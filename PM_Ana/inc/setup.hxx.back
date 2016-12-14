@@ -1,0 +1,38 @@
+#ifndef _SETUP_H
+#define _SETUP_H
+
+#define NumMod 1
+#define NumTPL 11
+#define NumVPL 3
+#define NumTFB 15
+#define UseNumTFB 13
+#define NumCh 64
+#define UseNumCh 48
+#define NumCyc 23
+#define UseNumTFB 11
+#define VetoNumTFB 2
+#define UseNumCh 48
+#define LayerNumCh 24
+#define NumLayer 2
+#define GATE 800 //nsec
+static const long Tdc_max=15000000;
+static const long Tdc_min=10;
+
+static const double CUT=2.5;
+
+//definition of the name of folder
+static const char *root_file_folder = "/home/daq/data/root_file";
+static const char *root_file_pe_folder = "/home/daq/data/root_file_pe";
+static const char *gain_and_pedestal_folder = "/home/daq/data/gain_and_pedestal_file";
+static const char *noise_folder = "/home/daq/data/noise_file";
+static const char *pdf_folder = "/home/daq/data/pdf_file";
+static const char *penetrate_cosmic_folder = "/home/daq/data/penetrate_cosmic_file";
+static const char *cosmic_LY_folder = "/home/daq/data/cosmic_LY_file";
+static const char *diff_Tdc_folder = "/home/daq/data/diff_Tdc";
+static const char *dac_calib_folder = "/home/daq/data/dac_calib";
+static const char *beam_folder = "/home/daq/data/beam";
+
+static const char *reference_of_gain = "/home/daq/data/gain_and_pedestal_file/ingrid_00001642_0000.daq.mid.gap.txt";
+static const char *reference_of_noise = "/home/daq/data/noise_file/ingrid_00001642_0000.daq.mid.noise.txt";
+static const char *reference_of_cosmic = "/home/cosmic_file/ingrid_00001569_0000.daq.mid.cosmic.txt";
+#endif

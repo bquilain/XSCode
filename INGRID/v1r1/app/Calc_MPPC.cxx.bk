@@ -1,0 +1,412 @@
+//under construction
+//////////////////////////////////////////////////
+//make calibration constant at offline
+//Made by Masashi Otani
+//////////////////////////////////////////////////
+
+/*
+|||||||||||||||||||||||||||||||
+consists 
+1. main
+2. ProcessFile
+3. Read
+4. 
+main{
+ProcessFile
+->Read->Analysis(each event)
+|||||||||||||||||||||||||||||||
+*/
+
+// ND280 software includes
+#include "TMidasBank.hxx"
+#include "TMidasFile.hxx"
+#include "TMidasBankProxy.hxx"
+#include "TMidasBankProxyRegistry.hxx"
+#include "TND280RawEvent.hxx"
+#include "TRawDataHeader.hxx"
+#include "TRunInfoBank.hxx"
+
+// oaRawEvent includes
+#include "TTripTDigitBank.hxx"
+#include "TMidasTripTDigitItr.hxx"
+#include "TMidasTripTDigit.hxx"
+
+#include "TMCMBank.hxx"
+#include "TTriggerBank.hxx"
+
+// ROOT includes
+#include "TApplication.h"
+#include "TFile.h"
+#include "TH1F.h"
+#include "TH2F.h"
+#include <TStyle.h>
+#include "TString.h"
+#include "TSystem.h"
+#include "TCanvas.h"
+#include <stdlib.h>
+
+#include <math.h>
+#include <stdio.h>
+#include <cstdio>
+#include <iostream>
+#include <sstream>
+#include <fstream>
+#include <iomanip.h>
+#include <sys/stat.h>
+using namespace std;
+
+// INGRID includes
+#include "setup.hxx"
+#include "ana_MPPC.cxx"
+#include "INGRID_Ch_config.cxx"
+#include "INGRID_BadCh_mapping.cxx"
+#include <unistd.h> // using getopt      
+
+ana_MPPC *fana_MPPC;
+int run_number;
+INGRID_Ch_config *fINGRID_Ch_config;
+INGRID_BadCh_mapping *fINGRID_BadCh_mapping;
+FileStat_t fs;
+
+ofstream MPPCfile;      //### High Gain pedestal and gain
+ofstream noisefile;     //### noise rate(High Gain)
+ofstream sigmafile;
+ofstream Tdcthreshold;  //### Tdc Threshold(High Gain)
+ofstream LowGain;       //### Low Gain pedestal
+
+Int_t NumEvt;
+TH1F*  fH_HighAdc[NumMod][2][NumTFB][NumCh];
+TH1F*  fH_LowAdc[NumMod][2][NumTFB][NumCh];
+Int_t  cAnaTrg;
+Int_t  fMinAdcwTdcCut[NumMod][2][NumTFB][NumCh];
+Int_t  anacounter; //
+Int_t  anabreak;   //number of event for analysis
+
+char   MPPC_calib_folder[300];
+void Analysis(){
+
+  cout<<"analysis"<<endl;
+  TCanvas *c1 = new TCanvas("c1","c1",10,10,500,500);
+  char buff1[300];
+  double pedestal,gain,noise,caa,lopedestal;
+  for(Int_t nummod=0;nummod<NumMod;nummod++){
+    if(nummod%10000==0) cout<<"nummod:"<<nummod<<endl;
+    for(Int_t view=0;view<2;view++){
+      for(Int_t numtfb=0;numtfb<NumTFB;numtfb++){
+      	for(Int_t numch=0;numch<24;numch++){
+	  int global_ch;
+
+	  bool tpl,veto;
+	  int tmp;int tmpch;
+	  if(numtfb>10){tpl=false;veto=true;tmp=numtfb-11;}
+	  else {tpl=true;veto=false;tmp=numtfb;}
+	  if(view==0&&tpl){tmpch=numch+24;}
+	  else if(view==1&&tpl){tmpch=numch;}
+	  else if(veto){tmpch=numch;}
+
+
+
+	  if(fINGRID_Ch_config->get_global_ch(&nummod,&view,&numtfb,&numch,&global_ch)&&!fINGRID_BadCh_mapping->badchannel(&nummod, &tmp, &tmpch, &tpl, &veto)){
+	    if(!fana_MPPC->analysis_old_version(fH_HighAdc[nummod][view][numtfb][numch])){
+	    
+
+	    };
+	    fana_MPPC -> analysis_logain(fH_LowAdc[nummod][view][numtfb][numch]);
+	    //fH_LowAdc[nummod][view][numtfb][numch]->Draw();
+	    //c1->Update();
+	    //cout<<fana_MPPC->get_lowpedestal()<<endl;
+	    //cin.get();
+
+
+	    pedestal  = fana_MPPC->get_pedestal();
+	    lopedestal= fana_MPPC->get_lowpedestal();
+	    gain      = fana_MPPC->get_gain();
+	    Int_t Nentry = fH_HighAdc[nummod][view][numtfb][numch]->GetEntries();
+	    noise     = fana_MPPC->get_noise(Nentry);
+	    caa       = fana_MPPC->get_crosstalk_and_afterpulse(Nentry);
+	    double pedsigma = fana_MPPC->get_pedestal_sigma();
+
+	    if(fabs(gain - 10)>6){
+	      cout<<"Mod:"   << nummod	     
+		  <<" view:"  << view
+		  <<" pln:"   << numtfb
+		  <<" ch:"    << numch
+		  <<" gain:"  << gain
+		  <<endl;
+	      //fH_HighAdc[nummod][view][numtfb][numch]->Draw();
+	      //c1->Update();
+	      //cin.get();
+
+	    }
+
+	    if(noise > 1.5){
+	      //fH_HighAdc[nummod][view][numtfb][numch]->Draw();
+	      //c1->Update();
+	      //cin.get();
+
+	    }
+
+	    bool tpl,veto;
+	    int tmp;int tmpch;
+	    if(numtfb>10){tpl=false;veto=true;tmp=numtfb-11;}
+	    else {tpl=true;veto=false;tmp=numtfb;}
+	    if(view==0){tmpch=numch+24;}
+	    else{tmpch=numch;};
+	    
+
+	   
+	    if(!fINGRID_BadCh_mapping->badchannel(&nummod, &tmp, &tmpch, &tpl, &veto)){
+	    MPPCfile<<nummod   <<"\t"
+                    <<view     <<"\t"
+                    <<numtfb   <<"\t"
+                    <<numch    <<"\t"
+                    <<pedestal <<"\t"
+                    <<gain     <<endl;
+	    noisefile<<nummod   <<"\t"
+                     <<view     <<"\t"
+                     <<numtfb   <<"\t"
+                     <<numch    <<"\t"
+                     <<noise    <<"\t"
+                     <<caa      <<endl;
+	    sigmafile<<nummod   <<"\t"
+                     <<view     <<"\t"
+                     <<numtfb   <<"\t"
+                     <<numch    <<"\t"
+                     <<noise    <<"\t"
+                     <<pedsigma <<endl;
+	    LowGain  <<nummod   <<"\t"
+                     <<view     <<"\t"
+                     <<numtfb   <<"\t"
+                     <<numch    <<"\t"
+                     <<lopedestal <<"\t"
+                     <<gain/10   <<endl;
+
+	    Tdcthreshold
+	             <<nummod   <<"\t"
+		     <<view     <<"\t"
+                     <<numtfb   <<"\t"
+                     <<numch    <<"\t"
+ 		     <<fMinAdcwTdcCut[nummod][view][numtfb][numch]  <<"\t"
+		     <<1.0*(fMinAdcwTdcCut[nummod][view][numtfb][numch]-pedestal)/gain  <<"\t"
+		     <<endl;
+
+	    }
+	    else{
+	    MPPCfile<<nummod   <<"\t"
+                    <<view     <<"\t"
+                    <<numtfb   <<"\t"
+                    <<numch    <<"\t"
+                    <<"100"    <<"\t"
+                    <<"100"    <<endl;
+	    noisefile<<nummod   <<"\t"
+                     <<view     <<"\t"
+                     <<numtfb   <<"\t"
+                     <<numch    <<"\t"
+                     <<"0.1"    <<"\t"
+                     <<"0.01"   <<endl;
+	    Tdcthreshold
+	             <<nummod   <<"\t"
+		     <<view     <<"\t"
+                     <<numtfb   <<"\t"
+                     <<numch    <<"\t"
+                     <<noise    <<"\t"
+		     <<-777     <<"\t"
+		     <<-777     <<"\t"
+		     <<endl;
+
+
+	    }
+	    
+	    
+
+	  
+	  }//active channel
+	}//numch
+      }//numtfb
+    }//view
+    cout<<"gain:"<<gain<<endl;
+  }//nummod
+
+
+  //############# write tdc threshold ######################
+  //########################################################
+
+}
+
+
+void Event(ND::TND280RawEvent* re) {
+
+  ND::THandle<ND::TRunInfoBank> RunInfoBank;
+  while ( RunInfoBank = re->GetMidasBank<ND::TRunInfoBank>("XRUN",RunInfoBank) ) {
+    ND::TRunInfoBank& runinfo = re->UseMidasBank<ND::TRunInfoBank>("XRUN");
+    NumEvt = runinfo.GetSeqNumber();
+  }
+
+  Int_t TrgId;
+  ND::THandle<ND::TTriggerBank> triggerBank;
+  while ( triggerBank = re->GetMidasBank<ND::TTriggerBank>("ITRI",triggerBank) ) {
+    ND::TTriggerBank& trigger = re->UseMidasBank<ND::TTriggerBank>("ITRI");
+    TrgId = (trigger.GetTriggerWord()>>48)&0xffff;
+  }
+
+  if(TrgId==cAnaTrg){//Beam Event
+    anacounter++;
+    // Loop over all banks of type TTripTHitBank
+    ND::THandle<ND::TTripTDigitBank> triptBank;
+    while ( triptBank = re->GetMidasBank<ND::TTripTDigitBank>("",triptBank) ) {
+      // Create an iterator over digits
+      ND::TMidasTripTDigitItr itr(triptBank->GetMidasTripTDigitItr());
+      while ( ! itr.EOD() ) {
+	ND::TMidasTripTDigit digit(itr.Get());
+	Int_t mod, view, plane, ch;
+	Int_t rmm      = digit.GetRMMNum();
+	Int_t trip     = digit.GetTripTNum();
+	Int_t trip_ch  = digit.GetChannelNum();
+	Int_t tfb      = digit.GetTFBNum();
+	if(fINGRID_Ch_config->channel_configuration(&rmm,&tfb,&trip,&trip_ch,&mod,&view,&plane, &ch)){  //### INGRID using channel
+	  Int_t highadc  =  digit.GetHighGainADC();
+	  fH_HighAdc[mod][view][plane][ch] -> Fill(highadc);
+	  Int_t loadc    =  digit.GetLowGainADC();
+	  fH_LowAdc[mod][view][plane][ch]  -> Fill(loadc);
+
+	  long  tdc      =  digit.GetTimeOffset();
+	  if(NumEvt>0 && highadc> 100&& tdc<16777201 && highadc < fMinAdcwTdcCut[mod][view][plane][ch]){
+	    fMinAdcwTdcCut[mod][view][plane][ch] = highadc;
+	  }//Tdc threshold calibration
+
+	 
+	}
+      }   // End of loop over digits in this bank
+    }     // End of loop over banks of digits in this event
+  }//TrgId==1
+}
+//____________________________________________________________________________
+
+
+//____________________________________________________________________________
+void ProcessFile(const char *FileName) {
+  
+  cout<<"processing file..."<<endl;
+  ND::TMidasBankProxyRegistry::Instance().Print();
+  
+  if ( gSystem->GetPathInfo(FileName,fs) ) {
+    std::cerr << "Cannot find file: " << FileName << std::endl;
+    return;
+  }
+
+  ND::TMidasFile mf;
+  mf.Open(FileName);
+
+  // Loop over events in this file
+  int Nevent=0;
+
+  while ( ND::TND280RawEvent* re = mf.ReadRawEvent() ) {
+    if(Nevent%10==0) cout<<Nevent<<endl;
+
+    Nevent++;
+    re->PromoteMidasBanks(false);
+    Event(re);
+    delete re;
+    if(anacounter>anabreak) break;
+  }  // End loop over events
+}
+
+//_____________________________________________________________________________
+
+void Book(){
+  char buff1[300];
+  for(Int_t nummod=0;nummod<NumMod;nummod++){
+    for(Int_t view=0;view<2;view++){
+      for(Int_t numtfb=0;numtfb<NumTFB;numtfb++){
+	for(Int_t numch=0;numch<24;numch++){
+	  if(view==0)sprintf(buff1,"Mod%02dXPln%02dCh%02d",nummod,numtfb,numch);
+	  if(view==1)sprintf(buff1,"Mod%02dYPln%02dCh%02d",nummod,numtfb,numch);
+	  fH_HighAdc[nummod][view][numtfb][numch] = new TH1F(buff1,buff1,200,100,300);
+	  if(view==0)sprintf(buff1,"Mod%02dXPln%02dCh%02dLow",nummod,numtfb,numch);
+	  if(view==1)sprintf(buff1,"Mod%02dYPln%02dCh%02dLow",nummod,numtfb,numch);
+	  fH_LowAdc[nummod][view][numtfb][numch] = new TH1F(buff1,buff1,300,0,300);
+	}//numch
+      }//numtfb
+    }//View
+  }//nummod
+}//Book
+void Initialize(){
+  for(Int_t nummod=0;nummod<NumMod;nummod++){
+    for(Int_t view=0;view<2;view++){
+      for(Int_t numtfb=0;numtfb<NumTFB;numtfb++){
+	for(Int_t numch=0;numch<24;numch++){
+	  fMinAdcwTdcCut[nummod][view][numtfb][numch]=1000;
+	}//numch
+      }//numtfb
+    }//View
+  }//nummod
+}//Initialize
+//_____________________________________________________________________________
+int main(int argc,char *argv[]){
+  TROOT root("GUI","GUI");
+  TApplication theApp("App",0,0);
+  anacounter=0;
+  cout<<"start"<<endl;
+  int c=-1;
+  char FileName[300],txt_file_name[300];
+  Int_t pedestal_and_gain_for_cosmic;
+  cAnaTrg=1;
+  anabreak=1000;
+  while ((c = getopt(argc, argv, "hr:t:b:")) != -1) {
+    switch(c){
+    case 'b':
+      anabreak = atoi(optarg);
+      break;
+    case 'r':
+      run_number=atoi(optarg);
+      sprintf(FileName,"%s/ingrid_%08d_0000.daq.mid.gz",midas_dir,run_number);
+      //sprintf(FileName,"%s/ingrid_%08d_0000.daq.mid.gz",data_file_folder,run_number);
+      cout<<"file name is :"<<FileName<<endl;
+      break;
+    case 'h':
+      cout<<"-r [run number]\t midas file to root file"<<endl;
+      break;
+    case 't':
+      cAnaTrg=atoi(optarg);
+      break;
+    case '?':
+      cout<<"Unknown option"<<endl;
+      cout<<"-r [run number]\t midas file to root file"<<endl;
+      exit(1);
+      break;
+    }
+  }//option end
+
+  fana_MPPC = new ana_MPPC();
+  fINGRID_Ch_config = new INGRID_Ch_config();
+  fINGRID_BadCh_mapping = new INGRID_BadCh_mapping();
+
+  //output txt file configure
+  sprintf(MPPC_calib_folder, "/home/ingrid/data_process/MPPC_calib");
+  sprintf(txt_file_name,
+	  "%s/ingrid_%08d_0000.txt",MPPC_calib_folder,run_number);  
+  MPPCfile.open(txt_file_name);
+  sprintf(txt_file_name,
+	  "%s/ingrid_%08d_0000_logain.txt",MPPC_calib_folder,run_number);  
+  LowGain.open(txt_file_name);
+  sprintf(txt_file_name,"%s/ingrid_%08d_0001.txt",MPPC_calib_folder,run_number);  
+  noisefile.open(txt_file_name);
+  sprintf(txt_file_name,"%s/ingrid_%08d_0003.txt",MPPC_calib_folder,run_number);  
+  sigmafile.open(txt_file_name);
+  sprintf(txt_file_name,"%s/ingrid_%08d_0002.txt",MPPC_calib_folder,run_number);  
+  Tdcthreshold.open(txt_file_name);
+
+  Initialize();
+  Book();
+  cout<<"read to midas file..."<<endl;
+
+  ProcessFile(FileName);
+  Analysis();
+  MPPCfile.    close();
+  noisefile.   close();
+  sigmafile.   close();
+  Tdcthreshold.close();
+
+  return 0;
+}
+

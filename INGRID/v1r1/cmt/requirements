@@ -1,0 +1,75 @@
+package work/INGRID
+version v1r1
+# This package provides support for raw MIDAS data input and access.
+manager Masashi Otani <masashi.o@scphys.kyoto-u.ac.jp>
+#author t2k-nd280-software@nngroup.physics.sunysb.edu
+
+branches app cmt src inc dict doc lib_tmp
+#branches app cmt src inc dict doc lib
+
+# Needed packages
+use nd280Policy
+use ROOT
+use oaEvent *
+use oaRawEvent
+#use triptHisto * monitor
+#use monBase * monitor
+#use midasOnline * monitor
+
+# Build methods to include.
+document rootcint dictionary *_LinkDef.h
+document version version *.cxx ../dict/*.cxx
+document register register
+document doxygen doxygen -group=documentation *.cxx *.hxx ../doc/*.dox
+
+# The library to be build
+library onlineMonMain *.cc *.h
+
+# Build information used by packages that use this one.
+#macro INGRID_cppflags " -DINGRID_USED "
+macro INGRID_linkopts " -L$(INGRIDROOT)/$(INGRID_tag) -lonlineMonMain "
+#macro INGRID_stamps " $(INGRIDROOT)/$(onlineMonMain_tag)/onlineMonMain.stamp"
+
+# The paths to find this library.
+path_remove LD_LIBRARY_PATH "$(INGRIDROOT)"
+path_prepend LD_LIBRARY_PATH "$(INGRIDROOT)/$(INGRID_tag)"
+#path_remove PATH "$(INGRIDROOT)"
+#path_prepend PATH "$(INGRIDROOT)/$(onlineMonMain_tag)"
+
+# Applications to build
+application DSTMaker ../app/DSTMaker.cxx
+application DSTMaker_Optimized ../app/DSTMaker_Optimized.cxx
+#application Calc_MPPC ../app/Calc_MPPC.cxx
+application Calc_MPPC_new ../app/Calc_MPPC_new.cxx
+application Calc_MPPC_new_ci ../app/Calc_MPPC_new_ci.cxx
+application IngCalib_new ../app/IngCalib_new.cc
+application IngCalib_ADCNLCorrected ../app/IngCalib_ADCNLCorrected.cc
+application Calc_MPPC_new_ci_2 ../app/Calc_MPPC_new_ci_2.cxx
+#application IngCalib_new_AllChannelCI ../app/IngCalib_new_AllChannelCI.cc
+#application IngCalib_new_AllChannelCI_New ../app/IngCalib_new_AllChannelCI_New.cc
+#application IngCalib_woCalib ../app/IngCalib_woCalib.cc
+#application IngCalib_new_AllChannelCI_Conversion ../app/IngCalib_new_AllChannelCI_Conversion.cc
+#application IngCalib_new_AllChannelCI_Conversion_SlideAverage ../app/IngCalib_new_AllChannelCI_Conversion_SlideAverage.cc
+#application IngCalib_new_AllChannelCI_temp ../app/IngCalib_new_AllChannelCI_temp.cc
+#application IngCalib_new_AllChannelCI_line ../app/IngCalib_new_AllChannelCI_line.cc
+#application IngCalib_new_AllChannelCI_line_temp ../app/IngCalib_new_AllChannelCI_line_temp.cc
+#application IngCalib_new_ci ../app/IngCalib_new_ci.cc
+#application IngCalib_new_ci_temp ../app/IngCalib_new_ci_temp.cc
+#application IngAddBSD ../app/IngAddBSD.cc
+# tests
+#application testOnlineMonMain -group=test ../test/*.cxx
+
+macro cppflags        "" \
+      alpha           "-nocompress -std arm -msg_quiet" \
+      OSF1            "-fpic" \
+      hp9000s780      "+Z" \
+      hp700_ux101     "-fpic" \
+      HP-UX           "+Z -Wc,-ansi_for_scope,on" \
+      hp_ux102        "-z +p -Wc,-ansi_for_scope,on +O2 +Onoinitcheck" \
+      Linux           "-g -pipe -O0 -Wall -ansi -Wctor-dtor-privacy -Wnon-virtual-\
+dtor -fpic " \
+      SunOS           "-KPIC" \
+      VisualC         '/nologo /DWIN32 /MD /W3 $(includes) /c'
+
+
+

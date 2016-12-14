@@ -1,0 +1,3 @@
+#!/bin/bash +x
+#/home/bquilain/CC0pi_XS/XS/XS_CC0pi_Plan -i /export/scraid2/data/bquilain/MCfiles/PMMC_Sand_Run1_1_wNoise_anareduced.root -o /home/bquilain/CC0pi_XS/XS/root_input/XSFormat_Sand_Run1_1_Plan.root -f 1 -n 5 -m
+/home/bquilain/CC0pi_XS/XS/XS_CC0pi_Plan_BNJDistributions -i /export/scraid2/data/bquilain/MCfiles/PMMC_Sand_Run1_1_wNoise_anareduced.root -o /home/bquilain/CC0pi_XS/XS/root_input/XSFormat_Sand_Run1_1_Plan_BNJ.root -f 1 -n 5 -m

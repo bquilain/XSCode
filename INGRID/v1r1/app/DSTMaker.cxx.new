@@ -1,0 +1,245 @@
+#include"DSTMaker.hxx"
+
+
+FileStat_t                                  fs;
+INGRID_Ch_config*            fINGRID_Ch_config;
+INGRID_BadCh_mapping*    fINGRID_BadCh_mapping;
+INGRID_Dimension*            fINGRID_Dimension;
+
+//____________________________________________
+Bool_t flana;
+void Book();
+void Read(ND::TND280RawEvent* re);
+void ProcessFile(const char *FileName);
+
+int run_number, subrun;
+//_______________________________________________________________
+int main(int argc,char *argv[]){
+  TROOT root("GUI","GUI");
+  TApplication theApp("App",0,0);
+  int c=-1;
+  char FileName[300],root_file_name[300];
+  run_number;
+  subrun = 0;
+  cAnaEvt    =       100;
+  cAnaMod    =        -1;
+  cAnaCyc    =        -1;
+  
+  cosmic     = false;
+  while ((c = getopt(argc, argv, "hr:ct:b:m:l:s:")) != -1) {
+    switch(c){
+    case 's':
+      subrun=atoi(optarg);
+      sprintf(FileName,"%s/ingrid_%08d_%04d.daq.mid.gz",data_file_folder,run_number,subrun);
+      break;
+    case 'r':
+      run_number=atoi(optarg);
+      //sprintf(FileName,"%s/ingrid_%08d_0000.daq.mid",data_file_folder,run_number);
+      sprintf(FileName,"%s/ingrid_%08d_%04d.daq.mid.gz",data_file_folder,run_number,subrun);
+      break;
+    case 'c':
+      cosmic = true;
+      break;
+    case 't':
+      cAnaTrg=atoi(optarg);
+      break;
+    case 'b':
+      cAnaEvt=atoi(optarg);
+      break;
+    case 'l':
+      cAnaCyc=atoi(optarg);
+      break;
+    case 'h':
+      cout<<"-r [run number]\t midas file to root file"<<endl;
+      break;
+    case 'm':
+      cAnaMod=atoi(optarg);
+      break;
+    case '?':
+      cout<<"Unknown option"<<endl;
+      cout<<"-r [run number]\t midas file to root file"<<endl;
+      exit(1);
+      break;
+    }
+  }//option end
+  fINGRID_Ch_config     = new INGRID_Ch_config();
+  fINGRID_BadCh_mapping = new INGRID_BadCh_mapping();
+  fINGRID_Dimension     = new INGRID_Dimension();
+
+  Book(run_number, subrun);
+
+  if ( gSystem->GetPathInfo(FileName,fs) ) {
+    std::cerr << "Cannot find file: " << FileName << std::endl;
+    sprintf( FileName, "/data/daqdata/ingrid_%08d_%04d.daq.mid.gz",run_number,subrun);
+    if ( gSystem->GetPathInfo(FileName,fs) ) {
+      std::cerr << "Cannot find file: " << FileName << std::endl;
+      exit(1);
+    }
+  }
+
+
+  ProcessFile(FileName);
+  Write();
+  return 0;
+}
+
+//_________________________________________________________________
+
+void ProcessFile(const char *FileName) {
+  ND::TMidasFile mf;
+  mf.Open(FileName);
+  cout<<"loop all event..."<<endl;
+
+  while ( ND::TND280RawEvent* re = mf.ReadRawEvent()) {
+    re->PromoteMidasBanks(false);
+    TrgId=-1;
+    IngridSimVertexSummary*   simvertex   = new IngridSimVertexSummary();
+    IngridSimParticleSummary* simparticle = new IngridSimParticleSummary();
+
+    if(re->size()!=0){//eliminate header and laster
+      summary -> Clear("C");
+      //summary -> AddSimVertex(simvertex);
+      //summary -> AddSimParticle(simparticle);
+      Read(re);
+      if(NumEvt%100==0)      cout<<NumEvt<<endl;
+     
+      if(cAnaTrg==TrgId)
+	tree    -> Fill();
+	
+
+    }
+    delete re;
+    if(NumEvt==cAnaEvt)break;
+    if(NumEvt%10000)Save();
+  }// End loop over events
+}
+//_________________________________________________________________
+#define DEBUG 0
+void Read(ND::TND280RawEvent* re){
+  //Header
+  ND::TRawDataHeader header = re->GetHeader();
+  summary -> time           = header.GetTimeStamp();
+
+  //TRunInfo
+  ND::THandle<ND::TRunInfoBank> RunInfoBank;
+  while ( RunInfoBank = re->GetMidasBank<ND::TRunInfoBank>("XRUN",RunInfoBank) ) {
+    ND::TRunInfoBank& runinfo = re->UseMidasBank<ND::TRunInfoBank>("XRUN");
+    NumEvt = runinfo.GetSeqNumber();
+    summary -> event = NumEvt;
+  }
+
+  //MCMBank
+  ND::THandle<ND::TMCMBank> mcmBank;
+  while ( mcmBank = re->GetMidasBank<ND::TMCMBank>("IMCM",mcmBank) ) {
+    ND::TMCMBank& mcm = re->UseMidasBank<ND::TMCMBank>("IMCM");
+    summary -> trgtime = mcm.GetUnixTimeSSecTrig();
+    TrgId  = (mcm.GetTriggerWord()>>48) & 0xffff;
+    summary -> trgid       = TrgId;
+    summary -> nd280nspill = (mcm.GetTriggerWord()>>32) & 0xffff;
+   
+  }
+  //Trigger Bank
+  /*
+  ND::THandle<ND::TTriggerBank> triggerBank;
+  while ( triggerBank = re->GetMidasBank<ND::TTriggerBank>("ITRI",triggerBank) ) {
+    ND::TTriggerBank& trigger = re->UseMidasBank<ND::TTriggerBank>("ITRI");
+    TrgId  = (trigger.GetTriggerWord()>>48) & 0xffff;
+    summary -> trgid       = TrgId;
+    summary -> nd280nspill = (trigger.GetTriggerWord()>>32) & 0xffff;
+  }
+  */
+
+  //###### Trip-t Bank(Data) ########
+  //################################# 
+  if(TrgId==cAnaTrg){
+    ND::THandle<ND::TTripTDigitBank> triptBank;
+    while ( triptBank = re->GetMidasBank<ND::TTripTDigitBank>("",triptBank) ) {
+      // Create an iterator over digits
+      
+      ND::TMidasTripTDigitItr itr(triptBank->GetMidasTripTDigitItr());
+      while ( ! itr.EOD() ) {
+	ND::TMidasTripTDigit digit(itr.Get());
+	Int_t rmm     =  digit.GetRMMNum();
+	Int_t tfb     =  digit.GetTFBNum();
+	Int_t trip    =  digit.GetTripTNum();
+	Int_t trip_ch =  digit.GetChannelNum();
+	Int_t cycle   =  digit.GetIntegrationNum();
+	Int_t mod,view,plane,ch;
+
+	if(fINGRID_Ch_config->channel_configuration(&rmm,&tfb,&trip,&trip_ch,&mod,&view,&plane,&ch) ){
+	  long tdc = digit.GetTimeOffset();
+	  long t0  = digit.GetTimeOffsetT0();
+	  bool tpl,veto;
+	  int tmp;int tmpch;
+	  if(plane>10){tpl=false;veto=true;tmp=plane-11;}
+	  else {tpl=true;veto=false;tmp=plane;}
+	  if(view==0&&tpl){tmpch=ch+24;}
+	  else if(view==1&&tpl){tmpch=ch;}
+	  else if(veto){tmpch=ch;}
+	  if(tdc<16777201&&!fINGRID_BadCh_mapping->badchannel(&mod, &tmp, &tmpch, &tpl, &veto)){
+	    const ND::TRawDataHeader& h = re->GetHeader();int evno = h.GetSeqNo();    // Event Sequence Number
+	    int iint = digit.GetIntegrationNum();    // = Capacitor number
+	    int icoff = triptBank->GetTFBStartCycle();int co = iint - icoff;
+	    if (co<0) co += 23;
+	    if ( cosmic && ( co!=14&&co!= 15 ) )continue;
+
+	    double xy = -1.0e-5;
+	    double z  = -1.0e-5;
+	    fINGRID_Dimension -> get_posXY( mod, view, plane, ch,
+					    &xy, &z	 );
+	    inghitsum -> Clear("C");
+	    inghitsum -> mod    = mod;
+	    inghitsum -> view   = view;
+	    inghitsum -> pln    = plane;
+	    inghitsum -> ch     = ch;
+	    inghitsum -> xy     = xy;
+	    inghitsum -> z      = z;
+
+	    inghitsum -> cyc    = co;
+	    inghitsum -> adc    = digit.GetHighGainADC();
+
+	    inghitsum -> loadc  = digit.GetLowGainADC();
+	    inghitsum -> tdc    = tdc + t0;
+	    summary   -> AddIngridModHit( inghitsum, mod, co );
+	    //summary   -> AddIngridHit( inghitsum );
+	    //#### Speciall for VETO ######
+	    //#############################
+	    //#### Horizontal Right VETO #####
+	    if( 0<=mod && mod <=5 ){
+	      if( plane == 12 ){
+		plane = 11;
+		inghitsum -> mod = mod+1;
+		inghitsum -> pln = plane;
+		fINGRID_Dimension -> get_posXY( mod+1, view, plane, ch,
+						&xy, &z	 );
+		inghitsum -> xy     = xy;
+		inghitsum -> z      = z;
+
+		summary   -> AddIngridModHit( inghitsum, mod+1, co );
+	      }
+	    }
+	    //#### Vertical Bottom VETO #####
+	    if( 7<=mod && mod <=12 ){
+	      if( plane == 14 ){
+		inghitsum -> mod = mod+1;
+		plane = 13;
+		inghitsum -> pln = plane;
+		fINGRID_Dimension -> get_posXY( mod+1, view, plane, ch,
+						&xy, &z	 );
+		inghitsum -> xy     = xy;
+		inghitsum -> z      = z;
+		summary   -> AddIngridModHit( inghitsum, mod+1, co );
+	      }
+	    }
+
+	  }
+	}//Ch_config
+      }//itr
+    }//tribBank
+  }//TrgId
+
+}
+
+//_________________________________________________________________
+
+

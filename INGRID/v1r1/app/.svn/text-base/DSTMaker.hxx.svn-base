@@ -1,0 +1,308 @@
+#ifndef __DSTMAKER_HXX__
+#define __DSTMAKER_HXX__
+
+// ND280 software includes
+#include "TMidasBank.hxx"
+#include "TMidasFile.hxx"
+#include "TMidasBankProxy.hxx"
+#include "TMidasBankProxyRegistry.hxx"
+#include "TND280RawEvent.hxx"
+#include "TRawDataHeader.hxx"
+// oaRawEvent includes
+#include "TTripTDigitBank.hxx"
+#include "TRunInfoBank.hxx"
+#include "TMidasTripTDigitItr.hxx"
+#include "TMidasTripTDigit.hxx"
+#include "TMCMBank.hxx"
+#include "TTriggerBank.hxx"
+// ROOT includes
+#include "TApplication.h"
+#include "TFile.h"
+#include "TH1F.h"
+#include "TF1.h"
+#include "TGraph.h"
+#include "TH2F.h"
+#include "TCanvas.h"
+#include <TStyle.h>
+#include "TString.h"
+#include "TSystem.h"
+#include "TSpectrum.h"
+#include "TTree.h"
+//C++ libraly includes
+#include <stdlib.h>
+#include <math.h>
+#include <stdio.h>
+#include <cstdio>
+#include <iostream>
+#include <sstream>
+#include <fstream>
+#include <iomanip.h>
+#include <algorithm>
+#include <deque>
+#include <vector>
+#include <sys/stat.h>
+#include <unistd.h> // using getopt      
+using namespace std;
+// INGRID includes
+#include "setup.hxx"
+#include "INGRID_Ch_config.cxx"
+#include "PM_Ch_config.cxx"
+#include "INGRID_BadCh_mapping.cxx"
+#include "INGRID_Dimension.cxx"
+#include "IngridConstants.hxx"
+// INGRID data structure
+#include "INGRIDEVENTSUMMARY.h"
+#include "IngridHitSummary.h"
+#include "IngridSimHitSummary.h"
+#include "IngridSimParticleSummary.h"
+#include "IngridSimVertexSummary.h"
+#include "BeamInfoSummary.h"
+#include "IngridBasicReconSummary.h"
+
+
+FileStat_t               fs;
+INGRID_Ch_config*        fINGRID_Ch_config;
+PM_Ch_config*            fPM_Ch_config;
+INGRID_BadCh_mapping*    fINGRID_BadCh_mapping;
+INGRID_Dimension*        fINGRID_Dimension;
+
+Int_t                    NumEvt;
+Int_t                    TrgId;
+Int_t                    cAnaEvt;
+Int_t                    cAnaTrg;
+
+TFile*                   fTFile;
+TTree*                   tree;
+IngridEventSummary*      summary;
+IngridHitSummary*        inghitsum;
+bool                     cosmic;
+bool                     PModule;
+
+void Book(Int_t run, Int_t subrun); //Make output ROOT file
+void Read(ND::TND280RawEvent* re) ; //Read data event by event
+//_______________________________________________________________________
+//#######################################################################
+//##### Temporary data class before add IngridHitSummary Class    #######
+//##### after sort with cycle, add this to IngridHitSummary Class #######
+//#######################################################################
+class Hit{
+public:
+  Int_t       mod;
+  Int_t       pln;
+  Int_t      view;
+  Int_t        ch;
+  Int_t       adc;
+  Long_t      tdc;  
+  Long_t       t0;
+};
+
+
+//__________________________________________________________
+
+bool TDCHit(long tdc){
+  if(tdc<16777201)
+    return true;
+  else
+    return false;
+}
+
+void Book(Int_t run, Int_t subrun){
+  char buff[300];
+  if(!cosmic&&!PModule)
+    sprintf(buff,"/home/ingrid/data/dst/ingrid_%08d_%04d.root",run,subrun);
+  else if(cosmic&&!PModule)
+    sprintf(buff,"/home/ingrid/data/cosmic/ingrid_%08d_%04d.root",run,subrun);
+  else if(!cosmic&&PModule)
+    sprintf(buff,"/home/ingrid/data/PM/ingrid_%08d_%04d.root",run,subrun);
+  else if(cosmic&&PModule)
+    sprintf(buff,"/home/ingrid/data/PM_cosmic/ingrid_%08d_%04d.root",run,subrun);
+  cout << "Make output ROOT files:" << buff << endl;
+  fTFile   = new TFile(buff,"recreate");
+  tree     = new TTree("tree","tree");
+  summary  = new IngridEventSummary();
+  inghitsum= new IngridHitSummary();
+  tree->Branch("fDefaultReco.", "IngridEventSummary",
+	       &summary, 64000, 99);
+}
+void Save(){
+  tree->AutoSave();
+}
+
+void WriteOnly(){
+  tree->Write();
+  fTFile->Write();
+ 
+}
+void Write(){
+  tree->Write();
+  fTFile->Write();
+  fTFile->Close();
+}
+
+
+void Read(ND::TND280RawEvent* re){
+  //Header
+  ND::TRawDataHeader header = re->GetHeader();
+  summary -> time           = header.GetTimeStamp();
+
+  //TRunInfo
+  ND::THandle<ND::TRunInfoBank> RunInfoBank;
+  while ( RunInfoBank = re->GetMidasBank<ND::TRunInfoBank>("XRUN",RunInfoBank) ) {
+    ND::TRunInfoBank& runinfo = re->UseMidasBank<ND::TRunInfoBank>("XRUN");
+    NumEvt = runinfo.GetSeqNumber();
+    summary -> event = NumEvt; //EVENT Number
+  }
+
+  //MCMBank
+  ND::THandle<ND::TMCMBank> mcmBank;
+  while ( mcmBank = re->GetMidasBank<ND::TMCMBank>("IMCM",mcmBank) ) {
+    ND::TMCMBank& mcm = re->UseMidasBank<ND::TMCMBank>("IMCM");
+    summary -> trgtime = mcm.GetUnixTimeSSecTrig();
+    TrgId                  = (mcm.GetTriggerWord()>>48) & 0xffff;
+    summary -> trgid       = TrgId; //Trigger ID, 1:beam, 2:Periodic, 128:Cosmic 
+    summary -> nd280nspill = (mcm.GetTriggerWord()>>32) & 0xffff;
+  }
+  //Trigger Bank
+  /*
+  ND::THandle<ND::TTriggerBank> triggerBank;
+  while ( triggerBank = re->GetMidasBank<ND::TTriggerBank>("ITRI",triggerBank) ) {
+    ND::TTriggerBank& trigger = re->UseMidasBank<ND::TTriggerBank>("ITRI");
+    TrgId  = (trigger.GetTriggerWord()>>48) & 0xffff;
+    summary -> trgid       = TrgId;
+    summary -> nd280nspill = (trigger.GetTriggerWord()>>32) & 0xffff;
+  }
+  */
+
+  //###### Trip-t Bank ##### ########
+  //################################# 
+  if(TrgId==cAnaTrg){
+    ND::THandle<ND::TTripTDigitBank> triptBank;
+    while ( triptBank = re->GetMidasBank<ND::TTripTDigitBank>("",triptBank) ) {
+      ND::TMidasTripTDigitItr itr(triptBank->GetMidasTripTDigitItr());
+      while ( ! itr.EOD() ) {
+	ND::TMidasTripTDigit digit(itr.Get());
+	Int_t rmm     =  digit.GetRMMNum();
+	Int_t tfb     =  digit.GetTFBNum();
+	Int_t trip    =  digit.GetTripTNum();
+	Int_t trip_ch =  digit.GetChannelNum();
+	Int_t cycle   =  digit.GetIntegrationNum();
+	Int_t mod,view,plane,ch;
+
+	bool  read = false;
+	if( PModule && isPM(rmm, tfb) )
+	  if(fPM_Ch_config->channel_configuration(&rmm,&tfb,&trip,&trip_ch,&mod,&view,&plane,&ch) )
+	    read = true;
+	
+	if( !PModule )
+	  if( fINGRID_Ch_config->channel_configuration
+	      (&rmm,&tfb,&trip,&trip_ch,&mod,&view,&plane,&ch) )
+ 	    //if this is false, MPPC is NOT connected, INGRID 16 Modules
+	    read = true;
+
+	if(!read)continue;
+
+
+	long tdc = digit.GetTimeOffset();
+	long t0  = digit.GetTimeOffsetT0();
+
+	if( !TDCHit( tdc ) )
+	  continue; 
+
+	if( (!fINGRID_BadCh_mapping->badchannel(mod, view, plane, ch) && !PModule)|| //INGRID
+	    PModule //Proton module
+	    ){ 
+	   
+	  const ND::TRawDataHeader& h = re->GetHeader();int evno = h.GetSeqNo();    // Event Sequence Number
+	  int iint = digit.GetIntegrationNum();    // = Capacitor number
+	  int icoff = triptBank->GetTFBStartCycle();int co = iint - icoff;
+	  if (co<0) co += 23;
+	  if ( cosmic && ( co!=14&&co!= 15 ) )continue;
+
+	  double xy = -1.0e-5;
+	  double z  = -1.0e-5;
+	  fINGRID_Dimension -> get_posXY( mod, view, plane, ch,
+					    &xy, &z	 );
+	  inghitsum -> Clear("C");
+	  inghitsum -> mod    = mod;
+	  inghitsum -> view   = view;
+	  inghitsum -> pln    = plane;
+	  inghitsum -> ch     = ch;
+	  inghitsum -> xy     = xy;
+	  inghitsum -> z      = z;
+
+	  inghitsum -> cyc    = co;
+	  inghitsum -> adc    = digit.GetHighGainADC();
+
+	  inghitsum -> loadc  = digit.GetLowGainADC();
+	  inghitsum -> tdc    = tdc + t0;
+	  summary   -> AddIngridModHit( inghitsum, mod, co );
+	 
+	  //#### Speciall for VETO ######
+	  //#############################
+	  //#### Horizontal Right VETO #####
+	  if( 0<=mod && mod <=5 ){
+	    if( plane == 12 ){
+	      plane = 11;
+	      inghitsum -> mod = mod+1;
+	      inghitsum -> pln = plane;
+	      fINGRID_Dimension -> get_posXY( mod+1, view, plane, ch,
+					      &xy, &z	 );
+	      inghitsum -> xy     = xy;
+	      inghitsum -> z      = z;
+	      summary   -> AddIngridModHit( inghitsum, mod+1, co );
+	    }
+	  }
+	  //#### Vertical Bottom VETO #####
+	  if( 7<=mod && mod <=12 ){
+	    if( plane == 14 ){
+	      inghitsum -> mod = mod+1;
+	      plane = 13;
+	      inghitsum -> pln = plane;
+	      fINGRID_Dimension -> get_posXY( mod+1, view, plane, ch,
+					      &xy, &z	 );
+	      inghitsum -> xy     = xy;
+	      inghitsum -> z      = z;
+	      summary   -> AddIngridModHit( inghitsum, mod+1, co );
+	    }
+	  }
+	}//Bad channel
+      }//itr
+    }//tribBank
+  }//TrgId
+
+}
+
+//_________________________________________________________________
+void ProcessFile(const char *FileName) {
+  ND::TMidasFile mf;
+  mf.Open(FileName);
+  cout<<"loop all event..."<<endl;
+
+  while ( ND::TND280RawEvent* re = mf.ReadRawEvent()) {
+    re->PromoteMidasBanks(false);
+    TrgId=-1;
+    IngridSimVertexSummary*   simvertex   = new IngridSimVertexSummary();
+    IngridSimParticleSummary* simparticle = new IngridSimParticleSummary();
+
+    if(re->size()!=0){//eliminate header and laster
+      summary -> Clear("C");
+      //summary -> AddSimVertex(simvertex);
+      //summary -> AddSimParticle(simparticle);
+      Read(re);
+      if(NumEvt%100==0)      cout<<NumEvt<<endl;
+     
+      if(cAnaTrg==TrgId)
+	tree    -> Fill();
+	
+
+    }
+    delete re;
+    if(cAnaEvt!=-1&&NumEvt>cAnaEvt)break;
+    if(NumEvt%10000)Save();
+  }// End loop over events
+}
+//______________________________________________
+
+
+
+#endif

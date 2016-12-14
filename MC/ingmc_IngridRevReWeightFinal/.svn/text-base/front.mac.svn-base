@@ -1,0 +1,4 @@
+###########  side view set (Up:+y, Right:+z) ###########
+/vis/viewer/set/upVector 1 0 0          
+/vis/viewer/set/viewpointVector 0 0 1
+/vis/viewer/flush

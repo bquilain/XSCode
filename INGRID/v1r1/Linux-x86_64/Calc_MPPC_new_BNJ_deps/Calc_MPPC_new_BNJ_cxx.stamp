@@ -1,0 +1,1 @@
+Calc_MPPC_new_BNJ_cxx_dependencies =  ../app/Calc_MPPC_new_BNJ.cxx  $(bin)Calc_MPPC_new_BNJ_deps/Calc_MPPC_new_BNJ_cxx.stamp

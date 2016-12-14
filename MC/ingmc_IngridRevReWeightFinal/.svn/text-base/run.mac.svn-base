@@ -1,0 +1,45 @@
+#
+# Macro file for the initialization phase of "exampleN02.cc"
+# when runing in interactive mode
+#
+# Sets some default verbose
+#
+/control/verbose 2
+
+/run/verbose 2
+/event/verbose 0
+/tracking/verbose 0
+#
+#
+# Create a scene handler for a specific graphics system
+# (Edit the next line(s) to choose another graphic system)
+#
+#/vis/open OGLIX
+/vis/open OGLSX
+#/vis/open OGLSXm
+#
+/vis/scene/create 0
+#
+/vis/sceneHandler/attach
+#
+# draw scene
+/vis/scene/add/volume
+/vis/scene/add/axes 0 0 0 6 m
+# x-axis:red, y-axis:green, z-axis:blue
+#
+#/vis/viewer/set/viewpointThetaPhi 90 180 deg
+#/vis/viewer/set/viewpointThetaPhi 0 0 deg
+/vis/viewer/set/viewpointThetaPhi 150 35 deg
+/vis/viewer/zoom 1.4
+#/vis/drawVolume iron
+#
+# for drawing the tracks
+# (if too many tracks cause core dump => storeTrajectory 0)
+/tracking/storeTrajectory 1
+## if above option off, display drawed Event by Event
+
+/vis/scene/add/trajectories
+/vis/scene/endOfEventAction accumulate
+
+#/run/beamOn 200
+#/vis/viewer/flush

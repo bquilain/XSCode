@@ -1,0 +1,1286 @@
+#ifndef Reconstruction_cc
+#define Reconstruction_cc
+/************CLibs********/
+#include<iostream>
+#include<sstream>
+#include<fstream>
+using namespace std;
+#include <iomanip>
+#include <sys/stat.h>
+#include <cmath>
+/********ROOT Libs*******/
+#include <TF1.h>
+#include <TROOT.h>
+#include <TStyle.h>
+#include <TApplication.h>
+#include <TFile.h>
+#include <TCanvas.h>
+#include <TTree.h>
+#include <TClonesArray.h>
+#include <TObject.h>
+#include <TEventList.h>
+#include <TBranch.h>
+#include <TH1.h>
+#include <TLegend.h>
+#include <TGraph.h>
+#include <TGaxis.h>
+#include <TMarker.h>
+#include <TText.h>
+#include <TMath.h>
+#include <TSpectrum.h>
+#include <TBox.h>
+#include <TLatex.h>
+#include <TString.h>
+#include <TSystem.h>
+#include <THStack.h>
+#include <TMatrixD.h>
+/**********INGRID Libs*************/
+#include "TApplication.h"
+#include "INGRIDEVENTSUMMARY.h"
+#include "IngridHitSummary.h"
+#include "IngridSimHitSummary.h"
+#include "IngridSimVertexSummary.h"
+#include "IngridSimParticleSummary.h"
+#include "BeamInfoSummary.h"
+#include "IngridBasicReconSummary.h"
+#include "INGRID_Dimension.cc"
+/*********Hit Libs****************/
+#include "Hit.h"
+#include "Reconstruction.h"
+#include "setup.h"
+//
+INGRID_Dimension * IngDimRec = new INGRID_Dimension();
+
+
+vector <Hit3D> Reconstruction::CountSharedHits(vector <Hit3D> Vec, vector< vector<Hit3D> > VecDouble, int Trk){
+  vector <Hit3D> VecD(Vec);
+  for(int itrk=0;itrk<VecDouble.size();itrk++){
+    if(itrk==Trk) continue;
+    else{
+      for(int ihit=0;ihit<Vec.size();ihit++){
+	//VecD[ihit]=Vec[ihit];
+	for(int ihit2=0;ihit2<VecDouble[itrk].size();ihit2++){
+	  if(Vec[ihit]==VecDouble[itrk][ihit2]){
+	    //cout<<"Original Track we compare="<<Trk<<" , Track with which we compare="<<itrk<<endl;
+	  //cout<<" Position=("<<Vec[ihit].x<<","<<Vec[ihit].y<<","<<Vec[ihit].z<<")   , NRJ="<<Vec[ihit].pe<<" , used="<<Vec[ihit].used<<endl;
+	  //cout<<" Posihittihiton=("<<VecDouble[itrk][ihit2].x<<","<<VecDouble[itrk][ihit2].y<<","<<VecDouble[itrk][ihit2].z<<")   , NRJ="<<VecDouble[itrk][ihit2].pe<<" , used="<<VecDouble[itrk][ihit2].used<<endl;
+	  VecD[ihit].used++;
+	  }
+	  else continue;
+	}
+      }
+    }
+  }
+  return VecD;
+}
+
+
+vector <HitTemp> Reconstruction::EraseDoubleHits(IngridBasicReconSummary * recon, int itrk, vector <HitTemp> HitV){
+  //cout<<"hello"<<endl;
+  HitV.clear();
+  IngridHitSummary * Hit = new IngridHitSummary();
+  HitTemp Coord;
+  int ndouble;
+  for(int ihit=0;ihit<recon->NhitTs(itrk);ihit++){
+    Hit=recon->GetIngridHitTrk(ihit,itrk);
+    Coord.x=Hit->view;
+    Coord.y=Hit->xy;
+    Coord.z=Hit->z;
+    Coord.trk=itrk;
+    Coord.hit=ihit;
+    HitV.push_back(Coord);
+    
+    for(int ihit2=0;ihit2<HitV.size()-1;ihit2++){
+      if(HitV[ihit2]==Coord) {
+	ndouble++;
+	HitV.pop_back();
+      }
+    }
+  }
+  
+//    Hit=(IngridHitSummary*) recon->GetIngridHitTrk(HitV[ihit].hit,HitV[ihit].trk);
+  //cout<<"HitV Size="<<HitV.size()<<endl;
+  return HitV;
+  // for(int ihit=0;ihit<HitV.size();ihit++){
+}
+
+vector <HitTemp> Reconstruction::EraseDoubleHitsPM(PMAnaSummary * recon, int itrk, vector <HitTemp> HitV){
+  HitTemp Coord;
+  int ndouble;
+  HitV.clear();
+  IngridHitSummary * Hit = new IngridHitSummary();
+  for(int ihit=0;ihit<recon->NhitTs(itrk);ihit++){
+    Hit=recon->GetIngridHitTrk(ihit,itrk);
+    Coord.x=Hit->view;
+    Coord.y=Hit->xy;
+    Coord.z=Hit->z;
+    Coord.trk=itrk;
+    Coord.hit=ihit;
+    HitV.push_back(Coord);
+
+    for(int ihit2=0;ihit2<HitV.size()-1;ihit2++){
+      if(HitV[ihit2]==Coord) {
+        ndouble++;
+        HitV.pop_back();
+      }
+    }
+  }  
+
+  return HitV;
+}
+
+vector <HitTemp> Reconstruction::EraseDoubleHitsAllTracks(IngridBasicReconSummary * recon, vector <HitTemp> HitV){
+  //cout<<"hello"<<endl;
+  HitV.clear();
+  IngridHitSummary * Hit = new IngridHitSummary();
+  HitTemp Coord;
+  int ndouble;
+  for(int itrk=0;itrk<recon->Ntrack;itrk++){
+    for(int ihit=0;ihit<recon->NhitTs(itrk);ihit++){
+      Hit=recon->GetIngridHitTrk(ihit,itrk);
+      Coord.x=Hit->view;
+      Coord.y=Hit->xy;
+      Coord.z=Hit->z;
+      Coord.trk=itrk;
+      Coord.hit=ihit;
+      HitV.push_back(Coord);
+      
+      for(int ihit2=0;ihit2<HitV.size()-1;ihit2++){
+	if(HitV[ihit2]==Coord) {
+	  ndouble++;
+	  HitV.pop_back();
+	}
+      }
+    }
+  }
+  
+//    Hit=(IngridHitSummary*) recon->GetIngridHitTrk(HitV[ihit].hit,HitV[ihit].trk);
+  //cout<<"HitV Size="<<HitV.size()<<endl;
+  return HitV;
+  // for(int ihit=0;ihit<HitV.size();ihit++){
+}
+
+
+vector <HitTemp> Reconstruction::EraseDoubleHitsAllTracksPM(PMAnaSummary * recon, vector <HitTemp> HitV){
+  //cout<<"hello"<<endl;
+  HitV.clear();
+  IngridHitSummary * Hit = new IngridHitSummary();
+  HitTemp Coord;
+  int ndouble;
+  for(int itrk=0;itrk<recon->Ntrack;itrk++){
+    for(int ihit=0;ihit<recon->NhitTs(itrk);ihit++){
+      Hit=recon->GetIngridHitTrk(ihit,itrk);
+      Coord.x=Hit->view;
+      Coord.y=Hit->xy;
+      Coord.z=Hit->z;
+      Coord.trk=itrk;
+      Coord.hit=ihit;
+      HitV.push_back(Coord);
+
+      for(int ihit2=0;ihit2<HitV.size()-1;ihit2++){
+        if(HitV[ihit2]==Coord) {
+          ndouble++;
+          HitV.pop_back();
+        }
+      }
+    }
+  }
+
+  return HitV;
+}
+
+
+vector <Hit3D> Reconstruction::Hit2DMatching( IngridEventSummary* evt, IngridBasicReconSummary * recon,vector <HitTemp> HitV,vector <Hit3D> Vec, bool MC){
+  Vec.clear();
+  //cout<<"hello Vec"<<endl;
+  IngridHitSummary * hit=new IngridHitSummary();
+  IngridHitSummary * hit2=new IngridHitSummary();
+  IngridSimParticleSummary * SimPart=new IngridSimParticleSummary();
+  Hit3D hit3d,hit3d2;
+
+  double HitPln[NPlnPM+3][NView+1][NChPM+1];
+  for(int ipln=0;ipln<NPlnPM;ipln++){
+    for(int iview=0;iview<NView;iview++){
+      for(int ich=0;ich<NChPM;ich++){
+	HitPln[ipln][iview][ich]=0;
+      }
+    }
+  }
+
+  for(int ihit=0;ihit<HitV.size();ihit++){
+    hit=(IngridHitSummary*) recon->GetIngridHitTrk(HitV[ihit].hit,HitV[ihit].trk);
+    if(hit->view==1) continue;
+    HitTemp T;
+
+    for(int ihit2=0;ihit2<HitV.size();ihit2++){
+      hit2=(IngridHitSummary*) recon->GetIngridHitTrk(HitV[ihit2].hit,HitV[ihit2].trk);
+      if(hit->view==hit2->view) continue;
+
+      if(TMath::Abs(hit->z-hit2->z)<3.){
+	hit3d.clear();
+	hit3d2.clear();
+
+	hit3d.z=hit->z;
+	if((hit->pe + hit->lope)/2.<30) hit3d.pe=hit->pe;
+	else hit3d.pe=hit->lope;
+	hit3d.view=hit->view;
+	hit3d.pln=hit->pln;
+	hit3d.used=1;
+	hit3d.InTrk=true;
+	if(MC==true && hit->NSimHits()!=0) {
+	  hit3d.truepe=((hit->GetIngridSimHit(0))->edeposit)*MeV2PE;
+	  hit3d.pdg=(hit->GetIngridSimHit(0))->pdg;
+	  //for(int ist=0;ist<evt->NIngridSimParticles();ist++){
+	  //SimPart = (IngridSimParticleSummary*) evt->GetSimParticle(ist);
+	    //if(SimPart->trackid==(hit->GetIngridSimHit(0))->trackid) {
+	    //hit3d.pdg=SimPart->pdg;
+
+	    //break;
+	    //}
+	  //}
+	}
+	else hit3d.truepe=-1;
+	hit3d2.z=hit2->z;
+	if((hit2->pe + hit2->lope)/2.<30) hit3d2.pe=hit2->pe;
+        else hit3d2.pe=hit2->lope;
+	hit3d2.pln=hit2->pln;
+	hit3d2.view=hit2->view;
+	hit3d2.used=1;
+	hit3d2.InTrk=true;
+
+	if(MC && hit2->NSimHits()!=0) {
+	  hit3d2.truepe=((hit2->GetIngridSimHit(0))->edeposit)*MeV2PE;
+	  hit3d2.pdg=(hit2->GetIngridSimHit(0))->pdg;
+	  /*for(int ist=0;ist<evt->NIngridSimParticles();ist++){
+	    SimPart = (IngridSimParticleSummary*) evt->GetSimParticle(ist);
+	    if(SimPart->trackid==(hit2->GetIngridSimHit(0))->trackid) {
+	      hit3d2.pdg=SimPart->pdg;
+	      break;
+	    }
+	  }*/
+	}
+	
+	if(hit->view==0) {
+	  hit3d.x=hit->xy;
+	  hit3d.y=hit2->xy;
+	  hit3d.ch=hit->ch;
+	  hit3d2.x=hit->xy;
+	  hit3d2.y=hit2->xy;
+	  hit3d2.ch=hit2->ch;
+	}
+	else{
+	  hit3d.x=hit2->xy;
+	  hit3d.y=hit->xy;
+	  hit3d.ch=hit2->ch;
+	  hit3d2.x=hit->xy;
+	  hit3d2.y=hit2->xy;
+	  hit3d.ch=hit->ch;
+	}
+	HitPln[hit3d.pln][hit3d.view][hit3d.ch]++;
+	HitPln[hit3d2.pln][hit3d2.view][hit3d2.ch]++;
+	Vec.push_back(hit3d);
+	Vec.push_back(hit3d2);
+      }
+  }
+}
+  //  cout<<"Vec Size="<<Vec.size()<<endl;
+for(int ihit=0;ihit<Vec.size();ihit++){
+    Vec[ihit].pe/=HitPln[Vec[ihit].pln][Vec[ihit].view][Vec[ihit].ch];
+  }
+  sort(Vec.begin(),Vec.end());
+  return Vec;
+}
+
+vector <Hit3D> Reconstruction::Hit2DMatchingPM( IngridEventSummary* evt, PMAnaSummary * recon,vector <HitTemp> HitV,vector <Hit3D> Vec, bool MC){
+  Vec.clear();
+  IngridHitSummary * hit=new IngridHitSummary();
+  IngridHitSummary * hit2=new IngridHitSummary();
+  Hit3D hit3d,hit3d2;
+  IngridSimParticleSummary * SimPart=new IngridSimParticleSummary();
+
+  double HitPln[NPlnPM+3][NView+1][NChPM+1];
+  for(int ipln=0;ipln<NPlnPM;ipln++){
+    for(int iview=0;iview<NView;iview++){
+      for(int ich=0;ich<NChPM;ich++){
+        HitPln[ipln][iview][ich]=0;
+      }
+    }
+  }
+  for(int ihit=0;ihit<HitV.size();ihit++){
+    hit=(IngridHitSummary*) recon->GetIngridHitTrk(HitV[ihit].hit,HitV[ihit].trk);
+    if(hit->view==1) continue;
+    HitTemp T;
+
+    for(int ihit2=0;ihit2<HitV.size();ihit2++){
+      hit2=(IngridHitSummary*) recon->GetIngridHitTrk(HitV[ihit2].hit,HitV[ihit2].trk);
+      if(hit->view==hit2->view) continue;
+
+      if(hit->pln==hit2->pln){
+	hit3d.clear();
+	hit3d2.clear();
+
+	hit3d.z=hit->z;
+	if((hit->pe + hit->lope)/2.<30) hit3d.pe=hit->pe;
+        else hit3d.pe=hit->lope;
+	hit3d.view=hit->view;
+	hit3d.pln=hit->pln;
+	hit3d.used=1;
+	hit3d.InTrk=true;
+
+	if(hit->NSimHits()>1) cout<<"NOOOOOOOOOOOOOOOOOOOOOO"<<endl;
+	if(hit->NSimHits()>1) cout<<"It can happen"<<endl;
+	if(MC==true && hit->NSimHits()!=0) {
+	  hit3d.truepe=((hit->GetIngridSimHit(0))->edeposit)*MeV2PEPM;
+	  //cout<<(hit->GetIngridSimHit(0))->pdg<<endl;
+	  hit3d.pdg=(hit->GetIngridSimHit(0))->pdg;
+	  /*
+	  for(int ist=0;ist<evt->NIngridSimParticles();ist++){
+	    SimPart = (IngridSimParticleSummary*) evt->GetSimParticle(ist);
+	    if(SimPart->trackid==(hit->GetIngridSimHit(0))->trackid) {
+	      hit3d.pdg=SimPart->pdg;
+	      break;
+	    }
+	    }*/
+	}
+	else hit3d.truepe=-1;
+	
+	hit3d2.z=hit2->z;
+	if((hit2->pe + hit2->lope)/2.<30) hit3d2.pe=hit2->pe;
+        else hit3d2.pe=hit2->lope;
+	hit3d2.pln=hit2->pln;
+	hit3d2.view=hit2->view;
+	hit3d2.used=1;
+	hit3d2.InTrk=true;
+	if(MC && hit2->NSimHits()!=0) {
+	  if(hit->NSimHits()>1) cout<<"It can happen"<<endl;
+	  hit3d2.truepe=((hit2->GetIngridSimHit(0))->edeposit)*MeV2PEPM;
+	  //cout<<(hit2->GetIngridSimHit(0))->pdg<<endl;
+	  hit3d2.pdg=(hit2->GetIngridSimHit(0))->pdg;
+	  /* for(int ist=0;ist<evt->NIngridSimParticles();ist++){
+	    SimPart = (IngridSimParticleSummary*) evt->GetSimParticle(ist);
+	    if(SimPart->trackid==(hit2->GetIngridSimHit(0))->trackid) {
+	      hit3d2.pdg=SimPart->pdg;
+	      break;
+	    }
+	    }*/
+	}
+
+	if(hit->view==0) {
+          hit3d.x=hit->xy;
+          hit3d.y=hit2->xy;
+          hit3d.ch=hit->ch;
+          hit3d2.x=hit->xy;
+          hit3d2.y=hit2->xy;
+          hit3d2.ch=hit2->ch;
+        }
+        else{
+          hit3d.x=hit2->xy;
+          hit3d.y=hit->xy;
+          hit3d.ch=hit2->ch;
+          hit3d2.x=hit->xy;
+          hit3d2.y=hit2->xy;
+          hit3d.ch=hit->ch;
+        }
+	HitPln[hit3d.pln][hit3d.view][hit3d.ch]++;
+	HitPln[hit3d2.pln][hit3d2.view][hit3d2.ch]++;
+	Vec.push_back(hit3d);
+	Vec.push_back(hit3d2);
+	//cout<<" Vec, Position=("<<Vec[ihit].x<<","<<Vec[ihit].y<<","<<Vec[ihit].z<<")   , NRJ="<<Vec[ihit].pe<<endl;                                    
+	//cout<<" hit3d #1, Position=("<<hit3d.x<<","<<hit3d.y<<","<<hit3d.z<<")   , NRJ="<<hit3d.pe<<endl;                                                    
+	//cout<<" hit3d #2, Position=("<<hit3d2.x<<","<<hit3d2.y<<","<<hit3d2.z<<")   , NRJ="<<hit3d2.pe<<endl;                                                
+	//cout<<"1st Hit params, view="<<hit->view<<" , xy="<<hit->xy<<" ,z="<<hit->z<<" , NRJ="<<hit->pe<<endl;                                                  
+	//              cout<<" In the hits, Position=("<<hit3d2.x<<","<<hit3d2.y<<","<<hit3d2.z<<")   , NRJ="<<hit3d2.pe<<endl;                                  
+	//cout<<"2nd Hit params, view="<<hit2->view<<" , xy="<<hit2->xy<<" ,z="<<hit2->z<<" , NRJ="<<hit2->pe<<endl<<endl;                                        
+	//double EnergyTest=FiberAttenuation(hit3d.view,hit3d.x,hit3d.y,hit3d.pe);                                                                                
+	//cout<<hit3d.pe<<"   "<<EnergyTest<<endl;
+      }
+    }
+  }
+
+  /* for(int ihit=0;ihit<Vec.size();ihit++){
+    //cout<<Vec[ihit].pln<<" "<<Vec[ihit].ch<<endl;
+    //cout<<" Vec, Position=("<<Vec[ihit].x<<","<<Vec[ihit].y<<","<<Vec[ihit].z<<")   , NRJ="<<Vec[ihit].pe<<" , Number of similar hits="<<HitPln[Vec[ihit].pln][Vec[ihit].view][Vec[ihit].ch]<<endl; 
+    Vec[ihit].pe/=HitPln[Vec[ihit].pln][Vec[ihit].view][Vec[ihit].ch];
+    }*/
+  sort(Vec.begin(),Vec.end());
+  return Vec;
+}
+
+
+
+vector <double> Reconstruction::GetTrackAngle(vector <Hit3D> Vec){
+  double dx,AngleX,AngleY;
+  TH1D * HistPosX=new TH1D("HistPosX","Hit Positions in the XZ plane",130,0,130);
+  TH1D * HistPosY=new TH1D("HistPosY","Hit Positions in the YZ plane",130,0,130);
+  TH1D * Norm=new TH1D("Norm","Norm of Hit Positions in the XZ plane",130,0,130);
+
+  for(int ihit=0;ihit<Vec.size();ihit++){
+    if(Vec[ihit].view==0) HistPosX->Fill(Vec[ihit].z,Vec[ihit].x);
+    else HistPosY->Fill(Vec[ihit].z,Vec[ihit].y);
+    Norm->Fill(Vec[ihit].z);
+  }
+  
+  HistPosX->Sumw2();
+  HistPosY->Sumw2();
+  HistPosX->Divide(Norm);
+  HistPosY->Divide(Norm);
+  TF1 * fx = new TF1("fx","[0]+x*[1]",0,130);
+  TF1 * fy = new TF1("fy","[0]+x*[1]",0,130);
+  HistPosX->Fit("fx","Q");
+  HistPosY->Fit("fy","Q");
+  double SlopeX=fx->GetParameter(1);
+  AngleX=TMath::ATan(SlopeX)*180/TMath::Pi();
+  double SlopeY=fy->GetParameter(1);
+  AngleY=TMath::ATan(SlopeY)*180/TMath::Pi();
+  dx=TMath::Sqrt(SlopeY*SlopeY+SlopeX*SlopeX+1);
+  //cout<<dx<<endl;
+  vector <double> Out;
+  Out.push_back(AngleX);
+  Out.push_back(AngleY);
+  Out.push_back(dx);
+  HistPosX->Delete();
+  HistPosY->Delete();
+  Norm->Delete();
+  return Out;
+}
+
+
+vector <double> Reconstruction::GetTrackAnglePM(vector <Hit3D> Vec){
+  double dx,AngleX,AngleY;
+  TH1D * HistPosX=new TH1D("HistPosX","Hit Positions in the XZ plane",130,0,130);
+  TH1D * HistPosY=new TH1D("HistPosY","Hit Positions in the YZ plane",130,0,130);
+  TH1D * Norm=new TH1D("Norm","Norm of Hit Positions in the XZ plane",130,0,130);
+
+  for(int ihit=0;ihit<Vec.size();ihit++){
+    if(Vec[ihit].view==0) HistPosX->Fill(Vec[ihit].z,Vec[ihit].x);
+    else HistPosY->Fill(Vec[ihit].z,Vec[ihit].y);
+    Norm->Fill(Vec[ihit].z);
+  }
+  
+  HistPosX->Sumw2();
+  HistPosY->Sumw2();
+  HistPosX->Divide(Norm);
+  HistPosY->Divide(Norm);
+  TF1 * fx = new TF1("fx","[0]+x*[1]",0,120);
+  TF1 * fy = new TF1("fy","[0]+x*[1]",0,120);
+  HistPosX->Fit("fx","Q");
+  HistPosY->Fit("fy","Q");
+  double SlopeX=fx->GetParameter(1);
+  AngleX=TMath::ATan(SlopeX)*180/TMath::Pi();
+  double SlopeY=fy->GetParameter(1);
+  AngleY=TMath::ATan(SlopeY)*180/TMath::Pi();
+  dx=TMath::Sqrt(SlopeY*SlopeY+SlopeX*SlopeX+1);
+
+  vector <double> Out;
+  Out.push_back(AngleX);
+  Out.push_back(AngleY);
+  Out.push_back(dx);
+  HistPosX->Delete();   
+  HistPosY->Delete();
+  Norm->Delete();
+  return Out;
+}
+
+vector <double> Reconstruction::GetKinematic(double ang1, double thetax1, double thetay1,double ang2, double thetax2, double thetay2){
+  float Track1[3],Track2[3];
+  vector <double> Kinematic;
+  Kinematic.clear();
+  double AngleInTracks,Determinant;
+
+  Track1[0]=TMath::Tan(thetax1)*TMath::Cos(ang1);
+  Track1[1]=TMath::Tan(thetay1)*TMath::Cos(ang1);
+  Track1[2]=TMath::Cos(ang1);
+  double NormTrack1=TMath::Sqrt(Track1[0]*Track1[0]+Track1[1]*Track1[1]+Track1[2]*Track1[2]);
+
+  Track2[0]=TMath::Tan(thetax2)*TMath::Cos(ang2);
+  Track2[1]=TMath::Tan(thetay2)*TMath::Cos(ang2);
+  Track2[2]=TMath::Cos(ang2);
+  double NormTrack2=TMath::Sqrt(Track2[0]*Track2[0]+Track2[1]*Track2[1]+Track2[2]*Track2[2]);
+
+  for(int i=0;i<3;i++){
+    //cout<<i<<": (";
+    Track1[i]/=NormTrack1;
+    Track2[i]/=NormTrack2;
+    //cout<< Track1[i]<<", "<< Track2[i]<<endl;
+  }
+
+  AngleInTracks=TMath::ACos(Track1[0]*Track2[0]+Track1[1]*Track2[1]+Track1[2]*Track2[2]);
+  //cout<<"Angle between Tracks="<<AngleInTracks*180/TMath::Pi()<<endl;
+
+  Kinematic.push_back(AngleInTracks);
+
+  //const double X[]={Beam[0],Track1[0],Track2[0],Beam[1],Track1[1],Track2[1],Beam[2],Track1[2],Track2[2]};
+  //TMatrixD M(3,3);
+  //M.SetMatrixArray(X);
+  double ProdVec[3],ProdScal,Angle3D;
+
+  ProdVec[0]=Track1[1]*Track2[2]-Track2[1]*Track1[2];
+  ProdVec[1]=Track1[2]*Track2[0]-Track2[2]*Track1[0];
+  ProdVec[2]=Track1[0]*Track2[1]-Track2[0]*Track1[1];
+
+  /*  cout<<"Matrix="<<endl;
+  for(int i=0;i<3;i++){
+    for(int j=0;j<3;j++){
+      cout<<M[i][j]<<endl;
+    }
+  }
+  */
+  double NormProdVec=TMath::Sqrt(ProdVec[0]*ProdVec[0]+ProdVec[1]*ProdVec[1]+ProdVec[2]*ProdVec[2]);
+  double NormBeam=TMath::Sqrt(Beam[0]*Beam[0]+Beam[1]*Beam[1]+Beam[2]*Beam[2]);
+
+  ProdScal=(Beam[0]*ProdVec[0]+Beam[1]*ProdVec[1]+Beam[2]*ProdVec[2])/NormProdVec;
+  Angle3D=TMath::ACos(ProdScal);
+  //Determinant=TMath::Abs(M.Determinant());
+  //cout<<"Determinant"<<Determinant<<endl;
+  //Kinematic.push_back(Determinant);
+ 
+  //cout<<"Norm Track1="<<NormTrack1<<" , Norm Track2="<<NormTrack2<<endl;
+  //cout<<"Norm Beam="<<NormBeam<<" , Norm ProdVec="<<NormProdVec<<endl;
+  Kinematic.push_back(Angle3D);
+
+  return Kinematic;
+}
+
+double Reconstruction::GetBeamAngle(double ang1, double thetax1, double thetay1){
+  float Track1[3];
+
+  double AngleBeamTrack;
+
+  Track1[0]=TMath::Tan(thetax1)*TMath::Cos(ang1);
+  Track1[1]=TMath::Tan(thetay1)*TMath::Cos(ang1);
+  Track1[2]=TMath::Cos(ang1);
+  double NormTrack1=TMath::Sqrt(Track1[0]*Track1[0]+Track1[1]*Track1[1]+Track1[2]*Track1[2]);
+
+  for(int i=0;i<3;i++){
+    Track1[i]/=NormTrack1;
+  }
+
+  AngleBeamTrack=TMath::ACos(Track1[0]*Beam[0]+Track1[1]*Beam[1]+Track1[2]*Beam[2]);
+
+  return AngleBeamTrack;
+}
+
+
+
+
+vector <Hit3D> Reconstruction::SeveralHitsPlane(IngridBasicReconSummary * recon,vector <HitTemp> HitV,vector <Hit3D> Vec){
+  vector <Hit3D> Vec2;
+  Hit3D hit3d, hit3d2, hitall;
+  
+  bool used[Vec.size()];
+  for(int ihit=0;ihit<Vec.size();ihit++){
+    used[ihit]=false;
+  }
+  
+  for(int ihit=0;ihit<Vec.size();ihit++){
+    if(used[ihit]==true) continue;
+    hitall.x+=Vec[ihit].x;
+    hitall.y+=Vec[ihit].y;
+    hitall.z+=Vec[ihit].z;
+    hitall.pe+=Vec[ihit].pe;
+    hitall.pecorr+=Vec[ihit].pecorr;
+    hitall.view=Vec[ihit].view;
+    hitall.pln=Vec[ihit].pln;
+    int IClster=1;
+    for(int ihit2=ihit+1;ihit2<Vec.size();ihit2++){
+      if(used[ihit2]==true) continue;
+      if((Vec[ihit].pln==Vec[ihit2].pln)&&(Vec[ihit].view==Vec[ihit2].view)&&(TMath::Abs(Vec[ihit].x-Vec[ihit2].x)<10 && (TMath::Abs(Vec[ihit].y-Vec[ihit2].y)<10))){
+	hitall.x+=Vec[ihit2].x;
+	hitall.y+=Vec[ihit2].y;
+	hitall.z+=Vec[ihit2].z;
+	hitall.pe+=Vec[ihit2].pe;
+	hitall.pecorr+=Vec[ihit2].pecorr;
+	IClster++;
+	used[ihit2]=true;
+      }
+  }
+    hitall.x/=IClster;
+    hitall.y/=IClster;
+    hitall.z/=IClster;
+    Vec2.push_back(hitall);
+    hitall.clear();
+  }
+  
+  hit3d.clear();
+  hit3d2.clear();
+  hitall.clear();
+  return Vec2;
+}
+
+
+vector <Hit3D> Reconstruction::SeveralHitsPlanePM(PMAnaSummary * recon,vector <HitTemp> HitV,vector <Hit3D> Vec){
+  vector <Hit3D> Vec2;
+  Hit3D hit3d, hit3d2, hitall;
+  
+  bool used[Vec.size()];
+  for(int ihit=0;ihit<Vec.size();ihit++){
+    used[ihit]=false;
+  }
+  
+  for(int ihit=0;ihit<Vec.size();ihit++){
+    if(used[ihit]==true) continue;
+    hitall.x+=Vec[ihit].x;
+    hitall.y+=Vec[ihit].y;
+    hitall.z+=Vec[ihit].z;
+    hitall.pe+=Vec[ihit].pe;
+    hitall.pecorr+=Vec[ihit].pecorr;
+    hitall.view=Vec[ihit].view;
+    hitall.pln=Vec[ihit].pln;
+    int IClster=1;
+    for(int ihit2=ihit+1;ihit2<Vec.size();ihit2++){
+      if(used[ihit2]==true) continue;
+      if((Vec[ihit].pln==Vec[ihit2].pln)&&(Vec[ihit].view==Vec[ihit2].view)&&(TMath::Abs(Vec[ihit].x-Vec[ihit2].x)<10 && (TMath::Abs(Vec[ihit].y-Vec[ihit2].y)<10))){
+	hitall.x+=Vec[ihit2].x;
+	hitall.y+=Vec[ihit2].y;
+	hitall.z+=Vec[ihit2].z;
+	hitall.pe+=Vec[ihit2].pe;
+	hitall.pecorr+=Vec[ihit2].pecorr;
+	IClster++;
+	used[ihit2]=true;
+      }
+  }
+    hitall.x/=IClster;
+    hitall.y/=IClster;
+    hitall.z/=IClster;
+    Vec2.push_back(hitall);
+    hitall.clear();
+  }
+  
+  hit3d.clear();
+  hit3d2.clear();
+  hitall.clear();
+  return Vec2;
+}
+
+
+
+
+vector <Hit3D> Reconstruction::Hit2DMatchingCluster(IngridEventSummary* evt, IngridBasicReconSummary * recon,vector <HitTemp> HitV,vector <Hit3D> Vec){
+  int Mod=recon->hitmod;
+  IngridHitSummary * hit =new IngridHitSummary();
+  IngridHitSummary * hit2 =new IngridHitSummary();
+  vector <Hit3D> VecAll;
+  Hit3D hit3d,hit3d2;
+  double TCluster= recon->clstime;
+
+  double HitPln[NPlnPM+3][NView+1][NChPM+1];
+  for(int ipln=0;ipln<NPlnPM;ipln++){
+    for(int iview=0;iview<NView;iview++){
+      for(int ich=0;ich<NChPM;ich++){
+        HitPln[ipln][iview][ich]=0;
+      }
+    }
+  }
+
+  VecAll.clear();                                                                                                   
+  for(int ihit=0;ihit<evt->NIngridHits();ihit++){
+    hit=(IngridHitSummary*) evt->GetIngridHit(ihit);//changer si data                                                                                           
+    if((TMath::Abs(hit->time-TCluster)>100)||(hit->mod!=16)) continue;
+    if(hit->view==1) continue;
+    HitTemp T;
+    
+    for(int ihit2=0;ihit2<evt->NIngridHits();ihit2++){
+      hit2=(IngridHitSummary*) evt->GetIngridHit(ihit2);
+      if(hit->view==hit2->view) continue;
+      if((TMath::Abs(hit->time-TCluster)>100)||(hit->mod!=Mod)) continue;
+      //cout<<ihit2<<endl;                                                                                                                                      
+      if(TMath::Abs(hit->z-hit2->z)<3.){
+	//cout<<"2nd Hit params, view="<<hit2->view<<" , xy="<<hit2->xy<<" ,z="<<hit2->z<<endl;                                                                 
+
+      hit3d.clear();
+      hit3d2.clear();
+
+      hit3d.z=hit->z;
+      if((hit->pe + hit->lope)/2.<30) hit3d.pe=hit->pe;
+      else hit3d.pe=hit->lope;     
+      hit3d.view=hit->view;
+      hit3d.pln=hit->pln;
+
+      hit3d2.z=hit2->z;
+      if((hit2->pe + hit2->lope)/2.<30) hit3d2.pe=hit2->pe;
+      else hit3d2.pe=hit2->lope;
+      hit3d2.pln=hit2->pln;
+      hit3d2.view=hit2->view;
+      hit3d.time=hit->time;
+      hit3d2.time=hit2->time;
+      //used[ihit2]==true;                                                                                                                                    
+
+      if(hit->view==0) {
+	hit3d.x=hit->xy;
+	hit3d.y=hit2->xy;
+	hit3d2.x=hit->xy;
+	hit3d2.y=hit2->xy;
+      }
+      else{
+	hit3d.x=hit2->xy;
+	hit3d.y=hit->xy;
+	hit3d2.x=hit->xy;
+	hit3d2.y=hit2->xy;
+      }
+      HitPln[hit3d.pln][hit3d.view][hit3d.ch]++;
+      HitPln[hit3d2.pln][hit3d2.view][hit3d2.ch]++;
+      VecAll.push_back(hit3d);
+      VecAll.push_back(hit3d2);
+    }
+  }
+ }
+  for(int ihit=0;ihit<VecAll.size();ihit++){
+    VecAll[ihit].pe/=HitPln[VecAll[ihit].pln][VecAll[ihit].view][VecAll[ihit].ch];
+  }
+  sort(VecAll.begin(),VecAll.end());
+  return VecAll;
+}
+
+
+vector <Hit3D> Reconstruction::Hit2DMatchingClusterPM(IngridEventSummary* evt, PMAnaSummary * recon){
+  int Mod=16;
+  IngridHitSummary * hit =new IngridHitSummary();
+  IngridHitSummary * hit2 =new IngridHitSummary();
+  vector <Hit3D> VecAll;
+  vector <HitTemp> HitV;
+  HitV.clear();
+
+  Hit3D hit3d,hit3d2;
+  double TCluster= recon->clstime;
+  double HitPln[NPlnPM+3][NView+1][NChPM+1];
+  for(int ipln=0;ipln<NPlnPM;ipln++){
+    for(int iview=0;iview<NView;iview++){
+      for(int ich=0;ich<NChPM;ich++){
+        HitPln[ipln][iview][ich]=0;
+      }
+    }
+  }
+
+
+  IngridHitSummary * Hit = new IngridHitSummary();
+  HitTemp Coord;
+  int ndouble;
+  for(int ihit=0;ihit<evt->NIngridHits();ihit++){
+    hit=(IngridHitSummary*) evt->GetIngridHit(ihit);//changer si data                                                                                                     
+    if((TMath::Abs(hit->time-TCluster)>150)||(hit->mod!=16)) continue;
+    Coord.x=hit->view;
+    Coord.y=hit->xy;
+    Coord.z=hit->z;
+    Coord.hit=ihit;
+    Coord.trk=0;
+    HitV.push_back(Coord);
+    
+    for(int ihit2=0;ihit2<HitV.size()-1;ihit2++){
+      if(HitV[ihit2]==Coord) {
+	ndouble++;
+	HitV.pop_back();
+      }
+    }
+  }
+
+  VecAll.clear();                                                                                                   
+  for(int ihit=0;ihit<HitV.size();ihit++){
+    hit=(IngridHitSummary*) evt->GetIngridHit(HitV[ihit].hit);//changer si data
+    if(hit->view==1) continue;
+    HitTemp T;
+    
+    for(int ihit2=0;ihit2<HitV.size();ihit2++){
+      hit2=(IngridHitSummary*) evt->GetIngridHit(HitV[ihit2].hit);
+      if(hit->view==hit2->view) continue;
+
+      if(TMath::Abs(hit->z-hit2->z)<3.){
+	
+	hit3d.clear();
+	hit3d2.clear();
+	
+	hit3d.z=hit->z;
+	if((hit->pe + hit->lope)/2.<30) hit3d.pe=hit->pe;
+	else hit3d.pe=hit->lope;
+	hit3d.view=hit->view;
+	hit3d.pln=hit->pln;
+	
+	hit3d2.z=hit2->z;
+	if((hit2->pe + hit2->lope)/2.<30) hit3d2.pe=hit2->pe;
+	else hit3d2.pe=hit2->lope;
+	hit3d2.pln=hit2->pln;
+	hit3d2.view=hit2->view;
+	hit3d.time=hit->time;
+	hit3d2.time=hit2->time;
+	//used[ihit2]==true;                                                                                                                                    
+	if(hit->view==0) {
+	  hit3d.x=hit->xy;
+	  hit3d.y=hit2->xy;
+	  hit3d2.x=hit->xy;
+	  hit3d2.y=hit2->xy;
+	}
+	else{
+	  hit3d.x=hit2->xy;
+	  hit3d.y=hit->xy;
+	  hit3d2.x=hit->xy;
+	  hit3d2.y=hit2->xy;
+	}
+	//cout<<hit3d.pln<<"  "<<hit3d2.pln<<"  "<<hit3d.view<<"  "<<hit3d2.view<<endl;
+	//cout<<HitPln[hit3d.pln][hit3d.view]<<"  "<<HitPln[hit3d2.pln][hit3d2.view]<<endl;
+	//if(hit3d.pln>17 || hit3d2.pln>17) {
+	//cout<<hit3d.pln<<"  "<<hit3d2.pln<<"  "<<hit3d.view<<"  "<<hit3d2.view<<endl;
+	//continue;}
+	HitPln[hit3d.pln][hit3d.view][hit3d.ch]++;
+	HitPln[hit3d2.pln][hit3d2.view][hit3d2.ch]++;
+	VecAll.push_back(hit3d);
+	VecAll.push_back(hit3d2);
+      }
+    }
+  }
+  for(int ihit=0;ihit<VecAll.size();ihit++){
+    //cout<<HitPln[VecAll[ihit].pln][VecAll[ihit].view]<<endl;
+    VecAll[ihit].pe/=HitPln[VecAll[ihit].pln][VecAll[ihit].view][VecAll[ihit].ch];
+  }
+  sort(VecAll.begin(),VecAll.end());
+  return VecAll;
+}
+
+double Reconstruction::GetTrackLength(vector <Hit3D> Vec){
+  double TrkLength=TMath::Sqrt(pow((Vec.front().x-Vec.back().x),2)+pow((Vec.front().y-Vec.back().y),2)+pow((Vec.front().z-Vec.back().z),2));
+  return TrkLength;
+}
+
+vector <double> Reconstruction::GetVertex(vector <Hit3D> Vec){
+  vector <double> Vertex;
+  Vertex.push_back(Vec.front().x);
+  Vertex.push_back(Vec.front().y);
+  Vertex.push_back(Vec.front().z);
+  return Vertex;
+}
+
+double Reconstruction::GetTrackEnergy(vector <Hit3D> Vec){
+  double Energy=0;
+  for(int ihit=0;ihit<Vec.size();ihit++){
+    if(Vec[ihit].used>1) continue;
+    if(Vec[ihit].ch<=7||Vec[ihit].ch>=24) Energy+=Vec[ihit].pe/2;
+    else Energy+=Vec[ihit].pe;
+  }
+  return Energy;
+}
+
+vector <double> Reconstruction::TrackComposition(vector <Hit3D> Vec, double VertexX,double VertexY,double VertexZ){
+  vector <double> Compo;
+  int NMuons=0;
+  int NPions=0;
+  int NProtons=0;
+  sort(Vec.begin(),Vec.end());
+  //cout<<"New Track:"<<endl;
+  for(int ihit=0/*Vec.size()-3*/;ihit<Vec.size();ihit++){
+    double Dist=TMath::Sqrt(pow(Vec[ihit].x-VertexX,2)+pow(Vec[ihit].y-VertexY,2)+pow(Vec[ihit].z-VertexZ,2));
+    if(Vec[ihit].used>1) continue;//skip hits too close from vertex
+    //cout<<"Particle Type="<<Vec[ihit].pdg<<" Distance from Vertex="<<Dist<<endl;
+    //if(Dist<20) continue;
+    if(Vec[ihit].pdg==13) NMuons++;
+    else if(Vec[ihit].pdg==211) NPions++;
+    else if(Vec[ihit].pdg==2212) NProtons++;
+  }
+
+  if(NMuons==0 && NPions==0 && NProtons==0) {//case where all hits are shared
+    //cout<<"All Hits are shared"<<endl;
+    for(int ihit=0;ihit<Vec.size();ihit++){
+      double Dist=TMath::Sqrt(pow(Vec[ihit].x-VertexX,2)+pow(Vec[ihit].y-VertexY,2)+pow(Vec[ihit].z-VertexZ,2));                                                    
+      //cout<<"Particle Type="<<Vec[ihit].pdg<<" Distance from Vertex="<<Dist<<endl;
+      if(Vec[ihit].pdg==13) NMuons++;
+      else if(Vec[ihit].pdg==211) NPions++;
+      else if(Vec[ihit].pdg==2212) NProtons++;
+    }
+  }
+  Compo.push_back(NMuons);
+  Compo.push_back(NPions);
+  Compo.push_back(NProtons);
+  
+  return Compo;
+}
+
+
+vector <Hit3D> Reconstruction::Hit2DMatchingAllTracks(IngridBasicReconSummary * recon){
+  int Mod=recon->hitmod;
+  IngridHitSummary * hit =new IngridHitSummary();
+  IngridHitSummary * hit2 =new IngridHitSummary();
+  vector <Hit3D> VecAll;
+  Hit3D hit3d,hit3d2;
+  vector <HitTemp> HitV;
+ 
+ double HitPln[NPlnPM+3][NView+1][NChPM+1];
+  for(int ipln=0;ipln<NPlnPM;ipln++){
+    for(int iview=0;iview<NView;iview++){
+      for(int ich=0;ich<NChPM;ich++){
+        HitPln[ipln][iview][ich]=0;
+      }
+    }
+  }
+  IngridHitSummary * Hit = new IngridHitSummary();
+  HitTemp Coord;
+  int ndouble;
+  for(int itrk=0;itrk<recon->Ntrack;itrk++){
+    for(int ihit=0;ihit<recon->NhitTs(itrk);ihit++){
+      Hit=recon->GetIngridHitTrk(ihit,itrk);
+      Coord.x=Hit->view;
+      Coord.y=Hit->xy;
+      Coord.z=Hit->z;
+      Coord.trk=itrk;
+      Coord.hit=ihit;
+      HitV.push_back(Coord);
+      
+      for(int ihit2=0;ihit2<HitV.size()-1;ihit2++){
+	if(HitV[ihit2]==Coord) {
+	  ndouble++;
+	  HitV.pop_back();
+	}
+      }
+    }
+  }
+
+  VecAll.clear();                                                                                                   
+  for(int ihit=0;ihit<HitV.size();ihit++){
+    hit=(IngridHitSummary*) recon->GetIngridHitTrk(HitV[ihit].hit,HitV[ihit].trk);
+    if(hit->view==1) continue;
+    HitTemp T;
+
+    for(int ihit2=0;ihit2<HitV.size();ihit2++){
+      hit2=(IngridHitSummary*) recon->GetIngridHitTrk(HitV[ihit2].hit,HitV[ihit2].trk);
+      if(hit->view==hit2->view) continue;
+      //cout<<ihit2<<endl;                                                                                                                                      
+      if(TMath::Abs(hit->z-hit2->z)<3.){
+
+      hit3d.clear();
+      hit3d2.clear();
+
+      hit3d.z=hit->z;
+      if((hit->pe + hit->lope)/2.<30) hit3d.pe=hit->pe;
+      else hit3d.pe=hit->lope;     
+      hit3d.view=hit->view;
+      hit3d.pln=hit->pln;
+      hit3d.InTrk=true;
+
+      hit3d2.z=hit2->z;
+      if((hit2->pe + hit2->lope)/2.<30) hit3d2.pe=hit2->pe;
+      else hit3d2.pe=hit2->lope;
+      hit3d2.pln=hit2->pln;
+      hit3d2.view=hit2->view;
+      hit3d.time=hit->time;
+      hit3d2.time=hit2->time;
+      hit3d2.InTrk=true;
+      //used[ihit2]==true;                                                                                                                                    
+
+      if(hit->view==0) {
+	hit3d.x=hit->xy;
+	hit3d.y=hit2->xy;
+	hit3d2.x=hit->xy;
+	hit3d2.y=hit2->xy;
+      }
+      else{
+	hit3d.x=hit2->xy;
+	hit3d.y=hit->xy;
+	hit3d2.x=hit->xy;
+	hit3d2.y=hit2->xy;
+      }
+      HitPln[hit3d.pln][hit3d.view][hit3d.ch]++;
+      HitPln[hit3d2.pln][hit3d2.view][hit3d2.ch]++;
+      VecAll.push_back(hit3d);
+      VecAll.push_back(hit3d2);
+    }
+  }
+ }
+
+  for(int ihit=0;ihit<VecAll.size();ihit++){
+    VecAll[ihit].pe/=HitPln[VecAll[ihit].pln][VecAll[ihit].view][VecAll[ihit].ch];
+  }
+  sort(VecAll.begin(),VecAll.end());
+  return VecAll;
+}
+
+vector <Hit3D> Reconstruction::Hit2DMatchingAllTracksPM(PMAnaSummary * recon){
+  int Mod=16;
+  IngridHitSummary * hit =new IngridHitSummary();
+  IngridHitSummary * hit2 =new IngridHitSummary();
+  vector <Hit3D> VecAll;
+  Hit3D hit3d,hit3d2;
+  vector <HitTemp> HitV;
+
+  double HitPln[NPlnPM+3][NView+1][NChPM+1];
+  for(int ipln=0;ipln<NPlnPM;ipln++){
+    for(int iview=0;iview<NView;iview++){
+      for(int ich=0;ich<NChPM;ich++){
+        HitPln[ipln][iview][ich]=0;
+      }
+    }
+  }
+
+  IngridHitSummary * Hit = new IngridHitSummary();
+  HitTemp Coord;
+  int ndouble;
+  //  cout<<"Ntracks="<<recon->Ntrack<<endl;
+  for(int itrk=0;itrk<recon->Ntrack;itrk++){
+    //if( recon->NhitTs(itrk)>100) cout<<"NHits Track="<<recon->NhitTs(itrk)<<endl;
+    for(int ihit=0;ihit<recon->NhitTs(itrk);ihit++){
+      Hit=recon->GetIngridHitTrk(ihit,itrk);
+      Coord.x=Hit->view;
+      Coord.y=Hit->xy;
+      Coord.z=Hit->z;
+      Coord.trk=itrk;
+      Coord.hit=ihit;
+      HitV.push_back(Coord);
+
+      for(int ihit2=0;ihit2<HitV.size()-1;ihit2++){
+        if(HitV[ihit2]==Coord) {
+          ndouble++;
+          HitV.pop_back();
+        }
+      }
+    }
+  }
+  /*cout<<"Vector HitV:"<<endl;
+   for(int ihit=0;ihit<HitV.size();ihit++){
+    cout<<HitV[ihit].x<<"  "<<HitV[ihit].y<<"  "<<HitV[ihit].z<<endl;
+    }*/
+
+  VecAll.clear();                                                                                                   
+  for(int ihit=0;ihit<HitV.size();ihit++){
+    //cout<<ihit<<endl;
+    hit=(IngridHitSummary*) recon->GetIngridHitTrk(HitV[ihit].hit,HitV[ihit].trk);
+    if(hit->view==1) continue;
+    HitTemp T;
+
+    for(int ihit2=0;ihit2<HitV.size();ihit2++){
+      hit2=(IngridHitSummary*) recon->GetIngridHitTrk(HitV[ihit2].hit,HitV[ihit2].trk);
+      if(hit->view==hit2->view) continue;
+      if(TMath::Abs(hit->z-hit2->z)<3.){
+	//cout<<"2nd Hit params, view="<<hit2->view<<" , xy="<<hit2->xy<<" ,z="<<hit2->z<<endl;                                                                 
+
+	hit3d.clear();
+      hit3d2.clear();
+
+      hit3d.z=hit->z;
+      if((hit->pe + hit->lope)/2.<30) hit3d.pe=hit->pe;
+      else hit3d.pe=hit->lope;     
+      hit3d.view=hit->view;
+      hit3d.pln=hit->pln;
+      hit3d.InTrk=true;
+      hit3d2.z=hit2->z;
+      if((hit2->pe + hit2->lope)/2.<30) hit3d2.pe=hit2->pe;
+      else hit3d2.pe=hit2->lope;
+      hit3d2.pln=hit2->pln;
+      hit3d2.view=hit2->view;
+      hit3d.time=hit->time;
+      hit3d2.time=hit2->time;
+      hit3d2.InTrk=true;
+      //used[ihit2]==true;                                                                                                                                    
+
+      if(hit->view==0) {
+	hit3d.x=hit->xy;
+	hit3d.y=hit2->xy;
+	hit3d2.x=hit->xy;
+	hit3d2.y=hit2->xy;
+      }
+      else{
+	hit3d.x=hit2->xy;
+	hit3d.y=hit->xy;
+	hit3d2.x=hit->xy;
+	hit3d2.y=hit2->xy;
+      }
+      //cout<<hit3d.pln<<" "<<hit3d2.pln<<endl;
+      HitPln[hit3d.pln][hit3d.view][hit3d.ch]++;
+      HitPln[hit3d2.pln][hit3d2.view][hit3d2.ch]++;
+      VecAll.push_back(hit3d);
+      VecAll.push_back(hit3d2);
+    }
+  }
+ }
+  sort(VecAll.begin(),VecAll.end());
+
+  for(int ihit=0;ihit<VecAll.size();ihit++){
+    //cout<<"Hit/Pln="<<HitPln[VecAll[ihit].pln][VecAll[ihit].view]<<endl;
+    VecAll[ihit].pe/=HitPln[VecAll[ihit].pln][VecAll[ihit].view][VecAll[ihit].ch];
+  }
+  /*  cout<<"Vec All:"<<endl;
+  for(int ihit=0;ihit<VecAll.size();ihit++){
+    cout<<VecAll[ihit].x<<"  "<<VecAll[ihit].y<<"  "<<VecAll[ihit].z<<"  "<<VecAll[ihit].pe<<endl;
+    }*/
+   return VecAll;
+}
+
+vector <Hit3D> Reconstruction::IsInTrk(vector <Hit3D> VecCluster, vector <Hit3D> VecAllTracks){
+  for(int ihit=0;ihit<VecCluster.size();ihit++){
+    for(int ihit2=0;ihit2<VecAllTracks.size();ihit2++){
+      if(VecCluster[ihit].x==VecAllTracks[ihit2].x && VecCluster[ihit].y==VecAllTracks[ihit2].y && VecCluster[ihit].z==VecAllTracks[ihit2].z && VecCluster[ihit].time==VecAllTracks[ihit2].time) VecCluster[ihit].InTrk=true;
+    }
+  }
+  return VecCluster;
+}
+
+vector <double> Reconstruction::TrackRelativeLength(double posx, double posy, double posz, double tx, double ty, double TrkLg){//feed it by vertex position and angles in xz and yz planes (in radian), and then, by track length
+  double pln=17;
+  double ch=31;
+  double posiz;
+  int view=1;
+  
+  if(view==0){
+    if(pln==0)posiz=5;
+    else posiz=46*pln+9;
+  }
+  else{
+    if(pln==0)posiz=28;
+    else posiz=46*pln+32;
+  }
+  double posiz0=5;
+
+  float posixy;
+
+  if(pln==0){
+    posixy=ch*50+25;
+  }
+  else{
+    if(ch<8)posixy=ch*50+25;
+    else if(ch<24)posixy=412.5+(ch-8)*25;
+    else posixy=(ch-8)*50+25;
+  }
+
+  //  posixy-=posixy/2;
+  double xend=((tx<0)?0:1)*posixy/10;
+  double yend=((ty<0)?0:1)*posixy/10;
+  double zendX=posz+(xend-posx)/TMath::Tan(tx);
+  double zendY=posz+(yend-posy)/TMath::Tan(ty);
+  double zend=(posiz-posiz0)/10;
+  //cout<<"New Track"<<endl;
+  //cout<<"Module ends= "<<xend<<"   "<<yend<<"   "<<zend<<endl;
+  //cout<<"zends= "<<zendX<<"   "<<zendY<<"   "<<zend<<endl;
+  //if(zendX<0||zendY<0) cout<<"Problem!!!!!!!!!!!!!!!"<<endl;
+  if(zend>1.3+zendX || zend>zendY){
+    if(zendX<zendY) {
+      zend=zendX;
+      yend=(zendX-posz)*TMath::Tan(ty)+posy;//goes out by the side
+    }
+    else{
+      zend=zendY;
+      xend=(zendY-posz)*TMath::Tan(tx)+posx;//goes out by top/bottom
+    }
+  }
+  else {
+    xend=TMath::Tan(tx)*(zend-posz)+posx;
+    yend=TMath::Tan(ty)*(zend-posz)+posy;
+  }
+
+  //cout<<"Vertex Position=("<<posx<<", "<<posy<<", "<<posz<<")  , ThetaX="<<tx*180/TMath::Pi()<<" , ThetaY="<<ty*180/TMath::Pi()<<endl;
+  //cout<<"Ending Position=("<<xend<<", "<<yend<<", "<<zend<<")"<<endl;
+  /*
+  int StartPln=(int) posz/2.3;
+  int EndPln=(int) zend/2.3;
+  //L in scinti depends if INGRID or SciBar...
+  double SlopeX=TMath::Tan(tx);
+  double SlopeY=TMath::Tan(ty);
+  double dx=TMath::Sqrt(SlopeY*SlopeY+SlopeX*SlopeX+1);
+  */
+
+
+  double GeomLength=TMath::Sqrt(pow(xend-posx,2)+pow(yend-posy,2)+pow(zend-posz,2));
+  //cout<<"Ideal Track Length="<<GeomLength<<" ,True Track Length="<<TrkLg<<endl;
+
+  
+  vector <double> Length;
+  Length.clear();
+  Length.push_back(GeomLength);
+  Length.push_back(TrkLg/GeomLength);
+  return Length;
+}
+
+/*Center of modules*/
+
+//on va rentrer le intcptx,intpcty et thetax, thetay
+//sortir si on a un module traversé avec une chance de créer une trace: renvoyer un booléen: oui et non
+
+bool Reconstruction::HasGeomTrack(int mod, int startplnx, int startchx, double thetax,int startplny, int startchy,double thetay){
+  double Mod[NMod][3];
+  double Scinti[NCh][2];
+  double *posXxy=new double();
+  double *posXz=new double();
+  double *posYxy=new double();
+  double *posYz=new double();
+  startchx/=10;
+  startchy/=10;
+
+  cout<<endl;
+  cout<<"Mod="<<mod<<" , startchx="<<startchx<<" , startplnZ="<<startplnx<<endl;
+  bool doneX=IngDimCor->INGRID_Dimension::get_posXY(mod,0,startplnx,0,posXxy,posXz);
+  bool doneY=IngDimCor->INGRID_Dimension::get_posXY(mod,1,startplny,0,posYxy,posYz);
+
+  cout<<"Starting Point: PosX="<<startchx<<" , PosY="<<startchy<<" , PosZ="<<*posXz<<endl;
+  cout<<"Track Angle X="<<thetax*180/TMath::Pi()<<" , Angle Y="<<thetay*180/TMath::Pi()<<endl;
+  Mod[3][0]=-0.000863*100;
+  Mod[3][1]=-17.55557*100;
+  Mod[3][2]=273.35956*100;
+  
+  Mod[10][0]=-0.038371*100;
+  Mod[10][1]=-17.37957*100;//to check
+  Mod[10][2]=273.35956*100;
+
+  Mod[16][0]=0.001*100;
+  Mod[16][1]=-17.563*100;
+  Mod[16][2]=276.168*100;
+  
+  //Center[16][0]=60.15;
+  //Center[16][1]=60.15;
+  //Center[16][2]=39.1;
+
+  /*conversion towards PM coordinates*/
+  
+  Mod[3][0]-=Mod[16][0];
+  Mod[3][1]-=Mod[16][1];
+  Mod[3][2]-=Mod[16][2];
+  Mod[10][0]-=Mod[16][0];
+  Mod[10][1]-=Mod[16][1];
+  Mod[10][2]-=Mod[16][2];
+
+  for(int imod=0;imod<NMod;imod++){
+    if(imod<7){
+      Mod[imod][0]=Mod[3][0]+(imod-3)*150;
+      Mod[imod][1]=Mod[3][1];
+      Mod[imod][2]=Mod[3][2];
+    }
+    else{
+      Mod[imod][0]=Mod[10][0];
+      Mod[imod][1]=Mod[10][1]+(imod-10)*150;
+      Mod[imod][2]=Mod[10][2];
+    }
+  }
+  
+  //  pos[0]=posX - 60.15 + Mod[16][0]*100;
+  //pos[1]=posY - 60.15 + Mod[16][1]*100;
+  //pos[2]=posZ - 39.1 + Mod[16][2]*100;
+  double PlnZ;
+  double X[2];
+  for(int ipln=0;ipln<NPln;ipln++){
+    //evaluer la droite XZ en Z=scinti vert, puis la droite YZ
+    //On obtient alors X,Z => Tester si on est dans un scinti d'INGRID
+    //Pour cela: on a scinti[j]: parcourir les j et voir si on est bien
+    //d'abord faudrait avoir le module après avoir testé les z =>
+    for(int iview=0;iview<NView;iview++){//on va regarder pour le smodules horizontaux, les plans successifs. Puis on regarde si pour le z alors fixé, dans quel module est le Xs'il est dans un module. On regarde alors dans quel module est le y en ce meme point pour voir si on va déposer en XZ. Puis faire de meme pour les plans pour view=1: dans celui la, on ne peut savoir dans quel module on est avec le seul y=> si on a le x donné par la droite
+     
+      if(iview==0) {
+	cout<<"XZ Plane:"<<endl;
+	PlnZ=(PlnThick+IronThick)*ipln+120.044;//différencier si view =0 ou 1
+	X[0]=startchx+TMath::Tan(thetax)*(PlnZ-*posXz);
+      }
+      else{
+	cout<<"YZ Plane:"<<endl;
+	PlnZ=(PlnThick+IronThick)*ipln+120.044+1.;//différencier si view =0 ou 1
+	X[1]=startchy+TMath::Tan(thetay)*(PlnZ-*posYz);
+      }
+      cout<<"Plane="<<ipln<<", Z pos="<<PlnZ<<endl;
+      for(int imod=0;imod<7;imod++){
+	if(TMath::Abs(X[0]-Mod[imod][0])<60.15 && TMath::Abs(X[1]-Mod[imod][1])<60.15) {
+	  for(int ich=0;ich<NCh;ich++){
+	    Scinti[ich][1]=(ScintiWidth)*ich+0.743-60.15;
+	    Scinti[ich][0]=(ScintiWidth)*ich-0.186-60.15;
+	    if(TMath::Abs(X[0]-Mod[imod][iview]-Scinti[ich][iview])<2.5){
+	      cout<<"it's in scintillators="<<ich<<" and in Module="<<imod<<endl; 
+	      //stocker le numéro du scinti et du module;
+	    }
+	  }
+	}
+      }
+    }
+    //droite XZ: a chaque scinti[i]
+  }
+}
+
+#endif

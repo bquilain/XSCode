@@ -1,0 +1,7 @@
+#!/bin/bash +x
+/home/bquilain/CC0pi_XS/MC/ingmc_IngridRevReWeightFinal/bin/Linux-g++/IngMC -o /export/scraid2/data/bquilain/MCfiles/PMMC_Run1_4.root -i /home/cvson/scraid2/neutfile5d3d2/run1/11bfluka_nd2_numu_ch_4.nt -m 2 -f 1
+/home/bquilain/CC0pi_XS/PM_Ana/app/IngAddNoisePMMC_new -f /export/scraid2/data/bquilain/MCfiles/PMMC_Run1_4.root -o /export/scraid2/data/bquilain/MCfiles/PMMC_Run1_4_wNoise.root
+/home/bquilain/CC0pi_XS/Reconstruction/app/PMreconRevOfficial -r 14000 -s 0 -f /export/scraid2/data/bquilain/MCfiles/PMMC_Run1_4_wNoise.root -o /export/scraid2/data/bquilain/MCfiles/PMMC_Run1_4_wNoise_recon.root
+/home/bquilain/CC0pi_XS/Reconstruction/app/PMAnaRevOfficial -r 14000 -s 0 -f /export/scraid2/data/bquilain/MCfiles/PMMC_Run1_4_wNoise_recon.root -o /export/scraid2/data/bquilain/MCfiles/PMMC_Run1_4_wNoise_ana.root
+/home/bquilain/CC0pi_XS/XS/XS_CC0pi_Plan -i /export/scraid2/data/bquilain/MCfiles/PMMC_Run1_4_wNoise_ana.root -o /home/bquilain/CC0pi_XS/XS/root_input/XSFormat_Run1_4_Plan.root -f 1 -n 5 -m
+h

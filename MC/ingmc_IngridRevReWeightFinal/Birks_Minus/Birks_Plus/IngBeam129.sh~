@@ -1,0 +1,5 @@
+#!/bin/bash +x
+#bin/Linux-g++/IngMC -o /export/scraid2/data/bquilain/MCfiles/PM_MC_Beam129_BirksCorrected.root -i /export/scbn07/data2/kikawa/neutfile_pm/11bfluka_nd2_numu_ch_129.nt -m 2 -f 1
+#/home/bquilain/PM_Ana/app/IngAddNoisePMMC -f /export/scraid2/data/bquilain/MCfiles/PM_MC_Beam129_BirksCorrected.root -o /export/scraid2/data/bquilain/MCfiles/PM_MC_Beam129_BirksCorrected_wNoise.root
+/home/bquilain/Ingrid_Process/INGRID_analysis/app/PMreconRev_woXTalk -r 14000 -s 0 -f /export/scraid2/data/bquilain/MCfiles/PM_MC_Beam129_BirksCorrected_wNoise.root -o /export/scraid2/data/bquilain/MCfiles/PM_MC_Beam129_BirksCorrected_wNoise_recon.root
+/home/bquilain/Ingrid_Process/INGRID_analysis/app/PMAna_ForXsections -r 14000 -s 0 -f /export/scraid2/data/bquilain/MCfiles/PM_MC_Beam129_BirksCorrected_wNoise_recon.root -o /export/scraid2/data/bquilain/MCfiles/PM_MC_Beam129_BirksCorrected_wNoise_ana.root

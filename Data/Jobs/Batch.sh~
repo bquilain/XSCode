@@ -1,0 +1,4 @@
+#!/bin/sh +x
+for i in *; do
+    condor_submit condor*.sh
+done

@@ -1,0 +1,2 @@
+.q#!/bin/bash +x
+./TrackMatching3D -r 14000 -s 42 -f /export/scraid2/data/bquilain/MCfiles/Ing_MC_Beam42_BirksOK_wNoise_recon.root -o /export/scraid2/data/bquilain/MCfiles/Ing_MC_Beam42_Criteria3_2_200_wNoise_ana.root -k 3 -m 2 -n 200

@@ -1,0 +1,3 @@
+
+#!/bin/bash +x
+bin/Linux-g++/IngMC -o /export/scraid2/data/bquilain/MCfiles/Ing_MC_Beam8_TestSetCut100mm.root -i /export/scraid2/data/bquilain/neutfile/11bfluka_nd3_numu_fe_8.nt -m 3 -f 1

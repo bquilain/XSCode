@@ -1,0 +1,2 @@
+B#!/bin/bash +x
+./PMAna_woIngrid -r 14000 -s 0 -f /export/scraid1/data/bquilain/MCfiles/PM_MC_Beam12_NewGainNewMIP11Xsec_recon.root -o /export/scraid1/data/bquilain/MCfiles/PM_MC_Beam12_NewGainNewMIP11Xsec_woIngridTracks_ana.root

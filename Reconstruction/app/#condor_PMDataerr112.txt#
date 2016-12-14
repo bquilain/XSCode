@@ -1,0 +1,56 @@
+Warning in <TStreamerInfo::BuildCheck>: 
+   The StreamerInfo of class IngridHitSummary read from file /export/scraid1/data/bquilain/ingrid_00014510_0112_pmcalib.root
+   has the same version (=6) as the active class but a different checksum.
+   You should update the version to ClassDef(IngridHitSummary,7).
+   Do not try to write objects with the current class definition,
+   the files will not be readable.
+
+Warning in <TStreamerInfo::BuildCheck>: 
+   The StreamerInfo of class IngridBasicReconSummary read from file /export/scraid1/data/bquilain/ingrid_00014510_0112_pmcalib.root
+   has the same version (=31) as the active class but a different checksum.
+   You should update the version to ClassDef(IngridBasicReconSummary,32).
+   Do not try to write objects with the current class definition,
+   the files will not be readable.
+
+Warning in <TStreamerInfo::BuildCheck>: 
+   The StreamerInfo of class PMReconSummary read from file /export/scraid1/data/bquilain/ingrid_00014510_0112_pmcalib.root
+   has the same version (=1) as the active class but a different checksum.
+   You should update the version to ClassDef(PMReconSummary,2).
+   Do not try to write objects with the current class definition,
+   the files will not be readable.
+
+Warning in <TStreamerInfo::BuildCheck>: 
+   The StreamerInfo of class PMAnaSummary read from file /export/scraid1/data/bquilain/ingrid_00014510_0112_pmcalib.root
+   has the same version (=1) as the active class but a different checksum.
+   You should update the version to ClassDef(PMAnaSummary,2).
+   Do not try to write objects with the current class definition,
+   the files will not be readable.
+
+Warning in <TStreamerInfo::BuildCheck>: 
+   The StreamerInfo of class IngridHitSummary read from file /export/scraid1/data/bquilain/Datafiles/ingrid_00014510_0112_pmrecon.root
+   has the same version (=6) as the active class but a different checksum.
+   You should update the version to ClassDef(IngridHitSummary,7).
+   Do not try to write objects with the current class definition,
+   the files will not be readable.
+
+Warning in <TStreamerInfo::BuildCheck>: 
+   The StreamerInfo of class IngridBasicReconSummary read from file /export/scraid1/data/bquilain/Datafiles/ingrid_00014510_0112_pmrecon.root
+   has the same version (=31) as the active class but a different checksum.
+.q   You should update the version to ClassDef(IngridBasicReconSummary,32).
+   Do not try to write objects with the current class definition,
+   the files will not be readable.
+
+Warning in <TStreamerInfo::BuildCheck>: 
+   The StreamerInfo of class PMReconSummary read from file /export/scraid1/data/bquilain/Datafiles/ingrid_00014510_0112_pmrecon.root
+   has the same version (=1) as the active class but a different checksum.
+   You should update the version to ClassDef(PMReconSummary,2).
+   Do not try to write objects with the current class definition,
+   the files will not be readable.
+
+Warning in <TStreamerInfo::BuildCheck>: 
+   The StreamerInfo of class PMAnaSummary read from file /export/scraid1/data/bquilain/Datafiles/ingrid_00014510_0112_pmrecon.root
+   has the same version (=1) as the active class but a different checksum.
+   You should update the version to ClassDef(PMAnaSummary,2).
+   Do not try to write objects with the current class definition,
+   the files will not be readable.
+

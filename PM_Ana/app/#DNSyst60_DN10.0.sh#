@@ -1,0 +1,4 @@
+.q#!/bin/bash +x
+/home/bquilain/PM_Ana/app/IngAddNoiseMC_Sequential -f /export/scraid2/data/bquilain/MCfiles/Ing_MC_Beam60_Birks10.root -o /export/scraid2/data/bquilain/MCfiles/Ing_MC_Beam60_BirksOK_wNoise10.0.root -n 10.0
+/home/bquilain/Ingrid_Process/INGRID_analysis/app/PMrecon_HitInfo -r 14000 -s 0 -f /export/scraid2/data/bquilain/MCfiles/Ing_MC_Beam60_BirksOK_wNoise10.0.root -o /export/scraid2/data/bquilain/MCfiles/Ing_MC_Beam60_BirksOK_wNoise10.0_recon.root
+/home/bquilain/Ingrid_Process/INGRID_analysis/app/IngAnaVertex_HitInfo -r 14000 -s 0 -f /export/scraid2/data/bquilain/MCfiles/Ing_MC_Beam60_BirksOK_wNoise10.0_recon.root -o /export/scraid2/data/bquilain/MCfiles/Ing_MC_Beam60_BirksOK_wNoise10.0_ana.root

@@ -1,0 +1,786 @@
+#-- start of make_header -----------------
+
+#====================================
+#  Document dictionary
+#
+#   Generated Sun Aug 17 11:04:12 2014  by bquilain
+#
+#====================================
+
+include ${CMTROOT}/src/Makefile.core
+
+ifdef tag
+CMTEXTRATAGS = $(tag)
+else
+tag       = $(CMTCONFIG)
+endif
+
+cmt_dictionary_has_no_target_tag = 1
+
+#--------------------------------------------------------
+
+ifdef cmt_dictionary_has_target_tag
+
+tags      = $(tag),$(CMTEXTRATAGS),target_dictionary
+
+INGRID_tag = $(tag)
+
+ifdef READONLY
+cmt_local_tagfile_dictionary = /tmp/CMT_$(INGRID_tag)_dictionary.make$(cmt_lock_pid)
+else
+#cmt_local_tagfile_dictionary = $(INGRID_tag)_dictionary.make
+cmt_local_tagfile_dictionary = $(bin)$(INGRID_tag)_dictionary.make
+endif
+
+else
+
+tags      = $(tag),$(CMTEXTRATAGS)
+
+INGRID_tag = $(tag)
+
+ifdef READONLY
+cmt_local_tagfile_dictionary = /tmp/CMT_$(INGRID_tag).make$(cmt_lock_pid)
+else
+#cmt_local_tagfile_dictionary = $(INGRID_tag).make
+cmt_local_tagfile_dictionary = $(bin)$(INGRID_tag).make
+endif
+
+endif
+
+-include $(cmt_local_tagfile_dictionary)
+
+ifdef cmt_dictionary_has_target_tag
+
+ifdef READONLY
+cmt_final_setup_dictionary = /tmp/CMT_INGRID_dictionarysetup.make
+cmt_local_dictionary_makefile = /tmp/CMT_dictionary$(cmt_lock_pid).make
+else
+cmt_final_setup_dictionary = $(bin)INGRID_dictionarysetup.make
+cmt_local_dictionary_makefile = $(bin)dictionary.make
+endif
+
+else
+
+ifdef READONLY
+cmt_final_setup_dictionary = /tmp/CMT_INGRIDsetup.make
+cmt_local_dictionary_makefile = /tmp/CMT_dictionary$(cmt_lock_pid).make
+else
+cmt_final_setup_dictionary = $(bin)INGRIDsetup.make
+cmt_local_dictionary_makefile = $(bin)dictionary.make
+endif
+
+endif
+
+ifdef READONLY
+cmt_final_setup = /tmp/CMT_INGRIDsetup.make
+else
+cmt_final_setup = $(bin)INGRIDsetup.make
+endif
+
+dictionary ::
+
+
+ifdef READONLY
+dictionary ::
+	@echo tags=$(tags)
+	@echo cmt_local_tagfile=$(cmt_local_tagfile)
+endif
+
+
+dirs ::
+	@if test ! -r requirements ; then echo "No requirements file" ; fi; \
+	  if test ! -d $(bin) ; then $(mkdir) -p $(bin) ; fi
+
+javadirs ::
+	@if test ! -d $(javabin) ; then $(mkdir) -p $(javabin) ; fi
+
+srcdirs ::
+	@if test ! -d $(src) ; then $(mkdir) -p $(src) ; fi
+
+help ::
+	$(echo) 'dictionary'
+
+binobj = 
+ifdef STRUCTURED_OUTPUT
+binobj = dictionary/
+dictionary::
+	@if test ! -d $(bin)$(binobj) ; then $(mkdir) -p $(bin)$(binobj) ; fi
+	$(echo) "STRUCTURED_OUTPUT="$(bin)$(binobj)
+endif
+
+#-- end of make_header ------------------
+
+# -*- makefile -*-
+# 
+# A makefile fragment used by CMT to build the ROOT dictionary files.
+#
+
+dictionary_output = $(dict)
+
+dictionary :: $(filter %_LinkDef.rootcint,$(dictionary_output)PMAnaSummary.rootcint $(dictionary_output)PMAnaSummaryLinkDef.rootcint $(dictionary_output)PMReconSummary.rootcint $(dictionary_output)BeamInfoSummaryDict.rootcint $(dictionary_output)PMAnaSummaryDict.rootcint $(dictionary_output)INGRIDEVENTSUMMARYDict.rootcint $(dictionary_output)PMReconSummaryDict.rootcint $(dictionary_output)PMReconSummaryLinkDef.rootcint $(dictionary_output)IngridConstants.rootcint $(dictionary_output)NeutInfoSummary.rootcint $(dictionary_output)INGRIDEVENTSUMMARYLinkDef.rootcint $(dictionary_output)IngridTrackSummaryLinkDef.rootcint $(dictionary_output)IngridSimVertexSummary.rootcint $(dictionary_output)INGRID_version.rootcint $(dictionary_output)IngridTrackSummaryDict.rootcint $(dictionary_output)IngridSimVertexSummaryDict.rootcint $(dictionary_output)IngridSimParticleSummary.rootcint $(dictionary_output)IngridBasicReconSummaryDict.rootcint $(dictionary_output)Ingrid1stReducSummaryDict.rootcint $(dictionary_output)Ingrid1stReducSummary.rootcint $(dictionary_output)IngridSimParticleSummaryDict.rootcint $(dictionary_output)IngridSimHitSummary.rootcint $(dictionary_output)IngridTrackSummary.rootcint $(dictionary_output)TINGRID_version_LinkDef.rootcint $(dictionary_output)Ingrid1stReducSummaryLinkDef.rootcint $(dictionary_output)INGRIDEVENTSUMMARY.rootcint $(dictionary_output)IngridHitSummaryLinkDef.rootcint $(dictionary_output)IngridBasicReconSummaryLinkDef.rootcint $(dictionary_output)IngridSimHitSummaryLinkDef.rootcint $(dictionary_output)IngridSimParticleSummaryLinkDef.rootcint $(dictionary_output)IngridBasicReconSummary.rootcint $(dictionary_output)BeamInfoSummaryLinkDef.rootcint $(dictionary_output)NeutInfoSummaryDict.rootcint $(dictionary_output)IngridSimHitSummaryDict.rootcint $(dictionary_output)IngridSimVertexSummaryLinkDef.rootcint $(dictionary_output)IngridHitSummary.rootcint $(dictionary_output)IngridHitSummaryDict.rootcint $(dictionary_output)NeutInfoSummaryLinkDef.rootcint $(dictionary_output)BeamInfoSummary.rootcint)
+	@echo "------> dictionary ok"
+
+PMAnaSummary_h_dependencies = ../src/PMAnaSummary.h
+PMAnaSummaryLinkDef_h_dependencies = ../src/PMAnaSummaryLinkDef.h
+PMReconSummary_h_dependencies = ../src/PMReconSummary.h
+BeamInfoSummaryDict_h_dependencies = ../src/BeamInfoSummaryDict.h
+PMAnaSummaryDict_h_dependencies = ../src/PMAnaSummaryDict.h
+INGRIDEVENTSUMMARYDict_h_dependencies = ../src/INGRIDEVENTSUMMARYDict.h
+PMReconSummaryDict_h_dependencies = ../src/PMReconSummaryDict.h
+PMReconSummaryLinkDef_h_dependencies = ../src/PMReconSummaryLinkDef.h
+IngridConstants_h_dependencies = ../src/IngridConstants.h
+NeutInfoSummary_h_dependencies = ../src/NeutInfoSummary.h
+INGRIDEVENTSUMMARYLinkDef_h_dependencies = ../src/INGRIDEVENTSUMMARYLinkDef.h
+IngridTrackSummaryLinkDef_h_dependencies = ../src/IngridTrackSummaryLinkDef.h
+IngridSimVertexSummary_h_dependencies = ../src/IngridSimVertexSummary.h
+INGRID_version_h_dependencies = ../src/INGRID_version.h
+IngridTrackSummaryDict_h_dependencies = ../src/IngridTrackSummaryDict.h
+IngridSimVertexSummaryDict_h_dependencies = ../src/IngridSimVertexSummaryDict.h
+IngridSimParticleSummary_h_dependencies = ../src/IngridSimParticleSummary.h
+IngridBasicReconSummaryDict_h_dependencies = ../src/IngridBasicReconSummaryDict.h
+Ingrid1stReducSummaryDict_h_dependencies = ../src/Ingrid1stReducSummaryDict.h
+Ingrid1stReducSummary_h_dependencies = ../src/Ingrid1stReducSummary.h
+IngridSimParticleSummaryDict_h_dependencies = ../src/IngridSimParticleSummaryDict.h
+IngridSimHitSummary_h_dependencies = ../src/IngridSimHitSummary.h
+IngridTrackSummary_h_dependencies = ../src/IngridTrackSummary.h
+TINGRID_version_LinkDef_h_dependencies = ../src/TINGRID_version_LinkDef.h
+Ingrid1stReducSummaryLinkDef_h_dependencies = ../src/Ingrid1stReducSummaryLinkDef.h
+INGRIDEVENTSUMMARY_h_dependencies = ../src/INGRIDEVENTSUMMARY.h
+IngridHitSummaryLinkDef_h_dependencies = ../src/IngridHitSummaryLinkDef.h
+IngridBasicReconSummaryLinkDef_h_dependencies = ../src/IngridBasicReconSummaryLinkDef.h
+IngridSimHitSummaryLinkDef_h_dependencies = ../src/IngridSimHitSummaryLinkDef.h
+IngridSimParticleSummaryLinkDef_h_dependencies = ../src/IngridSimParticleSummaryLinkDef.h
+IngridBasicReconSummary_h_dependencies = ../src/IngridBasicReconSummary.h
+BeamInfoSummaryLinkDef_h_dependencies = ../src/BeamInfoSummaryLinkDef.h
+NeutInfoSummaryDict_h_dependencies = ../src/NeutInfoSummaryDict.h
+IngridSimHitSummaryDict_h_dependencies = ../src/IngridSimHitSummaryDict.h
+IngridSimVertexSummaryLinkDef_h_dependencies = ../src/IngridSimVertexSummaryLinkDef.h
+IngridHitSummary_h_dependencies = ../src/IngridHitSummary.h
+IngridHitSummaryDict_h_dependencies = ../src/IngridHitSummaryDict.h
+NeutInfoSummaryLinkDef_h_dependencies = ../src/NeutInfoSummaryLinkDef.h
+BeamInfoSummary_h_dependencies = ../src/BeamInfoSummary.h
+# -*- makefile -*-
+# 
+# A makefile fragment used by CMT to build the ROOT dictionary files.
+#
+
+$(dict)PMAnaSummary.rootcint : $(dict)$(patsubst %_LinkDef,%_Dict,PMAnaSummary).cxx
+	@touch $@
+
+$(dict)$(patsubst %_LinkDef,%_Dict,PMAnaSummary).cxx : \
+    $(patsubst %_LinkDef.h,%.h*,$(src)PMAnaSummary.h) \
+    $(src)PMAnaSummary.h  $(ROOT_stamps)
+	@echo "Generating ROOT Dictionary from " $(filter-out %~,$^)
+	@if [ ! -d $(dict) ]; then mkdir $(dict); fi ;
+	$(rootcint) -f $@ -c -p $(includes) $(cppflags) $(word 1, $(filter-out %~,$^)) $(word 2, $(filter-out %~,$^))
+
+# -*- makefile -*-
+# 
+# A makefile fragment used by CMT to build the ROOT dictionary files.
+#
+
+$(dict)PMAnaSummaryLinkDef.rootcint : $(dict)$(patsubst %_LinkDef,%_Dict,PMAnaSummaryLinkDef).cxx
+	@touch $@
+
+$(dict)$(patsubst %_LinkDef,%_Dict,PMAnaSummaryLinkDef).cxx : \
+    $(patsubst %_LinkDef.h,%.h*,$(src)PMAnaSummaryLinkDef.h) \
+    $(src)PMAnaSummaryLinkDef.h  $(ROOT_stamps)
+	@echo "Generating ROOT Dictionary from " $(filter-out %~,$^)
+	@if [ ! -d $(dict) ]; then mkdir $(dict); fi ;
+	$(rootcint) -f $@ -c -p $(includes) $(cppflags) $(word 1, $(filter-out %~,$^)) $(word 2, $(filter-out %~,$^))
+
+# -*- makefile -*-
+# 
+# A makefile fragment used by CMT to build the ROOT dictionary files.
+#
+
+$(dict)PMReconSummary.rootcint : $(dict)$(patsubst %_LinkDef,%_Dict,PMReconSummary).cxx
+	@touch $@
+
+$(dict)$(patsubst %_LinkDef,%_Dict,PMReconSummary).cxx : \
+    $(patsubst %_LinkDef.h,%.h*,$(src)PMReconSummary.h) \
+    $(src)PMReconSummary.h  $(ROOT_stamps)
+	@echo "Generating ROOT Dictionary from " $(filter-out %~,$^)
+	@if [ ! -d $(dict) ]; then mkdir $(dict); fi ;
+	$(rootcint) -f $@ -c -p $(includes) $(cppflags) $(word 1, $(filter-out %~,$^)) $(word 2, $(filter-out %~,$^))
+
+# -*- makefile -*-
+# 
+# A makefile fragment used by CMT to build the ROOT dictionary files.
+#
+
+$(dict)BeamInfoSummaryDict.rootcint : $(dict)$(patsubst %_LinkDef,%_Dict,BeamInfoSummaryDict).cxx
+	@touch $@
+
+$(dict)$(patsubst %_LinkDef,%_Dict,BeamInfoSummaryDict).cxx : \
+    $(patsubst %_LinkDef.h,%.h*,$(src)BeamInfoSummaryDict.h) \
+    $(src)BeamInfoSummaryDict.h  $(ROOT_stamps)
+	@echo "Generating ROOT Dictionary from " $(filter-out %~,$^)
+	@if [ ! -d $(dict) ]; then mkdir $(dict); fi ;
+	$(rootcint) -f $@ -c -p $(includes) $(cppflags) $(word 1, $(filter-out %~,$^)) $(word 2, $(filter-out %~,$^))
+
+# -*- makefile -*-
+# 
+# A makefile fragment used by CMT to build the ROOT dictionary files.
+#
+
+$(dict)PMAnaSummaryDict.rootcint : $(dict)$(patsubst %_LinkDef,%_Dict,PMAnaSummaryDict).cxx
+	@touch $@
+
+$(dict)$(patsubst %_LinkDef,%_Dict,PMAnaSummaryDict).cxx : \
+    $(patsubst %_LinkDef.h,%.h*,$(src)PMAnaSummaryDict.h) \
+    $(src)PMAnaSummaryDict.h  $(ROOT_stamps)
+	@echo "Generating ROOT Dictionary from " $(filter-out %~,$^)
+	@if [ ! -d $(dict) ]; then mkdir $(dict); fi ;
+	$(rootcint) -f $@ -c -p $(includes) $(cppflags) $(word 1, $(filter-out %~,$^)) $(word 2, $(filter-out %~,$^))
+
+# -*- makefile -*-
+# 
+# A makefile fragment used by CMT to build the ROOT dictionary files.
+#
+
+$(dict)INGRIDEVENTSUMMARYDict.rootcint : $(dict)$(patsubst %_LinkDef,%_Dict,INGRIDEVENTSUMMARYDict).cxx
+	@touch $@
+
+$(dict)$(patsubst %_LinkDef,%_Dict,INGRIDEVENTSUMMARYDict).cxx : \
+    $(patsubst %_LinkDef.h,%.h*,$(src)INGRIDEVENTSUMMARYDict.h) \
+    $(src)INGRIDEVENTSUMMARYDict.h  $(ROOT_stamps)
+	@echo "Generating ROOT Dictionary from " $(filter-out %~,$^)
+	@if [ ! -d $(dict) ]; then mkdir $(dict); fi ;
+	$(rootcint) -f $@ -c -p $(includes) $(cppflags) $(word 1, $(filter-out %~,$^)) $(word 2, $(filter-out %~,$^))
+
+# -*- makefile -*-
+# 
+# A makefile fragment used by CMT to build the ROOT dictionary files.
+#
+
+$(dict)PMReconSummaryDict.rootcint : $(dict)$(patsubst %_LinkDef,%_Dict,PMReconSummaryDict).cxx
+	@touch $@
+
+$(dict)$(patsubst %_LinkDef,%_Dict,PMReconSummaryDict).cxx : \
+    $(patsubst %_LinkDef.h,%.h*,$(src)PMReconSummaryDict.h) \
+    $(src)PMReconSummaryDict.h  $(ROOT_stamps)
+	@echo "Generating ROOT Dictionary from " $(filter-out %~,$^)
+	@if [ ! -d $(dict) ]; then mkdir $(dict); fi ;
+	$(rootcint) -f $@ -c -p $(includes) $(cppflags) $(word 1, $(filter-out %~,$^)) $(word 2, $(filter-out %~,$^))
+
+# -*- makefile -*-
+# 
+# A makefile fragment used by CMT to build the ROOT dictionary files.
+#
+
+$(dict)PMReconSummaryLinkDef.rootcint : $(dict)$(patsubst %_LinkDef,%_Dict,PMReconSummaryLinkDef).cxx
+	@touch $@
+
+$(dict)$(patsubst %_LinkDef,%_Dict,PMReconSummaryLinkDef).cxx : \
+    $(patsubst %_LinkDef.h,%.h*,$(src)PMReconSummaryLinkDef.h) \
+    $(src)PMReconSummaryLinkDef.h  $(ROOT_stamps)
+	@echo "Generating ROOT Dictionary from " $(filter-out %~,$^)
+	@if [ ! -d $(dict) ]; then mkdir $(dict); fi ;
+	$(rootcint) -f $@ -c -p $(includes) $(cppflags) $(word 1, $(filter-out %~,$^)) $(word 2, $(filter-out %~,$^))
+
+# -*- makefile -*-
+# 
+# A makefile fragment used by CMT to build the ROOT dictionary files.
+#
+
+$(dict)IngridConstants.rootcint : $(dict)$(patsubst %_LinkDef,%_Dict,IngridConstants).cxx
+	@touch $@
+
+$(dict)$(patsubst %_LinkDef,%_Dict,IngridConstants).cxx : \
+    $(patsubst %_LinkDef.h,%.h*,$(src)IngridConstants.h) \
+    $(src)IngridConstants.h  $(ROOT_stamps)
+	@echo "Generating ROOT Dictionary from " $(filter-out %~,$^)
+	@if [ ! -d $(dict) ]; then mkdir $(dict); fi ;
+	$(rootcint) -f $@ -c -p $(includes) $(cppflags) $(word 1, $(filter-out %~,$^)) $(word 2, $(filter-out %~,$^))
+
+# -*- makefile -*-
+# 
+# A makefile fragment used by CMT to build the ROOT dictionary files.
+#
+
+$(dict)NeutInfoSummary.rootcint : $(dict)$(patsubst %_LinkDef,%_Dict,NeutInfoSummary).cxx
+	@touch $@
+
+$(dict)$(patsubst %_LinkDef,%_Dict,NeutInfoSummary).cxx : \
+    $(patsubst %_LinkDef.h,%.h*,$(src)NeutInfoSummary.h) \
+    $(src)NeutInfoSummary.h  $(ROOT_stamps)
+	@echo "Generating ROOT Dictionary from " $(filter-out %~,$^)
+	@if [ ! -d $(dict) ]; then mkdir $(dict); fi ;
+	$(rootcint) -f $@ -c -p $(includes) $(cppflags) $(word 1, $(filter-out %~,$^)) $(word 2, $(filter-out %~,$^))
+
+# -*- makefile -*-
+# 
+# A makefile fragment used by CMT to build the ROOT dictionary files.
+#
+
+$(dict)INGRIDEVENTSUMMARYLinkDef.rootcint : $(dict)$(patsubst %_LinkDef,%_Dict,INGRIDEVENTSUMMARYLinkDef).cxx
+	@touch $@
+
+$(dict)$(patsubst %_LinkDef,%_Dict,INGRIDEVENTSUMMARYLinkDef).cxx : \
+    $(patsubst %_LinkDef.h,%.h*,$(src)INGRIDEVENTSUMMARYLinkDef.h) \
+    $(src)INGRIDEVENTSUMMARYLinkDef.h  $(ROOT_stamps)
+	@echo "Generating ROOT Dictionary from " $(filter-out %~,$^)
+	@if [ ! -d $(dict) ]; then mkdir $(dict); fi ;
+	$(rootcint) -f $@ -c -p $(includes) $(cppflags) $(word 1, $(filter-out %~,$^)) $(word 2, $(filter-out %~,$^))
+
+# -*- makefile -*-
+# 
+# A makefile fragment used by CMT to build the ROOT dictionary files.
+#
+
+$(dict)IngridTrackSummaryLinkDef.rootcint : $(dict)$(patsubst %_LinkDef,%_Dict,IngridTrackSummaryLinkDef).cxx
+	@touch $@
+
+$(dict)$(patsubst %_LinkDef,%_Dict,IngridTrackSummaryLinkDef).cxx : \
+    $(patsubst %_LinkDef.h,%.h*,$(src)IngridTrackSummaryLinkDef.h) \
+    $(src)IngridTrackSummaryLinkDef.h  $(ROOT_stamps)
+	@echo "Generating ROOT Dictionary from " $(filter-out %~,$^)
+	@if [ ! -d $(dict) ]; then mkdir $(dict); fi ;
+	$(rootcint) -f $@ -c -p $(includes) $(cppflags) $(word 1, $(filter-out %~,$^)) $(word 2, $(filter-out %~,$^))
+
+# -*- makefile -*-
+# 
+# A makefile fragment used by CMT to build the ROOT dictionary files.
+#
+
+$(dict)IngridSimVertexSummary.rootcint : $(dict)$(patsubst %_LinkDef,%_Dict,IngridSimVertexSummary).cxx
+	@touch $@
+
+$(dict)$(patsubst %_LinkDef,%_Dict,IngridSimVertexSummary).cxx : \
+    $(patsubst %_LinkDef.h,%.h*,$(src)IngridSimVertexSummary.h) \
+    $(src)IngridSimVertexSummary.h  $(ROOT_stamps)
+	@echo "Generating ROOT Dictionary from " $(filter-out %~,$^)
+	@if [ ! -d $(dict) ]; then mkdir $(dict); fi ;
+	$(rootcint) -f $@ -c -p $(includes) $(cppflags) $(word 1, $(filter-out %~,$^)) $(word 2, $(filter-out %~,$^))
+
+# -*- makefile -*-
+# 
+# A makefile fragment used by CMT to build the ROOT dictionary files.
+#
+
+$(dict)INGRID_version.rootcint : $(dict)$(patsubst %_LinkDef,%_Dict,INGRID_version).cxx
+	@touch $@
+
+$(dict)$(patsubst %_LinkDef,%_Dict,INGRID_version).cxx : \
+    $(patsubst %_LinkDef.h,%.h*,$(src)INGRID_version.h) \
+    $(src)INGRID_version.h  $(ROOT_stamps)
+	@echo "Generating ROOT Dictionary from " $(filter-out %~,$^)
+	@if [ ! -d $(dict) ]; then mkdir $(dict); fi ;
+	$(rootcint) -f $@ -c -p $(includes) $(cppflags) $(word 1, $(filter-out %~,$^)) $(word 2, $(filter-out %~,$^))
+
+# -*- makefile -*-
+# 
+# A makefile fragment used by CMT to build the ROOT dictionary files.
+#
+
+$(dict)IngridTrackSummaryDict.rootcint : $(dict)$(patsubst %_LinkDef,%_Dict,IngridTrackSummaryDict).cxx
+	@touch $@
+
+$(dict)$(patsubst %_LinkDef,%_Dict,IngridTrackSummaryDict).cxx : \
+    $(patsubst %_LinkDef.h,%.h*,$(src)IngridTrackSummaryDict.h) \
+    $(src)IngridTrackSummaryDict.h  $(ROOT_stamps)
+	@echo "Generating ROOT Dictionary from " $(filter-out %~,$^)
+	@if [ ! -d $(dict) ]; then mkdir $(dict); fi ;
+	$(rootcint) -f $@ -c -p $(includes) $(cppflags) $(word 1, $(filter-out %~,$^)) $(word 2, $(filter-out %~,$^))
+
+# -*- makefile -*-
+# 
+# A makefile fragment used by CMT to build the ROOT dictionary files.
+#
+
+$(dict)IngridSimVertexSummaryDict.rootcint : $(dict)$(patsubst %_LinkDef,%_Dict,IngridSimVertexSummaryDict).cxx
+	@touch $@
+
+$(dict)$(patsubst %_LinkDef,%_Dict,IngridSimVertexSummaryDict).cxx : \
+    $(patsubst %_LinkDef.h,%.h*,$(src)IngridSimVertexSummaryDict.h) \
+    $(src)IngridSimVertexSummaryDict.h  $(ROOT_stamps)
+	@echo "Generating ROOT Dictionary from " $(filter-out %~,$^)
+	@if [ ! -d $(dict) ]; then mkdir $(dict); fi ;
+	$(rootcint) -f $@ -c -p $(includes) $(cppflags) $(word 1, $(filter-out %~,$^)) $(word 2, $(filter-out %~,$^))
+
+# -*- makefile -*-
+# 
+# A makefile fragment used by CMT to build the ROOT dictionary files.
+#
+
+$(dict)IngridSimParticleSummary.rootcint : $(dict)$(patsubst %_LinkDef,%_Dict,IngridSimParticleSummary).cxx
+	@touch $@
+
+$(dict)$(patsubst %_LinkDef,%_Dict,IngridSimParticleSummary).cxx : \
+    $(patsubst %_LinkDef.h,%.h*,$(src)IngridSimParticleSummary.h) \
+    $(src)IngridSimParticleSummary.h  $(ROOT_stamps)
+	@echo "Generating ROOT Dictionary from " $(filter-out %~,$^)
+	@if [ ! -d $(dict) ]; then mkdir $(dict); fi ;
+	$(rootcint) -f $@ -c -p $(includes) $(cppflags) $(word 1, $(filter-out %~,$^)) $(word 2, $(filter-out %~,$^))
+
+# -*- makefile -*-
+# 
+# A makefile fragment used by CMT to build the ROOT dictionary files.
+#
+
+$(dict)IngridBasicReconSummaryDict.rootcint : $(dict)$(patsubst %_LinkDef,%_Dict,IngridBasicReconSummaryDict).cxx
+	@touch $@
+
+$(dict)$(patsubst %_LinkDef,%_Dict,IngridBasicReconSummaryDict).cxx : \
+    $(patsubst %_LinkDef.h,%.h*,$(src)IngridBasicReconSummaryDict.h) \
+    $(src)IngridBasicReconSummaryDict.h  $(ROOT_stamps)
+	@echo "Generating ROOT Dictionary from " $(filter-out %~,$^)
+	@if [ ! -d $(dict) ]; then mkdir $(dict); fi ;
+	$(rootcint) -f $@ -c -p $(includes) $(cppflags) $(word 1, $(filter-out %~,$^)) $(word 2, $(filter-out %~,$^))
+
+# -*- makefile -*-
+# 
+# A makefile fragment used by CMT to build the ROOT dictionary files.
+#
+
+$(dict)Ingrid1stReducSummaryDict.rootcint : $(dict)$(patsubst %_LinkDef,%_Dict,Ingrid1stReducSummaryDict).cxx
+	@touch $@
+
+$(dict)$(patsubst %_LinkDef,%_Dict,Ingrid1stReducSummaryDict).cxx : \
+    $(patsubst %_LinkDef.h,%.h*,$(src)Ingrid1stReducSummaryDict.h) \
+    $(src)Ingrid1stReducSummaryDict.h  $(ROOT_stamps)
+	@echo "Generating ROOT Dictionary from " $(filter-out %~,$^)
+	@if [ ! -d $(dict) ]; then mkdir $(dict); fi ;
+	$(rootcint) -f $@ -c -p $(includes) $(cppflags) $(word 1, $(filter-out %~,$^)) $(word 2, $(filter-out %~,$^))
+
+# -*- makefile -*-
+# 
+# A makefile fragment used by CMT to build the ROOT dictionary files.
+#
+
+$(dict)Ingrid1stReducSummary.rootcint : $(dict)$(patsubst %_LinkDef,%_Dict,Ingrid1stReducSummary).cxx
+	@touch $@
+
+$(dict)$(patsubst %_LinkDef,%_Dict,Ingrid1stReducSummary).cxx : \
+    $(patsubst %_LinkDef.h,%.h*,$(src)Ingrid1stReducSummary.h) \
+    $(src)Ingrid1stReducSummary.h  $(ROOT_stamps)
+	@echo "Generating ROOT Dictionary from " $(filter-out %~,$^)
+	@if [ ! -d $(dict) ]; then mkdir $(dict); fi ;
+	$(rootcint) -f $@ -c -p $(includes) $(cppflags) $(word 1, $(filter-out %~,$^)) $(word 2, $(filter-out %~,$^))
+
+# -*- makefile -*-
+# 
+# A makefile fragment used by CMT to build the ROOT dictionary files.
+#
+
+$(dict)IngridSimParticleSummaryDict.rootcint : $(dict)$(patsubst %_LinkDef,%_Dict,IngridSimParticleSummaryDict).cxx
+	@touch $@
+
+$(dict)$(patsubst %_LinkDef,%_Dict,IngridSimParticleSummaryDict).cxx : \
+    $(patsubst %_LinkDef.h,%.h*,$(src)IngridSimParticleSummaryDict.h) \
+    $(src)IngridSimParticleSummaryDict.h  $(ROOT_stamps)
+	@echo "Generating ROOT Dictionary from " $(filter-out %~,$^)
+	@if [ ! -d $(dict) ]; then mkdir $(dict); fi ;
+	$(rootcint) -f $@ -c -p $(includes) $(cppflags) $(word 1, $(filter-out %~,$^)) $(word 2, $(filter-out %~,$^))
+
+# -*- makefile -*-
+# 
+# A makefile fragment used by CMT to build the ROOT dictionary files.
+#
+
+$(dict)IngridSimHitSummary.rootcint : $(dict)$(patsubst %_LinkDef,%_Dict,IngridSimHitSummary).cxx
+	@touch $@
+
+$(dict)$(patsubst %_LinkDef,%_Dict,IngridSimHitSummary).cxx : \
+    $(patsubst %_LinkDef.h,%.h*,$(src)IngridSimHitSummary.h) \
+    $(src)IngridSimHitSummary.h  $(ROOT_stamps)
+	@echo "Generating ROOT Dictionary from " $(filter-out %~,$^)
+	@if [ ! -d $(dict) ]; then mkdir $(dict); fi ;
+	$(rootcint) -f $@ -c -p $(includes) $(cppflags) $(word 1, $(filter-out %~,$^)) $(word 2, $(filter-out %~,$^))
+
+# -*- makefile -*-
+# 
+# A makefile fragment used by CMT to build the ROOT dictionary files.
+#
+
+$(dict)IngridTrackSummary.rootcint : $(dict)$(patsubst %_LinkDef,%_Dict,IngridTrackSummary).cxx
+	@touch $@
+
+$(dict)$(patsubst %_LinkDef,%_Dict,IngridTrackSummary).cxx : \
+    $(patsubst %_LinkDef.h,%.h*,$(src)IngridTrackSummary.h) \
+    $(src)IngridTrackSummary.h  $(ROOT_stamps)
+	@echo "Generating ROOT Dictionary from " $(filter-out %~,$^)
+	@if [ ! -d $(dict) ]; then mkdir $(dict); fi ;
+	$(rootcint) -f $@ -c -p $(includes) $(cppflags) $(word 1, $(filter-out %~,$^)) $(word 2, $(filter-out %~,$^))
+
+# -*- makefile -*-
+# 
+# A makefile fragment used by CMT to build the ROOT dictionary files.
+#
+
+$(dict)TINGRID_version_LinkDef.rootcint : $(dict)$(patsubst %_LinkDef,%_Dict,TINGRID_version_LinkDef).cxx
+	@touch $@
+
+$(dict)$(patsubst %_LinkDef,%_Dict,TINGRID_version_LinkDef).cxx : \
+    $(patsubst %_LinkDef.h,%.h*,$(src)TINGRID_version_LinkDef.h) \
+    $(src)TINGRID_version_LinkDef.h  $(ROOT_stamps)
+	@echo "Generating ROOT Dictionary from " $(filter-out %~,$^)
+	@if [ ! -d $(dict) ]; then mkdir $(dict); fi ;
+	$(rootcint) -f $@ -c -p $(includes) $(cppflags) $(word 1, $(filter-out %~,$^)) $(word 2, $(filter-out %~,$^))
+
+# -*- makefile -*-
+# 
+# A makefile fragment used by CMT to build the ROOT dictionary files.
+#
+
+$(dict)Ingrid1stReducSummaryLinkDef.rootcint : $(dict)$(patsubst %_LinkDef,%_Dict,Ingrid1stReducSummaryLinkDef).cxx
+	@touch $@
+
+$(dict)$(patsubst %_LinkDef,%_Dict,Ingrid1stReducSummaryLinkDef).cxx : \
+    $(patsubst %_LinkDef.h,%.h*,$(src)Ingrid1stReducSummaryLinkDef.h) \
+    $(src)Ingrid1stReducSummaryLinkDef.h  $(ROOT_stamps)
+	@echo "Generating ROOT Dictionary from " $(filter-out %~,$^)
+	@if [ ! -d $(dict) ]; then mkdir $(dict); fi ;
+	$(rootcint) -f $@ -c -p $(includes) $(cppflags) $(word 1, $(filter-out %~,$^)) $(word 2, $(filter-out %~,$^))
+
+# -*- makefile -*-
+# 
+# A makefile fragment used by CMT to build the ROOT dictionary files.
+#
+
+$(dict)INGRIDEVENTSUMMARY.rootcint : $(dict)$(patsubst %_LinkDef,%_Dict,INGRIDEVENTSUMMARY).cxx
+	@touch $@
+
+$(dict)$(patsubst %_LinkDef,%_Dict,INGRIDEVENTSUMMARY).cxx : \
+    $(patsubst %_LinkDef.h,%.h*,$(src)INGRIDEVENTSUMMARY.h) \
+    $(src)INGRIDEVENTSUMMARY.h  $(ROOT_stamps)
+	@echo "Generating ROOT Dictionary from " $(filter-out %~,$^)
+	@if [ ! -d $(dict) ]; then mkdir $(dict); fi ;
+	$(rootcint) -f $@ -c -p $(includes) $(cppflags) $(word 1, $(filter-out %~,$^)) $(word 2, $(filter-out %~,$^))
+
+# -*- makefile -*-
+# 
+# A makefile fragment used by CMT to build the ROOT dictionary files.
+#
+
+$(dict)IngridHitSummaryLinkDef.rootcint : $(dict)$(patsubst %_LinkDef,%_Dict,IngridHitSummaryLinkDef).cxx
+	@touch $@
+
+$(dict)$(patsubst %_LinkDef,%_Dict,IngridHitSummaryLinkDef).cxx : \
+    $(patsubst %_LinkDef.h,%.h*,$(src)IngridHitSummaryLinkDef.h) \
+    $(src)IngridHitSummaryLinkDef.h  $(ROOT_stamps)
+	@echo "Generating ROOT Dictionary from " $(filter-out %~,$^)
+	@if [ ! -d $(dict) ]; then mkdir $(dict); fi ;
+	$(rootcint) -f $@ -c -p $(includes) $(cppflags) $(word 1, $(filter-out %~,$^)) $(word 2, $(filter-out %~,$^))
+
+# -*- makefile -*-
+# 
+# A makefile fragment used by CMT to build the ROOT dictionary files.
+#
+
+$(dict)IngridBasicReconSummaryLinkDef.rootcint : $(dict)$(patsubst %_LinkDef,%_Dict,IngridBasicReconSummaryLinkDef).cxx
+	@touch $@
+
+$(dict)$(patsubst %_LinkDef,%_Dict,IngridBasicReconSummaryLinkDef).cxx : \
+    $(patsubst %_LinkDef.h,%.h*,$(src)IngridBasicReconSummaryLinkDef.h) \
+    $(src)IngridBasicReconSummaryLinkDef.h  $(ROOT_stamps)
+	@echo "Generating ROOT Dictionary from " $(filter-out %~,$^)
+	@if [ ! -d $(dict) ]; then mkdir $(dict); fi ;
+	$(rootcint) -f $@ -c -p $(includes) $(cppflags) $(word 1, $(filter-out %~,$^)) $(word 2, $(filter-out %~,$^))
+
+# -*- makefile -*-
+# 
+# A makefile fragment used by CMT to build the ROOT dictionary files.
+#
+
+$(dict)IngridSimHitSummaryLinkDef.rootcint : $(dict)$(patsubst %_LinkDef,%_Dict,IngridSimHitSummaryLinkDef).cxx
+	@touch $@
+
+$(dict)$(patsubst %_LinkDef,%_Dict,IngridSimHitSummaryLinkDef).cxx : \
+    $(patsubst %_LinkDef.h,%.h*,$(src)IngridSimHitSummaryLinkDef.h) \
+    $(src)IngridSimHitSummaryLinkDef.h  $(ROOT_stamps)
+	@echo "Generating ROOT Dictionary from " $(filter-out %~,$^)
+	@if [ ! -d $(dict) ]; then mkdir $(dict); fi ;
+	$(rootcint) -f $@ -c -p $(includes) $(cppflags) $(word 1, $(filter-out %~,$^)) $(word 2, $(filter-out %~,$^))
+
+# -*- makefile -*-
+# 
+# A makefile fragment used by CMT to build the ROOT dictionary files.
+#
+
+$(dict)IngridSimParticleSummaryLinkDef.rootcint : $(dict)$(patsubst %_LinkDef,%_Dict,IngridSimParticleSummaryLinkDef).cxx
+	@touch $@
+
+$(dict)$(patsubst %_LinkDef,%_Dict,IngridSimParticleSummaryLinkDef).cxx : \
+    $(patsubst %_LinkDef.h,%.h*,$(src)IngridSimParticleSummaryLinkDef.h) \
+    $(src)IngridSimParticleSummaryLinkDef.h  $(ROOT_stamps)
+	@echo "Generating ROOT Dictionary from " $(filter-out %~,$^)
+	@if [ ! -d $(dict) ]; then mkdir $(dict); fi ;
+	$(rootcint) -f $@ -c -p $(includes) $(cppflags) $(word 1, $(filter-out %~,$^)) $(word 2, $(filter-out %~,$^))
+
+# -*- makefile -*-
+# 
+# A makefile fragment used by CMT to build the ROOT dictionary files.
+#
+
+$(dict)IngridBasicReconSummary.rootcint : $(dict)$(patsubst %_LinkDef,%_Dict,IngridBasicReconSummary).cxx
+	@touch $@
+
+$(dict)$(patsubst %_LinkDef,%_Dict,IngridBasicReconSummary).cxx : \
+    $(patsubst %_LinkDef.h,%.h*,$(src)IngridBasicReconSummary.h) \
+    $(src)IngridBasicReconSummary.h  $(ROOT_stamps)
+	@echo "Generating ROOT Dictionary from " $(filter-out %~,$^)
+	@if [ ! -d $(dict) ]; then mkdir $(dict); fi ;
+	$(rootcint) -f $@ -c -p $(includes) $(cppflags) $(word 1, $(filter-out %~,$^)) $(word 2, $(filter-out %~,$^))
+
+# -*- makefile -*-
+# 
+# A makefile fragment used by CMT to build the ROOT dictionary files.
+#
+
+$(dict)BeamInfoSummaryLinkDef.rootcint : $(dict)$(patsubst %_LinkDef,%_Dict,BeamInfoSummaryLinkDef).cxx
+	@touch $@
+
+$(dict)$(patsubst %_LinkDef,%_Dict,BeamInfoSummaryLinkDef).cxx : \
+    $(patsubst %_LinkDef.h,%.h*,$(src)BeamInfoSummaryLinkDef.h) \
+    $(src)BeamInfoSummaryLinkDef.h  $(ROOT_stamps)
+	@echo "Generating ROOT Dictionary from " $(filter-out %~,$^)
+	@if [ ! -d $(dict) ]; then mkdir $(dict); fi ;
+	$(rootcint) -f $@ -c -p $(includes) $(cppflags) $(word 1, $(filter-out %~,$^)) $(word 2, $(filter-out %~,$^))
+
+# -*- makefile -*-
+# 
+# A makefile fragment used by CMT to build the ROOT dictionary files.
+#
+
+$(dict)NeutInfoSummaryDict.rootcint : $(dict)$(patsubst %_LinkDef,%_Dict,NeutInfoSummaryDict).cxx
+	@touch $@
+
+$(dict)$(patsubst %_LinkDef,%_Dict,NeutInfoSummaryDict).cxx : \
+    $(patsubst %_LinkDef.h,%.h*,$(src)NeutInfoSummaryDict.h) \
+    $(src)NeutInfoSummaryDict.h  $(ROOT_stamps)
+	@echo "Generating ROOT Dictionary from " $(filter-out %~,$^)
+	@if [ ! -d $(dict) ]; then mkdir $(dict); fi ;
+	$(rootcint) -f $@ -c -p $(includes) $(cppflags) $(word 1, $(filter-out %~,$^)) $(word 2, $(filter-out %~,$^))
+
+# -*- makefile -*-
+# 
+# A makefile fragment used by CMT to build the ROOT dictionary files.
+#
+
+$(dict)IngridSimHitSummaryDict.rootcint : $(dict)$(patsubst %_LinkDef,%_Dict,IngridSimHitSummaryDict).cxx
+	@touch $@
+
+$(dict)$(patsubst %_LinkDef,%_Dict,IngridSimHitSummaryDict).cxx : \
+    $(patsubst %_LinkDef.h,%.h*,$(src)IngridSimHitSummaryDict.h) \
+    $(src)IngridSimHitSummaryDict.h  $(ROOT_stamps)
+	@echo "Generating ROOT Dictionary from " $(filter-out %~,$^)
+	@if [ ! -d $(dict) ]; then mkdir $(dict); fi ;
+	$(rootcint) -f $@ -c -p $(includes) $(cppflags) $(word 1, $(filter-out %~,$^)) $(word 2, $(filter-out %~,$^))
+
+# -*- makefile -*-
+# 
+# A makefile fragment used by CMT to build the ROOT dictionary files.
+#
+
+$(dict)IngridSimVertexSummaryLinkDef.rootcint : $(dict)$(patsubst %_LinkDef,%_Dict,IngridSimVertexSummaryLinkDef).cxx
+	@touch $@
+
+$(dict)$(patsubst %_LinkDef,%_Dict,IngridSimVertexSummaryLinkDef).cxx : \
+    $(patsubst %_LinkDef.h,%.h*,$(src)IngridSimVertexSummaryLinkDef.h) \
+    $(src)IngridSimVertexSummaryLinkDef.h  $(ROOT_stamps)
+	@echo "Generating ROOT Dictionary from " $(filter-out %~,$^)
+	@if [ ! -d $(dict) ]; then mkdir $(dict); fi ;
+	$(rootcint) -f $@ -c -p $(includes) $(cppflags) $(word 1, $(filter-out %~,$^)) $(word 2, $(filter-out %~,$^))
+
+# -*- makefile -*-
+# 
+# A makefile fragment used by CMT to build the ROOT dictionary files.
+#
+
+$(dict)IngridHitSummary.rootcint : $(dict)$(patsubst %_LinkDef,%_Dict,IngridHitSummary).cxx
+	@touch $@
+
+$(dict)$(patsubst %_LinkDef,%_Dict,IngridHitSummary).cxx : \
+    $(patsubst %_LinkDef.h,%.h*,$(src)IngridHitSummary.h) \
+    $(src)IngridHitSummary.h  $(ROOT_stamps)
+	@echo "Generating ROOT Dictionary from " $(filter-out %~,$^)
+	@if [ ! -d $(dict) ]; then mkdir $(dict); fi ;
+	$(rootcint) -f $@ -c -p $(includes) $(cppflags) $(word 1, $(filter-out %~,$^)) $(word 2, $(filter-out %~,$^))
+
+# -*- makefile -*-
+# 
+# A makefile fragment used by CMT to build the ROOT dictionary files.
+#
+
+$(dict)IngridHitSummaryDict.rootcint : $(dict)$(patsubst %_LinkDef,%_Dict,IngridHitSummaryDict).cxx
+	@touch $@
+
+$(dict)$(patsubst %_LinkDef,%_Dict,IngridHitSummaryDict).cxx : \
+    $(patsubst %_LinkDef.h,%.h*,$(src)IngridHitSummaryDict.h) \
+    $(src)IngridHitSummaryDict.h  $(ROOT_stamps)
+	@echo "Generating ROOT Dictionary from " $(filter-out %~,$^)
+	@if [ ! -d $(dict) ]; then mkdir $(dict); fi ;
+	$(rootcint) -f $@ -c -p $(includes) $(cppflags) $(word 1, $(filter-out %~,$^)) $(word 2, $(filter-out %~,$^))
+
+# -*- makefile -*-
+# 
+# A makefile fragment used by CMT to build the ROOT dictionary files.
+#
+
+$(dict)NeutInfoSummaryLinkDef.rootcint : $(dict)$(patsubst %_LinkDef,%_Dict,NeutInfoSummaryLinkDef).cxx
+	@touch $@
+
+$(dict)$(patsubst %_LinkDef,%_Dict,NeutInfoSummaryLinkDef).cxx : \
+    $(patsubst %_LinkDef.h,%.h*,$(src)NeutInfoSummaryLinkDef.h) \
+    $(src)NeutInfoSummaryLinkDef.h  $(ROOT_stamps)
+	@echo "Generating ROOT Dictionary from " $(filter-out %~,$^)
+	@if [ ! -d $(dict) ]; then mkdir $(dict); fi ;
+	$(rootcint) -f $@ -c -p $(includes) $(cppflags) $(word 1, $(filter-out %~,$^)) $(word 2, $(filter-out %~,$^))
+
+# -*- makefile -*-
+# 
+# A makefile fragment used by CMT to build the ROOT dictionary files.
+#
+
+$(dict)BeamInfoSummary.rootcint : $(dict)$(patsubst %_LinkDef,%_Dict,BeamInfoSummary).cxx
+	@touch $@
+
+$(dict)$(patsubst %_LinkDef,%_Dict,BeamInfoSummary).cxx : \
+    $(patsubst %_LinkDef.h,%.h*,$(src)BeamInfoSummary.h) \
+    $(src)BeamInfoSummary.h  $(ROOT_stamps)
+	@echo "Generating ROOT Dictionary from " $(filter-out %~,$^)
+	@if [ ! -d $(dict) ]; then mkdir $(dict); fi ;
+	$(rootcint) -f $@ -c -p $(includes) $(cppflags) $(word 1, $(filter-out %~,$^)) $(word 2, $(filter-out %~,$^))
+
+# -*- makefile -*-
+# 
+# A makefile fragment used by CMT to build the ROOT dictionary files.
+#
+
+clean :: dictionaryclean
+	@cd .
+
+dictionaryclean ::
+	@echo "Removing root dictionaries: $(dict)"
+	/bin/rm -rf $(dict)
+#-- start of cleanup_header --------------
+
+clean :: dictionaryclean
+	@cd .
+
+ifndef PEDANTIC
+.DEFAULT::
+	$(echo) "(dictionary.make) $@: No rule for such target" >&2
+#	@echo "#CMT> Warning: $@: No rule for such target" >&2; exit
+else
+.DEFAULT::
+	$(echo) "(dictionary.make) PEDANTIC: $@: No rule for such target" >&2
+	if test $@ = "$(cmt_final_setup)" -o\
+	 $@ = "$(cmt_final_setup_dictionary)" ; then\
+	 found=n; for s in 1 2 3 4 5; do\
+	 sleep $$s; test ! -f $@ || { found=y; break; }\
+	 done; if test $$found = n; then\
+	 test -z "$(cmtmsg)" ||\
+	 echo "$(CMTMSGPREFIX)" "(dictionary.make) PEDANTIC: $@: Seems to be missing. Ignore it for now" >&2; exit 0 ; fi;\
+	 elif test `expr index $@ '/'` -ne 0 ; then\
+	 test -z "$(cmtmsg)" ||\
+	 echo "$(CMTMSGPREFIX)" "(dictionary.make) PEDANTIC: $@: Seems to be a missing file. Please check" >&2; exit 2 ; \
+	 else\
+	 test -z "$(cmtmsg)" ||\
+	 echo "$(CMTMSGPREFIX)" "(dictionary.make) PEDANTIC: $@: Seems to be a fake target due to some pattern. Just ignore it" >&2 ; exit 0; fi
+endif
+
+dictionaryclean ::
+#-- end of cleanup_header ---------------

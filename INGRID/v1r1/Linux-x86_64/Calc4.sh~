@@ -1,0 +1,2 @@
+#!/bin/zsh +x
+./Calc_MPPC_new_ci_2.exe -r 14510 -s 12 -t 1

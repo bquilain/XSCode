@@ -1,0 +1,7 @@
+#!/bin/bash +x
+home/bquilain/CC0pi_XS/Reconstruction/app/PMreconRevOfficial -r 14000 -s 0 -f /export/scraid2/data/bquilain/MCfiles/PMMC_Run1_10_wNoise.root -o /export/scraid2/data/bquilain/MCfiles/PMMC_Run1_10_wNoise_recon_Systematics8_  0.root -e 8 -v   0
+home/bquilain/CC0pi_XS/Reconstruction/app/PMAnaRevOfficial -r 14000 -s 0 -f /export/scraid2/data/bquilain/MCfiles/PMMC_Run1_10_wNoise_recon_Systematics8_  0.root -o /export/scraid2/data/bquilain/MCfiles/PMMC_Run1_10_wNoise_ana_Systematics8_  0.root
+/home/bquilain/CC0pi_XS/Reconstruction/app/PMAnaRevOfficial -r 14000 -s 0 -f /export/scraid2/data/bquilain/MCfiles/PMMC_Run1_10_wNoise_recon_Systematics8_  0.root -o /export/scraid2/data/bquilain/MCfiles/PMMC_Run1_10_wNoise_ana_Systematics8_  0.root
+
+
+

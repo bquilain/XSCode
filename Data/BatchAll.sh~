@@ -1,0 +1,71 @@
+#!/bin/sh +x
+#stop at 15792 all included
+#stop at 12339_20 included
+#for i in {14489..14489}; do
+#    for j in {37..42}; do
+for i in {12333..12355}; do
+    for j in {0..300}; do
+        if [ -f DST${i}_${j}.sh ]
+            then
+            condor_submit condorDST${i}_${j}.sh
+        fi
+    done
+done
+for i in {12398..12518};do
+    for j in {0..300}; do
+        if [ -f DST${i}_${j}.sh ]
+            then
+            condor_submit condorDST${i}_${j}.sh
+        fi
+    done
+done
+
+for i in {13048..13175};do
+    for j in {0..300}; do
+#    export j=0
+	if [ -f DST${i}_${j}.sh ]
+	    then
+	    condor_submit condorDST${i}_${j}.sh
+	fi
+    done
+done
+for i in {14337..14341};do
+    for j in {0..300}; do
+	if [ -f DST${i}_${j}.sh ]
+	    then
+	    condor_submit condorDST${i}_${j}.sh
+	fi
+    done
+done
+for i in {14384..14429};do
+#for i in {14488..14573};do
+#for i in {14574..17264};do
+    for j in {0..300}; do
+#    export j=0
+	if [ -f DST${i}_${j}.sh ]
+	    then
+	    condor_submit condorDST${i}_${j}.sh
+	fi
+    done
+#    condor_submit condorDSTPM${i}_${j}.sh
+done
+#for i in {14384..14429};do
+#for i in {14574..17264};do
+for i in {14488..14999};do
+    for j in {0..300}; do
+#    export j=0
+	if [ -f DST${i}_${j}.sh ]
+	    then
+	    condor_submit condorDST${i}_${j}.sh
+	fi
+    done
+#    condor_submit condorDSTPM${i}_${j}.sh
+done
+for i in {15000..17264};do
+    for j in {0..300}; do
+	if [ -f DST${i}_${j}.sh ]
+	    then
+	    condor_submit condorDST${i}_${j}.sh
+	fi
+    done
+done

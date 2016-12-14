@@ -1,0 +1,18 @@
+TARGET  = guisample
+OBJS    = guisample.o
+
+ROOTCFLAGS := $(shell root-config --cflags)
+ROOTGLIBS  := $(shell root-config --glibs)
+ 
+CXXFLAGS    = -Wall $(ROOTCFLAGS)
+CXXLIBS     = $(ROOTGLIBS)
+
+all: $(TARGET)
+guisample: guisample.o
+	g++ -o $@ guisample.o $(CXXLIBS)
+
+.cc.o:
+	g++ $(CXXFLAGS) -c $<
+
+clean:
+	rm -f $(TARGET) $(OBJS) *~

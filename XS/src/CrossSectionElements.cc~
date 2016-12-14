@@ -1,0 +1,36 @@
+
+void CrossSectionElements::DEDX(vector <Hit2D> Vec, double dx, TH1D * ){
+  double dE, dECorr, dETrue;
+  sort(Vec.begin(),Vec.end());
+  
+  for(int i=0;i<Vec.size();i++){
+    dE=(Vec[i].pe)/dx;
+    dECorr=(Vec[i].pecorr)/dx;
+    if(Vec[i].truepe>0) dETrue=(Vec[i].truepe)/dx;//avoid dark noise hits                                                                                       
+    HistdECorr->Fill(dECorr);
+    HistdESim->Fill(dETrue);
+    if(Vec[i].pdg==13) {
+      PEMuon->Fill(Vec[i].pe);
+      PECorrMuon->Fill(Vec[i].pecorr);
+      PETrueMuon->Fill(Vec[i].truepe);
+    }
+    else if(Vec[i].pdg==211) {
+      PEPion->Fill(Vec[i].pe);
+      PECorrPion->Fill(Vec[i].pecorr);
+      PETruePion->Fill(Vec[i].truepe);
+    }
+    if(Vec[i].pdg==2212) {
+      PEProton->Fill(Vec[i].pe);
+      PECorrProton->Fill(Vec[i].pecorr);
+      PETrueProton->Fill(Vec[i].truepe);
+    }
+    
+    if(Num_Int<30){
+      HistdECC->Fill(dE);
+      if(Num_Int==1) HistdECCQE->Fill(dE);
+      else if(Num_Int==11) HistdECCPI->Fill(dE);
+    else if(Num_Int==26) HistdECCDIS->Fill(dE);
+    }
+    else HistdENC->Fill(dE);
+ }
+}

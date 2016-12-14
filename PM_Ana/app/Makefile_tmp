@@ -1,0 +1,44 @@
+CPP     = g++
+CXXFLAGS  = -g -O3 -Wall -fPIC -D_REENTRANT -Wno-deprecated
+
+ROOTCFLAGS  := $(shell root-config --cflags)
+ROOTLIBS      := $(shell root-config --libs)
+ROOTGLIBS     := $(shell root-config --glibs)
+CXXFLAGS  += $(ROOTCFLAGS)
+CXXLIBS += $(ROOTLIBS)
+
+SRC=~/INGRID_analysis/src
+INC=~/INGRID_analysis/inc
+LIB=~/INGRID_analysis/lib_tmp
+CXXFLAGS += -I$(SRC) -I$(INC) -I$(LIB)
+
+DATALIBSO   = $(LIB)/libIngridData.so
+DATALIBS    = -Wl --rpath $(DATALIBSO)
+GLIBS   = $(ROOTGLIBS)
+CXXLIBS += $(DATALIBS)
+
+all: IngTClster IngBasicRecon IngReconMuBasic
+
+IngTClster: IngTClster.o
+	@echo "Now make $@"
+	@$(CPP) -o $@ IngTClster.o $(CXXFLAGS) $(CXXLIBS) 
+	@echo "..Compile done! "
+
+IngBasicRecon: IngBasicRecon.o
+	@echo "Now make $@"
+	@$(CPP) -o $@ IngBasicRecon.o $(CXXFLAGS) $(CXXLIBS)
+	@echo "..Compile done! "
+
+IngReconMuBasic: IngReconMuBasic.o
+	@echo "Now make $@"
+	@$(CPP) -o $@ IngReconMuBasic.o $(CXXFLAGS) $(CXXLIBS)
+	@echo "..Compile done! "
+
+.cc.o:
+	@echo "Start Compiling $<"
+	@$(CPP) -c $(CXXFLAGS) $(GDBFLAGS) $< -I $(LIB) -I $(SRC) -I $(INC)
+	@echo ".. Compiling Object Files $<   --> done"
+	@echo ""
+clean: 
+	@echo "Now Clean Up"
+	rm -f $(TARGET) *~ *.o *.o~ core
