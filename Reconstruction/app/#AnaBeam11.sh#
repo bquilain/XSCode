@@ -1,2 +1,0 @@
-#!/bin/bash +x
-./PMP -r 14000 -s 0 -f /export/scraid2/data/bquilain/MCfiles/PM_MC_Beam11_1000events_wNoise.root -o test.root

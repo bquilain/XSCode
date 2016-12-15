@@ -1,3 +1,0 @@
-#!/bin/bash +x
-/export/scraid2/data/bquilain/Programs/INGRID_analysis/app/PMreconRev_KS_woXTalk -r 14000 -s 45 -f /export/scraid2/data/bquilain/MCfiles/Ing_MC_Sand45_BirksCorrectedMIP46_ReWeight_wNoise.root -o /export/scraid2/data/bquilain/MCfiles/Ing_MC_Sand45_BirksCorrectedMIP46_ReWeight_wNoise_recon.root
-/export/scraid2/data/bquilain/Programs/INGRID_analysis/app/IngAnaVertex_HitInfo -r 14000 -s 45 -f /export/scraid2/data/bquilain/MCfiles/Ing_MC_Sand45_BirksCorrectedMIP46_ReWeight_wNoise_recon.root -o /export/scraid2/data/bquilain/MCfiles/Ing_MC_Sand45_BirksCorrectedMIP46_ReWeight_wNoise_ana.root
