@@ -1,4 +1,6 @@
- #!/bin/bash
+#!/bin/bash
+# ML 2016/12/15 not modified to fit in my own environment yet
+
 export T2KREWEIGHTREPOSITORY=/home/bquilain/T2KSoftware2/T2KReWeight/v1r23
 
 export CVSROOT=:ext:anoncvs@repo.t2k.org:/home/trt2kmgr/T2KRepository
