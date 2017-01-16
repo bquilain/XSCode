@@ -6,7 +6,7 @@ ROOTLIBS     	:= $(shell root-config --libs)
 ROOTGLIBS    	:= $(shell root-config --glibs)
 CXXFLAGS	+= $(ROOTCFLAGS)
 
-LIB = ${INSTALLREPOSITORY}/libs/lib_5.34
+LIB = ${INSTALLREPOSITORY}/libs/libsPM/lib_5.34
 #LIB = /home/bquilain/CC0pi_XS/MC/ingmc_IngridRevReWeightFinal/lib_New
 
 LIBS 		= $(ROOTGLIBS) \

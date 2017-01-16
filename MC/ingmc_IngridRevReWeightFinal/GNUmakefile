@@ -13,7 +13,7 @@ EXTRALIBS += $(CERNLIBS)
 MYTEMP = -L/usr/X11R6/lib -L/usr/lib/gcc/x86_64-redhat-linux/3.4.6/ -lg2c
 EXTRALIBS += $(MYTEMP)
 
-DATALIBDIR = $(INSTALLREPOSITORY)/libs/lib_5.22
+DATALIBDIR = $(INSTALLREPOSITORY)/libs/libsPM/lib_5.22
 CPPFLAGS += -I$(DATALIBDIR)
 
 MYLIB = -lm $(DATALIBDIR)/INGRIDEVENTSUMMARY.so $(DATALIBDIR)/IngridHitSummary.so $(DATALIBDIR)/IngridSimHitSummary.so $(DATALIBDIR)/IngridSimVertexSummary.so $(DATALIBDIR)/IngridSimParticleSummary.so $(DATALIBDIR)/BeamInfoSummary.so $(DATALIBDIR)/Ingrid1stReducSummary.so $(DATALIBDIR)/IngridBasicReconSummary.so $(DATALIBDIR)/IngridTrackSummary.so $(DATALIBDIR)/NeutInfoSummary.so $(DATALIBDIR)/PMReconSummary.so $(DATALIBDIR)/PMAnaSummary.so
