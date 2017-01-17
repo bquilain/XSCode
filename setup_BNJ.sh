@@ -25,7 +25,8 @@ source $ND280GEANT/cmt/setup.sh
 source $ND280CLHEP/cmt/setup.sh
 
 #Set MY Env
-export G4WORKDIR=$INSTALLREPOSITORY/MC/ingmc_IngridRevReWeightFinal
+#export G4WORKDIR=$INSTALLREPOSITORY/MC/ingmc_IngridRevReWeightFinal
+export G4WORKDIR=$INSTALLREPOSITORY/MC/
 export G4BIN=$G4WORKDIR/bin
 export G4TMP=$G4WORKDIR/tmp
 #export G4NEUTRONHPDATA=~/T2KSoftware2/GEANT/v9r2p01n00/Linux-x86_64/G4NDL4.2
