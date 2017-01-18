@@ -1,3 +1,5 @@
+//#define DEBUG_INGHIT
+//#define INGRIDPID
 #include<iostream>
 #include<sstream>
 #include<fstream>
@@ -55,6 +57,7 @@ vector<int>  bad_view;
 vector<int>  bad_ch;
 void Add_Bad_Channel();
 bool Is_Bad_Channel(IngridHitSummary* thit);
+void GetIngNonRecHits(IngridEventSummary* evt, int cyc); // for fIngHitPMJoint
 
 const static char *dst_data          = "/home/kikawa/scraid1/data/pm_ingrid";
 const static char *cosmic_data       = "/home/kikawa/scraid1/data/pm_ingrid";
@@ -89,16 +92,17 @@ int main(int argc,char *argv[]){
   Int_t Nini = 0;
   bool disp = false; 
   bool cosmic = false;
-  int VertexingPlane  =2;
-  double VertexingChannel =15;//cm
-  int TrackMatching=4;
-  double AngleCut=35;//degrees
-  double TransverseCut=8.5;//cm
+  int VertexingPlane  =pln_th;
+  double VertexingChannel =ch_th;//mm
+  int TrackMatching=diff_th;
+  double AngleCut=ang_th;//degrees
+  double TransverseCut=pos_th;//mm
   bool Error=false;
   int ErrorType=0;
   float ErrorValue=0.;
+  requireIngridTrack=true;
 
-  while ((c = getopt(argc, argv, "r:s:f:cado:i:e:v:")) != -1) {
+  while ((c = getopt(argc, argv, "r:s:f:cado:i:e:v:N")) != -1) {
     switch(c){
     case 'r':
       run_number=atoi(optarg);
@@ -123,6 +127,7 @@ int main(int argc,char *argv[]){
       Scyc = 14;
       Ncyc = 16;
       cosmic = true;
+      requireIngridTrack=false;
       break;
     case 'd':
       disp = true;
@@ -137,6 +142,9 @@ int main(int argc,char *argv[]){
     case 'v':
       ErrorValue=atof(optarg);
       break;
+    case 'N':
+      requireIngridTrack=false;
+      break;
     }
   }
   if(Error){
@@ -146,7 +154,8 @@ int main(int argc,char *argv[]){
     else if(ErrorType==14) AngleCut = (double) ErrorValue;
     else if(ErrorType==15) TransverseCut = (double) ErrorValue;
   }
-  cout<<"Matching plane="<<TrackMatching<<", Vertexing plane="<<VertexingPlane<<", Channel="<<VertexingChannel<<"mm, Angle cut="<<AngleCut<<"°, Transverse cut="<<TransverseCut<<"mm"<<endl;
+  cout<<"Matching plane="<<TrackMatching<<", Vertexing plane="<<VertexingPlane<<", Channel="<<VertexingChannel<<"cm, Angle cut="<<AngleCut<<"°, Transverse cut="<<TransverseCut<<"cm"<<endl;
+  cout<<(requireIngridTrack? "1 Ingrid track required" : "no Ingrid track required")<<endl;
   FileStat_t fs;
   // ifstream timing;
 
@@ -209,15 +218,16 @@ int main(int argc,char *argv[]){
   TrackIng                     ingtrack;
 
   Hits                        hit;
+  
+  
 
-  for(int ievt=Nini; ievt<nevt; ievt++){
+  for(int ievt=Nini; ievt<(Nini==0?nevt:Nini+1); ievt++){
 
     if(ievt%100==0)cout << "analyze event# " << ievt<<endl;
     wsummary -> Clear();
     evt      -> Clear();
     tree     -> GetEntry(ievt);
 
-    
     
     for( int cyc=Scyc; cyc<Ncyc; cyc++ ){  //### Cycle Loop
 
@@ -282,8 +292,6 @@ int main(int argc,char *argv[]){
 	    else
 	      vingtrack.push_back(ingtrack);
 
-
-
 	  }
 	}
       }
@@ -344,8 +352,15 @@ int main(int argc,char *argv[]){
 	    vtrack.push_back(track);
 	}
       }
+
+      GetIngNonRecHits(evt,cyc);//ML new
+
+
       //cout<<endl;
-      if(!fPMAna(VertexingPlane,VertexingChannel,TrackMatching,AngleCut,TransverseCut))continue;
+      // wrong -> if(!fPMAna(VertexingPlane,VertexingChannel,TrackMatching,AngleCut,TransverseCut))continue;
+      // correction ML 2016/10/17      
+      if(!fPMAna(TrackMatching,VertexingPlane,VertexingChannel,AngleCut,TransverseCut))continue;
+
       for(int i=0;i<pmtrack.size();i++){
 
 	if(pmtrack[i].Ntrack == 0)continue;
@@ -413,12 +428,14 @@ int main(int argc,char *argv[]){
 	pmanasum -> trkpe       .clear();
 	pmanasum -> mucl        .clear();
 	
-
+	//ML 2016/10/18
+	// since inghitsum->isohit is not well filled in PMreconRevOfficial, I refill it here
+	// NB 11/24: not sure it works. line443-> for the first hit isohit=1, then it is 0...
+	int NUsed[17][2][plnmax(16)][chmax(16)]; // to refill inghitsum->isohit
+	memset(NUsed,0,sizeof(NUsed));
 
 	for(int t=0;t<pmtrack[i].trk.size();t++){//run over the 3d tracks found
-	  //if(ievt==546 || ievt==5088) cout<<"Track Number="<<t<<", number of hits="<<pmtrack[i].trk[t].hit.size()<<endl;
 	  for(int ihit=0;ihit<pmtrack[i].trk[t].hit.size();ihit++){//look at the hit registered
-	    //if(ievt==546 || ievt==5088) cout<<"mod="<<pmtrack[i].trk[t].hit[ihit].mod<<", pln="<<pmtrack[i].trk[t].hit[ihit].pln<<", ch="<<pmtrack[i].trk[t].hit[ihit].ch<<", view="<<pmtrack[i].trk[t].hit[ihit].view<<endl;
 	    bool HitFound=false;
 	    for(int imod=0;imod<Nmod;imod++){//vary the module number
 	      int npmtrack = evt -> NPMModRecons(imod, cyc, pmtrack[i].trk[t].hit[ihit].view);//get the number of reconstruction in this module
@@ -429,13 +446,22 @@ int main(int argc,char *argv[]){
 		  if(HitFound) break;
 		  pmhit = recon -> GetIngridHit(NHIT);
 		  if(pmhit->mod==pmtrack[i].trk[t].hit[ihit].mod && pmhit->view==pmtrack[i].trk[t].hit[ihit].view && pmhit->pln==pmtrack[i].trk[t].hit[ihit].pln && pmhit->ch==pmtrack[i].trk[t].hit[ihit].ch && pmhit->pe==pmtrack[i].trk[t].hit[ihit].pe && pmhit->lope==pmtrack[i].trk[t].hit[ihit].lope && pmhit->xy==pmtrack[i].trk[t].hit[ihit].xy && pmhit->z==pmtrack[i].trk[t].hit[ihit].z && pmhit->time==pmtrack[i].trk[t].hit[ihit].time){
+		    pmhit->isohit=(NUsed[pmhit->mod][pmhit->view][pmhit->pln][pmhit->ch]==0);
 		    pmanasum -> AddIngridHitTrk(pmhit,t);//for each hit of the track, we check if it corresponds to a hit of the reconstruction. If yes, we add it ones, and then, we change the hit of the track we are looking for.
-		    //cout<<"hit is found, module="<<pmhit->mod<<", position pln="<<pmhit->pln<<", pe="<<pmhit->pe<<", lope="<<pmhit->lope<<endl; 
 		    HitFound=true;
+		    NUsed[pmhit->mod][pmhit->view][pmhit->pln][pmhit->ch]++;
 		  }
 		}
 	      } 
 	    }
+	    if(!HitFound){ // ie was not in any reconstruction -> from fIngHitPMJoint
+	      pmhit = evt->GetIngridModHit(pmtrack[i].trk[t].hit[ihit].hit_id,pmtrack[i].trk[t].hit[ihit].mod,cyc);
+#ifdef DEBUG_INGHIT
+	      cout<<"trk="<<t<<" hit= mod "<<pmtrack[i].trk[t].hit[ihit].mod<<" view "<<pmtrack[i].trk[t].hit[ihit].view<<" pln "<<pmtrack[i].trk[t].hit[ihit].pln<<" ch "<<pmtrack[i].trk[t].hit[ihit].ch<<" added!"<<endl;
+#endif
+	      pmanasum->AddIngridHitTrk(pmhit,t);
+	    }
+
 	  }
 
 	  pmanasum -> x           .push_back(pmtrack[i].trk[t].x);
@@ -548,3 +574,66 @@ bool Is_Bad_Channel(IngridHitSummary* thit){
   return false;
 }
 
+void GetIngNonRecHits(IngridEventSummary* evt, int cyc){
+  IngridHitSummary*    inghitsum;
+  int imod,view,pln,ch;
+  float pe,lope;
+  int ninghit,pdg;
+  memset(ingnonrechits_pe,  0,sizeof(ingnonrechits_pe));
+  memset(ingnonrechits_lope,0,sizeof(ingnonrechits_lope));
+  memset(ingnonrechits_pdg ,0,sizeof(ingnonrechits_pdg ));
+  memset(ingnonrechits_id  ,0,sizeof(ingnonrechits_id ));
+  
+
+  // store info of all IngridHits
+  for(int mod=0; mod<7; mod++){
+    ninghit = evt -> NIngridModHits(mod, cyc);
+    for(int ihit=0; ihit<ninghit; ihit++){
+      inghitsum  = (IngridHitSummary*) (evt -> GetIngridModHit(ihit,mod,cyc));
+      if(Is_Bad_Channel( inghitsum ))continue;
+      view = inghitsum->view;
+      ch   = inghitsum->ch;
+      pln  = inghitsum->pln;
+      pe   = inghitsum->pe;
+      lope = inghitsum->lope;
+      if((inghitsum -> NSimHits()) > 0)pdg = inghitsum -> GetIngridSimHit(0)->pdg;
+      else pdg = 0;
+      if(pln>=Cpln) continue; // pln>=11 are veto planes
+      ingnonrechits_pe[mod][view][pln][ch]=pe;
+      ingnonrechits_lope[mod][view][pln][ch]=lope;
+      ingnonrechits_pdg [mod][view][pln][ch]=pdg;
+      ingnonrechits_id [mod][view][pln][ch]=ihit;
+    }
+  }
+
+  // now delete all reconstructed hits
+  int hn=hingtrack.size();
+  int vn=vingtrack.size();
+  for(int i=0;i<hn;i++){
+    int nhit=hingtrack[i].hit.size();
+    for(int j=0;j<nhit;j++){
+      imod=hingtrack[i].hit[j].mod;
+      view=hingtrack[i].hit[j].view;
+      pln=hingtrack[i].hit[j].pln;
+      ch=hingtrack[i].hit[j].ch;
+      ingnonrechits_pe[imod][view][pln][ch]=0;
+      ingnonrechits_lope[imod][view][pln][ch]=0;
+      ingnonrechits_pdg[imod][view][pln][ch]=0;
+      ingnonrechits_id[imod][view][pln][ch]=0;
+    }
+  }
+
+  for(int i=0;i<vn;i++){
+    int nhit=vingtrack[i].hit.size();
+    for(int j=0;j<nhit;j++){
+      imod=vingtrack[i].hit[j].mod;
+      view=vingtrack[i].hit[j].view;
+      pln=vingtrack[i].hit[j].pln;
+      ch=vingtrack[i].hit[j].ch;
+      ingnonrechits_pe[imod][view][pln][ch]=0;
+      ingnonrechits_lope[imod][view][pln][ch]=0;
+      ingnonrechits_pdg[imod][view][pln][ch]=0;
+      ingnonrechits_id[imod][view][pln][ch]=0;
+    }
+  }
+}
