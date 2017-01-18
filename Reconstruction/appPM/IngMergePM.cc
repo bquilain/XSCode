@@ -1,4 +1,3 @@
-
 //##### Standard C++ lib. ######
 #include<iostream>
 #include<sstream>
@@ -78,7 +77,7 @@ int main(int argc,char *argv[]){
   //#########################################
  
   
-  /*  if( !MC&&filenum ){
+  if( !MC&&filenum ){
     sprintf(FileName,"/home/kikawa/scraid1/data/ingrid/ingrid_%08d_%04d_done.root",
 	    run_number, sub_run_number);
 
@@ -101,8 +100,8 @@ int main(int argc,char *argv[]){
     //sprintf(NewFile,"/home/kikawa/scraid1/data/pm_ingrid_track/ingrid_%08d_%04d_done.root",
     sprintf(NewFile,"/home/kikawa/scbn03/pm_ingrid_track/ingrid_%08d_%04d_done.root",
 	    run_number, sub_run_number);
-	    }*/
- 
+  }
+  
   if(gSystem->GetPathInfo(FileName,fs)){
     cout<<"Cannot open file "<<FileName<<endl;
     exit(1);
