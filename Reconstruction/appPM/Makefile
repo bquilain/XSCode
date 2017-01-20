@@ -25,7 +25,7 @@ CXXFLAGS += -I$(LIB) -I$(SRC) -I$(INC)
 
 TARGET = IngTClster IngBasicRecon IngReconMuBasic IngGetOnlyBasic \
          IngGetOnlyBasicMC get_daily_evt get_daily_evt_corr \
-         PMrecon IngAnaVertex PMAna PMGetOnlyBasic PMGetOnlyBasicMC \
+         PMrecon IngAnaVertex PMAna PMGetOnlyBasic PMGetOnlyBasicMC IngAddNoisePMMC_new\
          IngMergePM PMrecon_HitInfo IngAnaVertex_HitInfo PMrecon_HitInfo_Sand PMreconRev PMAna_HitInfo PMAna_HitInfo_Xsec PMAna_woIngrid PMAna_ForXsections PMreconRev2 PEdistBen PMPEinPMsci TrackMatching3D VetoAndFV PMreconRev_woXTalk PMreconRev_KS PMAnaRev_KS_woXTalk PMreconRev_KS_woXTalk SandEventReductionPM PMAnaRevRev PMAnaRevOfficial PMreconRevOfficial PMreconRevOfficial_shortingridtracks
 
 all: $(TARGET)
@@ -94,7 +94,9 @@ SandEventReductionPM: SandEventReductionPM.o
 
 PMAnaRevRev: PMAnaRevRev.o
 
-PMAnaRevOfficial: PMAnaRevOfficial.o
+PMAnaRevOfficial: PMAnaRevOfficial.o 
+
+IngAddNoisePMMC_new: IngAddNoisePMMC_new.o
 
 PMreconRevOfficial: PMreconRevOfficial.o
 
