@@ -16,7 +16,7 @@ class IngridHLayerSD : public G4VSensitiveDetector {
   G4double TotalhlayerDep;
  
 public:
-  IngridHLayerSD(const G4String& name);
+  IngridHLayerSD(const G4String& name, double cbirks=0.0208);
   virtual ~IngridHLayerSD();
 
   virtual G4bool ProcessHits(G4Step* aStep, G4TouchableHistory* ROhist);

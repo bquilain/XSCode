@@ -1,6 +1,0 @@
-#!/bin/zsh +x
-#for i in condorNuE*.sh; do
-#    condor_submit ${i}
-for i in {1..100};do
-    condor_submit condorNuE${i}.sh
-done

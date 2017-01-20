@@ -16,8 +16,8 @@ const G4double sciattleng = 10.46; //cm added
 //const G4double SciBarFactor = 1.72;  //P.E. factor for SciBar scintillator
 //Default: const G4double SciBarFactor = 1.77;  //P.E. factor for SciBar scintillator
 const G4double SciBarFactor = 1.88;//1.95
-const G4double CBIRKS = 0.0208;//0.0208; // used in SciBooNE MC
-const G4double CBIRKS_LE = 10*CBIRKS;
+//const G4double CBIRKS = 0.0185;//0.0208; // used in SciBooNE MC
+//const G4double CBIRKS_LE = 10*CBIRKS;
 //const G4double CBIRKS_Hadrons = 0.01;
 //const G4double CBIRKS = 0.1;//Benjamin Test (other solution: dans les stepping action: if(track->getdef==Gpartneutron) trackstatus(stopandkill)
 //const G4double CBIRKS_LE = 1;
@@ -79,7 +79,15 @@ const G4int sideview = 0;
 //
 IngridResponse::IngridResponse()
 {
+  CBIRKS = 0.0208;
 }
+
+IngridResponse::IngridResponse(G4double cbirks)
+{
+  CBIRKS = cbirks;
+  cout<<"Birks constant is set to "<<CBIRKS<<endl;
+}
+
 
 //
 IngridResponse::~IngridResponse()

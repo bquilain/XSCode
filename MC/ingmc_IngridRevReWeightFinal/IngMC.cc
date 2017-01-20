@@ -17,7 +17,6 @@
 #include "IngridEventAction.hh"
 #include "IngridTrackingAction.hh"
 #include "Neut.hh"
-//#include "Const.hh"
 
 #ifdef G4VIS_USE
 #include "G4VisExecutive.hh"
@@ -41,10 +40,13 @@ int main(int argc, char** argv)
   int flav = 0;
   // 1:numu, 2:numubar, 3:nue, 4:nuebar
 
+  double CBIRKS_values[3]={0.0185,0.0208,0.231}; // nominal 0.0208; Birks_Minus = 0.0185; Birks_Plus = 0.0231 
+  int BirksIndex=1;
+
 	int NumberOfEvent = 0;
 
 	int c = -1;
-	while ((c = getopt(argc, argv, "ho:i:m:b:f:")) != -1) {
+	while ((c = getopt(argc, argv, "ho:i:m:b:f:B:")) != -1) {
     switch(c){
 			case 'o':
 				sprintf(output,"%s",optarg);
@@ -62,11 +64,19 @@ int main(int argc, char** argv)
 				batch = 1;
 				sprintf(cmd,"%s",optarg);
 				break;
+                        case 'B':
+			        BirksIndex=atoi(optarg);
+				if(abs(BirksIndex-1)>1) {
+				  cout<<"Please select 0,1 or 2 for Birks constant"<<endl;
+				  exit(1);
+				}
+			        break;
 			case 'h':
 				std::cerr << "o:output root file name" << std::endl;
 				std::cerr << "i:input neut file" << std::endl;
 				std::cerr << "m:2(nd2) or 3(nd3) or 4(nd4)" << std::endl;
 				std::cerr << "b:batch command" << std::endl;
+				std::cerr << "B:Birks mode: 0(Birks_Minus) 1(nominal) 2(Birks_Plus)" << std::endl;
 				exit(1);
 		}
 	}
@@ -80,6 +90,8 @@ int main(int argc, char** argv)
     exit(1);
   }
 
+  //  cout<<"Birks constant is set to "<<CBIRKS_values[BirksIndex]<<endl;
+
   // run manager
   G4RunManager* runManager= new G4RunManager;  //G4cout << G4endl;
 
@@ -91,7 +103,7 @@ int main(int argc, char** argv)
   // set mandatory user initialization classes...
 
   // detector setup
-  runManager-> SetUserInitialization(new IngridDetectorConstruction(nd));
+	runManager-> SetUserInitialization(new IngridDetectorConstruction(nd, CBIRKS_values[BirksIndex]));
   //runManager-> SetUserInitialization(new IngridDetectorConstruction());
   G4cout << "Detector Init OK" << G4endl;
 

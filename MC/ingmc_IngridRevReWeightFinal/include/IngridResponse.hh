@@ -9,6 +9,7 @@
 class IngridResponse {
 public:
   IngridResponse();
+  IngridResponse(G4double);
   ~IngridResponse();
 
   double ApplyConversion(G4double* edep);
@@ -23,9 +24,11 @@ public:
   void ApplyScintiResponse2(G4double* edep, G4double* steplength, G4Track* aTrack);
 private:
   G4EmCalculator emcal;
+  G4double CBIRKS;
 
   void BirksSaturation(G4double* edeposit, G4Track* aTrack);
   void BirksSaturation2(G4double* edeposit, G4double * steplength, G4Track* aTrack);
+
 
 };
 

@@ -30,9 +30,10 @@
 
 //#define MOD3
 
-IngridDetectorConstruction::IngridDetectorConstruction(int MODE)
+IngridDetectorConstruction::IngridDetectorConstruction(int MODE, G4double cbirks)
 {
     mode = MODE;
+    CBIRKS=cbirks;
 }
 
 IngridDetectorConstruction::~IngridDetectorConstruction()
@@ -729,7 +730,7 @@ G4VPhysicalVolume* IngridDetectorConstruction::Construct()
   G4SDManager* SDman = G4SDManager::GetSDMpointer();
   
   G4String hlayerSDname = "Ingrid/hlayerSD";
-  ahlayerSD = new IngridHLayerSD( hlayerSDname );
+  ahlayerSD = new IngridHLayerSD( hlayerSDname , CBIRKS);
   SDman->AddNewDetector( ahlayerSD );
   //hlayerLV->SetSensitiveDetector( ahlayerSD );
   //hlayer2LV->SetSensitiveDetector( ahlayerSD );
@@ -738,7 +739,7 @@ G4VPhysicalVolume* IngridDetectorConstruction::Construct()
   hscint3_intLV->SetSensitiveDetector( ahlayerSD );//INGRID type added by kikawa
  
   G4String vlayerSDname = "Ingrid/vlayerSD";
-  avlayerSD = new IngridVLayerSD( vlayerSDname );
+  avlayerSD = new IngridVLayerSD( vlayerSDname, CBIRKS );
   SDman->AddNewDetector( avlayerSD );
   //vlayerLV->SetSensitiveDetector( avlayerSD );
   //vlayer2LV->SetSensitiveDetector( avlayerSD );
@@ -747,7 +748,7 @@ G4VPhysicalVolume* IngridDetectorConstruction::Construct()
   vscint3_intLV->SetSensitiveDetector( avlayerSD );//INGRID type added by kikawa
  
   G4String vetoSDname = "Ingrid/vetoSD";
-  avetoSD = new IngridVetoSD( vetoSDname );
+  avetoSD = new IngridVetoSD( vetoSDname , CBIRKS);
   SDman->AddNewDetector( avetoSD );
 
   SvetoLV->SetSensitiveDetector( avetoSD );
