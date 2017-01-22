@@ -62,7 +62,8 @@ int StartPE=0;
 int EndPE=300;
 TSpline3 * s_PMIng,* s_PMSci,* s_Ing;
 TF1 * f_PMIng,* f_PMSci,* f_Ing;
-  
+#define DEBUG
+
 bool IsINGRID(int ch){
   bool Ing;
   if(ch<=7||ch>=24) Ing=true;
@@ -238,12 +239,22 @@ int main(int argc, char **argv)
 
 
   TFile * wfile;
-  if(MC) wfile    = new TFile("src/PDFMuCL_Plan.root","recreate");
-  else wfile    = new TFile("src/PDFMuCL_Plan_Data.root","recreate");
+  if(MC) wfile    = new TFile("src/PDFMuCL_Plan_test.root","recreate");
+  else wfile    = new TFile("src/PDFMuCL_Plan_Data_test.root","recreate");
   TH1D * PDFMuCL_PMIng = new TH1D("PDFMuCL_PMIng","",NBins,StartPE,EndPE);
   TH1D * PDFMuCL_PMSci = new TH1D("PDFMuCL_PMSci","",NBins,StartPE,EndPE);
   TH1D * PDFMuCL_Ing = new TH1D("PDFMuCL_Ing","",NBins,StartPE,EndPE);
   PDFMuCL_PMIng->Sumw2();PDFMuCL_PMSci->Sumw2();PDFMuCL_Ing->Sumw2();
+
+#ifdef DEBUG
+  TH1D * PDFMuCL_PMIng_raw = new TH1D("PDFMuCL_PMIng_raw","",NBins,StartPE,EndPE);
+  TH1D * PDFMuCL_PMSci_raw = new TH1D("PDFMuCL_PMSci_raw","",NBins,StartPE,EndPE);
+  TH1D * PDFMuCL_Ing_raw = new TH1D("PDFMuCL_Ing_raw","",NBins,StartPE,EndPE);
+
+  TH1D * PDFMuCL_PMIng_fiberattenuationcorrected = new TH1D("PDFMuCL_PMIng_fiberattenuationcorrected","",NBins,StartPE,EndPE);
+  TH1D * PDFMuCL_PMSci_fiberattenuationcorrected = new TH1D("PDFMuCL_PMSci_fiberattenuationcorrected","",NBins,StartPE,EndPE);
+  TH1D * PDFMuCL_Ing_fiberattenuationcorrected = new TH1D("PDFMuCL_Ing_fiberattenuationcorrected","",NBins,StartPE,EndPE);
+#endif
   
   double PECorrected=0;
 
@@ -260,19 +271,15 @@ int main(int argc, char **argv)
   PMAnaSummary * recon = new PMAnaSummary();	
   IngridHitSummary * hit = new IngridHitSummary();
   IngridHitSummary * hit2 =new IngridHitSummary();
-  //TFile * _file0;
-  TTree * tree;
-  
+
+  TChain * tree = new TChain("tree");
   for(int n=IFiles;n<=NFiles;n++){//Loop over different files
+    if(MC)tree->Add(Form("/export/scraid2/data/bquilain/MCfiles/PMMC_Sand_Run1_%d_wNoise_anareduced.root",n));
+    else tree->Add(Form("/export/scraid2/data/bquilain/DataNew/ingrid_00014510_%04d_pmmergedKSPManabsd_woXTalk.root",n));
     cout<<"opening"<<endl;
-    if(MC) sprintf(File,"/export/scraid2/data/bquilain/MCfiles/PMMC_Sand_Run1_%d_wNoise_anareduced.root",n);
-    else sprintf(File,"/export/scraid2/data/bquilain/DataNew/ingrid_00014510_%04d_pmmergedKSPManabsd_woXTalk.root",n);
+  }
     //if(n>=415 && n<419) continue;
-    TFile * _file0 = new TFile(File);
-    if(_file0->IsOpen()) cout << _file0->GetName() <<" is open"<< endl ;
-    else continue;
-    tree=(TTree*) _file0->Get("tree");
-    if(tree!=tree) continue;
+    //TFile * _file0 = new TFile(File);
     int nevt=(int) tree->GetEntries();
     cout<<"Total Number Of Events="<<nevt<<endl;
 
@@ -328,9 +335,18 @@ int main(int argc, char **argv)
 	  }
 
 
-
+#ifdef DEBUG2
+	  cout<<endl<<"New vertex"<<endl;
+#endif
 	  
 	  for(int itrk=0;itrk<nTracks;itrk++){//loop on track
+#ifdef DEBUG2
+	    cout<<"New track:"<<endl;
+	    cout<<"Startxpln="<<(recon->startxpln)[itrk]/10.<<", Startypln="<<(recon->startypln)[itrk]/10.<<", Startxch="<<(recon->startxch)[itrk]/10.<<", Startych="<<(recon->startych)[itrk]/10.<<endl;
+	    cout<<"Endxpln="<<(recon->endxpln)[itrk]/10.<<", Endypln="<<(recon->endypln)[itrk]/10.<<", Endxch="<<(recon->endxch)[itrk]/10.<<", Endych="<<(recon->endych)[itrk]/10.<<endl;
+	    //cout<<"Gradient x="<<(recon->gradx)[itrk]<<", intcpt="<<(recon->intcptx)[itrk]<<", thetax="<<(recon->thetax)[itrk]<<endl;
+	    //cout<<"Gradient y="<<(recon->grady][itrk]<<", intcpt="<<(recon->intcpty)[itrk]<<", thetay="<<(recon->thetay)[itrk]<<endl;
+#endif
 	    bool SeveralHits=false;
 	    HitV.clear(); 
 	    vector <Hit3D> Vec;
@@ -349,11 +365,20 @@ int main(int argc, char **argv)
 
 	    double PEPlane[3][NPlnPM][2];//one per type of scinti, plane and view
 	    int Plane[3][NPlnPM][2];
+#ifdef DEBUG
+	    
+	    double PEPlane_raw[3][NPlnPM][2];//one per type of scinti, plane and view
+	    double PEPlane_fiberattenuationcorrected[3][NPlnPM][2];//one per type of scinti, plane and view
+#endif
 	    for(int ipln=0;ipln<NPlnPM;ipln++){
 	      for(int i=0;i<3;i++){
 		for(int iv=0;iv<2;iv++){
 		  PEPlane[i][ipln][iv]=0;
 		  Plane[i][ipln][iv]=0;
+#ifdef DEBUG
+		  PEPlane_raw[i][ipln][iv]=0;
+		  PEPlane_fiberattenuationcorrected[i][ipln][iv]=0;
+#endif
 		}
 	      }
 	    }
@@ -365,27 +390,59 @@ int main(int argc, char **argv)
 		PECorrected=Vec[i].pecorr/dx;
 		PEPlane[1][Vec[i].pln][Vec[i].view]+=PECorrected;
 		Plane[1][Vec[i].pln][Vec[i].view]++;
+#ifdef DEBUG
+		PEPlane_raw[1][Vec[i].pln][Vec[i].view]+=Vec[i].pe;
+		PEPlane_fiberattenuationcorrected[1][Vec[i].pln][Vec[i].view]+=Vec[i].pecorr;
+#endif
 	      }
 	      else if(Vec[i].mod==16 && !(Rec->Reconstruction::IsINGRID(Vec[i].mod,Vec[i].pln,Vec[i].ch))){
 		PECorrected=(Vec[i].pecorr/(1.3*dx))/INGRIDSCIBAR;
 		PEPlane[0][Vec[i].pln][Vec[i].view]+=PECorrected;
 		Plane[0][Vec[i].pln][Vec[i].view]++;
+
+#ifdef DEBUG
+		PEPlane_raw[0][Vec[i].pln][Vec[i].view]+=Vec[i].pe/(1.3*INGRIDSCIBAR);
+		PEPlane_fiberattenuationcorrected[0][Vec[i].pln][Vec[i].view]+=Vec[i].pecorr/(1.3*INGRIDSCIBAR);
+#endif
 	      }
 	      else{
 		PECorrected=Vec[i].pecorr/(dx);
 		PEPlane[2][Vec[i].pln][Vec[i].view]+=PECorrected;
 		Plane[2][Vec[i].pln][Vec[i].view]++;
-		}
+#ifdef DEBUG
+		PEPlane_raw[2][Vec[i].pln][Vec[i].view]+=Vec[i].pe;
+		PEPlane_fiberattenuationcorrected[2][Vec[i].pln][Vec[i].view]+=Vec[i].pecorr;
+#endif
+	      }
 	    }//EndPE of loop over hits
 
 
 	  for(int ipln=0;ipln<NPlnPM;ipln++){
 	      for(int iview=0;iview<2;iview++){
 		if(Plane[0][ipln][iview]!=0 || Plane[1][ipln][iview]!=0){//case PM & active plane
-		  if(Plane[0][ipln][iview]>=Plane[1][ipln][iview]) PDFMuCL_PMSci->Fill(PEPlane[0][ipln][iview]+PEPlane[1][ipln][iview],weight);//more SciBar
-		  else PDFMuCL_PMIng->Fill(PEPlane[0][ipln][iview]+PEPlane[1][ipln][iview],weight);//more INGRID
+		  if(Plane[0][ipln][iview]>=Plane[1][ipln][iview]){
+		    PDFMuCL_PMSci->Fill(PEPlane[0][ipln][iview]+PEPlane[1][ipln][iview],weight);//more SciBar
+#ifdef DEBUG
+		    PDFMuCL_PMSci_raw->Fill(PEPlane_raw[0][ipln][iview]+PEPlane_raw[1][ipln][iview],weight);//more SciBar
+		    PDFMuCL_PMSci_fiberattenuationcorrected->Fill(PEPlane_fiberattenuationcorrected[0][ipln][iview]+PEPlane_fiberattenuationcorrected[1][ipln][iview],weight);//more SciBar
+#endif
+		  }
+		  else{
+		    PDFMuCL_PMIng->Fill(PEPlane[0][ipln][iview]+PEPlane[1][ipln][iview],weight);//more INGRID
+#ifdef DEBUG
+		    PDFMuCL_PMIng_raw->Fill(PEPlane_raw[0][ipln][iview]+PEPlane_raw[1][ipln][iview],weight);//more SciBar
+		    PDFMuCL_PMIng_fiberattenuationcorrected->Fill(PEPlane_fiberattenuationcorrected[0][ipln][iview]+PEPlane_fiberattenuationcorrected[1][ipln][iview],weight);//more SciBar
+#endif
+	  
+		  }
 		}
-		else if(Plane[2][ipln][iview]!=0) PDFMuCL_Ing->Fill(PEPlane[2][ipln][iview],weight);
+		else if(Plane[2][ipln][iview]!=0){
+		  PDFMuCL_Ing->Fill(PEPlane[2][ipln][iview],weight);
+#ifdef DEBUG
+		  PDFMuCL_PMIng_raw->Fill(PEPlane_raw[2][ipln][iview],weight);//more IngBar
+		  PDFMuCL_PMIng_fiberattenuationcorrected->Fill(PEPlane_fiberattenuationcorrected[2][ipln][iview],weight);//more SciBar
+#endif
+		}
 	      }
 	    }
 
@@ -396,8 +453,6 @@ int main(int argc, char **argv)
       }//Evt
     }
     evt->Delete();
-    Br->Delete();
-  }//Files
   
   double Max_PMIng=PDFMuCL_PMIng->GetBinContent(PDFMuCL_PMIng->GetMaximumBin());
   double Max_PMSci=PDFMuCL_PMSci->GetBinContent(PDFMuCL_PMSci->GetMaximumBin());
@@ -405,7 +460,21 @@ int main(int argc, char **argv)
   PDFMuCL_PMIng->Scale(1./Max_PMIng);
   PDFMuCL_PMSci->Scale(1./Max_PMSci);
   PDFMuCL_Ing->Scale(1./Max_Ing);
-  
+#ifdef DEBUG
+  double Max_PMIng_raw=PDFMuCL_PMIng_raw->GetBinContent(PDFMuCL_PMIng_raw->GetMaximumBin());
+  double Max_PMSci_raw=PDFMuCL_PMSci_raw->GetBinContent(PDFMuCL_PMSci_raw->GetMaximumBin());
+  double Max_Ing_raw=PDFMuCL_Ing_raw->GetBinContent(PDFMuCL_Ing_raw->GetMaximumBin());
+  PDFMuCL_PMIng_raw->Scale(1./Max_PMIng_raw);
+  PDFMuCL_PMSci_raw->Scale(1./Max_PMSci_raw);
+  PDFMuCL_Ing_raw->Scale(1./Max_Ing_raw);
+
+  double Max_PMIng_fiberattenuationcorrected=PDFMuCL_PMIng_fiberattenuationcorrected->GetBinContent(PDFMuCL_PMIng_fiberattenuationcorrected->GetMaximumBin());
+  double Max_PMSci_fiberattenuationcorrected=PDFMuCL_PMSci_fiberattenuationcorrected->GetBinContent(PDFMuCL_PMSci_fiberattenuationcorrected->GetMaximumBin());
+  double Max_Ing_fiberattenuationcorrected=PDFMuCL_Ing_fiberattenuationcorrected->GetBinContent(PDFMuCL_Ing_fiberattenuationcorrected->GetMaximumBin());
+  PDFMuCL_PMIng_fiberattenuationcorrected->Scale(1./Max_PMIng_fiberattenuationcorrected);
+  PDFMuCL_PMSci_fiberattenuationcorrected->Scale(1./Max_PMSci_fiberattenuationcorrected);
+  PDFMuCL_Ing_fiberattenuationcorrected->Scale(1./Max_Ing_fiberattenuationcorrected);
+#endif
   double x_PMIng[PDFMuCL_PMIng->GetNbinsX()];double ex_PMIng[PDFMuCL_PMIng->GetNbinsX()];double y_PMIng[PDFMuCL_PMIng->GetNbinsX()];double ey_PMIng[PDFMuCL_PMIng->GetNbinsX()];
   for(int ibinx=1;ibinx<=PDFMuCL_PMIng->GetNbinsX();ibinx++){
     x_PMIng[ibinx-1]=PDFMuCL_PMIng->GetBinCenter(ibinx);
@@ -501,6 +570,14 @@ int main(int argc, char **argv)
   PDFMuCL_PMIng->Write();
   PDFMuCL_PMSci->Write();
   PDFMuCL_Ing->Write();
+#ifdef DEBUG
+  PDFMuCL_PMIng_raw->Write();
+  PDFMuCL_PMSci_raw->Write();
+  PDFMuCL_Ing_raw->Write();
+  PDFMuCL_PMIng_fiberattenuationcorrected->Write();
+  PDFMuCL_PMSci_fiberattenuationcorrected->Write();
+  PDFMuCL_Ing_fiberattenuationcorrected->Write();
+#endif
   s_PMIng->Write("s_PMIng");
   s_PMSci->Write("s_PMSci");
   s_Ing->Write("s_Ing");

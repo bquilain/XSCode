@@ -51,10 +51,17 @@ vector <Hit3D> Corrections::GetFiberAttenuation(vector <Hit3D> Vec){
   const double LAtt=241.7;
   for(int ihit=0;ihit<Vec.size();ihit++){
     double L;
-    //cout<<"x="<<Vec[ihit].x<<", y="<<Vec[ihit].y<<", z="<<Vec[ihit].z<<endl;
+    //if(Vec[ihit].view==0) L=(120-Vec[ihit].y);
+    //else L=(Vec[ihit].x);//changer pour le PM...
     if(Vec[ihit].view==0) L=(Vec[ihit].y);
-    else L=(120-Vec[ihit].x);//changer pour le PM...
+    else L=(120.-Vec[ihit].x);//changer pour le PM...
     Vec[ihit].pecorr=Vec[ihit].pe/TMath::Exp(-L/LAtt);
+#ifdef DEBUG2
+    cout<<"**************************************************"<<endl;
+    cout<<"Test of Correction::GetFiberAttenuation"<<endl;
+    cout<<"Hit view="<<Vec[ihit].view<<", estimated position=("<<Vec[ihit].x<<","<<Vec[ihit].y<<","<<Vec[ihit].z<<")"<<endl;
+    cout<<"Charge before ="<<Vec[ihit].pe<<" and after correction="<<Vec[ihit].pecorr<<endl;
+#endif
     //if(Vec[ihit].mod==16 && (Vec[ihit].ch>7 && Vec[ihit].ch<24)) cout<<"pe="<<Vec[ihit].pe<<", corr="<<Vec[ihit].pecorr<<endl;
   }
   return Vec;

@@ -289,9 +289,9 @@ int main(int argc, char **argv){
 	  }
       
 	
-	sprintf(Command10,"Executable = ${INSTALLREPOSITORY}/MC/JobsSystematics/PMMC%d_Systematics%d_%d.sh",i,ErrorType,n);
-	sprintf(Command20,"Output = ${INSTALLREPOSITORY}/MC/JobsSystematics/log_PMMC%d_Systematics%d_%d.txt",i,ErrorType,n);
-	sprintf(Command30,"Error = ${INSTALLREPOSITORY}/MC/JobsSystematics/err_PMMC%d_Systematics%d_%d.txt",i,ErrorType,n);
+	sprintf(Command10,"Executable = %s/MC/JobsSystematics/PMMC%d_Systematics%d_%d.sh",cINSTALLREPOSITORY,i,ErrorType,n);
+	sprintf(Command20,"Output = %s/MC/JobsSystematics/log_PMMC%d_Systematics%d_%d.txt",cINSTALLREPOSITORY,i,ErrorType,n);
+	sprintf(Command30,"Error = %s/MC/JobsSystematics/err_PMMC%d_Systematics%d_%d.txt",cINSTALLREPOSITORY,i,ErrorType,n);
 	ofstream CondorMC(Name2);
 	if(CondorMC){
 	  CondorMC<<Command10<<endl
@@ -428,9 +428,9 @@ int main(int argc, char **argv){
 	  }
 	
 	
-	sprintf(Command10,"Executable = ${INSTALLREPOSITORY}/MC/JobsSystematics/PMData_Run%d_SubRun%d_Systematics%d_%d.sh",RunNum,SubRunNum,ErrorType,n);
-	sprintf(Command20,"Output = ${INSTALLREPOSITORY}/MC/JobsSystematics/log_PMData_Run%d_SubRun%d_Systematics%d_%d.txt",RunNum,SubRunNum,ErrorType,n);
-	sprintf(Command30,"Error = ${INSTALLREPOSITORY}/MC/JobsSystematics/err_PMData_Run%d_SubRun%d_Systematics%d_%d.txt",RunNum,SubRunNum,ErrorType,n);
+	sprintf(Command10,"Executable = %s/MC/JobsSystematics/PMData_Run%d_SubRun%d_Systematics%d_%d.sh",cINSTALLREPOSITORY,RunNum,SubRunNum,ErrorType,n);
+	sprintf(Command20,"Output = %s/MC/JobsSystematics/log_PMData_Run%d_SubRun%d_Systematics%d_%d.txt",cINSTALLREPOSITORY,RunNum,SubRunNum,ErrorType,n);
+	sprintf(Command30,"Error = %s/MC/JobsSystematics/err_PMData_Run%d_SubRun%d_Systematics%d_%d.txt",cINSTALLREPOSITORY,RunNum,SubRunNum,ErrorType,n);
 	ofstream CondorData(Name2);
 	if(CondorData){
 	  CondorData<<Command10<<endl
