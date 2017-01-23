@@ -27,7 +27,7 @@ CXXFLAGS += -I$(LIB)/src -I$(SRC) -I$(INC)
 TARGET = IngTClster IngBasicRecon IngReconMuBasic IngGetOnlyBasic \
          IngGetOnlyBasicMC get_daily_evt get_daily_evt_corr \
          IngAnaVertex PMGetOnlyBasic PMGetOnlyBasicMC \
-         IngMergePM IngAddNoiseMC IngAddNoisePMMC IngAddCutMod3 \
+         IngMergePM IngAddNoiseMC IngAddNoisePMMC_new IngAddCutMod3 \
 	 Lolirecon LoliAna Loli_addcrosstalk IngAddEasirochit
 
 all: $(TARGET)
@@ -56,7 +56,7 @@ PMGetOnlyBasicMC: PMGetOnlyBasicMC.o
 
 IngAddNoiseMC: IngAddNoiseMC.o
 
-IngAddNoisePMMC: IngAddNoisePMMC.o
+IngAddNoisePMMC_new: IngAddNoisePMMC_new.o
 
 IngAddCutMod3: IngAddCutMod3.o
 

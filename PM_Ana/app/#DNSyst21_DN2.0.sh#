@@ -1,5 +1,0 @@
-#!/bin/bash +x
-#/home/bquilain/PM_Ana/app/IngAddNoisePMMC_new -f /export/scraid2/data/bquilain/MCfiles/PM_MC_Beam21_BirksCorrectedMIP40_ReWeight_SciBar188.root -o /export/scraid3/data/bquilain/MCfiles/PM_MC_Beam21_BirksCorrectedMIP40_ReWeight_SciBar188_wNoise2.0.root -n 2.0
-/home/bquilain/Ingrid_Process/INGRID_analysis/app/PMreconRev_KS_woXTalk -r 14000 -s 0 -f /export/scraid3/data/bquilain/MCfiles/PM_MC_Beam21_BirksCorrectedMIP40_ReWeight_SciBar188_wNoise2.0.root -o /export/scraid3/data/bquilain/MCfiles/PM_MC_Beam21_BirksCorrectedMIP40_ReWeight_SciBar188_wNoise2.0_KSreconcondorDNSyst21_DN2.0.sh
-
-/home/bquilain/Ingrid_Process/INGRID_analysis/app/PMAnaRev_KS -r 14000 -s 0 -f /export/scraid3/data/bquilain/MCfiles/PM_MC_Beam21_BirksCorrectedMIP40_ReWeight_SciBar188_wNoise2.0_KSrecon_woXTalk.root -o /export/scraid3/data/bquilain/MCfiles/PM_MC_Beam21_BirksCorrectedMIP40_ReWeight_SciBar188_wNoise2.0_KSana_woXTalk.root

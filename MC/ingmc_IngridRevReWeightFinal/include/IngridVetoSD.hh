@@ -23,7 +23,7 @@ class IngridVetoSD : public G4VSensitiveDetector {
   G4int fHIT;
  
 public:
-  IngridVetoSD(const G4String& name);
+  IngridVetoSD(const G4String& name, G4double cbirks=0.0208);
   virtual ~IngridVetoSD();
 
   // virtual methods

@@ -16,12 +16,12 @@
 
 //#define DEBUG
 
-IngridHLayerSD::IngridHLayerSD(const G4String& name)
+IngridHLayerSD::IngridHLayerSD(const G4String& name, double cbirks)
   : G4VSensitiveDetector(name)
 {
   collectionName.insert("hlayerHitCollection");
 
-  ingresp = new IngridResponse();
+  ingresp = new IngridResponse(cbirks);
 }
 
 

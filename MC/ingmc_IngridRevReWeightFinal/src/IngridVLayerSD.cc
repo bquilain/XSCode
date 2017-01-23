@@ -14,11 +14,11 @@
 
 //#define DEBUG
 
-IngridVLayerSD::IngridVLayerSD(const G4String& name)
+IngridVLayerSD::IngridVLayerSD(const G4String& name, G4double cbirks)
   : G4VSensitiveDetector(name)
 {
   collectionName.insert("vlayerHitCollection");
-  ingresp = new IngridResponse();
+  ingresp = new IngridResponse(cbirks);
 }
 
 

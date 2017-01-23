@@ -582,7 +582,7 @@ int num2pdg(int *trkpdg){
   return pdg;
 };
 
-TFile *fmucl = new TFile("/home/bquilain/CC0pi_XS/Reconstruction/app/mucl.root");
+TFile *fmucl = new TFile("/home/bquilain/CC0pi_XS/Reconstruction/appPM/mucl.root");
 TH1F* ling = (TH1F*)fmucl -> Get("ling");
 TH1F* lsci = (TH1F*)fmucl -> Get("lsci");
 
@@ -1130,7 +1130,10 @@ bool fPMAna(int TrackMatchingPlane, int VertexingPlane, double VertexingChannel,
 
   else { // ie !requireIngridTrack && no pmtrack (ie no vertex yet)
     // step 3b-i:  matching of all tracks (similar to step 1)
-    //cout<<"event with no INGRID 3D track...";
+    //   it is possible that there are some INGRID 2D tracks at this point
+    //cout<<"event with no INGRID 3D track... h?"<<!(ah&&bh)<<" v?"<<!(av&&bv)<<" ";
+    //if(!(ah&&bh) && !(av&&bv)) return false; //tmp
+
     for(int dif=0;dif<TrackMatchingPlane;dif++){
       for(int pln=0;pln<plnmax(16)-1;pln++){//16 means PM
 	id_h.clear();id_v.clear();
@@ -1290,9 +1293,10 @@ bool fPMAna(int TrackMatchingPlane, int VertexingPlane, double VertexingChannel,
       if(vtrack[v].ing_trk)pmtrack[k].Ningtrack++;
       pmtrack[k].Ntrack++;
     }
+    //    cout<<pmtrack[k].Ningtrack<<endl;  
   }
 
-  
+
   return (pmtrack.size()>0);
 };
 
