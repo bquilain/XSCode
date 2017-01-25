@@ -42,7 +42,7 @@ using namespace std;
 #include "INGRID_Dimension.cc"
 #include "Reconstruction.cc"
 #include "Xsec.cc"
-#include "inc/setup.h"
+#include "setup.h"
 INGRID_Dimension * IngDim = new INGRID_Dimension();
 Reconstruction * Rec = new Reconstruction();
 Xsec * xs = new Xsec();

@@ -217,7 +217,7 @@ int main(int argc,char *argv[]){
 
   Hits                        hits;
 
-  LoadMuCL("../inc/sandmuon_distributions_54k_cut4pe5.root",false);
+  LoadMuCL("$(INSTALLREPOSITORY)/Reconstruction/inc/sandmuon_WM_distributions_54k_cut4pe5.root",false);
   int biasedMuCL=0;
 
   for(int ievt=Nini; ievt<nevt; ievt++){
@@ -375,6 +375,7 @@ int main(int argc,char *argv[]){
       for(int i=0;i<pmtrack.size();i++){
 	
 	if(pmtrack[i].Ntrack == 0)continue;
+	pmanasum->Clear();
 
 	reCalcIsohit(pmtrack[i],isoHitCut);
 

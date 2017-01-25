@@ -43,26 +43,26 @@ using namespace std;
 #include <TApplication.h>
 #include <TBox.h>
 #include "setup.h"
-#include "Xsec.cc"
-#include "Reconstruction.cc"
-Xsec * XS = new Xsec();
-double IronCarbonRatio=7.87/1.03;
+//#include "Xsec.cc"
+//#include "Reconstruction.cc"
+//Xsec * XS = new Xsec();
+//double IronCarbonRatio=7.87/1.03;
 TLegend * leg_Sample4;
 TLegend * leg_Sample4_Data;
 
 void ProduceStack(TH1D * h[11], THStack * hStack){
   for(int fsi=1;fsi<11;fsi++){
     /*
-    if(fsi==1) h[fsi]->SetFillColor(kRed);
-    else if(fsi==3) h[fsi]->SetFillColor(kBlue);
-    else if(fsi==4) h[fsi]->SetFillColor(kAzure+10);
-    else if(fsi==5) h[fsi]->SetFillColor(kGreen-2);
-    else if(fsi==6) h[fsi]->SetFillColor(kGray);
-    else if(fsi==7) h[fsi]->SetFillColor(kYellow);
-    else if(fsi==8) h[fsi]->SetFillColor(kYellow+2);
-    else if(fsi==9) h[fsi]->SetFillColor(kYellow+4);
-    else if(fsi==10) h[fsi]->SetFillColor(kMagenta);
-*/
+      if(fsi==1) h[fsi]->SetFillColor(kRed);
+      else if(fsi==3) h[fsi]->SetFillColor(kBlue);
+      else if(fsi==4) h[fsi]->SetFillColor(kAzure+10);
+      else if(fsi==5) h[fsi]->SetFillColor(kGreen-2);
+      else if(fsi==6) h[fsi]->SetFillColor(kGray);
+      else if(fsi==7) h[fsi]->SetFillColor(kYellow);
+      else if(fsi==8) h[fsi]->SetFillColor(kYellow+2);
+      else if(fsi==9) h[fsi]->SetFillColor(kYellow+4);
+      else if(fsi==10) h[fsi]->SetFillColor(kMagenta);
+    */
     h[fsi]->GetYaxis()->SetTitleOffset(1.3);
     if(fsi==1) h[fsi]->SetFillColor(kRed);
     //else if(fsi==2) h[fsi]->SetFillColor(kRed/*kOrange-3*/);
@@ -79,44 +79,44 @@ void ProduceStack(TH1D * h[11], THStack * hStack){
     h[fsi]->SetLineWidth(2);
     
     /*
-    if(fsi==1) h[fsi]->SetFillStyle(1001);
+      if(fsi==1) h[fsi]->SetFillStyle(1001);
     
       else if(fsi==3) h[fsi]->SetFillStyle(3105);
-    else if(fsi==4) h[fsi]->SetFillStyle(3154);
-    else if(fsi==5) h[fsi]->SetFillStyle(3158);
+      else if(fsi==4) h[fsi]->SetFillStyle(3154);
+      else if(fsi==5) h[fsi]->SetFillStyle(3158);
     
-    else if(fsi==3) h[fsi]->SetFillStyle(3002);
-    else if(fsi==4) h[fsi]->SetFillStyle(3002);
-    else if(fsi==5) h[fsi]->SetFillStyle(3002);
-    else if(fsi==6) h[fsi]->SetFillStyle(3002);
-    else if(fsi==7) h[fsi]->SetFillStyle(3002);
-    else if(fsi==8) h[fsi]->SetFillStyle(3002);
-    else if(fsi==9) h[fsi]->SetFillStyle(3002);
-    else if(fsi==10) h[fsi]->SetFillStyle(3002);
-*/
+      else if(fsi==3) h[fsi]->SetFillStyle(3002);
+      else if(fsi==4) h[fsi]->SetFillStyle(3002);
+      else if(fsi==5) h[fsi]->SetFillStyle(3002);
+      else if(fsi==6) h[fsi]->SetFillStyle(3002);
+      else if(fsi==7) h[fsi]->SetFillStyle(3002);
+      else if(fsi==8) h[fsi]->SetFillStyle(3002);
+      else if(fsi==9) h[fsi]->SetFillStyle(3002);
+      else if(fsi==10) h[fsi]->SetFillStyle(3002);
+    */
     hStack->Add(h[fsi]);
   }
 }
 
 void ProduceStack2(TH1D * h[11], THStack * hStack, bool Last){
   for(int fsi=1;fsi<11;fsi++){
-      if(fsi==1) h[fsi]->SetFillColor(kRed);
+    if(fsi==1) h[fsi]->SetFillColor(kRed);
    
-      h[fsi]->GetYaxis()->SetTitleOffset(1.1);
-      if(fsi==1) h[fsi]->SetFillColor(kRed);
-      //else if(fsi==2) h[fsi]->SetFillColor(kRed/*kOrange-3*/);
-      else if(fsi==3) h[fsi]->SetFillColor(kBlue+2);
-      else if(fsi==4) h[fsi]->SetFillColor(kAzure+7);
-      else if(fsi==5) h[fsi]->SetFillColor(kAzure+10);
-      else if(fsi==6) h[fsi]->SetFillColor(kGreen-2);
-      else if(fsi==7) h[fsi]->SetFillColor(kYellow);
-      else if(fsi==8) h[fsi]->SetFillColor(kYellow+2);
-      else if(fsi==9) h[fsi]->SetFillColor(kYellow+4);
-      else if(fsi==10) h[fsi]->SetFillColor(kMagenta);
+    h[fsi]->GetYaxis()->SetTitleOffset(1.1);
+    if(fsi==1) h[fsi]->SetFillColor(kRed);
+    //else if(fsi==2) h[fsi]->SetFillColor(kRed/*kOrange-3*/);
+    else if(fsi==3) h[fsi]->SetFillColor(kBlue+2);
+    else if(fsi==4) h[fsi]->SetFillColor(kAzure+7);
+    else if(fsi==5) h[fsi]->SetFillColor(kAzure+10);
+    else if(fsi==6) h[fsi]->SetFillColor(kGreen-2);
+    else if(fsi==7) h[fsi]->SetFillColor(kYellow);
+    else if(fsi==8) h[fsi]->SetFillColor(kYellow+2);
+    else if(fsi==9) h[fsi]->SetFillColor(kYellow+4);
+    else if(fsi==10) h[fsi]->SetFillColor(kMagenta);
       
-      //h[fsi]->SetLineColor(1);
-      //h[fsi]->SetLineWidth(2);
-      /*
+    //h[fsi]->SetLineColor(1);
+    //h[fsi]->SetLineWidth(2);
+    /*
       else if(fsi==3) h[fsi]->SetFillColor(kBlue);
       else if(fsi==4) h[fsi]->SetFillColor(kAzure+10);
       else if(fsi==5) h[fsi]->SetFillColor(kGreen-2);
@@ -125,31 +125,31 @@ void ProduceStack2(TH1D * h[11], THStack * hStack, bool Last){
       else if(fsi==8) h[fsi]->SetFillColor(kYellow+2);
       else if(fsi==9) h[fsi]->SetFillColor(kYellow+4);
       else if(fsi==10) h[fsi]->SetFillColor(kMagenta);
-*/
-      if(fsi==1) h[fsi]->SetLineColor(kRed);
-      //else if(fsi==2) h[fsi]->SetLineColor(kRed/*kOrange-3*/);
-      else if(fsi==3) h[fsi]->SetLineColor(kBlue+2);
-      else if(fsi==4) h[fsi]->SetLineColor(kAzure+7);
-      else if(fsi==5) h[fsi]->SetLineColor(kAzure+10);
-      else if(fsi==6) h[fsi]->SetLineColor(kGreen-2);
-      else if(fsi==7) h[fsi]->SetLineColor(kYellow);
-      else if(fsi==8) h[fsi]->SetLineColor(kYellow+2);
-      else if(fsi==9) h[fsi]->SetLineColor(kYellow+4);
-      else if(fsi==10) h[fsi]->SetLineColor(kMagenta);
+    */
+    if(fsi==1) h[fsi]->SetLineColor(kRed);
+    //else if(fsi==2) h[fsi]->SetLineColor(kRed/*kOrange-3*/);
+    else if(fsi==3) h[fsi]->SetLineColor(kBlue+2);
+    else if(fsi==4) h[fsi]->SetLineColor(kAzure+7);
+    else if(fsi==5) h[fsi]->SetLineColor(kAzure+10);
+    else if(fsi==6) h[fsi]->SetLineColor(kGreen-2);
+    else if(fsi==7) h[fsi]->SetLineColor(kYellow);
+    else if(fsi==8) h[fsi]->SetLineColor(kYellow+2);
+    else if(fsi==9) h[fsi]->SetLineColor(kYellow+4);
+    else if(fsi==10) h[fsi]->SetLineColor(kMagenta);
 
-      if(Last){
-	if(fsi==1) h[fsi]->SetLineColor(1);
-	else if(fsi==3) h[fsi]->SetLineColor(1);
-	else if(fsi==4) h[fsi]->SetLineColor(1);
-	else if(fsi==5) h[fsi]->SetLineColor(1);
-	else if(fsi==6) h[fsi]->SetLineColor(1);
-	else if(fsi==7) h[fsi]->SetLineColor(1);
-	else if(fsi==8) h[fsi]->SetLineColor(1);
-	else if(fsi==9) h[fsi]->SetLineColor(1);
-	else if(fsi==10) h[fsi]->SetLineColor(1);
-      }
-      hStack->Add(h[fsi]);
+    if(Last){
+      if(fsi==1) h[fsi]->SetLineColor(1);
+      else if(fsi==3) h[fsi]->SetLineColor(1);
+      else if(fsi==4) h[fsi]->SetLineColor(1);
+      else if(fsi==5) h[fsi]->SetLineColor(1);
+      else if(fsi==6) h[fsi]->SetLineColor(1);
+      else if(fsi==7) h[fsi]->SetLineColor(1);
+      else if(fsi==8) h[fsi]->SetLineColor(1);
+      else if(fsi==9) h[fsi]->SetLineColor(1);
+      else if(fsi==10) h[fsi]->SetLineColor(1);
     }
+    hStack->Add(h[fsi]);
+  }
 }
 
 int main(int argc, char **argv)
@@ -163,7 +163,8 @@ int main(int argc, char **argv)
   gStyle->SetOptStat(kFALSE);
   gStyle->SetTitleX(0.1f);
   gStyle->SetTitleW(0.8f);
-  XS->Xsec::Initialize();
+  //  XS->Xsec::Initialize();
+  InitializeGlobal();
 
   char Name[256];
   //TFile * _file0 = new TFile("CC0pi_1000.root");
@@ -201,7 +202,7 @@ int main(int argc, char **argv)
   bool IsBkgV;
   bool IsNuE;
   int VertexZ[10];
- double TrackAngle[10][20];
+  double TrackAngle[10][20];
   int TypeOfTrack[10][20];
   double CLMuon[10][20];// = new vector<double> [10][20];
   double TrackWidth[10][20];
@@ -282,15 +283,15 @@ int main(int argc, char **argv)
   BrMC_IsDetected->SetAddress(&IsDetected);
   wtree->SetBranchAddress("IsDetected[10]",&IsDetected);
   /*
-  TBranch * BrMC_VertexZ = wtree->GetBranch("VertexZ[10]");
-  BrMC_VertexZ->SetAddress(&VertexZ);
-  wtree->SetBranchAddress("VertexZ[10]",&VertexZ);
+    TBranch * BrMC_VertexZ = wtree->GetBranch("VertexZ[10]");
+    BrMC_VertexZ->SetAddress(&VertexZ);
+    wtree->SetBranchAddress("VertexZ[10]",&VertexZ);
   */
   TBranch * BrMC_TrackAngle = wtree->GetBranch("TrackAngle[10][20]");
   BrMC_TrackAngle->SetAddress(TrackAngle);
   wtree->SetBranchAddress("TrackAngle[10][20]",TrackAngle);
  
- TBranch * BrMC_TypeOfTrack = wtree->GetBranch("TypeOfTrack[10][20]");
+  TBranch * BrMC_TypeOfTrack = wtree->GetBranch("TypeOfTrack[10][20]");
   BrMC_TypeOfTrack->SetAddress(TypeOfTrack);
   wtree->SetBranchAddress("TypeOfTrack[10][20]",TypeOfTrack);
 
@@ -351,22 +352,22 @@ int main(int argc, char **argv)
   BrMC_GeometricTrack->SetAddress(GeometricTrack);
   wtree->SetBranchAddress("GeometricTrack[10][20]",GeometricTrack);
 
-  /*
-  int NBinsIron=12;
 
-  double DistIronBin[NBinsIron+1];
-  for(int i=0;i<NBinsIron+1;i++){
+    int NBinsIron=12;
+
+    double DistIronBin[NBinsIron+1];
+    for(int i=0;i<NBinsIron+1;i++){
     DistIronBin[0]=0;
     DistIronBin[1]=10;
     if(i>1 && i<=9) DistIronBin[i]=20+5*(i-2);
     DistIronBin[10]=60;
     DistIronBin[11]=70;
     DistIronBin[12]=100;
-  }
+    }
 
-  int NBinsMom=5;
-  double DistMomBin[NBinsMom+1];
-  for(int i=0;i<NBinsMom+1;i++){
+    int NBinsMom=5;
+    double DistMomBin[NBinsMom+1];
+    for(int i=0;i<NBinsMom+1;i++){
     DistMomBin[0]=0;
     DistMomBin[1]=0.4;
     DistMomBin[2]=0.6;
@@ -374,15 +375,15 @@ int main(int argc, char **argv)
     DistMomBin[4]=1.0;
     //DistMomBin[5]=2.0;
     DistMomBin[5]=10.0;
-  }
-  const int NBinsAngle=10;
-  double DistAngleBin[NBinsAngle+1];
-  for(int i=0;i<NBinsAngle+1;i++){
+    }
+    const int NBinsAngle=10;
+    double DistAngleBin[NBinsAngle+1];
+    for(int i=0;i<NBinsAngle+1;i++){
     if(i!=NBinsAngle) DistAngleBin[i]=i*5;
     else DistAngleBin[i]=90;//TMath::Cos(90*TMath::Pi()/180);
     cout<<"bin="<<i<<", bin value="<<DistAngleBin[i]<<endl;
-  }
-  */
+    }
+
   TRandom3 * r1 = new TRandom3();
   const int NBinsHalf=50;
   double DistHalfBin[NBinsHalf+1];
@@ -587,8 +588,8 @@ int main(int argc, char **argv)
     Selected_IronDistance_MC[i] = new TH1D(Name,"",20,0,100);
     Selected_IronDistance_MC[i]->Sumw2();
   }
-    for(int j=1;j<11;j++){
-sprintf(Name,"InFV_Interacting[%d]",j);
+  for(int j=1;j<11;j++){
+    sprintf(Name,"InFV_Interacting[%d]",j);
     InFV_Interacting[j] = new TH1D(Name,"",100,0,10);
     InFV_Interacting[j]->GetXaxis()->SetTitle("In FV interactions");
 
@@ -633,76 +634,76 @@ sprintf(Name,"InFV_Interacting[%d]",j);
     Selected_NTracks_ATrackIsSample5[j]->GetYaxis()->SetTitle("Number of events");
 
 
-      for(int i=0;i<6;i++){
-    sprintf(Name,"Selected_NTracks[%d][%d]",i,j);
-    Selected_NTracks[i][j] = new TH1D(Name,"",9,1,10);
-    Selected_NTracks[i][j]->GetXaxis()->SetTitle("Number of reconstructed tracks");
-    Selected_NTracks[i][j]->GetYaxis()->SetTitle("Number of events");
+    for(int i=0;i<6;i++){
+      sprintf(Name,"Selected_NTracks[%d][%d]",i,j);
+      Selected_NTracks[i][j] = new TH1D(Name,"",9,1,10);
+      Selected_NTracks[i][j]->GetXaxis()->SetTitle("Number of reconstructed tracks");
+      Selected_NTracks[i][j]->GetYaxis()->SetTitle("Number of events");
 
-    //Selected_NTracks[i][j]->Sumw2();
-    sprintf(Name,"Reconstructed_NTracks[%d][%d]",i,j);
-    Reconstructed_NTracks[i][j] = new TH1D(Name,"",9,1,10);
-    Reconstructed_NTracks[i][j]->GetXaxis()->SetTitle("Number of reconstructed tracks");
-    Reconstructed_NTracks[i][j]->GetYaxis()->SetTitle("Number of events");
+      //Selected_NTracks[i][j]->Sumw2();
+      sprintf(Name,"Reconstructed_NTracks[%d][%d]",i,j);
+      Reconstructed_NTracks[i][j] = new TH1D(Name,"",9,1,10);
+      Reconstructed_NTracks[i][j]->GetXaxis()->SetTitle("Number of reconstructed tracks");
+      Reconstructed_NTracks[i][j]->GetYaxis()->SetTitle("Number of events");
 
-    //Reconstructed_NTracks[i][j]->Sumw2();
-    sprintf(Name,"Interacting_NTracks[%d][%d]",i,j);
-    Interacting_NTracks[i][j] = new TH1D(Name,"",9,1,10);
-    //Interacting_NTracks[i][j]->Sumw2();
-    Interacting_NTracks[i][j]->GetXaxis()->SetTitle("Number of reconstructed tracks");
-    Interacting_NTracks[i][j]->GetYaxis()->SetTitle("Number of events");
+      //Reconstructed_NTracks[i][j]->Sumw2();
+      sprintf(Name,"Interacting_NTracks[%d][%d]",i,j);
+      Interacting_NTracks[i][j] = new TH1D(Name,"",9,1,10);
+      //Interacting_NTracks[i][j]->Sumw2();
+      Interacting_NTracks[i][j]->GetXaxis()->SetTitle("Number of reconstructed tracks");
+      Interacting_NTracks[i][j]->GetYaxis()->SetTitle("Number of events");
 
-    sprintf(Name,"Selected_Momentum[%d][%d]",i,j);
-    Selected_Momentum[i][j] = new TH1D(Name,"",200,0,10);
+      sprintf(Name,"Selected_Momentum[%d][%d]",i,j);
+      Selected_Momentum[i][j] = new TH1D(Name,"",200,0,10);
 
-    sprintf(Name,"PID_Selected_IronDistance[%d][%d]",i,j);
-    PID_Selected_IronDistance[i][j] = new TH1D(Name,"",20,0,100);
-    sprintf(Name,"PIDAndMatching_Selected_IronDistance[%d][%d]",i,j);
-    PIDAndMatching_Selected_IronDistance[i][j] = new TH1D(Name,"",20,0,100);
+      sprintf(Name,"PID_Selected_IronDistance[%d][%d]",i,j);
+      PID_Selected_IronDistance[i][j] = new TH1D(Name,"",20,0,100);
+      sprintf(Name,"PIDAndMatching_Selected_IronDistance[%d][%d]",i,j);
+      PIDAndMatching_Selected_IronDistance[i][j] = new TH1D(Name,"",20,0,100);
 
-    sprintf(Name,"PID_Selected_ReconstructedAngle[%d][%d]",i,j);
-    PID_Selected_ReconstructedAngle[i][j] = new TH1D(Name,"",30,0,90);
-    sprintf(Name,"PIDAndMatching_Selected_ReconstructedAngle[%d][%d]",i,j);
-    PIDAndMatching_Selected_ReconstructedAngle[i][j] = new TH1D(Name,"",30,0,90);
+      sprintf(Name,"PID_Selected_ReconstructedAngle[%d][%d]",i,j);
+      PID_Selected_ReconstructedAngle[i][j] = new TH1D(Name,"",30,0,90);
+      sprintf(Name,"PIDAndMatching_Selected_ReconstructedAngle[%d][%d]",i,j);
+      PIDAndMatching_Selected_ReconstructedAngle[i][j] = new TH1D(Name,"",30,0,90);
 
 
-    //Selected_Momentum[i][j]->Sumw2();
-    sprintf(Name,"Reconstructed_Momentum[%d][%d]",i,j);
-    Reconstructed_Momentum[i][j] = new TH1D(Name,"",200,0,10);
-    //Reconstructed_Momentum[i][j]->Sumw2();
-    sprintf(Name,"Interacting_Momentum[%d][%d]",i,j);
-    Interacting_Momentum[i][j] = new TH1D(Name,"",200,0,10);
-    //Interacting_Momentum[i][j]->Sumw2();
+      //Selected_Momentum[i][j]->Sumw2();
+      sprintf(Name,"Reconstructed_Momentum[%d][%d]",i,j);
+      Reconstructed_Momentum[i][j] = new TH1D(Name,"",200,0,10);
+      //Reconstructed_Momentum[i][j]->Sumw2();
+      sprintf(Name,"Interacting_Momentum[%d][%d]",i,j);
+      Interacting_Momentum[i][j] = new TH1D(Name,"",200,0,10);
+      //Interacting_Momentum[i][j]->Sumw2();
 
-    sprintf(Name,"Selected_IronDistance[%d][%d]",i,j);
-    Selected_IronDistance[i][j] = new TH1D(Name,"",20,0,100);
+      sprintf(Name,"Selected_IronDistance[%d][%d]",i,j);
+      Selected_IronDistance[i][j] = new TH1D(Name,"",20,0,100);
    
-    sprintf(Name,"Reconstructed_IronDistance[%d][%d]",i,j);
-    Reconstructed_IronDistance[i][j] = new TH1D(Name,"",20,0,100);
-    //Reconstructed_IronDistance[i][j]->Sumw2();
-    sprintf(Name,"Interacting_IronDistance[%d][%d]",i,j);
-    Interacting_IronDistance[i][j] = new TH1D(Name,"",20,0,100);
-    //Interacting_IronDistance[i][j]->Sumw2();
+      sprintf(Name,"Reconstructed_IronDistance[%d][%d]",i,j);
+      Reconstructed_IronDistance[i][j] = new TH1D(Name,"",20,0,100);
+      //Reconstructed_IronDistance[i][j]->Sumw2();
+      sprintf(Name,"Interacting_IronDistance[%d][%d]",i,j);
+      Interacting_IronDistance[i][j] = new TH1D(Name,"",20,0,100);
+      //Interacting_IronDistance[i][j]->Sumw2();
 
-    sprintf(Name,"Selected_Angle[%d][%d]",i,j);
-    Selected_Angle[i][j] = new TH1D(Name,"",30,0,90);
-    //Selected_Angle[i][j]->Sumw2();
-    sprintf(Name,"Reconstructed_Angle[%d][%d]",i,j);
-    Reconstructed_Angle[i][j] = new TH1D(Name,"",30,0,90);
-    //Reconstructed_Angle[i][j]->Sumw2();
-    sprintf(Name,"Interacting_Angle[%d][%d]",i,j);
-    Interacting_Angle[i][j] = new TH1D(Name,"",30,0,90);
-    //Interacting_Angle[i][j]->Sumw2();
+      sprintf(Name,"Selected_Angle[%d][%d]",i,j);
+      Selected_Angle[i][j] = new TH1D(Name,"",30,0,90);
+      //Selected_Angle[i][j]->Sumw2();
+      sprintf(Name,"Reconstructed_Angle[%d][%d]",i,j);
+      Reconstructed_Angle[i][j] = new TH1D(Name,"",30,0,90);
+      //Reconstructed_Angle[i][j]->Sumw2();
+      sprintf(Name,"Interacting_Angle[%d][%d]",i,j);
+      Interacting_Angle[i][j] = new TH1D(Name,"",30,0,90);
+      //Interacting_Angle[i][j]->Sumw2();
 
-    sprintf(Name,"Selected_ReconstructedAngle[%d][%d]",i,j);
-    Selected_ReconstructedAngle[i][j] = new TH1D(Name,"",30,0,90);
-    //Selected_ReconstructedAngle[i][j]->Sumw2();
-    sprintf(Name,"Reconstructed_ReconstructedAngle[%d][%d]",i,j);
-    Reconstructed_ReconstructedAngle[i][j] = new TH1D(Name,"",30,0,90);
-    //Reconstructed_ReconstructedAngle[i][j]->Sumw2();
-    sprintf(Name,"Interacting_ReconstructedAngle[%d][%d]",i,j);
-    Interacting_ReconstructedAngle[i][j] = new TH1D(Name,"",30,0,90);
-    //Interacting_ReconstructedAngle[i][j]->Sumw2();
+      sprintf(Name,"Selected_ReconstructedAngle[%d][%d]",i,j);
+      Selected_ReconstructedAngle[i][j] = new TH1D(Name,"",30,0,90);
+      //Selected_ReconstructedAngle[i][j]->Sumw2();
+      sprintf(Name,"Reconstructed_ReconstructedAngle[%d][%d]",i,j);
+      Reconstructed_ReconstructedAngle[i][j] = new TH1D(Name,"",30,0,90);
+      //Reconstructed_ReconstructedAngle[i][j]->Sumw2();
+      sprintf(Name,"Interacting_ReconstructedAngle[%d][%d]",i,j);
+      Interacting_ReconstructedAngle[i][j] = new TH1D(Name,"",30,0,90);
+      //Interacting_ReconstructedAngle[i][j]->Sumw2();
 
     }
   }
@@ -744,243 +745,243 @@ sprintf(Name,"InFV_Interacting[%d]",j);
      
     if(IsFV) InFV_Interacting[FSIInt]->Fill(Enu,weight);
     bool FirstRec=true;
-      for(int irec=0;irec<nIngBasRec;irec++){
-	bool Trash=false;
-	//cout<<"new rec"<<endl;
-	bool MuonFound=false;
-	int MuonTrue;int MuonRec=0;
-	//if(weight>1e3) continue;//cout<<weight<<endl;
-	CountSand++;//=weight; 
-	//weight*=1.1;
-	//if(IsSand) cout<<FSIInt<<", "<<Sample[irec][MuonRec]<<endl;
-	//cout<<"ok"<<endl;
-	if(IsDetected[irec]){
-	  if(IsFV && FirstRec){
-	    InFV_Reconstructed[FSIInt]->Fill(Enu,weight);
-	    //FirstRec=false;
-	  } 
-	  //if(FSIInt==5) cout<<"yeah="<<FSIInt<<endl;    
-
-	  //IronDistance[irec][MuonRec]=IronDistance[irec][MuonRec]+(PlasticDistance[irec][MuonRec]/IronCarbonRatio);
-	  //if(VertexZ[irec]>10) continue;
-	  //if(IsAnti) cout<<"IsAnti, weight="<<weight<<endl;
-	//else cout<<weight<<endl;
-	  //cout<<"IsFV, interaction="<<FSIInt<<endl;
-	  if(nTracks[irec]>20) nTracks[irec]=20;
-	  for(int itrk=0;itrk<nTracks[irec];itrk++){
-	    //cout<<"before test"<<endl;
-	    if(IsReconstructed[irec][itrk]){
-	      IronDistance[irec][itrk]=IronDistance[irec][itrk]+(PlasticDistance[irec][itrk]/IronCarbonRatio);
-	      double Test=r1->Uniform();
-	      if(Sample[irec][itrk]==5 && IronDistance[irec][itrk]>58.5 && Test>0.95) Sample[irec][itrk]=4;
- 
-	      //if(nTracks[irec]==1) cout<<"Track sample="<<Sample[irec][itrk]<<endl;
-	      if(CLMuon[irec][itrk]!=CLMuon[irec][itrk] || CLMuon[irec][itrk]==-1){ Trash=true;continue;}
-	      if(TypeOfTrack[irec][itrk]==0){
-		MuonTrue=itrk;
-		if(Sample[irec][itrk]==4) MomentumXIron_ReconstructedForTrueMuon->Fill(TrueMomentumMuon,IronDistance[irec][itrk],weight);
-		if(Sample[irec][itrk]==5) AngleRecXTrue->Fill(TrueAngleMuon,TrackAngle[irec][itrk],weight);
-	      }
-	      //cout<<CLMuon[irec][itrk]<<", "<<CLMuon[irec][MuonRec]<<endl;
-	      if(CLMuon[irec][itrk]>=CLMuon[irec][MuonRec]) MuonRec=itrk;
-	      //cout<<Sample[irec][itrk]<<", "<<FSIInt<<", irec="<<irec<<", MuonRec="<<MuonRec<<endl;
-	      MuonFound=true;
-	    }
-	  }
-	  if(Trash) continue; 
-	  NTracksTotal->Fill(nTracks[irec],weight);
-	  if(!MuonFound) continue;
-	  //if(IsBkgH) cout<<"Is Bkg Horiz, weight="<<weight<<endl;
-	  //if(IsBkgV) cout<<"Is Bkg Verti, weight="<<weight<<endl;
-	  //if(IsNuE) cout<<"Is NuE, weight="<<weight<<endl;
-	  bool FirstSample4=true;
-	  bool FirstSample5=true;
-	  for(int itrk=0;itrk<nTracks[irec];itrk++){
-	    if(IsReconstructed[irec][itrk]==true){
-	      if(Sample[irec][itrk]>=4){
-		if(IsNuE) TrackWidthXIronDistance_NuE->Fill(IronDistance[irec][itrk],TrackWidth[irec][itrk],weight);
-		else if(!IsNuE && !IsSand && !IsAnti && !IsBkgH && !IsBkgV) TrackWidthXIronDistance->Fill(IronDistance[irec][itrk],TrackWidth[irec][itrk],weight);
-	      }
-	      if(Sample[irec][itrk]==5) AngleTotal->Fill(TrackAngle[irec][itrk],weight);
-	      CLMuonTotal->Fill(CLMuon[irec][itrk],weight);
-
-	      if(TypeOfTrack[irec][itrk]<3) CLMuon_Distribution_Particle[Sample[irec][itrk]][TypeOfTrack[irec][itrk]]->Fill(CLMuon[irec][itrk],weight);
-	      CLMuon_Distribution[Sample[irec][itrk]]->Fill(CLMuon[irec][itrk],weight);
-	      SampleTotal->Fill(Sample[irec][itrk],weight);
-
-	      if(Sample[irec][itrk]==5){
-		if(FirstSample5){
-		  if(IsFV && FirstRec) Reconstructed_NTracks_ATrackIsSample5[FSIInt]->Fill(nTracks[irec],weight);
-		  Selected_NTracks_ATrackIsSample5[FSIInt]->Fill(nTracks[irec],weight);
-		  FirstSample5=false;
-		}
-	      }
-	      if(Sample[irec][itrk]==4){
-		if(FirstSample4){
-		  if(IsFV && FirstRec){
-		    Reconstructed_NTracks_ATrackIsSample4[FSIInt]->Fill(nTracks[irec],weight);
-		    /*		    if(FSIInt==1){
-		      cout<<"Is a track, weight="<<weight<<endl;
-		      cout<<"Integral="<<Reconstructed_NTracks_ATrackIsSample4[FSIInt]->Integral();
-		    }
-*/
-		  }
-		  Selected_NTracks_ATrackIsSample4[FSIInt]->Fill(nTracks[irec],weight);
-		  FirstSample4=false;
-		}
-		IronDistanceTotal->Fill(IronDistance[irec][itrk],weight);
-		NTracksTotalSample4->Fill(nTracks[irec],weight);
-		if(nTracks[irec]==1) IronDistanceTotalSample4_1Track->Fill(IronDistance[irec][itrk],weight);
-		if(nTracks[irec]==2){
-		  if(itrk==MuonRec) IronDistanceTotalSample4_2Tracks->Fill(IronDistance[irec][MuonRec],weight);
-		  for(int itrk2=0;itrk2<nTracks[irec];itrk2++){
-		    if(itrk==itrk2) continue;
-		    SampleTotalSample4->Fill(Sample[irec][itrk2],weight);
-		  }
-		}
-	      }
-	    }
-	  }
-
-	  //if(Sample[irec][MuonRec]==4) IronDistanceTotal->Fill(IronDistance[irec][MuonRec],weight);
-	  //if(Sample[irec][MuonRec]==5) AngleTotal->Fill(TrackAngle[irec][MuonRec],weight);
-	  //if(IronDistance[irec][MuonRec]>=58.5){Sample[irec][MuonRec]=4; cout<<"Careful, change this value for sample through going plots!!!!!!!"<<endl;}
-	  //cout<<"ntracks="<<nTracks[irec]<<", test="<<Sample[irec][MuonRec]<<", "<<FSIInt<<", irec="<<irec<<", MuonRec="<<MuonRec<<endl;
-
-	   if(IsFV && FirstRec) Reconstructed_NTracks[Sample[irec][MuonRec]][FSIInt]->Fill(nTracks[irec],weight);
-	    Reconstructed_Momentum[Sample[irec][MuonRec]][FSIInt]->Fill(TrueMomentumMuon,weight);
-	    Reconstructed_IronDistance[Sample[irec][MuonRec]][FSIInt]->Fill(IronDistance[irec][MuonRec],weight);
-	    Reconstructed_Angle[Sample[irec][MuonRec]][FSIInt]->Fill(TrueAngleMuon,weight);
-	    Reconstructed_ReconstructedAngle[Sample[irec][MuonRec]][FSIInt]->Fill(TrackAngle[irec][MuonRec],weight);
-	   
-	    for(int itrk=0;itrk<nTracks[irec];itrk++){
-	    if(IsReconstructed[irec][itrk]==true){
-	   
-	      for(double mucl=0;mucl<=1;mucl=mucl+0.1){
-		if(CLMuon[irec][itrk]>=mucl) Selected_Higher[TypeOfTrack[irec][itrk]]->Fill(mucl+1e-3,weight);
-		else if(CLMuon[irec][itrk]<=mucl){
-		  //IsReconstructed[irec][itrk]=0;
-		  //cout<<"type="<<TypeOfTrack[irec][itrk]<<", is rec="<<IsReconstructed[irec][itrk]<<endl;
-		  Selected_Lower[TypeOfTrack[irec][itrk]]->Fill(mucl+1e-3,weight);
-		  //if(mucl==.7) cout<<"passing"<<endl;
-		}
-		//if(mucl==1) cout<<"interacting"<<endl<<endl;
-		Interacting_Higher[TypeOfTrack[irec][itrk]]->Fill(mucl+1e-3,weight);
-		Interacting_Lower[TypeOfTrack[irec][itrk]]->Fill(mucl+1e-3,weight);
-	      }
-
-	      if(Sample[irec][itrk]==4){
-		if(IronDistance[irec][itrk]>10){
-		  int BinIron=(int) (IronDistance[irec][itrk]/5)-2;
-		  if(IronDistance[irec][itrk]>90) BinIron=NBinsIron-1;
-		  hCriteriaAngleXY[BinIron]->Fill(CriteriaAngleX[irec][itrk],CriteriaAngleY[irec][itrk],weight);
-		  hCriteriaHalfWayXY[BinIron]->Fill(CriteriaHalfWayX[irec][itrk],CriteriaHalfWayY[irec][itrk],weight);
-		}
-	      }
-	      hCriteriaHalfWayX[Sample[irec][itrk]]->Fill(IronDistance[irec][itrk],CriteriaHalfWayX[irec][itrk],weight);
-	      hCriteriaHalfWayY[Sample[irec][itrk]]->Fill(IronDistance[irec][itrk],CriteriaHalfWayY[irec][itrk],weight);
-	      hCriteriaAngleX[Sample[irec][itrk]]->Fill(IronDistance[irec][itrk],CriteriaAngleX[irec][itrk],weight);
-	      hCriteriaAngleY[Sample[irec][itrk]]->Fill(IronDistance[irec][itrk],CriteriaAngleY[irec][itrk],weight);
-	    
-
-	    }
-	    }
-	
-	    if((nTracks[irec]==1 && CLMuon[irec][0]>0.7) || ((nTracks[irec]==2 && TMath::Max(CLMuon[irec][0],CLMuon[irec][1])>0.7 && TMath::Min(CLMuon[irec][0],CLMuon[irec][1])<0.3) && (TMath::Min(CLMuon[irec][0],CLMuon[irec][1])>=0)) || ((nTracks[irec]==3 && CLMuon[irec][MuonRec]>0.7 && CLMuon[irec][(MuonRec+1)%3]<0.3 && CLMuon[irec][(MuonRec+2)%3]<0.3)) || ((nTracks[irec]==4 && CLMuon[irec][MuonRec]>0.7 && CLMuon[irec][(MuonRec+1)%4]<0.3 && CLMuon[irec][(MuonRec+2)%4]<0.3 && CLMuon[irec][(MuonRec+3)%4]<0.3))){
-	      //if(FSIInt==1 && Sample[irec][MuonRec]==4) cout<<"The interaction is Selected, weight="<<weight<<endl;
-
-	    
-	      //if(Sample[irec][MuonRec]==4 && PlasticDistance[irec][MuonRec]<25) continue;
-	      //if(Sample[irec][MuonRec]>=4) TrackWidthXIronDistance->Fill(IronDistance[irec][MuonRec],TrackWidth[irec][MuonRec],weight);
-
-	      if(Sample[irec][MuonRec]==4 && IronDistance[irec][MuonRec]<17){
-		Problematic_PlasticDistance->Fill(PlasticDistance[irec][MuonRec],weight);
-		Problematic_Angle->Fill(TrackAngle[irec][MuonRec],weight);
-		Problematic_NTracks->Fill(nTracks[irec],weight);
-		Problematic_CLMuon->Fill(CLMuon[irec][MuonRec],weight);
-		Problematic_TrackWidth->Fill(TrackWidth[irec][MuonRec],weight);
-		Problematic_Geom->Fill(GeometricTrack[irec][MuonRec],weight);
-		int LS;
-		if(TMath::Abs(LastChannelINGRIDX[irec][MuonRec]-11.5)>TMath::Abs(LastChannelINGRIDY[irec][MuonRec]-11.5)) LS=LastChannelINGRIDX[irec][MuonRec];
-		else LS=LastChannelINGRIDY[irec][MuonRec];
-		Problematic_LastChannel->Fill(LS,weight);
-
-	      }
-	      //if(Sample[irec][MuonRec]==4 /*&& IronDistance[irec][MuonRec]<25*/ && (CriteriaAngleX[irec][MuonRec]>25 || CriteriaAngleY[irec][MuonRec]>25 || CriteriaHalfWayX[irec][MuonRec]>7 || CriteriaHalfWayY[irec][MuonRec]>7 || TrackWidth[irec][MuonRec]>1.1)) continue; /*
-	      //if(Sample[irec][MuonRec]==4 && TrackWidth[irec][MuonRec]>1.1 && IronDistance[irec][MuonRec]<25) continue;	      
-	      //if(Sample[irec][MuonRec]==4 && TrackWidth[irec][MuonRec]>1.5 && IronDistance[irec][MuonRec]>25) continue;	 
-	      PID_Selected_IronDistance[Sample[irec][MuonRec]][FSIInt]->Fill(IronDistance[irec][MuonRec],weight);
-	      PID_Selected_ReconstructedAngle[Sample[irec][MuonRec]][FSIInt]->Fill(TrackAngle[irec][MuonRec],weight);
-
-	      if(Sample[irec][MuonRec]==4){
-		INGRIDAngleCriteria[FSIInt]->Fill(max(CriteriaAngleX[irec][MuonRec],CriteriaAngleY[irec][MuonRec]),weight);
-		INGRIDPositionCriteria[FSIInt]->Fill(max(CriteriaHalfWayX[irec][MuonRec],CriteriaHalfWayY[irec][MuonRec]),weight);
-	      }
-
-
-	      if(Sample[irec][MuonRec]>=4 && (CriteriaAngleX[irec][MuonRec]>25 || CriteriaAngleY[irec][MuonRec]>25 || CriteriaHalfWayX[irec][MuonRec]>7 || CriteriaHalfWayY[irec][MuonRec]>7)) continue; 	      
-	       PIDAndMatching_Selected_IronDistance[Sample[irec][MuonRec]][FSIInt]->Fill(IronDistance[irec][MuonRec],weight);
-	       PIDAndMatching_Selected_ReconstructedAngle[Sample[irec][MuonRec]][FSIInt]->Fill(TrackAngle[irec][MuonRec],weight);
-
-	 
-	      if(Sample[irec][MuonRec]>=4){
-		if(Sample[irec][MuonRec]==4) INGRIDTrackWidth[FSIInt]->Fill(TrackWidth[irec][MuonRec],weight);
-		if(TrackWidth[irec][MuonRec]>1.1 && IronDistance[irec][MuonRec]<15) continue;
-		else if(TrackWidth[irec][MuonRec]>1.2 && IronDistance[irec][MuonRec]<20) continue;
-	      	else if(TrackWidth[irec][MuonRec]>1.3 && IronDistance[irec][MuonRec]<30) continue;
-		else if(TrackWidth[irec][MuonRec]>1.5) continue;
-	      }
-	      
-	      //else if(Sample[irec][MuonRec]==4 && TrackWidth[irec][MuonRec]>1.1 && IronDistance[irec][MuonRec]<15) continue;	      
-	      //if(Sample[irec][MuonRec]==4 && TrackWidth[irec][MuonRec]>1.5 && IronDistance[irec][MuonRec]>25) continue;	  
-	      if(Sample[irec][MuonRec]==5) AngleRecXTrue_Selected->Fill(TrueAngleMuon,TrackAngle[irec][MuonRec],weight);
-	      //if(FSIInt==5) cout<<weight<<endl;
-	      //if(FSIInt==1 && Sample[irec][MuonRec]==4) cout<<"The interaction is finally Selected, weight="<<weight<<endl;
-
-	    Selected_NTracks[Sample[irec][MuonRec]][FSIInt]->Fill(nTracks[irec],weight);
-	    /*	      if(FSIInt==1 && Sample[irec][MuonRec]==4){
-		cout<<"The interaction is finally Selected, weight="<<weight<<endl;
-		cout<<"Integral="<< Selected_NTracks[Sample[irec][MuonRec]][FSIInt]->Integral();
-	      }
-	    */
-	    if(Sample[irec][MuonRec]==4) Selected2D->Fill(IronDistance[irec][MuonRec],TrackAngle[irec][MuonRec],weight);
-
-	    Selected_Momentum[Sample[irec][MuonRec]][FSIInt]->Fill(TrueMomentumMuon,weight);
-	    Selected_IronDistance[Sample[irec][MuonRec]][FSIInt]->Fill(IronDistance[irec][MuonRec],weight);
-	    Selected_IronDistance_MC[Sample[irec][MuonRec]]->Fill(IronDistance[irec][MuonRec],weight);
-	    Selected_Angle[Sample[irec][MuonRec]][FSIInt]->Fill(TrueAngleMuon,weight);
-	    Selected_ReconstructedAngle[Sample[irec][MuonRec]][FSIInt]->Fill(TrackAngle[irec][MuonRec],weight);
-	    }
-	    //if(IsFV){
-	      //Interacting_NuE[Sample[irec][MuonRec]][FSIInt]->Fill(Enu,weight);
-	      Interacting_NTracks[Sample[irec][MuonRec]][FSIInt]->Fill(nTracks[irec],weight);
-	      Interacting_Momentum[Sample[irec][MuonRec]][FSIInt]->Fill(TrueMomentumMuon,weight);
-	      Interacting_IronDistance[Sample[irec][MuonRec]][FSIInt]->Fill(IronDistance[irec][MuonRec],weight);
-	      Interacting_Angle[Sample[irec][MuonRec]][FSIInt]->Fill(TrueAngleMuon,weight);
-	      Interacting_ReconstructedAngle[Sample[irec][MuonRec]][FSIInt]->Fill(TrackAngle[irec][MuonRec],weight);
-	      //}
-	      if(FirstRec) FirstRec=false;
+    for(int irec=0;irec<nIngBasRec;irec++){
+      bool Trash=false;
+      //cout<<"new rec"<<endl;
+      bool MuonFound=false;
+      int MuonTrue;int MuonRec=0;
+      //if(weight>1e3) continue;//cout<<weight<<endl;
+      CountSand++;//=weight; 
+      //weight*=1.1;
+      //if(IsSand) cout<<FSIInt<<", "<<Sample[irec][MuonRec]<<endl;
+      //cout<<"ok"<<endl;
+      if(IsDetected[irec]){
+	if(IsFV && FirstRec){
+	  InFV_Reconstructed[FSIInt]->Fill(Enu,weight);
+	  //FirstRec=false;
 	} 
-	 
+	//if(FSIInt==5) cout<<"yeah="<<FSIInt<<endl;    
+
+	//IronDistance[irec][MuonRec]=IronDistance[irec][MuonRec]+(PlasticDistance[irec][MuonRec]/IronCarbonRatio);
+	//if(VertexZ[irec]>10) continue;
+	//if(IsAnti) cout<<"IsAnti, weight="<<weight<<endl;
+	//else cout<<weight<<endl;
+	//cout<<"IsFV, interaction="<<FSIInt<<endl;
+	if(nTracks[irec]>20) nTracks[irec]=20;
+	for(int itrk=0;itrk<nTracks[irec];itrk++){
+	  //cout<<"before test"<<endl;
+	  if(IsReconstructed[irec][itrk]){
+	    IronDistance[irec][itrk]=IronDistance[irec][itrk]+(PlasticDistance[irec][itrk]/IronCarbonRatio);
+	    double Test=r1->Uniform();
+	    if(Sample[irec][itrk]==5 && IronDistance[irec][itrk]>58.5 && Test>0.95) Sample[irec][itrk]=4;
+ 
+	    //if(nTracks[irec]==1) cout<<"Track sample="<<Sample[irec][itrk]<<endl;
+	    if(CLMuon[irec][itrk]!=CLMuon[irec][itrk] || CLMuon[irec][itrk]==-1){ Trash=true;continue;}
+	    if(TypeOfTrack[irec][itrk]==0){
+	      MuonTrue=itrk;
+	      if(Sample[irec][itrk]==4) MomentumXIron_ReconstructedForTrueMuon->Fill(TrueMomentumMuon,IronDistance[irec][itrk],weight);
+	      if(Sample[irec][itrk]==5) AngleRecXTrue->Fill(TrueAngleMuon,TrackAngle[irec][itrk],weight);
+	    }
+	    //cout<<CLMuon[irec][itrk]<<", "<<CLMuon[irec][MuonRec]<<endl;
+	    if(CLMuon[irec][itrk]>=CLMuon[irec][MuonRec]) MuonRec=itrk;
+	    //cout<<Sample[irec][itrk]<<", "<<FSIInt<<", irec="<<irec<<", MuonRec="<<MuonRec<<endl;
+	    MuonFound=true;
+	  }
 	}
-      }
-      //}
+	if(Trash) continue; 
+	NTracksTotal->Fill(nTracks[irec],weight);
+	if(!MuonFound) continue;
+	//if(IsBkgH) cout<<"Is Bkg Horiz, weight="<<weight<<endl;
+	//if(IsBkgV) cout<<"Is Bkg Verti, weight="<<weight<<endl;
+	//if(IsNuE) cout<<"Is NuE, weight="<<weight<<endl;
+	bool FirstSample4=true;
+	bool FirstSample5=true;
+	for(int itrk=0;itrk<nTracks[irec];itrk++){
+	  if(IsReconstructed[irec][itrk]==true){
+	    if(Sample[irec][itrk]>=4){
+	      if(IsNuE) TrackWidthXIronDistance_NuE->Fill(IronDistance[irec][itrk],TrackWidth[irec][itrk],weight);
+	      else if(!IsNuE && !IsSand && !IsAnti && !IsBkgH && !IsBkgV) TrackWidthXIronDistance->Fill(IronDistance[irec][itrk],TrackWidth[irec][itrk],weight);
+	    }
+	    if(Sample[irec][itrk]==5) AngleTotal->Fill(TrackAngle[irec][itrk],weight);
+	    CLMuonTotal->Fill(CLMuon[irec][itrk],weight);
+
+	    if(TypeOfTrack[irec][itrk]<3) CLMuon_Distribution_Particle[Sample[irec][itrk]][TypeOfTrack[irec][itrk]]->Fill(CLMuon[irec][itrk],weight);
+	    CLMuon_Distribution[Sample[irec][itrk]]->Fill(CLMuon[irec][itrk],weight);
+	    SampleTotal->Fill(Sample[irec][itrk],weight);
+
+	    if(Sample[irec][itrk]==5){
+	      if(FirstSample5){
+		if(IsFV && FirstRec) Reconstructed_NTracks_ATrackIsSample5[FSIInt]->Fill(nTracks[irec],weight);
+		Selected_NTracks_ATrackIsSample5[FSIInt]->Fill(nTracks[irec],weight);
+		FirstSample5=false;
+	      }
+	    }
+	    if(Sample[irec][itrk]==4){
+	      if(FirstSample4){
+		if(IsFV && FirstRec){
+		  Reconstructed_NTracks_ATrackIsSample4[FSIInt]->Fill(nTracks[irec],weight);
+		  /*		    if(FSIInt==1){
+		    cout<<"Is a track, weight="<<weight<<endl;
+		    cout<<"Integral="<<Reconstructed_NTracks_ATrackIsSample4[FSIInt]->Integral();
+		    }
+		  */
+		}
+		Selected_NTracks_ATrackIsSample4[FSIInt]->Fill(nTracks[irec],weight);
+		FirstSample4=false;
+	      }
+	      IronDistanceTotal->Fill(IronDistance[irec][itrk],weight);
+	      NTracksTotalSample4->Fill(nTracks[irec],weight);
+	      if(nTracks[irec]==1) IronDistanceTotalSample4_1Track->Fill(IronDistance[irec][itrk],weight);
+	      if(nTracks[irec]==2){
+		if(itrk==MuonRec) IronDistanceTotalSample4_2Tracks->Fill(IronDistance[irec][MuonRec],weight);
+		for(int itrk2=0;itrk2<nTracks[irec];itrk2++){
+		  if(itrk==itrk2) continue;
+		  SampleTotalSample4->Fill(Sample[irec][itrk2],weight);
+		}
+	      }
+	    }
+	  }
+	}
+
+	//if(Sample[irec][MuonRec]==4) IronDistanceTotal->Fill(IronDistance[irec][MuonRec],weight);
+	//if(Sample[irec][MuonRec]==5) AngleTotal->Fill(TrackAngle[irec][MuonRec],weight);
+	//if(IronDistance[irec][MuonRec]>=58.5){Sample[irec][MuonRec]=4; cout<<"Careful, change this value for sample through going plots!!!!!!!"<<endl;}
+	//cout<<"ntracks="<<nTracks[irec]<<", test="<<Sample[irec][MuonRec]<<", "<<FSIInt<<", irec="<<irec<<", MuonRec="<<MuonRec<<endl;
+
+	if(IsFV && FirstRec) Reconstructed_NTracks[Sample[irec][MuonRec]][FSIInt]->Fill(nTracks[irec],weight);
+	Reconstructed_Momentum[Sample[irec][MuonRec]][FSIInt]->Fill(TrueMomentumMuon,weight);
+	Reconstructed_IronDistance[Sample[irec][MuonRec]][FSIInt]->Fill(IronDistance[irec][MuonRec],weight);
+	Reconstructed_Angle[Sample[irec][MuonRec]][FSIInt]->Fill(TrueAngleMuon,weight);
+	Reconstructed_ReconstructedAngle[Sample[irec][MuonRec]][FSIInt]->Fill(TrackAngle[irec][MuonRec],weight);
+	   
+	for(int itrk=0;itrk<nTracks[irec];itrk++){
+	  if(IsReconstructed[irec][itrk]==true){
+	   
+	    for(double mucl=0;mucl<=1;mucl=mucl+0.1){
+	      if(CLMuon[irec][itrk]>=mucl) Selected_Higher[TypeOfTrack[irec][itrk]]->Fill(mucl+1e-3,weight);
+	      else if(CLMuon[irec][itrk]<=mucl){
+		//IsReconstructed[irec][itrk]=0;
+		//cout<<"type="<<TypeOfTrack[irec][itrk]<<", is rec="<<IsReconstructed[irec][itrk]<<endl;
+		Selected_Lower[TypeOfTrack[irec][itrk]]->Fill(mucl+1e-3,weight);
+		//if(mucl==.7) cout<<"passing"<<endl;
+	      }
+	      //if(mucl==1) cout<<"interacting"<<endl<<endl;
+	      Interacting_Higher[TypeOfTrack[irec][itrk]]->Fill(mucl+1e-3,weight);
+	      Interacting_Lower[TypeOfTrack[irec][itrk]]->Fill(mucl+1e-3,weight);
+	    }
+
+	    if(Sample[irec][itrk]==4){
+	      if(IronDistance[irec][itrk]>10){
+		int BinIron=(int) (IronDistance[irec][itrk]/5)-2;
+		if(IronDistance[irec][itrk]>90) BinIron=NBinsIron-1;
+		hCriteriaAngleXY[BinIron]->Fill(CriteriaAngleX[irec][itrk],CriteriaAngleY[irec][itrk],weight);
+		hCriteriaHalfWayXY[BinIron]->Fill(CriteriaHalfWayX[irec][itrk],CriteriaHalfWayY[irec][itrk],weight);
+	      }
+	    }
+	    hCriteriaHalfWayX[Sample[irec][itrk]]->Fill(IronDistance[irec][itrk],CriteriaHalfWayX[irec][itrk],weight);
+	    hCriteriaHalfWayY[Sample[irec][itrk]]->Fill(IronDistance[irec][itrk],CriteriaHalfWayY[irec][itrk],weight);
+	    hCriteriaAngleX[Sample[irec][itrk]]->Fill(IronDistance[irec][itrk],CriteriaAngleX[irec][itrk],weight);
+	    hCriteriaAngleY[Sample[irec][itrk]]->Fill(IronDistance[irec][itrk],CriteriaAngleY[irec][itrk],weight);
+	    
+
+	  }
+	}
+	
+	if((nTracks[irec]==1 && CLMuon[irec][0]>0.7) || ((nTracks[irec]==2 && TMath::Max(CLMuon[irec][0],CLMuon[irec][1])>0.7 && TMath::Min(CLMuon[irec][0],CLMuon[irec][1])<0.3) && (TMath::Min(CLMuon[irec][0],CLMuon[irec][1])>=0)) || ((nTracks[irec]==3 && CLMuon[irec][MuonRec]>0.7 && CLMuon[irec][(MuonRec+1)%3]<0.3 && CLMuon[irec][(MuonRec+2)%3]<0.3)) || ((nTracks[irec]==4 && CLMuon[irec][MuonRec]>0.7 && CLMuon[irec][(MuonRec+1)%4]<0.3 && CLMuon[irec][(MuonRec+2)%4]<0.3 && CLMuon[irec][(MuonRec+3)%4]<0.3))){
+	  //if(FSIInt==1 && Sample[irec][MuonRec]==4) cout<<"The interaction is Selected, weight="<<weight<<endl;
+
+	    
+	  //if(Sample[irec][MuonRec]==4 && PlasticDistance[irec][MuonRec]<25) continue;
+	  //if(Sample[irec][MuonRec]>=4) TrackWidthXIronDistance->Fill(IronDistance[irec][MuonRec],TrackWidth[irec][MuonRec],weight);
+
+	  if(Sample[irec][MuonRec]==4 && IronDistance[irec][MuonRec]<17){
+	    Problematic_PlasticDistance->Fill(PlasticDistance[irec][MuonRec],weight);
+	    Problematic_Angle->Fill(TrackAngle[irec][MuonRec],weight);
+	    Problematic_NTracks->Fill(nTracks[irec],weight);
+	    Problematic_CLMuon->Fill(CLMuon[irec][MuonRec],weight);
+	    Problematic_TrackWidth->Fill(TrackWidth[irec][MuonRec],weight);
+	    Problematic_Geom->Fill(GeometricTrack[irec][MuonRec],weight);
+	    int LS;
+	    if(TMath::Abs(LastChannelINGRIDX[irec][MuonRec]-11.5)>TMath::Abs(LastChannelINGRIDY[irec][MuonRec]-11.5)) LS=LastChannelINGRIDX[irec][MuonRec];
+	    else LS=LastChannelINGRIDY[irec][MuonRec];
+	    Problematic_LastChannel->Fill(LS,weight);
+
+	  }
+	  //if(Sample[irec][MuonRec]==4 /*&& IronDistance[irec][MuonRec]<25*/ && (CriteriaAngleX[irec][MuonRec]>25 || CriteriaAngleY[irec][MuonRec]>25 || CriteriaHalfWayX[irec][MuonRec]>7 || CriteriaHalfWayY[irec][MuonRec]>7 || TrackWidth[irec][MuonRec]>1.1)) continue; /*
+	  //if(Sample[irec][MuonRec]==4 && TrackWidth[irec][MuonRec]>1.1 && IronDistance[irec][MuonRec]<25) continue;	      
+	  //if(Sample[irec][MuonRec]==4 && TrackWidth[irec][MuonRec]>1.5 && IronDistance[irec][MuonRec]>25) continue;	 
+	  PID_Selected_IronDistance[Sample[irec][MuonRec]][FSIInt]->Fill(IronDistance[irec][MuonRec],weight);
+	  PID_Selected_ReconstructedAngle[Sample[irec][MuonRec]][FSIInt]->Fill(TrackAngle[irec][MuonRec],weight);
+
+	  if(Sample[irec][MuonRec]==4){
+	    INGRIDAngleCriteria[FSIInt]->Fill(max(CriteriaAngleX[irec][MuonRec],CriteriaAngleY[irec][MuonRec]),weight);
+	    INGRIDPositionCriteria[FSIInt]->Fill(max(CriteriaHalfWayX[irec][MuonRec],CriteriaHalfWayY[irec][MuonRec]),weight);
+	  }
+
+
+	  if(Sample[irec][MuonRec]>=4 && (CriteriaAngleX[irec][MuonRec]>25 || CriteriaAngleY[irec][MuonRec]>25 || CriteriaHalfWayX[irec][MuonRec]>7 || CriteriaHalfWayY[irec][MuonRec]>7)) continue; 	      
+	  PIDAndMatching_Selected_IronDistance[Sample[irec][MuonRec]][FSIInt]->Fill(IronDistance[irec][MuonRec],weight);
+	  PIDAndMatching_Selected_ReconstructedAngle[Sample[irec][MuonRec]][FSIInt]->Fill(TrackAngle[irec][MuonRec],weight);
+
+	 
+	  if(Sample[irec][MuonRec]>=4){
+	    if(Sample[irec][MuonRec]==4) INGRIDTrackWidth[FSIInt]->Fill(TrackWidth[irec][MuonRec],weight);
+	    if(TrackWidth[irec][MuonRec]>1.1 && IronDistance[irec][MuonRec]<15) continue;
+	    else if(TrackWidth[irec][MuonRec]>1.2 && IronDistance[irec][MuonRec]<20) continue;
+	    else if(TrackWidth[irec][MuonRec]>1.3 && IronDistance[irec][MuonRec]<30) continue;
+	    else if(TrackWidth[irec][MuonRec]>1.5) continue;
+	  }
+	      
+	  //else if(Sample[irec][MuonRec]==4 && TrackWidth[irec][MuonRec]>1.1 && IronDistance[irec][MuonRec]<15) continue;	      
+	  //if(Sample[irec][MuonRec]==4 && TrackWidth[irec][MuonRec]>1.5 && IronDistance[irec][MuonRec]>25) continue;	  
+	  if(Sample[irec][MuonRec]==5) AngleRecXTrue_Selected->Fill(TrueAngleMuon,TrackAngle[irec][MuonRec],weight);
+	  //if(FSIInt==5) cout<<weight<<endl;
+	  //if(FSIInt==1 && Sample[irec][MuonRec]==4) cout<<"The interaction is finally Selected, weight="<<weight<<endl;
+
+	  Selected_NTracks[Sample[irec][MuonRec]][FSIInt]->Fill(nTracks[irec],weight);
+	  /*	      if(FSIInt==1 && Sample[irec][MuonRec]==4){
+	    cout<<"The interaction is finally Selected, weight="<<weight<<endl;
+	    cout<<"Integral="<< Selected_NTracks[Sample[irec][MuonRec]][FSIInt]->Integral();
+	    }
+	  */
+	  if(Sample[irec][MuonRec]==4) Selected2D->Fill(IronDistance[irec][MuonRec],TrackAngle[irec][MuonRec],weight);
+
+	  Selected_Momentum[Sample[irec][MuonRec]][FSIInt]->Fill(TrueMomentumMuon,weight);
+	  Selected_IronDistance[Sample[irec][MuonRec]][FSIInt]->Fill(IronDistance[irec][MuonRec],weight);
+	  Selected_IronDistance_MC[Sample[irec][MuonRec]]->Fill(IronDistance[irec][MuonRec],weight);
+	  Selected_Angle[Sample[irec][MuonRec]][FSIInt]->Fill(TrueAngleMuon,weight);
+	  Selected_ReconstructedAngle[Sample[irec][MuonRec]][FSIInt]->Fill(TrackAngle[irec][MuonRec],weight);
+	}
+	//if(IsFV){
+	//Interacting_NuE[Sample[irec][MuonRec]][FSIInt]->Fill(Enu,weight);
+	Interacting_NTracks[Sample[irec][MuonRec]][FSIInt]->Fill(nTracks[irec],weight);
+	Interacting_Momentum[Sample[irec][MuonRec]][FSIInt]->Fill(TrueMomentumMuon,weight);
+	Interacting_IronDistance[Sample[irec][MuonRec]][FSIInt]->Fill(IronDistance[irec][MuonRec],weight);
+	Interacting_Angle[Sample[irec][MuonRec]][FSIInt]->Fill(TrueAngleMuon,weight);
+	Interacting_ReconstructedAngle[Sample[irec][MuonRec]][FSIInt]->Fill(TrackAngle[irec][MuonRec],weight);
+	//}
+	if(FirstRec) FirstRec=false;
+      } 
+	 
+    }
+  }
+  //}
   
   cout<<"Number of sands="<<CountSand<<endl;
   TChain * wtreeData = new TChain("wtree");
   for(int i=13000;i<17265;i++){
-  //for(int i=13000;i<17500;i++){
-  //for(int i=14510;i<14511;i++){
+    //for(int i=13000;i<17500;i++){
+    //for(int i=14510;i<14511;i++){
     if(i>=14337 && i<=14429) continue;
     /*
-    if(i<13048) continue;
-    else{
+      if(i<13048) continue;
+      else{
       if(i>13094 && i<13107) continue;
       else if(i>13159 && i<13167) continue;
       else if(i>13175 && i<14510) continue;
       else if(i<16901 && i>14570) continue;
-    }
-  */
+      }
+    */
     //if(i>=16500 && i<=16900) continue;
     //if(i==14500) continue;
     sprintf(Name,"AllCC0pi5/CC0piTree_%d.root",i);
@@ -988,13 +989,13 @@ sprintf(Name,"InFV_Interacting[%d]",j);
   }  
   
   /*
-  for(int i=1;i<=100;i++){
+    for(int i=1;i<=100;i++){
     //sprintf(Name,"CC0piData6/CC0piTree%d.root",i);
     sprintf(Name,"PEError/CC0piTree_%d_PE1.root",i);
     cout<<Name<<endl;
     wtreeData->Add(Name);
-  }
-*/
+    }
+  */
   //wtreeData->Add("AllCC0piData.root");
   int nevtData=(int) wtreeData->GetEntries();
 
@@ -1046,9 +1047,9 @@ sprintf(Name,"InFV_Interacting[%d]",j);
   Br_POT->SetAddress(&POT);
   wtreeData->SetBranchAddress("POT",&POT);
   /*
-  TBranch * Br_VertexZ = wtreeData->GetBranch("VertexZ[10]");
-  Br_VertexZ->SetAddress(&VertexZ);
-  wtreeData->SetBranchAddress("VertexZ[10]",&VertexZ);
+    TBranch * Br_VertexZ = wtreeData->GetBranch("VertexZ[10]");
+    Br_VertexZ->SetAddress(&VertexZ);
+    wtreeData->SetBranchAddress("VertexZ[10]",&VertexZ);
   */
   TBranch * Br_IsDetected = wtreeData->GetBranch("IsDetected[10]");
   Br_IsDetected->SetAddress(&IsDetected);
@@ -1058,7 +1059,7 @@ sprintf(Name,"InFV_Interacting[%d]",j);
   Br_TrackAngle->SetAddress(TrackAngle);
   wtreeData->SetBranchAddress("TrackAngle[10][20]",TrackAngle);
  
- TBranch * Br_TypeOfTrack = wtreeData->GetBranch("TypeOfTrack[10][20]");
+  TBranch * Br_TypeOfTrack = wtreeData->GetBranch("TypeOfTrack[10][20]");
   Br_TypeOfTrack->SetAddress(TypeOfTrack);
   wtreeData->SetBranchAddress("TypeOfTrack[10][20]",TypeOfTrack);
 
@@ -1119,28 +1120,28 @@ sprintf(Name,"InFV_Interacting[%d]",j);
   Br_GeometricTrack->SetAddress(GeometricTrack);
   wtreeData->SetBranchAddress("GeometricTrack[10][20]",GeometricTrack);
 
-    INGRIDTrackWidth_Data = new TH1D("INGRIDTrackWidth_Data","Average track width distribution",40,1,5); 
-    INGRIDTrackWidth_Data->GetXaxis()->SetTitle("Average transverse track width");
-    INGRIDTrackWidth_Data->GetYaxis()->SetTitle("Number of tracks");
+  INGRIDTrackWidth_Data = new TH1D("INGRIDTrackWidth_Data","Average track width distribution",40,1,5); 
+  INGRIDTrackWidth_Data->GetXaxis()->SetTitle("Average transverse track width");
+  INGRIDTrackWidth_Data->GetYaxis()->SetTitle("Number of tracks");
 
-    INGRIDAngleCriteria_Data = new TH1D(Name,"PM and INGRID track angle difference",15,0,45); 
-    INGRIDAngleCriteria_Data->GetXaxis()->SetTitle("Angle difference (#circ)");
-    INGRIDAngleCriteria_Data->GetYaxis()->SetTitle("Number of tracks");
+  INGRIDAngleCriteria_Data = new TH1D(Name,"PM and INGRID track angle difference",15,0,45); 
+  INGRIDAngleCriteria_Data->GetXaxis()->SetTitle("Angle difference (#circ)");
+  INGRIDAngleCriteria_Data->GetYaxis()->SetTitle("Number of tracks");
 
-    INGRIDPositionCriteria_Data = new TH1D(Name,"PM and INGRID track transverse position difference",30,0,15); 
-    INGRIDPositionCriteria_Data->GetXaxis()->SetTitle("Position difference (cm)");
-    INGRIDPositionCriteria_Data->GetYaxis()->SetTitle("Number of tracks");
+  INGRIDPositionCriteria_Data = new TH1D(Name,"PM and INGRID track transverse position difference",30,0,15); 
+  INGRIDPositionCriteria_Data->GetXaxis()->SetTitle("Position difference (cm)");
+  INGRIDPositionCriteria_Data->GetYaxis()->SetTitle("Number of tracks");
 
 
   sprintf(Name,"Selected_NTracks_ATrackIsSample4_Data");
-    Selected_NTracks_ATrackIsSample4_Data = new TH1D(Name,"",9,1,10);
-    Selected_NTracks_ATrackIsSample4_Data->GetXaxis()->SetTitle("Number of reconstructed tracks");
-    Selected_NTracks_ATrackIsSample4_Data->GetYaxis()->SetTitle("Number of events");
+  Selected_NTracks_ATrackIsSample4_Data = new TH1D(Name,"",9,1,10);
+  Selected_NTracks_ATrackIsSample4_Data->GetXaxis()->SetTitle("Number of reconstructed tracks");
+  Selected_NTracks_ATrackIsSample4_Data->GetYaxis()->SetTitle("Number of events");
 
   sprintf(Name,"Selected_NTracks_ATrackIsSample5_Data");
-    Selected_NTracks_ATrackIsSample5_Data = new TH1D(Name,"",9,1,10);
-    Selected_NTracks_ATrackIsSample5_Data->GetXaxis()->SetTitle("Number of reconstructed tracks");
-    Selected_NTracks_ATrackIsSample5_Data->GetYaxis()->SetTitle("Number of events");
+  Selected_NTracks_ATrackIsSample5_Data = new TH1D(Name,"",9,1,10);
+  Selected_NTracks_ATrackIsSample5_Data->GetXaxis()->SetTitle("Number of reconstructed tracks");
+  Selected_NTracks_ATrackIsSample5_Data->GetYaxis()->SetTitle("Number of events");
 
   for(int i=0;i<6;i++){
     sprintf(Name,"Selected_NTracks_Data[%d]",i);
@@ -1210,150 +1211,150 @@ sprintf(Name,"InFV_Interacting[%d]",j);
     
     //if(IsFV){
     //if(nIngBasRec!=0) cout<<nIngBasRec<<endl;
-     for(int irec=0;irec<nIngBasRec;irec++){
-	bool MuonFound=false;
-	int MuonTrue;int MuonRec=0;
-	bool Trash=false;
-	if(IsDetected[irec]){
-	  //if(VertexZ[irec]>10) continue;
+    for(int irec=0;irec<nIngBasRec;irec++){
+      bool MuonFound=false;
+      int MuonTrue;int MuonRec=0;
+      bool Trash=false;
+      if(IsDetected[irec]){
+	//if(VertexZ[irec]>10) continue;
 
-	  for(int itrk=0;itrk<nTracks[irec];itrk++){
-	    //cout<<"before test"<<endl;
-	    if(IsReconstructed[irec][itrk]){
-	      IronDistance[irec][itrk]=IronDistance[irec][itrk]+(PlasticDistance[irec][itrk]/IronCarbonRatio);
-	      double Test=r1->Uniform();
-	      if(Sample[irec][itrk]==5 && IronDistance[irec][itrk]>58.5 && Test>0.95) Sample[irec][itrk]=4;
+	for(int itrk=0;itrk<nTracks[irec];itrk++){
+	  //cout<<"before test"<<endl;
+	  if(IsReconstructed[irec][itrk]){
+	    IronDistance[irec][itrk]=IronDistance[irec][itrk]+(PlasticDistance[irec][itrk]/IronCarbonRatio);
+	    double Test=r1->Uniform();
+	    if(Sample[irec][itrk]==5 && IronDistance[irec][itrk]>58.5 && Test>0.95) Sample[irec][itrk]=4;
 
-	      //if(nTracks[irec]==1) cout<<"Track sample="<<Sample[irec][itrk]<<endl;
-	     	      //if(CLMuon[irec][itrk]!=CLMuon[irec][itrk]) continue;
-	      if(CLMuon[irec][itrk]!=CLMuon[irec][itrk] || CLMuon[irec][itrk]==-1){ Trash=true; continue;}
-	      if(TypeOfTrack[irec][itrk]==0) MuonTrue=itrk;
-	      if(CLMuon[irec][itrk]>=CLMuon[irec][MuonRec]) MuonRec=itrk;
-	      //cout<<"Muon Rec="<<MuonRec<<endl;
-	      MuonFound=true;
-	    }
+	    //if(nTracks[irec]==1) cout<<"Track sample="<<Sample[irec][itrk]<<endl;
+	    //if(CLMuon[irec][itrk]!=CLMuon[irec][itrk]) continue;
+	    if(CLMuon[irec][itrk]!=CLMuon[irec][itrk] || CLMuon[irec][itrk]==-1){ Trash=true; continue;}
+	    if(TypeOfTrack[irec][itrk]==0) MuonTrue=itrk;
+	    if(CLMuon[irec][itrk]>=CLMuon[irec][MuonRec]) MuonRec=itrk;
+	    //cout<<"Muon Rec="<<MuonRec<<endl;
+	    MuonFound=true;
 	  }
-
-	  if(Trash) continue;
-	  bool FirstSample4=true;
-	  bool FirstSample5=true;
-
-	  //cout<<CLMuon[irec][MuonRec]<<endl;
-	  NTracksTotal_Data->Fill(nTracks[irec],weight);
-	  if(!MuonFound) continue;
-	  for(int itrk=0;itrk<nTracks[irec];itrk++){
-	    if(IsReconstructed[irec][itrk]==true){
-	      if(Sample[irec][itrk]==5) AngleTotal_Data->Fill(TrackAngle[irec][itrk],weight);
-	      CLMuonTotal_Data->Fill(CLMuon[irec][itrk],weight);
-	      //if(Sample[irec][itrk]<4) cout<<CLMuon[irec][itrk]<<", weight="<<weight<<endl;
-	      CLMuon_Distribution_Data[Sample[irec][itrk]]->Fill(CLMuon[irec][itrk],weight);
-	      SampleTotal_Data->Fill(Sample[irec][itrk],weight);
-
-	      if(Sample[irec][itrk]==4){
-		if(FirstSample4){
-		  Selected_NTracks_ATrackIsSample4_Data->Fill(nTracks[irec],weight);
-		  FirstSample4=false;
-		}
-
-		IronDistanceTotal_Data->Fill(IronDistance[irec][itrk],weight);
-		NTracksTotalSample4_Data->Fill(nTracks[irec],weight);
-		if(nTracks[irec]==1) IronDistanceTotalSample4_1Track_Data->Fill(IronDistance[irec][itrk],weight);
-		if(nTracks[irec]==2){
-		  if(MuonRec==itrk) IronDistanceTotalSample4_2Tracks_Data->Fill(IronDistance[irec][MuonRec],weight);
-		  for(int itrk2=0;itrk2<nTracks[irec];itrk2++){
-		    if(itrk==itrk2) continue;
-		    SampleTotalSample4_Data->Fill(Sample[irec][itrk2],weight);
-		  }
-	      }
-	    }
-
-	      if(Sample[irec][itrk]==4){
-		if(IronDistance[irec][itrk]>10){
-		  int BinIron=(int) (IronDistance[irec][itrk]/5)-2;
-		  if(IronDistance[irec][itrk]>90) BinIron=NBinsIron-1;
-		  hCriteriaAngleXY_Data[BinIron]->Fill(CriteriaAngleX[irec][itrk],CriteriaAngleY[irec][itrk],weight);
-		  hCriteriaHalfWayXY_Data[BinIron]->Fill(CriteriaHalfWayX[irec][itrk],CriteriaHalfWayY[irec][itrk],weight);
-		}
-	      }
-	      hCriteriaHalfWayX_Data[Sample[irec][itrk]]->Fill(IronDistance[irec][itrk],CriteriaHalfWayX[irec][itrk],weight);
-	      hCriteriaHalfWayY_Data[Sample[irec][itrk]]->Fill(IronDistance[irec][itrk],CriteriaHalfWayY[irec][itrk],weight);
-	      hCriteriaAngleX_Data[Sample[irec][itrk]]->Fill(IronDistance[irec][itrk],CriteriaAngleX[irec][itrk],weight);
-	      hCriteriaAngleY_Data[Sample[irec][itrk]]->Fill(IronDistance[irec][itrk],CriteriaAngleY[irec][itrk],weight);
-
-
-	    }
-	  }
-	  //if(Sample[irec][MuonRec]==4) IronDistanceTotal_Data->Fill(IronDistance[irec][MuonRec],weight);
-	  //if(Sample[irec][MuonRec]==5) AngleTotal_Data->Fill(TrackAngle[irec][MuonRec],weight);
-
-
-	    Reconstructed_NTracks_Data[Sample[irec][MuonRec]]->Fill(nTracks[irec],weight);
-	    Reconstructed_IronDistance_Data[Sample[irec][MuonRec]]->Fill(IronDistance[irec][MuonRec],weight);
-	    Reconstructed_ReconstructedAngle_Data[Sample[irec][MuonRec]]->Fill(TrackAngle[irec][MuonRec],weight);
-  
-	    if((nTracks[irec]==1 && CLMuon[irec][0]>0.7) || ((nTracks[irec]==2 && TMath::Max(CLMuon[irec][0],CLMuon[irec][1])>0.7 && TMath::Min(CLMuon[irec][0],CLMuon[irec][1])<0.3) && (TMath::Min(CLMuon[irec][0],CLMuon[irec][1])>=0)) || ((nTracks[irec]==3 && CLMuon[irec][MuonRec]>0.7 && CLMuon[irec][(MuonRec+1)%3]<0.3 && CLMuon[irec][(MuonRec+2)%3]<0.3)) || ((nTracks[irec]==4 && CLMuon[irec][MuonRec]>0.7 && CLMuon[irec][(MuonRec+1)%4]<0.3 && CLMuon[irec][(MuonRec+2)%4]<0.3 && CLMuon[irec][(MuonRec+3)%4]<0.3))){
-  //if((nTracks[irec]==1 && CLMuon[irec][0]>0.7) || (nTracks[irec]==2 && TMath::Max(CLMuon[irec][0],CLMuon[irec][1])>0.7 && TMath::Min(CLMuon[irec][0],CLMuon[irec][1])<0.3) && (TMath::Min(CLMuon[irec][0],CLMuon[irec][1])>=0) || (nTracks[irec]==3 && CLMuon[irec][MuonRec]>0.7 && CLMuon[irec][(MuonRec+1)%3]<0.3 && CLMuon[irec][(MuonRec+2)%3]<0.3) || (nTracks[irec]==4 && CLMuon[irec][MuonRec]>0.7 && CLMuon[irec][(MuonRec+1)%4]<0.3 && CLMuon[irec][(MuonRec+2)%4]<0.3 && CLMuon[irec][(MuonRec+3)%4]<0.3)){
-	    //cout<<"ok"<<endl;
-	    //cout<<FSIInt<<", "<<Sample[irec][MuonRec]<<endl;
-	      //if(Sample[irec][MuonRec]==4) cout<<"AngleX="<<CriteriaAngleX[irec][MuonRec]<<", AngleY="<<CriteriaAngleY[irec][MuonRec]<<", Haflway X="<<CriteriaHalfWayX[irec][MuonRec]<<", HalfwayY="<<CriteriaHalfWayY[irec][MuonRec]<<endl;
-	      if(Sample[irec][MuonRec]>=4) TrackWidthXIronDistance_Data->Fill(IronDistance[irec][MuonRec],TrackWidth[irec][MuonRec],weight);
-
-	      if(Sample[irec][MuonRec]==4){
-		if(IronDistance[irec][MuonRec]>10){
-		  int BinIron=(int) (IronDistance[irec][MuonRec]/5)-2;
-		  if(IronDistance[irec][MuonRec]>90) BinIron=NBinsIron-1;
-		  hCriteriaAngleXY_Data[BinIron]->Fill(CriteriaAngleX[irec][MuonRec],CriteriaAngleY[irec][MuonRec],weight);
-		  hCriteriaHalfWayXY_Data[BinIron]->Fill(CriteriaHalfWayX[irec][MuonRec],CriteriaHalfWayY[irec][MuonRec],weight);
-		}
-	      }
-	      //if(Sample[irec][MuonRec]==4 && PlasticDistance[irec][MuonRec]<25) continue;
-	      if(Sample[irec][MuonRec]==4 && IronDistance[irec][MuonRec]<17){
-		Problematic_PlasticDistance_Data->Fill(PlasticDistance[irec][MuonRec],weight);
-		Problematic_Angle_Data->Fill(TrackAngle[irec][MuonRec],weight);
-		Problematic_NTracks_Data->Fill(nTracks[irec],weight);
-		Problematic_CLMuon_Data->Fill(CLMuon[irec][MuonRec],weight);
-		Problematic_TrackWidth_Data->Fill(TrackWidth[irec][MuonRec],weight);
-		Problematic_Geom_Data->Fill(GeometricTrack[irec][MuonRec],weight);
-		int LS;
-		if(TMath::Abs(LastChannelINGRIDX[irec][MuonRec]-11.5)>TMath::Abs(LastChannelINGRIDY[irec][MuonRec]-11.5)) LS=LastChannelINGRIDX[irec][MuonRec];
-		else LS=LastChannelINGRIDY[irec][MuonRec];
-		Problematic_LastChannel_Data->Fill(LS,weight);
-
-	      }
-	      
-	      //if(Sample[irec][MuonRec]==4 /*&& IronDistance[irec][MuonRec]<25*/ && (CriteriaAngleX[irec][MuonRec]>25 || CriteriaAngleY[irec][MuonRec]>25 || CriteriaHalfWayX[irec][MuonRec]>7 || CriteriaHalfWayY[irec][MuonRec]>7 || TrackWidth[irec][MuonRec]>1.1)) continue; 
-	      //if(Sample[irec][MuonRec]==4 && TrackWidth[irec][MuonRec]>1.1 && IronDistance[irec][MuonRec]<25) continue;	      
-	      //if(Sample[irec][MuonRec]==4 && TrackWidth[irec][MuonRec]>1.5 && IronDistance[irec][MuonRec]>25) continue;	    
-	      PID_Selected_IronDistance_Data[Sample[irec][MuonRec]]->Fill(IronDistance[irec][MuonRec],weight);
-	      PID_Selected_ReconstructedAngle_Data[Sample[irec][MuonRec]]->Fill(TrackAngle[irec][MuonRec],weight);
-  	      if(Sample[irec][MuonRec]==4){
-		INGRIDAngleCriteria_Data->Fill(max(CriteriaAngleX[irec][MuonRec],CriteriaAngleY[irec][MuonRec]),weight);
-		INGRIDPositionCriteria_Data->Fill(max(CriteriaHalfWayX[irec][MuonRec],CriteriaHalfWayY[irec][MuonRec]),weight);
-	      }
-
-	      if(Sample[irec][MuonRec]>=4 && (CriteriaAngleX[irec][MuonRec]>25 || CriteriaAngleY[irec][MuonRec]>25 || CriteriaHalfWayX[irec][MuonRec]>7 || CriteriaHalfWayY[irec][MuonRec]>7)) continue;
-	      PIDAndMatching_Selected_IronDistance_Data[Sample[irec][MuonRec]]->Fill(IronDistance[irec][MuonRec],weight);
-	      PIDAndMatching_Selected_ReconstructedAngle_Data[Sample[irec][MuonRec]]->Fill(TrackAngle[irec][MuonRec],weight);
-
-
-	      if(Sample[irec][MuonRec]>=4){
-		if(Sample[irec][MuonRec]==4) INGRIDTrackWidth_Data->Fill(TrackWidth[irec][MuonRec],weight);
-		if(TrackWidth[irec][MuonRec]>1.1 && IronDistance[irec][MuonRec]<15) continue;
-		else if(TrackWidth[irec][MuonRec]>1.2 && IronDistance[irec][MuonRec]<20) continue;
-	      	else if(TrackWidth[irec][MuonRec]>1.3 && IronDistance[irec][MuonRec]<30) continue;
-		else if(TrackWidth[irec][MuonRec]>1.5) continue;
-	      }
-	      if(Sample[irec][MuonRec]==4) Selected2D_Data->Fill(IronDistance[irec][MuonRec],TrackAngle[irec][MuonRec],weight);
-	      Selected_NTracks_Data[Sample[irec][MuonRec]]->Fill(nTracks[irec],weight);
-	      Selected_IronDistance_Data[Sample[irec][MuonRec]]->Fill(IronDistance[irec][MuonRec],weight);
-	      Selected_ReconstructedAngle_Data[Sample[irec][MuonRec]]->Fill(TrackAngle[irec][MuonRec],weight);
-	  }
-	  Interacting_NTracks_Data[Sample[irec][MuonRec]]->Fill(nTracks[irec],weight);
-	  Interacting_IronDistance_Data[Sample[irec][MuonRec]]->Fill(IronDistance[irec][MuonRec],weight);
-	  Interacting_ReconstructedAngle_Data[Sample[irec][MuonRec]]->Fill(TrackAngle[irec][MuonRec],weight);
 	}
+
+	if(Trash) continue;
+	bool FirstSample4=true;
+	bool FirstSample5=true;
+
+	//cout<<CLMuon[irec][MuonRec]<<endl;
+	NTracksTotal_Data->Fill(nTracks[irec],weight);
+	if(!MuonFound) continue;
+	for(int itrk=0;itrk<nTracks[irec];itrk++){
+	  if(IsReconstructed[irec][itrk]==true){
+	    if(Sample[irec][itrk]==5) AngleTotal_Data->Fill(TrackAngle[irec][itrk],weight);
+	    CLMuonTotal_Data->Fill(CLMuon[irec][itrk],weight);
+	    //if(Sample[irec][itrk]<4) cout<<CLMuon[irec][itrk]<<", weight="<<weight<<endl;
+	    CLMuon_Distribution_Data[Sample[irec][itrk]]->Fill(CLMuon[irec][itrk],weight);
+	    SampleTotal_Data->Fill(Sample[irec][itrk],weight);
+
+	    if(Sample[irec][itrk]==4){
+	      if(FirstSample4){
+		Selected_NTracks_ATrackIsSample4_Data->Fill(nTracks[irec],weight);
+		FirstSample4=false;
+	      }
+
+	      IronDistanceTotal_Data->Fill(IronDistance[irec][itrk],weight);
+	      NTracksTotalSample4_Data->Fill(nTracks[irec],weight);
+	      if(nTracks[irec]==1) IronDistanceTotalSample4_1Track_Data->Fill(IronDistance[irec][itrk],weight);
+	      if(nTracks[irec]==2){
+		if(MuonRec==itrk) IronDistanceTotalSample4_2Tracks_Data->Fill(IronDistance[irec][MuonRec],weight);
+		for(int itrk2=0;itrk2<nTracks[irec];itrk2++){
+		  if(itrk==itrk2) continue;
+		  SampleTotalSample4_Data->Fill(Sample[irec][itrk2],weight);
+		}
+	      }
+	    }
+
+	    if(Sample[irec][itrk]==4){
+	      if(IronDistance[irec][itrk]>10){
+		int BinIron=(int) (IronDistance[irec][itrk]/5)-2;
+		if(IronDistance[irec][itrk]>90) BinIron=NBinsIron-1;
+		hCriteriaAngleXY_Data[BinIron]->Fill(CriteriaAngleX[irec][itrk],CriteriaAngleY[irec][itrk],weight);
+		hCriteriaHalfWayXY_Data[BinIron]->Fill(CriteriaHalfWayX[irec][itrk],CriteriaHalfWayY[irec][itrk],weight);
+	      }
+	    }
+	    hCriteriaHalfWayX_Data[Sample[irec][itrk]]->Fill(IronDistance[irec][itrk],CriteriaHalfWayX[irec][itrk],weight);
+	    hCriteriaHalfWayY_Data[Sample[irec][itrk]]->Fill(IronDistance[irec][itrk],CriteriaHalfWayY[irec][itrk],weight);
+	    hCriteriaAngleX_Data[Sample[irec][itrk]]->Fill(IronDistance[irec][itrk],CriteriaAngleX[irec][itrk],weight);
+	    hCriteriaAngleY_Data[Sample[irec][itrk]]->Fill(IronDistance[irec][itrk],CriteriaAngleY[irec][itrk],weight);
+
+
+	  }
+	}
+	//if(Sample[irec][MuonRec]==4) IronDistanceTotal_Data->Fill(IronDistance[irec][MuonRec],weight);
+	//if(Sample[irec][MuonRec]==5) AngleTotal_Data->Fill(TrackAngle[irec][MuonRec],weight);
+
+
+	Reconstructed_NTracks_Data[Sample[irec][MuonRec]]->Fill(nTracks[irec],weight);
+	Reconstructed_IronDistance_Data[Sample[irec][MuonRec]]->Fill(IronDistance[irec][MuonRec],weight);
+	Reconstructed_ReconstructedAngle_Data[Sample[irec][MuonRec]]->Fill(TrackAngle[irec][MuonRec],weight);
+  
+	if((nTracks[irec]==1 && CLMuon[irec][0]>0.7) || ((nTracks[irec]==2 && TMath::Max(CLMuon[irec][0],CLMuon[irec][1])>0.7 && TMath::Min(CLMuon[irec][0],CLMuon[irec][1])<0.3) && (TMath::Min(CLMuon[irec][0],CLMuon[irec][1])>=0)) || ((nTracks[irec]==3 && CLMuon[irec][MuonRec]>0.7 && CLMuon[irec][(MuonRec+1)%3]<0.3 && CLMuon[irec][(MuonRec+2)%3]<0.3)) || ((nTracks[irec]==4 && CLMuon[irec][MuonRec]>0.7 && CLMuon[irec][(MuonRec+1)%4]<0.3 && CLMuon[irec][(MuonRec+2)%4]<0.3 && CLMuon[irec][(MuonRec+3)%4]<0.3))){
+	  //if((nTracks[irec]==1 && CLMuon[irec][0]>0.7) || (nTracks[irec]==2 && TMath::Max(CLMuon[irec][0],CLMuon[irec][1])>0.7 && TMath::Min(CLMuon[irec][0],CLMuon[irec][1])<0.3) && (TMath::Min(CLMuon[irec][0],CLMuon[irec][1])>=0) || (nTracks[irec]==3 && CLMuon[irec][MuonRec]>0.7 && CLMuon[irec][(MuonRec+1)%3]<0.3 && CLMuon[irec][(MuonRec+2)%3]<0.3) || (nTracks[irec]==4 && CLMuon[irec][MuonRec]>0.7 && CLMuon[irec][(MuonRec+1)%4]<0.3 && CLMuon[irec][(MuonRec+2)%4]<0.3 && CLMuon[irec][(MuonRec+3)%4]<0.3)){
+	  //cout<<"ok"<<endl;
+	  //cout<<FSIInt<<", "<<Sample[irec][MuonRec]<<endl;
+	  //if(Sample[irec][MuonRec]==4) cout<<"AngleX="<<CriteriaAngleX[irec][MuonRec]<<", AngleY="<<CriteriaAngleY[irec][MuonRec]<<", Haflway X="<<CriteriaHalfWayX[irec][MuonRec]<<", HalfwayY="<<CriteriaHalfWayY[irec][MuonRec]<<endl;
+	  if(Sample[irec][MuonRec]>=4) TrackWidthXIronDistance_Data->Fill(IronDistance[irec][MuonRec],TrackWidth[irec][MuonRec],weight);
+
+	  if(Sample[irec][MuonRec]==4){
+	    if(IronDistance[irec][MuonRec]>10){
+	      int BinIron=(int) (IronDistance[irec][MuonRec]/5)-2;
+	      if(IronDistance[irec][MuonRec]>90) BinIron=NBinsIron-1;
+	      hCriteriaAngleXY_Data[BinIron]->Fill(CriteriaAngleX[irec][MuonRec],CriteriaAngleY[irec][MuonRec],weight);
+	      hCriteriaHalfWayXY_Data[BinIron]->Fill(CriteriaHalfWayX[irec][MuonRec],CriteriaHalfWayY[irec][MuonRec],weight);
+	    }
+	  }
+	  //if(Sample[irec][MuonRec]==4 && PlasticDistance[irec][MuonRec]<25) continue;
+	  if(Sample[irec][MuonRec]==4 && IronDistance[irec][MuonRec]<17){
+	    Problematic_PlasticDistance_Data->Fill(PlasticDistance[irec][MuonRec],weight);
+	    Problematic_Angle_Data->Fill(TrackAngle[irec][MuonRec],weight);
+	    Problematic_NTracks_Data->Fill(nTracks[irec],weight);
+	    Problematic_CLMuon_Data->Fill(CLMuon[irec][MuonRec],weight);
+	    Problematic_TrackWidth_Data->Fill(TrackWidth[irec][MuonRec],weight);
+	    Problematic_Geom_Data->Fill(GeometricTrack[irec][MuonRec],weight);
+	    int LS;
+	    if(TMath::Abs(LastChannelINGRIDX[irec][MuonRec]-11.5)>TMath::Abs(LastChannelINGRIDY[irec][MuonRec]-11.5)) LS=LastChannelINGRIDX[irec][MuonRec];
+	    else LS=LastChannelINGRIDY[irec][MuonRec];
+	    Problematic_LastChannel_Data->Fill(LS,weight);
+
+	  }
+	      
+	  //if(Sample[irec][MuonRec]==4 /*&& IronDistance[irec][MuonRec]<25*/ && (CriteriaAngleX[irec][MuonRec]>25 || CriteriaAngleY[irec][MuonRec]>25 || CriteriaHalfWayX[irec][MuonRec]>7 || CriteriaHalfWayY[irec][MuonRec]>7 || TrackWidth[irec][MuonRec]>1.1)) continue; 
+	  //if(Sample[irec][MuonRec]==4 && TrackWidth[irec][MuonRec]>1.1 && IronDistance[irec][MuonRec]<25) continue;	      
+	  //if(Sample[irec][MuonRec]==4 && TrackWidth[irec][MuonRec]>1.5 && IronDistance[irec][MuonRec]>25) continue;	    
+	  PID_Selected_IronDistance_Data[Sample[irec][MuonRec]]->Fill(IronDistance[irec][MuonRec],weight);
+	  PID_Selected_ReconstructedAngle_Data[Sample[irec][MuonRec]]->Fill(TrackAngle[irec][MuonRec],weight);
+	  if(Sample[irec][MuonRec]==4){
+	    INGRIDAngleCriteria_Data->Fill(max(CriteriaAngleX[irec][MuonRec],CriteriaAngleY[irec][MuonRec]),weight);
+	    INGRIDPositionCriteria_Data->Fill(max(CriteriaHalfWayX[irec][MuonRec],CriteriaHalfWayY[irec][MuonRec]),weight);
+	  }
+
+	  if(Sample[irec][MuonRec]>=4 && (CriteriaAngleX[irec][MuonRec]>25 || CriteriaAngleY[irec][MuonRec]>25 || CriteriaHalfWayX[irec][MuonRec]>7 || CriteriaHalfWayY[irec][MuonRec]>7)) continue;
+	  PIDAndMatching_Selected_IronDistance_Data[Sample[irec][MuonRec]]->Fill(IronDistance[irec][MuonRec],weight);
+	  PIDAndMatching_Selected_ReconstructedAngle_Data[Sample[irec][MuonRec]]->Fill(TrackAngle[irec][MuonRec],weight);
+
+
+	  if(Sample[irec][MuonRec]>=4){
+	    if(Sample[irec][MuonRec]==4) INGRIDTrackWidth_Data->Fill(TrackWidth[irec][MuonRec],weight);
+	    if(TrackWidth[irec][MuonRec]>1.1 && IronDistance[irec][MuonRec]<15) continue;
+	    else if(TrackWidth[irec][MuonRec]>1.2 && IronDistance[irec][MuonRec]<20) continue;
+	    else if(TrackWidth[irec][MuonRec]>1.3 && IronDistance[irec][MuonRec]<30) continue;
+	    else if(TrackWidth[irec][MuonRec]>1.5) continue;
+	  }
+	  if(Sample[irec][MuonRec]==4) Selected2D_Data->Fill(IronDistance[irec][MuonRec],TrackAngle[irec][MuonRec],weight);
+	  Selected_NTracks_Data[Sample[irec][MuonRec]]->Fill(nTracks[irec],weight);
+	  Selected_IronDistance_Data[Sample[irec][MuonRec]]->Fill(IronDistance[irec][MuonRec],weight);
+	  Selected_ReconstructedAngle_Data[Sample[irec][MuonRec]]->Fill(TrackAngle[irec][MuonRec],weight);
+	}
+	Interacting_NTracks_Data[Sample[irec][MuonRec]]->Fill(nTracks[irec],weight);
+	Interacting_IronDistance_Data[Sample[irec][MuonRec]]->Fill(IronDistance[irec][MuonRec],weight);
+	Interacting_ReconstructedAngle_Data[Sample[irec][MuonRec]]->Fill(TrackAngle[irec][MuonRec],weight);
       }
-     //}
+    }
+    //}
   }
 
   //cout<<endl<<endl<<endl<<POTCount<<endl;
@@ -1361,50 +1362,50 @@ sprintf(Name,"InFV_Interacting[%d]",j);
   //double ScalingFactor=1/(2.7);//(9.91e21);
   //double ScalingFactor=1;//POTCount/weightMC;
  
- for(int j=1;j<11;j++){
-   InFV_Interacting[j]->Scale(ScalingFactor);
-   InFV_Reconstructed[j]->Scale(ScalingFactor);
+  for(int j=1;j<11;j++){
+    InFV_Interacting[j]->Scale(ScalingFactor);
+    InFV_Reconstructed[j]->Scale(ScalingFactor);
 
-   Reconstructed_NTracks_ATrackIsSample4[j]->Scale(ScalingFactor);
-   Reconstructed_NTracks_ATrackIsSample5[j]->Scale(ScalingFactor);
+    Reconstructed_NTracks_ATrackIsSample4[j]->Scale(ScalingFactor);
+    Reconstructed_NTracks_ATrackIsSample5[j]->Scale(ScalingFactor);
 
-   Selected_NTracks_ATrackIsSample4[j]->Scale(ScalingFactor);
-   Selected_NTracks_ATrackIsSample5[j]->Scale(ScalingFactor);
+    Selected_NTracks_ATrackIsSample4[j]->Scale(ScalingFactor);
+    Selected_NTracks_ATrackIsSample5[j]->Scale(ScalingFactor);
 
-   INGRIDTrackWidth[j]->Scale(ScalingFactor);
-   INGRIDAngleCriteria[j]->Scale(ScalingFactor);
-   INGRIDPositionCriteria[j]->Scale(ScalingFactor);
+    INGRIDTrackWidth[j]->Scale(ScalingFactor);
+    INGRIDAngleCriteria[j]->Scale(ScalingFactor);
+    INGRIDPositionCriteria[j]->Scale(ScalingFactor);
 
-   for(int i=0;i<6;i++){
-     Selected_NTracks[i][j]->Scale(ScalingFactor);
-     Reconstructed_NTracks[i][j]->Scale(ScalingFactor);
-     Interacting_NTracks[i][j]->Scale(ScalingFactor);
-     Selected_Momentum[i][j]->Scale(ScalingFactor);
-     Reconstructed_Momentum[i][j]->Scale(ScalingFactor);
-     Interacting_Momentum[i][j]->Scale(ScalingFactor);
+    for(int i=0;i<6;i++){
+      Selected_NTracks[i][j]->Scale(ScalingFactor);
+      Reconstructed_NTracks[i][j]->Scale(ScalingFactor);
+      Interacting_NTracks[i][j]->Scale(ScalingFactor);
+      Selected_Momentum[i][j]->Scale(ScalingFactor);
+      Reconstructed_Momentum[i][j]->Scale(ScalingFactor);
+      Interacting_Momentum[i][j]->Scale(ScalingFactor);
 
 
-     PID_Selected_IronDistance[i][j]->Scale(ScalingFactor);
-     PIDAndMatching_Selected_IronDistance[i][j]->Scale(ScalingFactor);
-     PID_Selected_ReconstructedAngle[i][j]->Scale(ScalingFactor);
-     PIDAndMatching_Selected_ReconstructedAngle[i][j]->Scale(ScalingFactor);
+      PID_Selected_IronDistance[i][j]->Scale(ScalingFactor);
+      PIDAndMatching_Selected_IronDistance[i][j]->Scale(ScalingFactor);
+      PID_Selected_ReconstructedAngle[i][j]->Scale(ScalingFactor);
+      PIDAndMatching_Selected_ReconstructedAngle[i][j]->Scale(ScalingFactor);
 
-     Selected_IronDistance[i][j]->Scale(ScalingFactor);
-     Reconstructed_IronDistance[i][j]->Scale(ScalingFactor);
-     Interacting_IronDistance[i][j]->Scale(ScalingFactor);
-     Selected_Angle[i][j]->Scale(ScalingFactor);
-     Reconstructed_Angle[i][j]->Scale(ScalingFactor);
-     Interacting_Angle[i][j]->Scale(ScalingFactor);
-     Selected_ReconstructedAngle[i][j]->Scale(ScalingFactor);
-     Reconstructed_ReconstructedAngle[i][j]->Scale(ScalingFactor);
-     Interacting_ReconstructedAngle[i][j]->Scale(ScalingFactor);
+      Selected_IronDistance[i][j]->Scale(ScalingFactor);
+      Reconstructed_IronDistance[i][j]->Scale(ScalingFactor);
+      Interacting_IronDistance[i][j]->Scale(ScalingFactor);
+      Selected_Angle[i][j]->Scale(ScalingFactor);
+      Reconstructed_Angle[i][j]->Scale(ScalingFactor);
+      Interacting_Angle[i][j]->Scale(ScalingFactor);
+      Selected_ReconstructedAngle[i][j]->Scale(ScalingFactor);
+      Reconstructed_ReconstructedAngle[i][j]->Scale(ScalingFactor);
+      Interacting_ReconstructedAngle[i][j]->Scale(ScalingFactor);
     }
- }
+  }
 
- for(int i=0;i<6;i++){
-   Selected_IronDistance_MC[i]->Scale(ScalingFactor);
- }
- THStack * Stack_Reconstructed_NTracks = new THStack("Stack_Reconstructed_NTracks","");
+  for(int i=0;i<6;i++){
+    Selected_IronDistance_MC[i]->Scale(ScalingFactor);
+  }
+  THStack * Stack_Reconstructed_NTracks = new THStack("Stack_Reconstructed_NTracks","");
 
   THStack * Stack_InFV_Interacting = new THStack("Stack_InFV_Interacting","");
   THStack * Stack_InFV_Reconstructed = new THStack("Stack_InFV_Reconstructed","");
@@ -1425,45 +1426,45 @@ sprintf(Name,"InFV_Interacting[%d]",j);
 
   THStack * Stack_Reconstructed_IronDistance_Sample4 = new THStack("Stack_Reconstructed_IronDistance_Sample4","");
 
- leg_Sample4= new TLegend(0.70,0.4,.99,.92);
- leg_Sample4->SetFillColor(0);
- for(int fsi=1;fsi<11;fsi++){
-   if(fsi==1) leg_Sample4->AddEntry(Reconstructed_NTracks[4][fsi],"CC-0Pi");
-   //else if(fsi==2) leg_Sample4->AddEntry(Reconstructed_NTracks[4][fsi],"CC-0Pi (Multi-protons)");
-   else if(fsi==3) leg_Sample4->AddEntry(Reconstructed_NTracks[4][fsi],"CC-1Pi");
-   else if(fsi==4) leg_Sample4->AddEntry(Reconstructed_NTracks[4][fsi],"CC-NPi");
-   else if(fsi==5) leg_Sample4->AddEntry(Reconstructed_NTracks[4][fsi],"CC-Other");
-   else if(fsi==6) leg_Sample4->AddEntry(Reconstructed_NTracks[4][fsi],"NC");
-   else if(fsi==7) leg_Sample4->AddEntry(Reconstructed_NTracks[4][fsi],"Wall Bkg");
-   else if(fsi==8) leg_Sample4->AddEntry(Reconstructed_NTracks[4][fsi],"INGRID H Bkg");
-   else if(fsi==9) leg_Sample4->AddEntry(Reconstructed_NTracks[4][fsi],"INGRID V Bkg");
-   else if(fsi==10) leg_Sample4->AddEntry(Reconstructed_NTracks[4][fsi],"#nu_{#mu}+#nu_{e}");
- }
+  leg_Sample4= new TLegend(0.70,0.4,.99,.92);
+  leg_Sample4->SetFillColor(0);
+  for(int fsi=1;fsi<11;fsi++){
+    if(fsi==1) leg_Sample4->AddEntry(Reconstructed_NTracks[4][fsi],"CC-0Pi");
+    //else if(fsi==2) leg_Sample4->AddEntry(Reconstructed_NTracks[4][fsi],"CC-0Pi (Multi-protons)");
+    else if(fsi==3) leg_Sample4->AddEntry(Reconstructed_NTracks[4][fsi],"CC-1Pi");
+    else if(fsi==4) leg_Sample4->AddEntry(Reconstructed_NTracks[4][fsi],"CC-NPi");
+    else if(fsi==5) leg_Sample4->AddEntry(Reconstructed_NTracks[4][fsi],"CC-Other");
+    else if(fsi==6) leg_Sample4->AddEntry(Reconstructed_NTracks[4][fsi],"NC");
+    else if(fsi==7) leg_Sample4->AddEntry(Reconstructed_NTracks[4][fsi],"Wall Bkg");
+    else if(fsi==8) leg_Sample4->AddEntry(Reconstructed_NTracks[4][fsi],"INGRID H Bkg");
+    else if(fsi==9) leg_Sample4->AddEntry(Reconstructed_NTracks[4][fsi],"INGRID V Bkg");
+    else if(fsi==10) leg_Sample4->AddEntry(Reconstructed_NTracks[4][fsi],"#nu_{#mu}+#nu_{e}");
+  }
 
- leg_Sample4_Data= new TLegend(0.70,0.4,.99,.92);
- leg_Sample4_Data->SetFillColor(0);
- leg_Sample4_Data->AddEntry(Selected_IronDistance_Data[4],"Data");
+  leg_Sample4_Data= new TLegend(0.70,0.4,.99,.92);
+  leg_Sample4_Data->SetFillColor(0);
+  leg_Sample4_Data->AddEntry(Selected_IronDistance_Data[4],"Data");
   
- for(int fsi=1;fsi<11;fsi++){
-   if(fsi==1) leg_Sample4_Data->AddEntry(Selected_IronDistance[4][fsi],"CC-0Pi");
-   //else if(fsi==2) leg_Sample4_Data->AddEntry(Selected_IronDistance[4][fsi],"CC-0Pi (Multi-protons)");
-   else if(fsi==3) leg_Sample4_Data->AddEntry(Selected_IronDistance[4][fsi],"CC-1Pi");
-   else if(fsi==4) leg_Sample4_Data->AddEntry(Selected_IronDistance[4][fsi],"CC-NPi");
-   else if(fsi==5) leg_Sample4_Data->AddEntry(Selected_IronDistance[4][fsi],"CC-Other");
-   else if(fsi==6) leg_Sample4_Data->AddEntry(Selected_IronDistance[4][fsi],"NC");
-   else if(fsi==7) leg_Sample4_Data->AddEntry(Selected_IronDistance[4][fsi],"Wall Bkg");
-   else if(fsi==8) leg_Sample4_Data->AddEntry(Selected_IronDistance[4][fsi],"INGRID H Bkg");
-   else if(fsi==9) leg_Sample4_Data->AddEntry(Selected_IronDistance[4][fsi],"INGRID V Bkg");
-   else if(fsi==10) leg_Sample4_Data->AddEntry(Selected_IronDistance[4][fsi],"#nu_{#mu}+#nu_{e}");
- }
+  for(int fsi=1;fsi<11;fsi++){
+    if(fsi==1) leg_Sample4_Data->AddEntry(Selected_IronDistance[4][fsi],"CC-0Pi");
+    //else if(fsi==2) leg_Sample4_Data->AddEntry(Selected_IronDistance[4][fsi],"CC-0Pi (Multi-protons)");
+    else if(fsi==3) leg_Sample4_Data->AddEntry(Selected_IronDistance[4][fsi],"CC-1Pi");
+    else if(fsi==4) leg_Sample4_Data->AddEntry(Selected_IronDistance[4][fsi],"CC-NPi");
+    else if(fsi==5) leg_Sample4_Data->AddEntry(Selected_IronDistance[4][fsi],"CC-Other");
+    else if(fsi==6) leg_Sample4_Data->AddEntry(Selected_IronDistance[4][fsi],"NC");
+    else if(fsi==7) leg_Sample4_Data->AddEntry(Selected_IronDistance[4][fsi],"Wall Bkg");
+    else if(fsi==8) leg_Sample4_Data->AddEntry(Selected_IronDistance[4][fsi],"INGRID H Bkg");
+    else if(fsi==9) leg_Sample4_Data->AddEntry(Selected_IronDistance[4][fsi],"INGRID V Bkg");
+    else if(fsi==10) leg_Sample4_Data->AddEntry(Selected_IronDistance[4][fsi],"#nu_{#mu}+#nu_{e}");
+  }
 
   THStack * Stack_Selected_NTracks_Sample5 = new THStack("Stack_Selected_NTracks_Sample5","");
   THStack * Stack_Reconstructed_NTracks_Sample5 = new THStack("Stack_Reconstructed_NTracks_Sample5","");
- THStack * Stack_Selected_Momentum_Sample5 = new THStack("Stack_Selected_Momentum_Sample5","");
+  THStack * Stack_Selected_Momentum_Sample5 = new THStack("Stack_Selected_Momentum_Sample5","");
   THStack * Stack_Reconstructed_Momentum_Sample5 = new THStack("Stack_Reconstructed_Momentum_Sample5","");
   THStack * Stack_Selected_Angle_Sample5 = new THStack("Stack_Selected_Angle_Sample5","");
   THStack * Stack_Reconstructed_Angle_Sample5 = new THStack("Stack_Reconstructed_Angle_Sample5","");
-   THStack * Stack_Selected_ReconstructedAngle_Sample5 = new THStack("Stack_Selected_ReconstructedAngle_Sample5","");
+  THStack * Stack_Selected_ReconstructedAngle_Sample5 = new THStack("Stack_Selected_ReconstructedAngle_Sample5","");
   THStack * Stack_Reconstructed_ReconstructedAngle_Sample5 = new THStack("Stack_Reconstructed_ReconstructedAngle_Sample5","");
   THStack * Stack_INGRIDTrackWidth = new THStack("Stack_INGRIDTrackWidth","");
   THStack * Stack_INGRIDAngleCriteria = new THStack("Stack_INGRIDAngleCriteria","");
@@ -1496,7 +1497,7 @@ sprintf(Name,"InFV_Interacting[%d]",j);
   TH1D * Reconstructed_Angle_Sample5_All;
   TH1D * Interacting_Angle_Sample5_All;
  
- TH1D * Selected_ReconstructedAngle_Sample5_All;
+  TH1D * Selected_ReconstructedAngle_Sample5_All;
   TH1D * Reconstructed_ReconstructedAngle_Sample5_All;
   TH1D * Interacting_ReconstructedAngle_Sample5_All;
 
@@ -1558,41 +1559,41 @@ sprintf(Name,"InFV_Interacting[%d]",j);
 
   ProduceStack(Selected_NTracks[4],Stack_Selected_NTracks_Sample4);
   ProduceStack(Reconstructed_NTracks[4],Stack_Reconstructed_NTracks_Sample4);
-   for(int j=0;j<6;j++){
-     bool Last=false;
-     if(j==5) Last=true;
-     ProduceStack2(Reconstructed_NTracks[j],Stack_Reconstructed_NTracks,Last);
-   }
-   ProduceStack(Selected_Momentum[4],Stack_Selected_Momentum_Sample4);
-   ProduceStack(Reconstructed_Momentum[4],Stack_Reconstructed_Momentum_Sample4);
-   ProduceStack(Selected_IronDistance[4],Stack_Selected_IronDistance_Sample4);
-   ProduceStack(PID_Selected_IronDistance[4],Stack_PID_Selected_IronDistance_Sample4);
-   ProduceStack(PIDAndMatching_Selected_IronDistance[4],Stack_PIDAndMatching_Selected_IronDistance_Sample4);
-   ProduceStack(PID_Selected_ReconstructedAngle[4],Stack_PID_Selected_ReconstructedAngle_Sample4);
-   ProduceStack(PIDAndMatching_Selected_ReconstructedAngle[4],Stack_PIDAndMatching_Selected_ReconstructedAngle_Sample4);
+  for(int j=0;j<6;j++){
+    bool Last=false;
+    if(j==5) Last=true;
+    ProduceStack2(Reconstructed_NTracks[j],Stack_Reconstructed_NTracks,Last);
+  }
+  ProduceStack(Selected_Momentum[4],Stack_Selected_Momentum_Sample4);
+  ProduceStack(Reconstructed_Momentum[4],Stack_Reconstructed_Momentum_Sample4);
+  ProduceStack(Selected_IronDistance[4],Stack_Selected_IronDistance_Sample4);
+  ProduceStack(PID_Selected_IronDistance[4],Stack_PID_Selected_IronDistance_Sample4);
+  ProduceStack(PIDAndMatching_Selected_IronDistance[4],Stack_PIDAndMatching_Selected_IronDistance_Sample4);
+  ProduceStack(PID_Selected_ReconstructedAngle[4],Stack_PID_Selected_ReconstructedAngle_Sample4);
+  ProduceStack(PIDAndMatching_Selected_ReconstructedAngle[4],Stack_PIDAndMatching_Selected_ReconstructedAngle_Sample4);
  
-   ProduceStack(Reconstructed_IronDistance[4],Stack_Reconstructed_IronDistance_Sample4);
-   ProduceStack(Selected_Angle[4],Stack_Selected_Angle_Sample4);
-   ProduceStack(Reconstructed_Angle[4],Stack_Reconstructed_Angle_Sample4);
-   ProduceStack(Selected_ReconstructedAngle[4],Stack_Selected_ReconstructedAngle_Sample4);
-   ProduceStack(Reconstructed_ReconstructedAngle[4],Stack_Reconstructed_ReconstructedAngle_Sample4);
+  ProduceStack(Reconstructed_IronDistance[4],Stack_Reconstructed_IronDistance_Sample4);
+  ProduceStack(Selected_Angle[4],Stack_Selected_Angle_Sample4);
+  ProduceStack(Reconstructed_Angle[4],Stack_Reconstructed_Angle_Sample4);
+  ProduceStack(Selected_ReconstructedAngle[4],Stack_Selected_ReconstructedAngle_Sample4);
+  ProduceStack(Reconstructed_ReconstructedAngle[4],Stack_Reconstructed_ReconstructedAngle_Sample4);
 
 
-   ProduceStack(Selected_NTracks[5],Stack_Selected_NTracks_Sample5);
-   ProduceStack(Reconstructed_NTracks[5],Stack_Reconstructed_NTracks_Sample5);
-   ProduceStack(Selected_Momentum[5],Stack_Selected_Momentum_Sample5);
-   ProduceStack(Reconstructed_Momentum[5],Stack_Reconstructed_Momentum_Sample5);
-   ProduceStack(Selected_Angle[5],Stack_Selected_Angle_Sample5);
-   ProduceStack(Reconstructed_Angle[5],Stack_Reconstructed_Angle_Sample5);
-   ProduceStack(Selected_ReconstructedAngle[5],Stack_Selected_ReconstructedAngle_Sample5);
-   ProduceStack(Reconstructed_ReconstructedAngle[5],Stack_Reconstructed_ReconstructedAngle_Sample5);
+  ProduceStack(Selected_NTracks[5],Stack_Selected_NTracks_Sample5);
+  ProduceStack(Reconstructed_NTracks[5],Stack_Reconstructed_NTracks_Sample5);
+  ProduceStack(Selected_Momentum[5],Stack_Selected_Momentum_Sample5);
+  ProduceStack(Reconstructed_Momentum[5],Stack_Reconstructed_Momentum_Sample5);
+  ProduceStack(Selected_Angle[5],Stack_Selected_Angle_Sample5);
+  ProduceStack(Reconstructed_Angle[5],Stack_Reconstructed_Angle_Sample5);
+  ProduceStack(Selected_ReconstructedAngle[5],Stack_Selected_ReconstructedAngle_Sample5);
+  ProduceStack(Reconstructed_ReconstructedAngle[5],Stack_Reconstructed_ReconstructedAngle_Sample5);
 
-   ProduceStack(InFV_Interacting,Stack_InFV_Interacting);
-   ProduceStack(InFV_Reconstructed,Stack_InFV_Reconstructed);
+  ProduceStack(InFV_Interacting,Stack_InFV_Interacting);
+  ProduceStack(InFV_Reconstructed,Stack_InFV_Reconstructed);
 
-   ProduceStack(INGRIDTrackWidth,Stack_INGRIDTrackWidth);
-   ProduceStack(INGRIDPositionCriteria,Stack_INGRIDPositionCriteria);
-   ProduceStack(INGRIDAngleCriteria,Stack_INGRIDAngleCriteria);
+  ProduceStack(INGRIDTrackWidth,Stack_INGRIDTrackWidth);
+  ProduceStack(INGRIDPositionCriteria,Stack_INGRIDPositionCriteria);
+  ProduceStack(INGRIDAngleCriteria,Stack_INGRIDAngleCriteria);
 
 
   TCanvas * c0 = new TCanvas("c0","Reconstructed by TN-160 selection: All samples");
@@ -1647,12 +1648,12 @@ sprintf(Name,"InFV_Interacting[%d]",j);
   InFV_Reconstructed_Clone->Sumw2();
   InFV_Reconstructed_Clone->Divide(InFV_Interacting_Clone);
   /*
-  for(int ibinx=1;ibinx<=InFV_Interacting_Clone->GetNbinsX();ibinx++){
+    for(int ibinx=1;ibinx<=InFV_Interacting_Clone->GetNbinsX();ibinx++){
     double Value=InFV_Reconstructed_Clone->GetBinContent(ibinx);
     if(InFV_Interacting_Clone->GetBinContent(ibinx)!=0) Value/=InFV_Interacting_Clone->GetBinContent(ibinx);
     cout<<"Bin="<<ibinx<<", Value="<<Value<<endl;
     InFV_Reconstructed_Clone->SetBinContent(ibinx,Value);
-  }
+    }
   */
   
   for(int ibinx=1;ibinx<=InFV_Interacting_Clone->GetNbinsX();ibinx++){
@@ -1812,15 +1813,15 @@ sprintf(Name,"InFV_Interacting[%d]",j);
       PIDAndMatching_Bkg+=PIDAndMatching_Selected_IronDistance[4][fsi]->Integral();
       PIDAndMatchingAndWidth_Bkg+=Selected_IronDistance[4][fsi]->Integral();
     }
-      PriorPID_Total+=Selected_NTracks_ATrackIsSample4[fsi]->Integral();
-      PID_Total+=PID_Selected_IronDistance[4][fsi]->Integral();
-      PIDAndMatching_Total+=PIDAndMatching_Selected_IronDistance[4][fsi]->Integral();
-      PIDAndMatchingAndWidth_Total+=Selected_IronDistance[4][fsi]->Integral();
+    PriorPID_Total+=Selected_NTracks_ATrackIsSample4[fsi]->Integral();
+    PID_Total+=PID_Selected_IronDistance[4][fsi]->Integral();
+    PIDAndMatching_Total+=PIDAndMatching_Selected_IronDistance[4][fsi]->Integral();
+    PIDAndMatchingAndWidth_Total+=Selected_IronDistance[4][fsi]->Integral();
 
-      PriorPID_Total_Sample5+=Selected_NTracks_ATrackIsSample5[fsi]->Integral();
-      PID_Total_Sample5+=PID_Selected_IronDistance[5][fsi]->Integral();
-      PIDAndMatching_Total_Sample5+=PIDAndMatching_Selected_IronDistance[5][fsi]->Integral();
-      PIDAndMatchingAndWidth_Total_Sample5+=Selected_IronDistance[5][fsi]->Integral();
+    PriorPID_Total_Sample5+=Selected_NTracks_ATrackIsSample5[fsi]->Integral();
+    PID_Total_Sample5+=PID_Selected_IronDistance[5][fsi]->Integral();
+    PIDAndMatching_Total_Sample5+=PIDAndMatching_Selected_IronDistance[5][fsi]->Integral();
+    PIDAndMatchingAndWidth_Total_Sample5+=Selected_IronDistance[5][fsi]->Integral();
   }
 
   cout<<"Selection:"<<endl;
@@ -1830,7 +1831,7 @@ sprintf(Name,"InFV_Interacting[%d]",j);
   cout<<"Width cut (only sample 4 selection): Number of events having a Mu like in sample 4 (CC0pi) = "<<PIDAndMatchingAndWidth_CC0pi<<", Total="<<PIDAndMatchingAndWidth_Total<<", Data="<<Selected_IronDistance_Data[4]->Integral()<<", Purity="<<PIDAndMatchingAndWidth_CC0pi/PIDAndMatchingAndWidth_Total<<", Efficiency="<<PIDAndMatchingAndWidth_CC0pi/PIDAndMatching_CC0pi<<endl;
 
   cout<<endl<<endl;
-cout<<" \\hline"<<endl;
+  cout<<" \\hline"<<endl;
   cout<<" & CC-0pi & CC-Others & NC & Other bkg & CC-0pi purity & CC-0pi efficiency & Total MC & Data"<<" \\"<<"\\"<<endl; 
   cout<<" \\hline"<<endl;
   cout<<"One track INGRID stopped & "<<PriorPID_CC0pi<<" & "<<PriorPID_CCOthers<<" & "<<PriorPID_NC<<" & "<<PriorPID_Bkg<<" & "<<PriorPID_CC0pi/PriorPID_Total<<" &  &"<<PriorPID_Total<<" & "<<Selected_NTracks_ATrackIsSample4_Data->Integral()<<" \\"<<"\\"<<endl;
@@ -1862,16 +1863,16 @@ cout<<" \\hline"<<endl;
   leg_Sample4->Draw("same");
   c2->SaveAs("Stopping_NTracksReconstructed.pdf");
   /*
-  TCanvas * c20 = new TCanvas();
-  Stack_Reconstructed_NTracks_Sample4->SetTitle("INGRID stopped #mu: Interaction type with reconstructed tracks");
-  Stack_Reconstructed_NTracks_Sample4->Draw();
-  TH1D * hStack_Reconstructed_NTracks_Sample4 = (TH1D*) Stack_Reconstructed_NTracks_Sample4->GetHistogram();
-  hStack_Reconstructed_NTracks_Sample4->GetXaxis()->SetTitle("Number of reconstructed tracks");
-  hStack_Reconstructed_NTracks_Sample4->GetYaxis()->SetTitle("Number of events");
-  cout<<"Purity of the TN-160 reconstruction in CC-0pi:"<<Reconstructed_NTracks[4][1]->Integral()/Stack_Reconstructed_NTracks_Sample4->Integral()<<endl;
-  leg_Sample4->Draw("same");
-  c2->SaveAs("Stopping_NTracksReconstructed.pdf");
-*/
+    TCanvas * c20 = new TCanvas();
+    Stack_Reconstructed_NTracks_Sample4->SetTitle("INGRID stopped #mu: Interaction type with reconstructed tracks");
+    Stack_Reconstructed_NTracks_Sample4->Draw();
+    TH1D * hStack_Reconstructed_NTracks_Sample4 = (TH1D*) Stack_Reconstructed_NTracks_Sample4->GetHistogram();
+    hStack_Reconstructed_NTracks_Sample4->GetXaxis()->SetTitle("Number of reconstructed tracks");
+    hStack_Reconstructed_NTracks_Sample4->GetYaxis()->SetTitle("Number of events");
+    cout<<"Purity of the TN-160 reconstruction in CC-0pi:"<<Reconstructed_NTracks[4][1]->Integral()/Stack_Reconstructed_NTracks_Sample4->Integral()<<endl;
+    leg_Sample4->Draw("same");
+    c2->SaveAs("Stopping_NTracksReconstructed.pdf");
+  */
   TCanvas * c3 = new TCanvas();
   Stack_Selected_Momentum_Sample4->SetTitle("CC-0pi like INGRID stopped #mu: Interaction type with p_{#mu}");
   Stack_Selected_Momentum_Sample4->Draw();
@@ -1896,7 +1897,7 @@ cout<<" \\hline"<<endl;
   THStack * Stack_Selected_Momentum_Sample4_Zoom = (THStack*) Stack_Selected_Momentum_Sample4->Clone("Stack_Selected_Momentum_Sample4_Zoom");
   Stack_Selected_Momentum_Sample4_Zoom->SetMinimum(0);
   Stack_Selected_Momentum_Sample4_Zoom->SetMaximum(2000);
-   Stack_Selected_Momentum_Sample4_Zoom->Draw();
+  Stack_Selected_Momentum_Sample4_Zoom->Draw();
   TH1D * hStack_Selected_Momentum_Sample4_Zoom = (TH1D*) Stack_Selected_Momentum_Sample4_Zoom->GetHistogram();
   hStack_Selected_Momentum_Sample4_Zoom->GetXaxis()->SetRangeUser(0,1);
   //hStack_Selected_Momentum_Sample4_Zoom->GetYaxis()->SetRangeUser(0,2000);
@@ -1904,17 +1905,17 @@ cout<<" \\hline"<<endl;
   leg_Sample4->Draw("same");
   c30->SaveAs("Stopping_MomentumSelected_Zoom.pdf");
   /*
-  TCanvas * c40 = new TCanvas();
-  THStack * Stack_Reconstructed_Momentum_Sample4_Zoom = (THStack*) Stack_Reconstructed_Momentum_Sample4->Clone("Stack_Reconstructed_Momentum_Sample4_Zoom");
- Stack_Reconstructed_Momentum_Sample4_Zoom->SetMinimum(0);
-  Stack_Reconstructed_Momentum_Sample4_Zoom->SetMaximum(3000);
-   Stack_Reconstructed_Momentum_Sample4_Zoom->Draw();
-  TH1D * hStack_Reconstructed_Momentum_Sample4_Zoom = (TH1D*) Stack_Reconstructed_Momentum_Sample4_Zoom->GetHistogram();
-  hStack_Reconstructed_Momentum_Sample4_Zoom->GetXaxis()->SetRangeUser(0,1);
-  Stack_Reconstructed_Momentum_Sample4_Zoom->Draw();
-  leg_Sample4->Draw("same");
-  c40->SaveAs("Stopping_MomentumReconstructed_Zoom.pdf");
-*/
+    TCanvas * c40 = new TCanvas();
+    THStack * Stack_Reconstructed_Momentum_Sample4_Zoom = (THStack*) Stack_Reconstructed_Momentum_Sample4->Clone("Stack_Reconstructed_Momentum_Sample4_Zoom");
+    Stack_Reconstructed_Momentum_Sample4_Zoom->SetMinimum(0);
+    Stack_Reconstructed_Momentum_Sample4_Zoom->SetMaximum(3000);
+    Stack_Reconstructed_Momentum_Sample4_Zoom->Draw();
+    TH1D * hStack_Reconstructed_Momentum_Sample4_Zoom = (TH1D*) Stack_Reconstructed_Momentum_Sample4_Zoom->GetHistogram();
+    hStack_Reconstructed_Momentum_Sample4_Zoom->GetXaxis()->SetRangeUser(0,1);
+    Stack_Reconstructed_Momentum_Sample4_Zoom->Draw();
+    leg_Sample4->Draw("same");
+    c40->SaveAs("Stopping_MomentumReconstructed_Zoom.pdf");
+  */
 
   TCanvas * c040 = new TCanvas();
   Stack_INGRIDTrackWidth->SetTitle("CC-0pi like INGRID stopped #mu");
@@ -2120,71 +2121,71 @@ cout<<" \\hline"<<endl;
   c414->SaveAs("Stopping_ReconstructedAnglePIDAndMatching_Selected.pdf");
 
 
- TCanvas * c415 = new TCanvas();
- Selected2D->Scale(ScalingFactor);
- Selected2D->SetTitle("MC: CC-0pi like INGRID stopped #mu #theta_{#mu}Xd_{#mu} distribution ");
- Selected2D->GetXaxis()->SetTitle("d_{#mu} (cm)");
- Selected2D->GetYaxis()->SetTitle("#theta_{#mu} (#circ)");
- Selected2D->GetZaxis()->SetTitle("Number of events");
- Selected2D->GetXaxis()->SetTitleOffset(1.5);
- Selected2D->GetYaxis()->SetTitleOffset(1.8);
- Selected2D->GetZaxis()->SetTitleOffset(1.2);
- Selected2D->GetXaxis()->SetRangeUser(0,80);
- Selected2D->GetYaxis()->SetRangeUser(0,30);
- Selected2D->Draw("LEGO1");
- Selected2D->SaveAs("SelectedMC.pdf");
+  TCanvas * c415 = new TCanvas();
+  Selected2D->Scale(ScalingFactor);
+  Selected2D->SetTitle("MC: CC-0pi like INGRID stopped #mu #theta_{#mu}Xd_{#mu} distribution ");
+  Selected2D->GetXaxis()->SetTitle("d_{#mu} (cm)");
+  Selected2D->GetYaxis()->SetTitle("#theta_{#mu} (#circ)");
+  Selected2D->GetZaxis()->SetTitle("Number of events");
+  Selected2D->GetXaxis()->SetTitleOffset(1.5);
+  Selected2D->GetYaxis()->SetTitleOffset(1.8);
+  Selected2D->GetZaxis()->SetTitleOffset(1.2);
+  Selected2D->GetXaxis()->SetRangeUser(0,80);
+  Selected2D->GetYaxis()->SetRangeUser(0,30);
+  Selected2D->Draw("LEGO1");
+  Selected2D->SaveAs("SelectedMC.pdf");
 
- TCanvas * c416 = new TCanvas();
- Selected2D_Data->SetTitle("Data: CC-0pi like INGRID stopped #mu #theta_{#mu}Xd_{#mu} distribution ");
- Selected2D_Data->GetXaxis()->SetTitle("d_{#mu} (cm)");
- Selected2D_Data->GetYaxis()->SetTitle("#theta_{#mu} (#circ)");
- Selected2D_Data->GetZaxis()->SetTitle("Number of events");
- Selected2D_Data->GetXaxis()->SetTitleOffset(1.5);
- Selected2D_Data->GetYaxis()->SetTitleOffset(1.8);
- Selected2D_Data->GetZaxis()->SetTitleOffset(1.2);
- Selected2D_Data->GetXaxis()->SetRangeUser(0,80);
- Selected2D_Data->GetYaxis()->SetRangeUser(0,30);
- Selected2D_Data->Draw("LEGO1");
- Selected2D_Data->SaveAs("SelectedData.pdf");
+  TCanvas * c416 = new TCanvas();
+  Selected2D_Data->SetTitle("Data: CC-0pi like INGRID stopped #mu #theta_{#mu}Xd_{#mu} distribution ");
+  Selected2D_Data->GetXaxis()->SetTitle("d_{#mu} (cm)");
+  Selected2D_Data->GetYaxis()->SetTitle("#theta_{#mu} (#circ)");
+  Selected2D_Data->GetZaxis()->SetTitle("Number of events");
+  Selected2D_Data->GetXaxis()->SetTitleOffset(1.5);
+  Selected2D_Data->GetYaxis()->SetTitleOffset(1.8);
+  Selected2D_Data->GetZaxis()->SetTitleOffset(1.2);
+  Selected2D_Data->GetXaxis()->SetRangeUser(0,80);
+  Selected2D_Data->GetYaxis()->SetRangeUser(0,30);
+  Selected2D_Data->Draw("LEGO1");
+  Selected2D_Data->SaveAs("SelectedData.pdf");
 
- TCanvas * c417 = new TCanvas();
- TH2D * Selected2D_Data2 = (TH2D*) Selected2D_Data->Clone("Selected2D_Data2");
- cout.precision(2);
- for(int ibinx=1;ibinx<=Selected2D_Data->GetNbinsX();ibinx++){
-   cout<<std::fixed<<"\\multirow{3}{*}{$d_{\\mu} \\in ["<<DistIronBin[ibinx-1]<<"~cm, "<<DistIronBin[ibinx]<<"~cm]$} & ";
-   for(int ibiny=1;ibiny<=Selected2D_Data->GetNbinsY();ibiny++){
-     double MC=Selected2D->GetBinContent(ibinx,ibiny);
-     double Data=Selected2D_Data->GetBinContent(ibinx,ibiny);
-     double ErrorData=TMath::Sqrt(Data);
-     double Relative=Data-MC;
-     if(MC!=0) Relative/=MC;
-     Selected2D_Data2->SetBinContent(ibinx,ibiny,Relative);
-     if(ibiny!=Selected2D_Data->GetNbinsY()) cout<<"Data: "<<Data<<" \\pm "<<ErrorData<<"& ";
-     else cout<<"Data: "<<Data<<" \\pm "<<ErrorData<<" \\"<<"\\"<<endl;
-   }
-   cout<<" & ";
-   for(int ibiny=1;ibiny<=Selected2D_Data->GetNbinsY();ibiny++){
-     double MC=Selected2D->GetBinContent(ibinx,ibiny);
-     if(ibiny!=Selected2D_Data->GetNbinsY()) cout<<"MC: "<<MC<<" & ";
-     else cout<<"MC: "<<MC<<" \\"<<"\\"<<endl;
-     double Data=Selected2D_Data->GetBinContent(ibinx,ibiny);
-     double Relative=Data-MC;
-     if(MC!=0) Relative/=MC;
-   }
-   cout<<" & ";
-   for(int ibiny=1;ibiny<=Selected2D_Data->GetNbinsY();ibiny++){
-     double MC=Selected2D->GetBinContent(ibinx,ibiny);
-     double Data=Selected2D_Data->GetBinContent(ibinx,ibiny);
-     double ErrorData=TMath::Sqrt(Data);
-     double Error=ErrorData; if(MC!=0) Error/=MC;
-     double Ratio=Data-MC;
-     if(MC!=0) Ratio/=MC;
-     if(ibiny!=Selected2D_Data->GetNbinsY()) cout<<"$\\frac{Data-MC}{MC}$: "<<Ratio*100<<" \\pm "<<Error*100<<" \\% & ";
-     else cout<<"$\\frac{Data-MC}{MC}$: "<<Ratio*100<<" \\pm "<<Error*100<<"\\% \\"<<"\\"<<endl;
-   }
-   cout<<"\\hline"<<endl;
- }
- Selected2D_Data2->Draw("colz");
+  TCanvas * c417 = new TCanvas();
+  TH2D * Selected2D_Data2 = (TH2D*) Selected2D_Data->Clone("Selected2D_Data2");
+  cout.precision(2);
+  for(int ibinx=1;ibinx<=Selected2D_Data->GetNbinsX();ibinx++){
+    cout<<std::fixed<<"\\multirow{3}{*}{$d_{\\mu} \\in ["<<DistIronBin[ibinx-1]<<"~cm, "<<DistIronBin[ibinx]<<"~cm]$} & ";
+    for(int ibiny=1;ibiny<=Selected2D_Data->GetNbinsY();ibiny++){
+      double MC=Selected2D->GetBinContent(ibinx,ibiny);
+      double Data=Selected2D_Data->GetBinContent(ibinx,ibiny);
+      double ErrorData=TMath::Sqrt(Data);
+      double Relative=Data-MC;
+      if(MC!=0) Relative/=MC;
+      Selected2D_Data2->SetBinContent(ibinx,ibiny,Relative);
+      if(ibiny!=Selected2D_Data->GetNbinsY()) cout<<"Data: "<<Data<<" \\pm "<<ErrorData<<"& ";
+      else cout<<"Data: "<<Data<<" \\pm "<<ErrorData<<" \\"<<"\\"<<endl;
+    }
+    cout<<" & ";
+    for(int ibiny=1;ibiny<=Selected2D_Data->GetNbinsY();ibiny++){
+      double MC=Selected2D->GetBinContent(ibinx,ibiny);
+      if(ibiny!=Selected2D_Data->GetNbinsY()) cout<<"MC: "<<MC<<" & ";
+      else cout<<"MC: "<<MC<<" \\"<<"\\"<<endl;
+      double Data=Selected2D_Data->GetBinContent(ibinx,ibiny);
+      double Relative=Data-MC;
+      if(MC!=0) Relative/=MC;
+    }
+    cout<<" & ";
+    for(int ibiny=1;ibiny<=Selected2D_Data->GetNbinsY();ibiny++){
+      double MC=Selected2D->GetBinContent(ibinx,ibiny);
+      double Data=Selected2D_Data->GetBinContent(ibinx,ibiny);
+      double ErrorData=TMath::Sqrt(Data);
+      double Error=ErrorData; if(MC!=0) Error/=MC;
+      double Ratio=Data-MC;
+      if(MC!=0) Ratio/=MC;
+      if(ibiny!=Selected2D_Data->GetNbinsY()) cout<<"$\\frac{Data-MC}{MC}$: "<<Ratio*100<<" \\pm "<<Error*100<<" \\% & ";
+      else cout<<"$\\frac{Data-MC}{MC}$: "<<Ratio*100<<" \\pm "<<Error*100<<"\\% \\"<<"\\"<<endl;
+    }
+    cout<<"\\hline"<<endl;
+  }
+  Selected2D_Data2->Draw("colz");
 
 
   TCanvas * c42 = new TCanvas();
@@ -2290,98 +2291,98 @@ cout<<" \\hline"<<endl;
   c83->SaveAs("ThroughGoing_ReconstructedAngleSelected.pdf");
 
   /*
-  TCanvas * c99 = new TCanvas();
-  hStack_Selected_Momentum_Sample4->Draw();
-  cout<<"Stopping sample:"<<endl;
-  cout<<"Original Purity in CC0pi="<<Reconstructed_NTracks[4][1]->Integral()/Reconstructed_Momentum_Sample4_All->Integral()<<endl;
-  cout<<"Purity after selection in CC0pi="<<Selected_NTracks[4][1]->Integral()/Selected_Momentum_Sample4_All->Integral()<<endl;
-  cout<<"Cut efficiency="<<Selected_NTracks[4][1]->Integral()/Reconstructed_NTracks[4][1]->Integral()<<endl;
-  cout<<"if removing NTracks>2:"<<endl;
-  cout<<"Purity after selection in CC0pi="<<Selected_NTracks[4][1]->Integral(0,3)/Selected_NTracks_Sample4_All->Integral(0,3)<<endl;
-  cout<<"Cut efficiency="<<Selected_NTracks[4][1]->Integral(0,3)/Reconstructed_NTracks[4][1]->Integral()<<endl;
-  cout<<"test bin="<<Selected_NTracks[4][1]->GetBinCenter(3)<<", "<<Selected_NTracks[4][1]->Integral(2,3)<<", "<<Selected_NTracks[4][1]->Integral(0,10)<<endl;
+    TCanvas * c99 = new TCanvas();
+    hStack_Selected_Momentum_Sample4->Draw();
+    cout<<"Stopping sample:"<<endl;
+    cout<<"Original Purity in CC0pi="<<Reconstructed_NTracks[4][1]->Integral()/Reconstructed_Momentum_Sample4_All->Integral()<<endl;
+    cout<<"Purity after selection in CC0pi="<<Selected_NTracks[4][1]->Integral()/Selected_Momentum_Sample4_All->Integral()<<endl;
+    cout<<"Cut efficiency="<<Selected_NTracks[4][1]->Integral()/Reconstructed_NTracks[4][1]->Integral()<<endl;
+    cout<<"if removing NTracks>2:"<<endl;
+    cout<<"Purity after selection in CC0pi="<<Selected_NTracks[4][1]->Integral(0,3)/Selected_NTracks_Sample4_All->Integral(0,3)<<endl;
+    cout<<"Cut efficiency="<<Selected_NTracks[4][1]->Integral(0,3)/Reconstructed_NTracks[4][1]->Integral()<<endl;
+    cout<<"test bin="<<Selected_NTracks[4][1]->GetBinCenter(3)<<", "<<Selected_NTracks[4][1]->Integral(2,3)<<", "<<Selected_NTracks[4][1]->Integral(0,10)<<endl;
 
 
-  cout<<endl<<endl<<"INGRID escaping sample:"<<endl;
-  cout<<"Original Purity in CC0pi="<<Reconstructed_NTracks[5][1]->Integral()/Reconstructed_Momentum_Sample5_All->Integral()<<endl;
-  cout<<"Purity after selection in CC0pi="<<Selected_NTracks[5][1]->Integral()/Selected_Momentum_Sample5_All->Integral()<<endl;
-  cout<<"Cut efficiency="<<Selected_NTracks[5][1]->Integral()/Reconstructed_NTracks[5][1]->Integral()<<endl;
-  cout<<"if removing NTracks>2:"<<endl;
-  cout<<"Purity after selection in CC0pi="<<Selected_NTracks[5][1]->Integral(0,3)/Selected_NTracks_Sample5_All->Integral(0,3)<<endl;
-  cout<<"Cut efficiency="<<Selected_NTracks[5][1]->Integral(0,3)/Reconstructed_NTracks[5][1]->Integral()<<endl;
-  cout<<"test bin="<<Selected_NTracks[5][1]->GetBinCenter(3)<<", "<<Selected_NTracks[5][1]->Integral(2,3)<<", "<<Selected_NTracks[5][1]->Integral(0,10)<<endl;
+    cout<<endl<<endl<<"INGRID escaping sample:"<<endl;
+    cout<<"Original Purity in CC0pi="<<Reconstructed_NTracks[5][1]->Integral()/Reconstructed_Momentum_Sample5_All->Integral()<<endl;
+    cout<<"Purity after selection in CC0pi="<<Selected_NTracks[5][1]->Integral()/Selected_Momentum_Sample5_All->Integral()<<endl;
+    cout<<"Cut efficiency="<<Selected_NTracks[5][1]->Integral()/Reconstructed_NTracks[5][1]->Integral()<<endl;
+    cout<<"if removing NTracks>2:"<<endl;
+    cout<<"Purity after selection in CC0pi="<<Selected_NTracks[5][1]->Integral(0,3)/Selected_NTracks_Sample5_All->Integral(0,3)<<endl;
+    cout<<"Cut efficiency="<<Selected_NTracks[5][1]->Integral(0,3)/Reconstructed_NTracks[5][1]->Integral()<<endl;
+    cout<<"test bin="<<Selected_NTracks[5][1]->GetBinCenter(3)<<", "<<Selected_NTracks[5][1]->Integral(2,3)<<", "<<Selected_NTracks[5][1]->Integral(0,10)<<endl;
 
-  TH1D * Selected_Higher_Purity = (TH1D*) Selected_Higher[0]->Clone("Selected_Higher_Purity");
-  Selected_Higher_Purity->Sumw2();
-  Selected_Higher_Purity->GetXaxis()->SetTitle("#mu_{CL} cut value");
-  Selected_Higher_Purity->GetYaxis()->SetTitle("#mu purity");
-  Selected_Higher_Purity->GetYaxis()->SetTitleOffset(1.3);
-  Selected_Higher_Purity->GetXaxis()->SetRangeUser(0,1);
+    TH1D * Selected_Higher_Purity = (TH1D*) Selected_Higher[0]->Clone("Selected_Higher_Purity");
+    Selected_Higher_Purity->Sumw2();
+    Selected_Higher_Purity->GetXaxis()->SetTitle("#mu_{CL} cut value");
+    Selected_Higher_Purity->GetYaxis()->SetTitle("#mu purity");
+    Selected_Higher_Purity->GetYaxis()->SetTitleOffset(1.3);
+    Selected_Higher_Purity->GetXaxis()->SetRangeUser(0,1);
 
-  TH1D * Selected_Higher_Purity_All = (TH1D*) Selected_Higher[0]->Clone("Selected_Higher_Purity_All");
-  Selected_Higher_Purity_All->Sumw2();
-  for(int type=1;type<4;type++) Selected_Higher_Purity_All->Add(Selected_Higher[type]);
-  Selected_Higher_Purity->Divide(Selected_Higher_Purity_All);
+    TH1D * Selected_Higher_Purity_All = (TH1D*) Selected_Higher[0]->Clone("Selected_Higher_Purity_All");
+    Selected_Higher_Purity_All->Sumw2();
+    for(int type=1;type<4;type++) Selected_Higher_Purity_All->Add(Selected_Higher[type]);
+    Selected_Higher_Purity->Divide(Selected_Higher_Purity_All);
 
-  TH1D * Selected_Higher_Efficiency = (TH1D*) Selected_Higher[0]->Clone("Selected_Higher_Efficiency");
-  Selected_Higher_Efficiency->Sumw2();
-  Selected_Higher_Efficiency->GetXaxis()->SetTitle("#mu_{CL} cut value");
-  Selected_Higher_Efficiency->GetYaxis()->SetTitle("#mu efficiency");
-  Selected_Higher_Efficiency->GetYaxis()->SetTitleOffset(1.3);
-  Selected_Higher_Efficiency->Divide(Interacting_Higher[0]);
-  Selected_Higher_Efficiency->GetXaxis()->SetRangeUser(0,1);
+    TH1D * Selected_Higher_Efficiency = (TH1D*) Selected_Higher[0]->Clone("Selected_Higher_Efficiency");
+    Selected_Higher_Efficiency->Sumw2();
+    Selected_Higher_Efficiency->GetXaxis()->SetTitle("#mu_{CL} cut value");
+    Selected_Higher_Efficiency->GetYaxis()->SetTitle("#mu efficiency");
+    Selected_Higher_Efficiency->GetYaxis()->SetTitleOffset(1.3);
+    Selected_Higher_Efficiency->Divide(Interacting_Higher[0]);
+    Selected_Higher_Efficiency->GetXaxis()->SetRangeUser(0,1);
 
-  TCanvas * c9 = new TCanvas();
-  Selected_Higher_Purity->Draw();
-  c9->SaveAs("Muon_purity.pdf");
-  TCanvas * c10 = new TCanvas();
-  Selected_Higher_Efficiency->Draw();
-  c10->SaveAs("Muon_efficiency.pdf");
+    TCanvas * c9 = new TCanvas();
+    Selected_Higher_Purity->Draw();
+    c9->SaveAs("Muon_purity.pdf");
+    TCanvas * c10 = new TCanvas();
+    Selected_Higher_Efficiency->Draw();
+    c10->SaveAs("Muon_efficiency.pdf");
 
 
-  TH1D * Selected_Lower_Purity = (TH1D*) Selected_Lower[2]->Clone("Selected_Lower_Purity");
-  Selected_Lower_Purity->Sumw2();
-  Selected_Lower_Purity->GetXaxis()->SetTitle("#mu_{CL} cut value");
-  Selected_Lower_Purity->GetYaxis()->SetTitle("p purity");
-  Selected_Lower_Purity->GetYaxis()->SetTitleOffset(1.3);
-  Selected_Lower_Purity->GetXaxis()->SetRangeUser(0,1);
+    TH1D * Selected_Lower_Purity = (TH1D*) Selected_Lower[2]->Clone("Selected_Lower_Purity");
+    Selected_Lower_Purity->Sumw2();
+    Selected_Lower_Purity->GetXaxis()->SetTitle("#mu_{CL} cut value");
+    Selected_Lower_Purity->GetYaxis()->SetTitle("p purity");
+    Selected_Lower_Purity->GetYaxis()->SetTitleOffset(1.3);
+    Selected_Lower_Purity->GetXaxis()->SetRangeUser(0,1);
 
-  TH1D * Selected_Lower_Purity_All = (TH1D*) Selected_Lower[2]->Clone("Selected_Lower_Purity_All");
-  Selected_Lower_Purity_All->Sumw2();
-  for(int type=0;type<4;type++){ if(type!=2) Selected_Lower_Purity_All->Add(Selected_Lower[type]);}
-  Selected_Lower_Purity->Divide(Selected_Lower_Purity_All);
+    TH1D * Selected_Lower_Purity_All = (TH1D*) Selected_Lower[2]->Clone("Selected_Lower_Purity_All");
+    Selected_Lower_Purity_All->Sumw2();
+    for(int type=0;type<4;type++){ if(type!=2) Selected_Lower_Purity_All->Add(Selected_Lower[type]);}
+    Selected_Lower_Purity->Divide(Selected_Lower_Purity_All);
 
-  TH1D * Selected_Lower_Efficiency = (TH1D*) Selected_Lower[2]->Clone("Selected_Lower_Efficiency");
-  Selected_Lower_Efficiency->Sumw2();
-  Selected_Lower_Efficiency->GetXaxis()->SetTitle("#mu_{CL} cut value");
-  Selected_Lower_Efficiency->GetYaxis()->SetTitle("p efficiency");
-  Selected_Lower_Efficiency->GetYaxis()->SetTitleOffset(1.3);
-  Selected_Lower_Efficiency->Divide(Interacting_Lower[2]);
-  Selected_Lower_Efficiency->GetXaxis()->SetRangeUser(0,1);
+    TH1D * Selected_Lower_Efficiency = (TH1D*) Selected_Lower[2]->Clone("Selected_Lower_Efficiency");
+    Selected_Lower_Efficiency->Sumw2();
+    Selected_Lower_Efficiency->GetXaxis()->SetTitle("#mu_{CL} cut value");
+    Selected_Lower_Efficiency->GetYaxis()->SetTitle("p efficiency");
+    Selected_Lower_Efficiency->GetYaxis()->SetTitleOffset(1.3);
+    Selected_Lower_Efficiency->Divide(Interacting_Lower[2]);
+    Selected_Lower_Efficiency->GetXaxis()->SetRangeUser(0,1);
   
-  TCanvas * c11 = new TCanvas();
-  Selected_Lower_Purity->Draw();
-  c11->SaveAs("Proton_purity.pdf");
-  TCanvas * c12 = new TCanvas();
-  Selected_Lower_Efficiency->Draw();
-  c12->SaveAs("Proton_efficiency.pdf");
+    TCanvas * c11 = new TCanvas();
+    Selected_Lower_Purity->Draw();
+    c11->SaveAs("Proton_purity.pdf");
+    TCanvas * c12 = new TCanvas();
+    Selected_Lower_Efficiency->Draw();
+    c12->SaveAs("Proton_efficiency.pdf");
   */
   /*
-  TCanvas * c11 = new TCanvas();
-  Selected_Muon_Purity_Sample5->Draw();
-  c11->SaveAs("CC-0pi_purity_MuonGoing.pdf");
-  TCanvas * c12 = new TCanvas();
-  Selected_Muon_Efficiency_Sample5->Draw();
-  c12->SaveAs("CC-0pi_efficiency_MuonGoing.pdf");
+    TCanvas * c11 = new TCanvas();
+    Selected_Muon_Purity_Sample5->Draw();
+    c11->SaveAs("CC-0pi_purity_MuonGoing.pdf");
+    TCanvas * c12 = new TCanvas();
+    Selected_Muon_Efficiency_Sample5->Draw();
+    c12->SaveAs("CC-0pi_efficiency_MuonGoing.pdf");
 
   */
 
   /*
-  TFile * wfile = new TFile("UnfoldingInputs.root","RECREATE");
-  wfile->Write();
-  wfile->Close();*/
+    TFile * wfile = new TFile("UnfoldingInputs.root","RECREATE");
+    wfile->Write();
+    wfile->Close();*/
   /*
-*/
+   */
   TCanvas * c00 = new TCanvas();
   NTracksTotal_Data->SetLineColor(2.);
   NTracksTotal_Data->Draw();
@@ -2669,11 +2670,11 @@ cout<<" \\hline"<<endl;
   }
 
   /*
-  cTrackWidthXIronDistance_NuE->Divide(1,2);
-  cTrackWidthXIronDistance_NuE->cd(1);
-  pTrackWidthXIronDistance_NuE->Draw();
-  cTrackWidthXIronDistance_NuE->cd(2);
-  TrackWidthXIronDistance_NuE->Draw("colz");
+    cTrackWidthXIronDistance_NuE->Divide(1,2);
+    cTrackWidthXIronDistance_NuE->cd(1);
+    pTrackWidthXIronDistance_NuE->Draw();
+    cTrackWidthXIronDistance_NuE->cd(2);
+    TrackWidthXIronDistance_NuE->Draw("colz");
   */
   TCanvas * cAngle2D = new TCanvas();
   cAngle2D->Divide(1,2);
@@ -2685,25 +2686,25 @@ cout<<" \\hline"<<endl;
   TCanvas * cIronXMom = new TCanvas();
   MomentumXIron_ReconstructedForTrueMuon->Draw("colz");
   /*
-  TCanvas * cCriteria_Angle[NBinsIron];
-  for(int i=0;i<NBinsIron;i++){
+    TCanvas * cCriteria_Angle[NBinsIron];
+    for(int i=0;i<NBinsIron;i++){
     cCriteria_Angle[i] = new TCanvas();
     cCriteria_Angle[i]->Divide(1,2);
     cCriteria_Angle[i]->cd(1);
     hCriteriaAngleXY_Data[i]->Draw("colz");
     cCriteria_Angle[i]->cd(2);
     hCriteriaAngleXY[i]->Draw("colz");
-  }
+    }
 
-  TCanvas * cCriteria_HalfWay[NBinsIron];
-  for(int i=0;i<NBinsIron;i++){
+    TCanvas * cCriteria_HalfWay[NBinsIron];
+    for(int i=0;i<NBinsIron;i++){
     cCriteria_HalfWay[i] = new TCanvas();
     cCriteria_HalfWay[i]->Divide(1,2);
     cCriteria_HalfWay[i]->cd(1);
     hCriteriaHalfWayXY_Data[i]->Draw("colz");
     cCriteria_HalfWay[i]->cd(2);
     hCriteriaHalfWayXY[i]->Draw("colz");
-  }
+    }
   */
   
 

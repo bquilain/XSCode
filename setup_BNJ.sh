@@ -1,8 +1,12 @@
 export INSTALLREPOSITORY=/home/mlicciardi/T2K/work/XSCode
 export MCINPUTSTORAGE=/home/cvson/scraid2/neutfile5d3d2
+export MCINPUTSTORAGE_WM=/export/scraid4/data2/taichiro/neut
 export DATAINPUTSTORAGE=/export/scraid2/data/bquilain
+# need DATAINPUTSTORAGE_WM
 export MCOUTPUTSTORAGE=/export/scraid2/data/bquilain/MCfiles
+export MCOUTPUTSTORAGE_WM=/export/scraid4/data2/mlicciardi/WaterModule_MCFiles/XSFileGenerator
 export DATAOUTPUTSTORAGE=/export/scraid2/data/bquilain
+# need DATAOUTPUTSTORAGE_WM
 export INGRIDSOFTWARE=/home/mlicciardi/T2K/work/basesoft
 
 #Set ND280 software package PATH

@@ -14,13 +14,13 @@ class Reconstruction{
 
   vector <Hit3D> ApplyPEError(vector <Hit3D> Vec, double angle);
   vector <Hit3D> SearchIngridHit(vector <Hit3D> Vec, vector <Hit3D> VecAll, double thetaX, double thetaY, double TrackSample);
-  vector <HitTemp> EraseDoubleHits(IngridBasicReconSummary * recon, int itrk, vector <HitTemp> HitV);
-  vector <Hit3D> Hit2DMatching(IngridEventSummary* evt, IngridBasicReconSummary * recon,vector <HitTemp> HitV,vector <Hit3D> Vec, bool MC);
+  //vector <HitTemp> EraseDoubleHits(IngridBasicReconSummary * recon, int itrk, vector <HitTemp> HitV);
+  //vector <Hit3D> Hit2DMatching(IngridEventSummary* evt, IngridBasicReconSummary * recon,vector <HitTemp> HitV,vector <Hit3D> Vec, bool MC);
   vector <double> GetTrackAngle(vector <Hit3D> Vec);
-  vector <Hit3D> SeveralHitsPlane(IngridBasicReconSummary * recon,vector <HitTemp> HitV,vector <Hit3D> Vec);
-  vector <Hit3D> Hit2DMatchingCluster(IngridEventSummary* evt, IngridBasicReconSummary * recon,vector <HitTemp> HitV,vector <Hit3D> Vec);
-  vector <HitTemp> EraseDoubleHitsAllTracks(IngridBasicReconSummary * recon, vector <HitTemp> HitV);
-  vector <Hit3D> Hit2DMatchingAllTracks(IngridBasicReconSummary * recon);
+  //vector <Hit3D> SeveralHitsPlane(IngridBasicReconSummary * recon,vector <HitTemp> HitV,vector <Hit3D> Vec);
+  //vector <Hit3D> Hit2DMatchingCluster(IngridEventSummary* evt, IngridBasicReconSummary * recon,vector <HitTemp> HitV,vector <Hit3D> Vec);
+  //vector <HitTemp> EraseDoubleHitsAllTracks(IngridBasicReconSummary * recon, vector <HitTemp> HitV);
+  //vector <Hit3D> Hit2DMatchingAllTracks(IngridBasicReconSummary * recon);
   vector <HitTemp> EraseDoubleHitsPM(PMAnaSummary * recon, int itrk, vector <HitTemp> HitV);
   vector <Hit3D> Hit2DMatchingPM(IngridEventSummary* evt, PMAnaSummary * recon,vector <HitTemp> HitV,vector <Hit3D> Vec, bool MC);
   vector <double> GetTrackAnglePM(vector <Hit3D> Vec, double anglex, double angley, int TrackSample);
@@ -49,6 +49,7 @@ class Reconstruction{
   double GetFSI(IngridEventSummary * evt);
   bool InPMFV(IngridSimVertexSummary * simver);
   vector <double> GetTrueMuonInformation(IngridEventSummary * evt);
+  vector <double> GetTruePionInformation(IngridEventSummary * evt);//ML
   bool IsFV(int mod, double posx, double posy, double posz);
   int GetTrackParticle(IngridEventSummary * evt, PMAnaSummary * recon, int itrk, double TrkLength);
   bool IsINGRID(int mod, int pln, int ch);

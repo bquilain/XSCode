@@ -48,11 +48,11 @@ using namespace std;
 #include <TBox.h>
 #include <TVectorD.h>
 #include "setup.h"
-#include "Xsec.cc"
-#include "Reconstruction.cc"
+//#include "Xsec.cc"
+//#include "Reconstruction.cc"
 #define DEBUG
 
-Xsec * XS = new Xsec();
+//Xsec * XS = new Xsec();
 char Type[32];
 char Name[256];
 char Name0[256];
@@ -942,7 +942,8 @@ int main(int argc, char ** argv){
   }
   
   cout<<"welcome"<<endl;
-  XS->Xsec::Initialize();
+  //  XS->Xsec::Initialize();
+  InitializeGlobal();
  
    TChain * chain = new TChain("wtree");
    if(Data){

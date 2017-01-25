@@ -2,7 +2,9 @@
 #define Neut_h 1
 
 #define NVEC 100
-#define NG 20
+//#define NVEC 12
+//#define NG 20
+#define NG 12
 
 #include <stdio.h>
 #include <iostream>
@@ -70,6 +72,7 @@ typedef struct {
 	float gpx[NG],gpy[NG],gpz[NG],gcosbm[NG];
 	float gvx[NG],gvy[NG],gvz[NG];
 	int gpid[NG],gmec[NG];
+	int gmat[NG],gdistc[NG],gdistal[NG],gdistti[NG],gdistfe[NG]; //added by koga 2017/1/18
 } Ancestor;
 
 //
@@ -130,7 +133,9 @@ public:
       ParentVector ParentProduction;
       float r, x, y, Direction[3];
       int FDID;
-      PrimaryParticle primary_particle;
+      PrimaryParticle primary_particle; //added by koga 2017/1/18
+      Ancestor ancestor; //added by koga 2017/1/18
+      SKInfo sk_info;
       /*
 //removed before using t2kreweight
 #ifdef JNBEAM10A

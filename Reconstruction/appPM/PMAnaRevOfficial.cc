@@ -357,14 +357,18 @@ int main(int argc,char *argv[]){
 
 
       //cout<<endl;
-      // wrong -> if(!fPMAna(VertexingPlane,VertexingChannel,TrackMatching,AngleCut,TransverseCut))continue;
-      // correction ML 2016/10/17      
+
       if(!fPMAna(TrackMatching,VertexingPlane,VertexingChannel,AngleCut,TransverseCut))continue;
+
+      // isoHitCut is the minimal number of isolated it I require
+      int isoHitCut=3;
 
       for(int i=0;i<pmtrack.size();i++){
 
 	if(pmtrack[i].Ntrack == 0)continue;
 	pmanasum -> Clear();
+
+	reCalcIsohit(pmtrack[i],isoHitCut);
 
 	//Vertex activity
 	int ninghit = evt -> NIngridModHits(16, cyc);
@@ -428,11 +432,6 @@ int main(int argc,char *argv[]){
 	pmanasum -> trkpe       .clear();
 	pmanasum -> mucl        .clear();
 	
-	//ML 2016/10/18
-	// since inghitsum->isohit is not well filled in PMreconRevOfficial, I refill it here
-	// NB 11/24: not sure it works. line443-> for the first hit isohit=1, then it is 0...
-	int NUsed[17][2][plnmax(16)][chmax(16)]; // to refill inghitsum->isohit
-	memset(NUsed,0,sizeof(NUsed));
 
 	for(int t=0;t<pmtrack[i].trk.size();t++){//run over the 3d tracks found
 	  for(int ihit=0;ihit<pmtrack[i].trk[t].hit.size();ihit++){//look at the hit registered
@@ -446,10 +445,9 @@ int main(int argc,char *argv[]){
 		  if(HitFound) break;
 		  pmhit = recon -> GetIngridHit(NHIT);
 		  if(pmhit->mod==pmtrack[i].trk[t].hit[ihit].mod && pmhit->view==pmtrack[i].trk[t].hit[ihit].view && pmhit->pln==pmtrack[i].trk[t].hit[ihit].pln && pmhit->ch==pmtrack[i].trk[t].hit[ihit].ch && pmhit->pe==pmtrack[i].trk[t].hit[ihit].pe && pmhit->lope==pmtrack[i].trk[t].hit[ihit].lope && pmhit->xy==pmtrack[i].trk[t].hit[ihit].xy && pmhit->z==pmtrack[i].trk[t].hit[ihit].z && pmhit->time==pmtrack[i].trk[t].hit[ihit].time){
-		    pmhit->isohit=(NUsed[pmhit->mod][pmhit->view][pmhit->pln][pmhit->ch]==0);
+		    pmhit->isohit=pmtrack[i].trk[t].hit[ihit].isohit; // correct the isohit variable
 		    pmanasum -> AddIngridHitTrk(pmhit,t);//for each hit of the track, we check if it corresponds to a hit of the reconstruction. If yes, we add it ones, and then, we change the hit of the track we are looking for.
 		    HitFound=true;
-		    NUsed[pmhit->mod][pmhit->view][pmhit->pln][pmhit->ch]++;
 		  }
 		}
 	      } 

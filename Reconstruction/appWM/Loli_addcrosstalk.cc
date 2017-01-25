@@ -185,8 +185,8 @@ int main(int argc,char *argv[]){
   //Hit                        hit;
   for(int ievt=Nini; ievt<nevt; ievt++){
 
-    //if(ievt%100==0)cout << "analyze event# " << ievt<<endl;
-    cout << "analyze event# " << ievt<<endl;
+    if(ievt%100==0)cout << "analyze event# " << ievt<<endl;
+    //    cout << "analyze event# " << ievt<<endl;
     wsummary -> Clear();
     evt      -> Clear();
     tree     -> GetEntry(ievt);
@@ -195,6 +195,7 @@ int main(int argc,char *argv[]){
       for( int mod=15; mod<16; mod++ ){   //### Module Loop
 	
 	int ninghit = evt -> NIngridModHits(mod, cyc);
+	cout<<"ninghit="<<ninghit<<endl;
 	double pe_gridcell_x[42][8];
 	double pe_gridcell_y[42][8];
 	for(int i=0;i<42;i++){
@@ -248,6 +249,7 @@ int main(int argc,char *argv[]){
 							hit->pe = 0;
 							hit->pe_cross = r.Poisson(pe_gridcell_x[i][j] * 0.02);//poisson;
 							if(hit->pe_cross==0)continue;
+							cout<<"xtalk hit added"<<endl;
 							evt->AddIngridModHit(hit, mod, cyc);
 							evt->AddIngridSimHit(simhit);
 						}

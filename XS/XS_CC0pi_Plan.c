@@ -366,6 +366,8 @@ int main(int argc, char **argv)
   double Enu;
   double TrueAngleMuon;
   double TrueMomentumMuon;
+  double TrueAnglePion;//ML
+  double TrueMomentumPion;//ML
   int NIngBasRec;
   int GoodSpill;
   int Spill;
@@ -374,6 +376,8 @@ int main(int argc, char **argv)
   bool VSelectionOV[LimitRecs];
   bool VSelectionFV[LimitRecs];
   double TrackAngle[LimitRecs][LimitTracks];
+  double TrackThetaX[LimitRecs][LimitTracks];
+  double TrackThetaY[LimitRecs][LimitTracks];
   int TypeOfTrack[LimitRecs][LimitTracks];
   double CLMuon[LimitRecs][LimitTracks];
   double CLMuon_Plan[LimitRecs][LimitTracks];
@@ -382,7 +386,6 @@ int main(int argc, char **argv)
   double ProportionHighPE[LimitRecs][LimitTracks];
   double MeanHighPE[LimitRecs][LimitTracks];
   double HighestPE[LimitRecs][LimitTracks];
-  
   int NHits_PMIng[LimitRecs][LimitTracks];
   int NHits_PMSci[LimitRecs][LimitTracks];
   int NHits_Ing[LimitRecs][LimitTracks];
@@ -428,8 +431,12 @@ int main(int argc, char **argv)
   wtree              -> Branch   ("Enu",&Enu,"Enu/D");
   wtree              -> Branch   ("TrueAngleMuon",&TrueAngleMuon,"TrueAngleMuon/D");
   wtree              -> Branch   ("TrueMomentumMuon",&TrueMomentumMuon,"TrueMomentumMuon/D");
+  wtree              -> Branch   ("TrueAnglePion",&TrueAnglePion,"TrueAnglePion/D");//ML
+  wtree              -> Branch   ("TrueMomentumPion",&TrueMomentumPion,"TrueMomentumPion/D");//ML
   wtree              -> Branch   ("TrackWidth[10][20]",&TrackWidth,"TrackWidth[10][20]/D");
   wtree              -> Branch   ("TrackAngle[10][20]",&TrackAngle,"TrackAngle[10][20]/D");
+  wtree              -> Branch   ("TrackThetaX[10][20]",&TrackThetaX,"TrackThetaX[10][20]/D");
+  wtree              -> Branch   ("TrackThetaY[10][20]",&TrackThetaY,"TrackThetaY[10][20]/D");
   wtree              -> Branch   ("TypeOfTrack[10][20]",&TypeOfTrack,"TypeOfTrack[10][20]/I");
   wtree              -> Branch   ("Sample[10][20]",&Sample,"Sample[10][20]/I");
   wtree              -> Branch   ("CLMuon[10][20]",&CLMuon,"CLMuon[10][20]/D"); 
@@ -520,6 +527,8 @@ int main(int argc, char **argv)
       for(int ibas=0;ibas<LimitRecs;ibas++){
 	for(int itrk=0;itrk<LimitTracks;itrk++){
 	  TrackAngle[ibas][itrk]=-1;
+	  TrackThetaX[ibas][itrk]=180;//ML
+	  TrackThetaY[ibas][itrk]=180;//ML
 	  TrackWidth[ibas][itrk]=-1;
 	  TypeOfTrack[ibas][itrk]=-1;
 	  CLMuon[ibas][itrk]=-1;
@@ -555,6 +564,8 @@ int main(int argc, char **argv)
       NIngBasRec=-1;
       TrueAngleMuon=-1;
       TrueMomentumMuon=-1;
+      TrueAnglePion=-1;
+      TrueMomentumPion=-1;
       IsFV=false;
       IsDetected=false;
       FSIInt=-1;
@@ -607,12 +618,19 @@ int main(int argc, char **argv)
 	 FluxTot+=norm;
 	 Flux->Fill(1,norm);
 	 vector <double> MuonTrue = Rec->Reconstruction::GetTrueMuonInformation(evt);
+
 	 TrueAngleMuon=MuonTrue[1];
 	 TrueMomentumMuon=MuonTrue[0];
 	 IsFV=Rec->Reconstruction::IsFV(mod,TrueVertexPosition[0],TrueVertexPosition[1],TrueVertexPosition[2]);
 
 	 XS->Xsec::DetermineNuType(IsSand,IsAnti,IsNuE,IsBkgH,IsBkgV,simver->nutype,simver->mod);
 	 FSIInt=XS->Xsec::DetermineFSI(IsSand,IsAnti,IsNuE,IsBkgH,IsBkgV,evt);
+
+	 if(FSIInt==3){
+	   vector<double> PionTrue = Rec->Reconstruction::GetTruePionInformation(evt);
+	   TrueAnglePion=PionTrue[1];
+	   TrueMomentumPion=PionTrue[0];
+	 }
 
 	 weight = 1;
 	 if(IsBkgH==1 || IsBkgV) weight=norm*totcrsne*pow(10.,-38.)*6.02*pow(10.,23.)*7.87*58.5;
@@ -1130,6 +1148,8 @@ int main(int argc, char **argv)
 	LastChannelINGRIDY[irec][itrk]=LastChan[0];
 	LastChannelINGRIDX[irec][itrk]=LastChan[1];
 	TrackAngle[irec][itrk]=(recon->angle)[itrk];
+	TrackThetaX[irec][itrk]=(recon->thetax)[itrk];
+	TrackThetaY[irec][itrk]=(recon->thetay)[itrk];
 	TrackWidth[irec][itrk]=Rec->Reconstruction::GetINGRIDTrackWidth(Vec);
 	GT[irec][itrk]=Geom;
 	IsReconstructed[irec][itrk]=true;

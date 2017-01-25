@@ -33,8 +33,8 @@ using namespace std;
 #include <THStack.h>
 #include "TApplication.h"
 #include "setup.h"
-#include "Xsec.cc"
-Xsec * xs = new Xsec();
+//#include "Xsec.cc"
+//Xsec * xs = new Xsec();
 
 int main(int argc, char **argv){
   
@@ -49,7 +49,9 @@ int main(int argc, char **argv){
       break;
     }
   }
-  xs->Initialize();
+  //xs->Initialize();
+  InitializeGlobal();
+
   TApplication theApp("App",0,0);
 
   TH2D * MC_OV_ChargeDXCorrected_Ing = new TH2D("MC_OV_ChargeDXCorrected_Ing","MC_OV_ChargeDXCorrected_Ing",NBinsRecAngle,BinningRecAngle,200,0,200);

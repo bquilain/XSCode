@@ -6,7 +6,7 @@ ROOTLIBS     	:= $(shell root-config --libs)
 ROOTGLIBS    	:= $(shell root-config --glibs)
 CXXFLAGS	+= $(ROOTCFLAGS)
 
-LIB = ${INSTALLREPOSITORY}/libs/libsWM/
+LIB = ${INSTALLREPOSITORY}/libs/libsWM
 LIBSO = $(LIB)/lib_5.34
 
 LIBS 		= $(ROOTGLIBS) \
@@ -27,47 +27,28 @@ CXXFLAGS += -I$(LIB)/src -I$(SRC) -I$(INC)
 TARGET = IngTClster IngBasicRecon IngReconMuBasic IngGetOnlyBasic \
          IngGetOnlyBasicMC get_daily_evt get_daily_evt_corr \
          IngAnaVertex PMGetOnlyBasic PMGetOnlyBasicMC \
-         IngMergePM IngAddNoiseMC IngAddNoisePMMC_new IngAddCutMod3 \
+         IngMergePM IngAddNoisePMMC_new IngAddCutMod3 \
 	 Lolirecon LoliAna Loli_addcrosstalk IngAddEasirochit
 
 all: $(TARGET)
 
 IngTClster: IngTClster.o
-
 IngBasicRecon: IngBasicRecon.o
-
 IngReconMuBasic: IngReconMuBasic.o
-
 IngGetOnlyBasic: IngGetOnlyBasic.o
-
 IngGetOnlyBasicMC: IngGetOnlyBasicMC.o
-
 get_daily_evt: get_daily_evt.o
-
 get_daily_evt_corr: get_daily_evt_corr.o
-
 IngMergePM: IngMergePM.o
-
 IngAnaVertex: IngAnaVertex.o
-
 PMGetOnlyBasic: PMGetOnlyBasic.o
-
 PMGetOnlyBasicMC: PMGetOnlyBasicMC.o
-
-IngAddNoiseMC: IngAddNoiseMC.o
-
 IngAddNoisePMMC_new: IngAddNoisePMMC_new.o
-
 IngAddCutMod3: IngAddCutMod3.o
-
 Lolirecon: Lolirecon.o
-
 LoliAna: LoliAna.o
-
 Loli_addcrosstalk: Loli_addcrosstalk.o
-
 IngAddEasirochit: IngAddEasirochit.o
-
 
 
 %: %.o

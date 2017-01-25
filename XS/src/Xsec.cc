@@ -58,7 +58,10 @@ Reconstruction * Reco = new Reconstruction();
 //#define DEBUG
 void Xsec::Initialize(){
 
-  for(int i=0;i<=NBinsEnergyFlux;i++){
+  InitializeGlobal();
+ //ML 2017-01-25
+  // commented out and done in setup.h
+  /*for(int i=0;i<=NBinsEnergyFlux;i++){
     if(i==0) BinningEnergyFlux[i]=0;
     else if(i>=1 && i<36) BinningEnergyFlux[i]=0.5+(i-1)*0.1;
     else if(i>=36 && i<42) BinningEnergyFlux[i]=4+(i-36)*1;
@@ -91,7 +94,7 @@ void Xsec::Initialize(){
 
     for(int i=0;i<NBinsRecAngle+1;i++){
       BinningRecAngle[i]=3*i;
-    }
+      }*/ //ML 2017-01-25
     //BinningRecAngle[0]=0;
     //BinningRecAngle[1]=180;
 
@@ -124,7 +127,10 @@ void Xsec::Initialize(){
   }
 */
     ////////////////////////////INITIALIZE ERROR NOW////////////////////////////////////
-    for(int n=StartError;n<=EndError;n++){
+    // is done in setup.h to avoid #include Xsec.cc in some macros (e.g. XSFileGenerator)
+  //ML 2017-01-25
+
+    /*    for(int n=StartError;n<=EndError;n++){
       NE[n]=1;
       Start[n]=1;
       Step[n]=1;
@@ -232,7 +238,7 @@ void Xsec::Initialize(){
       }
       End[n]=Start[n]+(NE[n]+1)*Step[n];
     }
-    
+*/    
 //0. No Error, nominal case
 //1. TO DO
 //2. Dark noise, variations

@@ -27,7 +27,6 @@ using namespace std;
 //##### INGRID Software ########
 #include "INGRID_Dimension.cxx"
 #include "INGRID_BadCh_mapping.cxx"
-
 INGRID_BadCh_mapping* IngBadChMap;
 
 bool Is_Bad_Channel(IngridHitSummary* thit);
@@ -38,7 +37,8 @@ INGRID_Dimension* fINGRID_Dimension;
 FileStat_t fs;
 
 int main(int argc,char *argv[]){
-  Double_t NDUMMY= 4; //### Poisson mean value of # of noise hit at each module
+   Double_t NDUMMY= 5.05; //### Poisson mean value of # of noise hit at each module
+   Double_t NDUMMY_INI= 5.05;
   TROOT        root ("GUI","GUI");
   TApplication app  ("App",0,0);
   fINGRID_Dimension = new INGRID_Dimension();
@@ -47,7 +47,9 @@ int main(int argc,char *argv[]){
   int  c=-1;
   char FileName[300], Output[300];
   bool MC = false;
-  while ((c = getopt(argc, argv, "f:o:")) != -1) {
+  bool WM=false;
+
+  while ((c = getopt(argc, argv, "f:o:n:w")) != -1) {
     switch(c){
     case 'f':
       sprintf(FileName, "%s", optarg);
@@ -55,9 +57,17 @@ int main(int argc,char *argv[]){
     case 'o':
       sprintf(Output, "%s", optarg);
       break;
+    case 'n':
+      NDUMMY_INI=atof(optarg);
+      break;
+    case 'w':
+      WM=true;
+      break;
     }
   }
 
+  bool PM=!WM;
+  cout<<"noise value = "<<NDUMMY_INI<<endl;
 
   //#### Read file before adding noise ######
   //#########################################
@@ -115,7 +125,8 @@ int main(int argc,char *argv[]){
     summary -> Clear();
     wsummary-> Clear();
     tree    -> GetEntry(ievt);
-    for(int mod=0; mod<14; mod++){
+    for(int mod=0; mod<17; mod++){
+      if(mod==14 || (mod==15 && PM) || (mod==16 && WM))continue; // mod==15 is WM
       for(int cyc=startcyc; cyc<endcyc; cyc++){
 	int ninghit = summary -> NIngridModHits(mod, cyc);
 	//#### Set true hit's dummy flag "dummy" = false ###
@@ -127,6 +138,17 @@ int main(int argc,char *argv[]){
 
 	//#### generate dummy noise hit with dummy = true####
 	//###################################################
+	/*	if(mod!=16)
+	  NDUMMY=5.05;
+	else
+	  NDUMMY=12.48;
+	*/
+	//if(mod==16) NDUMMY=NDUMMY_INI*12.48/5.05;
+	//else NDUMMY=NDUMMY_INI;
+	if((PM && mod==16) || (WM && mod==15)) NDUMMY=NDUMMY_INI;//*12.48/5.05;
+	else NDUMMY=5.05;
+	//else NDUMMY=NDUMMY_INI;
+
 	int ndummyhit = r.Poisson( NDUMMY );
 
 	for(int idummyhit = 0; idummyhit < ndummyhit; idummyhit++){
@@ -138,23 +160,62 @@ int main(int argc,char *argv[]){
 
 	  inghitsum -> time  = ttime - 200 - 320;// - 580 * 5+50;       //### add offset 
 	  //cout << inghitsum -> time << endl;
-	  int view, pln, ch;                            //### channel ID
-	  int tch   = r.Uniform(0, 616+(1e-11) );
+	  int view, pln, ch,tch;                            //### channel ID
+	  
+	  if(mod<14){
+	    tch   = r.Uniform(0, 616+(1e-11) );
 
-	  if(tch < 528){//Tracking plane
-	    pln  = (int)( tch / (48) );
-	    view = (int)((tch - pln*48)/24);
-	    ch   = (int)( tch-pln*48-24*view );
+	    if(tch < 528){//Tracking plane
+	      pln  = (int)( tch / (48) );
+	      view = (int)((tch - pln*48)/24);
+	      ch   = (int)( tch-pln*48-24*view );
+	    }
+	    else if( tch >= 528 ){//VETO
+	      tch = tch - 528;
+	      pln = 11 + (int)( tch/(22) );
+	      if(pln == 11 || pln == 12)
+		view=1;
+	      else
+		view=0;
+	      ch = tch - 22 * (pln-11);
+	    }
 	  }
-	  else if( tch >= 528 ){//VETO
-	    tch = tch - 528;
-	    pln = 11 + (int)( tch/(22) );
-	    if(pln == 11 || pln == 12)
-	      view=1;
-	    else
-	      view=0;
-	    ch = tch - 22 * (pln-11);
+	  else if(PM || mod==16){
+            tch   = r.Uniform(0, 1204+(1e-11) );
+
+            if(tch < 48){//Front plane
+              pln  = 0;
+              view = (int)( tch/24 );
+              ch   = (int)( tch-24*view );
+            }
+            else if(tch < 1136){//Tracking plane
+              tch = tch - 48;
+              pln  = (int)( tch / (64) );
+              view = (int)((tch - pln*64)/32);
+              ch   = (int)( tch-pln*64-32*view );
+	      pln++;
+            }
+            else if( tch >= 1136 ){//VETO
+              tch = tch - 1136;
+              pln = 18 + (int)( tch/(17) );
+              if(pln == 19 || pln == 21)
+                view=1;
+              else
+                view=0;
+              ch = tch - 17 * (pln-18);
+            }
+
 	  }
+
+	  else if(WM || mod==15){
+            tch   = r.Uniform(0, 1280 );
+
+	    pln  = (int) (tch/160);
+	    view = (int)((tch-pln*160)/80);
+	    ch   = (int)(tch-160*pln-80*view );
+            
+	  }
+
 	
 	  //Fill p.e., time, channel map
 	  inghitsum -> pe    = tpe;
@@ -166,7 +227,9 @@ int main(int argc,char *argv[]){
 	  inghitsum -> cyc   = -1;
 
 	  double xy, z;
-	  fINGRID_Dimension -> get_posXY( mod, view, pln, ch,
+	  if(PM) fINGRID_Dimension -> get_posXY( mod, view, pln, ch,
+					  &xy, &z);
+	  else  fINGRID_Dimension -> get_pos_loli_xy( mod, view, pln, ch,
 					  &xy, &z);
 	  inghitsum -> xy    = xy;
 	  inghitsum ->  z    =  z;
