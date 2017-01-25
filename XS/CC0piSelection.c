@@ -140,25 +140,25 @@ void CC0piDistributions(TChain * wtree,bool IsData,int Selection,bool Plots,bool
 
   
   ///////////////////////////////NOW, TAKE CARE OF THE SELECTION
-  int FSIInt;
-  int Num_Int;
-  int nTracks[10];
-  double weight;
-  bool IsFV;
+  int FSIInt;//Final state true information
+  int Num_Int;//Interaction number
+  int nTracks[10];//number of tracks reconstructed per vertex
+  double weight;//weight of each event
+  bool IsFV;//True vertex is in FV
   bool IsSand;
   bool IsAnti;
   bool IsBkgH;
   bool IsBkgV;
   bool IsNuE;
-  bool IsDetected[10];
-  bool SelectionFV[10];bool SelectionOV[10];
-  double Enu;
-  int nIngBasRec;
+  bool IsDetected[10];//Event is reconstructed (means >=1 vertex reconstructed)
+  bool SelectionFV[10];bool SelectionOV[10];//Vertex is reconstructed within/out of FV
+  double Enu;//True neutrino energy
+  int nIngBasRec;//Number of vertices reconstructed per event
   double Errorweight;
-  double TrueMomentumMuon, TrueAngleMuon;
-  double POT;
-  double TrackAngle[10][20];
-  int TypeOfTrack[10][20];
+  double TrueMomentumMuon, TrueAngleMuon;//True muon kinematic variables
+  double POT;//Number of POT
+  double TrackAngle[10][20];//Reconstructed angle of the reconstructed track
+  int TypeOfTrack[10][20];//pdg of the reconstructed track. Careful that it is based on an algorithm defined in Reconstruction.cc
   double CLMuon[10][20];// = new vector<double> [10][20];
   double CLMuon_Plan[10][20];// = new vector<double> [10][20];
   double ProportionHighPE[10][20];
@@ -167,7 +167,7 @@ void CC0piDistributions(TChain * wtree,bool IsData,int Selection,bool Plots,bool
   double Momentum[10][20];
   double IronDistance[10][20];
   double PlasticDistance[10][20];
-  int Sample[10][20];
+  int Sample[10][20];//Geometric properties of the track, defined in Reconstruction::SelectTrackSample
   bool IsReconstructed[10][20];
   double ReWeight[175];
   double CriteriaAngleX[10][20];
@@ -370,6 +370,8 @@ void CC0piDistributions(TChain * wtree,bool IsData,int Selection,bool Plots,bool
   TH1D * hRecMom_CCNpi[NFSIs];
   TH1D * hRecAngle_CCNpi[NFSIs];
 
+  TH1D * hSampleSecondTrack[NFSIs];
+
   TH1D * hMuCL_TrueMuon;
   TH1D * hMuCL_TruePion;
   TH1D * hMuCL_TrueProton;
@@ -479,6 +481,13 @@ void CC0piDistributions(TChain * wtree,bool IsData,int Selection,bool Plots,bool
 	//hRecAngle_CCNpi->Sumw2();
 	hRecAngle_CCNpi[i]->GetXaxis()->SetTitle("Angle_CCNpi (cm)");
 	hRecAngle_CCNpi[i]->GetYaxis()->SetTitle("Number of events");
+
+	sprintf(Name,"hSampleSecondTrack%d",i);
+	sprintf(Title,"Number of tracks for the %dth-fsi",i);
+	hSampleSecondTrack[i] = new TH1D(Name,Title,6,0,6);
+	//hSampleSecondTrack->Sumw2();
+	hSampleSecondTrack[i]->GetXaxis()->SetTitle("Track sample");
+	hSampleSecondTrack[i]->GetYaxis()->SetTitle("Number of events");
 
       }
 
@@ -650,6 +659,11 @@ void CC0piDistributions(TChain * wtree,bool IsData,int Selection,bool Plots,bool
       	    if(MuonLike==1 && Undetermined==0/*&& nTracks[irec]<=2*/){//CC0pi
 	      //cout<<"Interaction value="<<FSIInt<<", Ion distance="<<IronDistance[irec][MuonRec]+(PlasticDistance[irec][MuonRec]/IronCarbonRatio)<<endl;
 	      DataSelected[BinRecMom][BinRecAngle]+=weight;
+
+	      //TEMPORARY
+	      if(nTracks[irec]==2) hSampleSecondTrack[FSIInt]->Fill(Sample[irec][LowestMuCL]);
+	      //
+		 
 	      //cout<<"Bin="<<BinRecMom<<","<<BinRecAngle<<", data="<<DataSelected[BinRecMom][BinRecAngle]<<endl;
 	      if(!IsData){
 		if(FSIInt<3 && IsNuMu){
@@ -783,6 +797,7 @@ void CC0piDistributions(TChain * wtree,bool IsData,int Selection,bool Plots,bool
       THStack * Stack_RecAngle_CC1pi = new THStack("Stack_RecAngle_CC1pi","");
       THStack * Stack_RecMom_CCNpi = new THStack("Stack_RecMom_CCNpi","");
       THStack * Stack_RecAngle_CCNpi = new THStack("Stack_RecAngle_CCNpi","");
+      THStack * Stack_SampleSecondTrack = new THStack("Stack_SampleSecondTrack","");
 
       ProduceStack(hMuCL,Stack_MuCL);
       ProduceStack(hMuCL_Lowest,Stack_MuCL_Lowest);
@@ -800,6 +815,8 @@ void CC0piDistributions(TChain * wtree,bool IsData,int Selection,bool Plots,bool
       ProduceStack(hRecMom_CCNpi,Stack_RecMom_CCNpi);
       ProduceStack(hRecAngle_CCNpi,Stack_RecAngle_CCNpi);
       
+      ProduceStack(hSampleSecondTrack,Stack_SampleSecondTrack);
+
       TLegend * leg = new TLegend(0.7,0.8,1,1);
       if(hRecMom[0]) leg->AddEntry(hRecMom[0],"CC0#pi");
       if(hRecMom[1]) leg->AddEntry(hRecMom[1],"MEC");
@@ -820,6 +837,7 @@ void CC0piDistributions(TChain * wtree,bool IsData,int Selection,bool Plots,bool
       Stack_RecAngle_CC1pi->Write();
       Stack_RecMom_CCNpi->Write();
       Stack_RecAngle_CCNpi->Write();
+      Stack_SampleSecondTrack->Write();
       MCEfficiency->Write();
       MCEfficiency_Energy->Write();
       leg->Write();

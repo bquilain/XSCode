@@ -59,7 +59,7 @@ Corrections * Cor = new Corrections();
 Xsec * XS = new Xsec();
 #define LIKELIHOODHERE
 //#define ALLSTUDY
-#define DEBUG_PID
+//#define DEBUG_PID
 //#define DEBUG
 //#define XSEC_ERROR
 //#define DEBUG2
@@ -375,6 +375,8 @@ int main(int argc, char **argv)
   bool VIsDetected[LimitRecs];
   bool VSelectionOV[LimitRecs];
   bool VSelectionFV[LimitRecs];
+  double OpeningAngle[LimitRecs];
+  double CoplanarityAngle[LimitRecs];
   double TrackAngle[LimitRecs][LimitTracks];
   double TrackThetaX[LimitRecs][LimitTracks];
   double TrackThetaY[LimitRecs][LimitTracks];
@@ -386,6 +388,7 @@ int main(int argc, char **argv)
   double ProportionHighPE[LimitRecs][LimitTracks];
   double MeanHighPE[LimitRecs][LimitTracks];
   double HighestPE[LimitRecs][LimitTracks];
+  double TotalCharge[LimitRecs][LimitTracks];
   int NHits_PMIng[LimitRecs][LimitTracks];
   int NHits_PMSci[LimitRecs][LimitTracks];
   int NHits_Ing[LimitRecs][LimitTracks];
@@ -439,6 +442,9 @@ int main(int argc, char **argv)
   wtree              -> Branch   ("TrackThetaY[10][20]",&TrackThetaY,"TrackThetaY[10][20]/D");
   wtree              -> Branch   ("TypeOfTrack[10][20]",&TypeOfTrack,"TypeOfTrack[10][20]/I");
   wtree              -> Branch   ("Sample[10][20]",&Sample,"Sample[10][20]/I");
+  wtree              -> Branch   ("TotalCharge[10][20]",&TotalCharge,"TotalCharge[10][20]/D");
+  wtree              -> Branch   ("OpeningAngle[10]",&OpeningAngle,"OpeningAngle[10]/D");
+  wtree              -> Branch   ("CoplanarityAngle[10]",&CoplanarityAngle,"CoplanarityAngle[10]/D");
   wtree              -> Branch   ("CLMuon[10][20]",&CLMuon,"CLMuon[10][20]/D"); 
   wtree              -> Branch   ("CLMuon_Plan[10][20]",&CLMuon_Plan,"CLMuon_Plan[10][20]/D"); 
   wtree              -> Branch   ("CLMuon_KS[10][20]",&CLMuon_KS,"CLMuon_KS[10][20]/D");
@@ -531,6 +537,7 @@ int main(int argc, char **argv)
 	  TrackThetaY[ibas][itrk]=180;//ML
 	  TrackWidth[ibas][itrk]=-1;
 	  TypeOfTrack[ibas][itrk]=-1;
+	  TotalCharge[ibas][itrk]=-1.;
 	  CLMuon[ibas][itrk]=-1;
 	  CLMuon_Plan[ibas][itrk]=-1;
 	  CLMuon_KS[ibas][itrk]=-1;
@@ -559,6 +566,8 @@ int main(int argc, char **argv)
 	VSelectionFV[ibas]=false;
 	VSelectionOV[ibas]=false;
 	VnTracks[ibas]=-1;
+	OpeningAngle[ibas]=-1.;
+	CoplanarityAngle[ibas]=-1.;
       }
     
       NIngBasRec=-1;
@@ -575,7 +584,7 @@ int main(int argc, char **argv)
       Enu=0;
       GoodSpill=0;
       Spill=0;
-      
+
       
       if(XSEC){
 	if(reweight->GetSize()!=NDials && ievt==0) cout<<"Problem: change NDials="<<NDials<<" into "<<reweight->GetSize()<<" in the CC0pi code"<<endl;
@@ -715,8 +724,6 @@ int main(int argc, char **argv)
 
 	  bool Geom=false;
 
-	  vector <double> Kinematic;
-	  Kinematic.clear();
 	  vector <RecTrack> VRecTrack;
 	  VRecTrack.clear();	
 
@@ -816,6 +823,7 @@ int main(int argc, char **argv)
 	    //4. Determine the distance crossed in Plastic and Iron by the track
 	    vector <double> Dist;//
 	    Dist=Rec->Reconstruction::TrackPenetrationPM((recon->startxpln)[itrk],(recon->startxch)[itrk], DegRad((recon->thetax)[itrk]), (recon->startypln)[itrk],(recon->startych)[itrk], DegRad((recon->thetay)[itrk]),(recon->endxpln)[itrk],(recon->endxch)[itrk],(recon->endypln)[itrk],(recon->endych)[itrk],(recon->ing_startmod)[itrk],(recon->ing_startpln)[itrk], (recon->ing_endpln)[itrk],dx,(recon->pm_stop)[itrk]);
+	    
 	    if((recon->ing_endpln)[itrk]>=9) Dist[1]=58.5/TMath::Cos(DegRad((recon->angle)[itrk]));
 	    else Dist[1]=6.5*((recon->ing_endpln)[itrk]-(recon->ing_startpln)[itrk])/TMath::Cos(DegRad((recon->angle)[itrk]));
 	    if((recon->ing_endpln)[itrk]<2 && recon->ing_trk[itrk]) cout<<"ONLY 2 PLANES"<<endl;
@@ -824,8 +832,6 @@ int main(int argc, char **argv)
 
 	    if(Disp) cout<<"Track Number="<<itrk<<endl;
 	    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	   
-
 
 
 
@@ -1171,6 +1177,28 @@ int main(int argc, char **argv)
 	if(TrackSample>=2) ID[irec][itrk]=Dist[1];
 	else ID[irec][itrk]=0;
 	Sample[irec][itrk]=TrackSample;
+	TotalCharge[irec][itrk]=Rec->Reconstruction::GetTrackEnergyPerDistance(Vec,dx);
+	//cout<<"Energy of the track="<<Rec->Reconstruction::GetTrackEnergy(Vec)<<endl;
+
+	
+	//5. Determine the unit vector, opening angle and coplanarity
+	if(VnTracks[irec]==2){
+	  vector <double> Kinematic;
+	  Kinematic.clear();
+	  for(int itrk2=0;itrk2<VnTracks[irec];itrk2++){
+	    if(itrk2==itrk) continue;
+	    else{
+	      Kinematic=Rec->Reconstruction::GetKinematic(DegRad((recon->angle)[itrk]), DegRad((recon->thetax)[itrk]), DegRad((recon->thetay)[itrk]), DegRad((recon->angle)[itrk2]), DegRad((recon->thetax)[itrk2]), DegRad((recon->thetay)[itrk2]));
+	      
+	    }
+	  }
+	  OpeningAngle[irec]=RadDeg(Kinematic[0]);
+	  CoplanarityAngle[irec]=RadDeg(Kinematic[1]);
+	  //cout<<"Opening="<<OpeningAngle[irec]<<", coplanarity="<<CoplanarityAngle[irec]<<endl;
+	}
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+	
 #ifdef DEBUG2
 	if(Sample[irec][itrk]>=3){
 	  cout<<"New Track, having momentum="<<Momentum[irec][itrk]<<endl;
@@ -1185,6 +1213,7 @@ int main(int argc, char **argv)
 	Vec2.clear();
 	VecAll.clear();
 	}//Tracks
+	   
       }//Recons
       wtree->Fill(); 
     }//Evt

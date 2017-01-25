@@ -80,7 +80,8 @@ vector <Hit3D> Reconstruction::ApplyPEError(vector <Hit3D> Vec, double angle){
   return Vec;
 }
 
-
+/**Determine the track sample, depending on where it stops**/
+/**0, 1, 2, 3, 4, 5 respectively corresponds to stopped in PM, out of PM without being geometrically able to reach INGRID, out of PM in the direction of INGRID w/o INGRID track, with and INGRID track but stopped in INGRID, with an INGRID track side escaping, with an INGRID track through going**/
 int Reconstruction::SelectTrackSample(bool pm_stop, bool Geom, bool has_ingrid, bool ingrid_stop, int ing_last_pln){
   int TrackSample;
 
@@ -93,7 +94,10 @@ int Reconstruction::SelectTrackSample(bool pm_stop, bool Geom, bool has_ingrid, 
 
   return TrackSample;
 }
+/***********************************************************/
 
+/**Search for hits in INGRID that are aligned with the PM track, but are not enough to be reconstructed as an INGRID track**/
+//To check
 vector <Hit3D> Reconstruction::SearchIngridHit(vector <Hit3D> Vec, vector <Hit3D> VecAll, double thetaX, double thetaY, double TrackSample){
 
   if(TrackSample<=2){
@@ -210,6 +214,7 @@ vector <Hit3D> Reconstruction::SearchIngridHit(vector <Hit3D> Vec, vector <Hit3D
 
   return Vec;
 }
+/*************************************************************************************************************/
 
 vector <Hit3D> Reconstruction::CountSharedHits(vector <Hit3D> Vec, vector< vector<Hit3D> > VecDouble, int Trk){
   vector <Hit3D> VecD(Vec);
@@ -222,8 +227,8 @@ vector <Hit3D> Reconstruction::CountSharedHits(vector <Hit3D> Vec, vector< vecto
 	  if(Vec[ihit]==VecDouble[itrk][ihit2]){
 #ifdef DEBUG2
 	    cout<<"Original Track we compare="<<Trk<<" , Track with which we compare="<<itrk<<endl;
-	  cout<<" Position=("<<Vec[ihit].x<<","<<Vec[ihit].y<<","<<Vec[ihit].z<<")   , NRJ="<<Vec[ihit].pe<<" , used="<<Vec[ihit].used<<endl;
-	  cout<<" Posihittihiton=("<<VecDouble[itrk][ihit2].x<<","<<VecDouble[itrk][ihit2].y<<","<<VecDouble[itrk][ihit2].z<<")   , NRJ="<<VecDouble[itrk][ihit2].pe<<" , used="<<VecDouble[itrk][ihit2].used<<endl;
+	    cout<<" Position=("<<Vec[ihit].x<<","<<Vec[ihit].y<<","<<Vec[ihit].z<<")   , NRJ="<<Vec[ihit].pe<<" , used="<<Vec[ihit].used<<endl;
+	    cout<<" Posihittihiton=("<<VecDouble[itrk][ihit2].x<<","<<VecDouble[itrk][ihit2].y<<","<<VecDouble[itrk][ihit2].z<<")   , NRJ="<<VecDouble[itrk][ihit2].pe<<" , used="<<VecDouble[itrk][ihit2].used<<endl;
 #endif
 	  VecD[ihit].used++;
 	  }
@@ -535,13 +540,24 @@ vector <Hit3D> Reconstruction::Hit2DMatchingPM( IngridEventSummary* evt, PMAnaSu
     double intcptx=(recon->zx)[HitV[ihit].trk]; double intcpty=(recon->zy)[HitV[ihit].trk];
     double gradx=TMath::ATan(thetax*TMath::Pi()/180.);
     double grady=TMath::ATan(thetay*TMath::Pi()/180.);
-
+    
+    
     hit=(IngridHitSummary*) recon->GetIngridHitTrk(HitV[ihit].hit,HitV[ihit].trk);
     HitTemp T;
     if(hit->cyc==-2) continue;//throw away the ?? hits
     hit3d.clear();
 
     hit3d.z=zposi(hit->mod,hit->view,hit->pln)/10.;
+
+#ifdef DEBUG2
+    cout<<"**************************************************"<<endl;
+    cout<<"Test of Reconstruction::Hit2DMatching"<<endl;
+    cout<<"Gradient x="<<gradx<<", intcpt="<<intcptx/10.<<", thetax="<<thetax<<endl;
+    cout<<"Gradient y="<<grady<<", intcpt="<<intcpty/10.<<", thetay="<<thetay<<endl;
+    cout<<"Hit pln="<<hit->pln<<", z position="<<zposi(hit->mod,hit->view,hit->pln)/10.<<", hit view="<<hit->view<<endl;
+  cout<<"**************************************************"<<endl;
+#endif
+
     
     if(MC) hit3d.pe=hit->pe;
     else{
@@ -563,13 +579,14 @@ vector <Hit3D> Reconstruction::Hit2DMatchingPM( IngridEventSummary* evt, PMAnaSu
       hit3d.trackid=(hit->GetIngridSimHit(0))->trackid;
     }
     else hit3d.truepe=-1;
+    
     if(hit->view==0){
       hit3d.x=hit->xy;
-      hit3d.y=grady*hit3d.z+intcpty/10;
+      hit3d.y=grady*hit3d.z+intcpty/10.;
     }
     else{
       hit3d.y=hit->xy;
-      hit3d.x=gradx*hit3d.z+intcptx/10;
+      hit3d.x=gradx*hit3d.z+intcptx/10.;
     }
 
     hit3d.ch=hit->ch;
@@ -913,8 +930,10 @@ vector <double> Reconstruction::GetTrackAnglePM(vector <Hit3D> Vec, double Angle
   */
 }
 
+/**Provides two track opening angle and coplanarity**/
 vector <double> Reconstruction::GetKinematic(double ang1, double thetax1, double thetay1,double ang2, double thetax2, double thetay2){
-  float Track1[3],Track2[3];
+  double * Track1 = new double[3];
+  double * Track2 = new double[3];
   vector <double> Kinematic;
   Kinematic.clear();
   double AngleInTracks,Determinant;
@@ -940,7 +959,35 @@ vector <double> Reconstruction::GetKinematic(double ang1, double thetax1, double
   //cout<<"Angle between Tracks="<<AngleInTracks*180/TMath::Pi()<<endl;
 
   Kinematic.push_back(AngleInTracks);
+  
+  //Construct the coplanarity angle.
+  //a. neutrino beam direction
+  double * neutrinobeam = new double[3];
+  neutrinobeam[0]=0;
+  neutrinobeam[1]=-TMath::Sin(3.8*TMath::Pi()/180.);
+  neutrinobeam[2]=TMath::Cos(3.8*TMath::Pi()/180.);
+  double Nneutrinobeam=TMath::Sqrt(neutrinobeam[0]*neutrinobeam[0]+neutrinobeam[1]*neutrinobeam[1]+neutrinobeam[2]*neutrinobeam[2]);
+  for(int i=0;i<3;i++) neutrinobeam[i]/=Nneutrinobeam;
+  
+  //b. Construct the projections of first & second tracks on the plan orthogonal to the beam direction
+  double * firsttrackproj = new double[3];
+  TMath::NormCross(neutrinobeam,Track1,firsttrackproj);
+  double * secondtrackproj = new double[3];
+  TMath::NormCross(neutrinobeam,Track2,secondtrackproj);
 
+  //c. Determine the angle before these two projected vectors.
+  double CoplanarityAngle=TMath::ACos(firsttrackproj[0]*secondtrackproj[0]+firsttrackproj[1]*secondtrackproj[1]+firsttrackproj[2]*secondtrackproj[2]);
+
+#ifdef DEBUG2
+  cout<<"**************************************************"<<endl;
+  cout<<"Test of Reconstruction::GetKinematic"<<endl;
+  cout<<"neutrino direction vector=("<<neutrinobeam[0]<<","<<neutrinobeam[1]<<","<<neutrinobeam[2]<<")"<<endl;
+  cout<<"Test track 1, original vector=("<<Track1[0]<<","<<Track1[1]<<","<<Track1[2]<<") and projected=("<<firsttrackproj[0]<<","<<firsttrackproj[1]<<","<<firsttrackproj[2]<<")"<<endl;
+  cout<<"Test track 2, original vector=("<<Track2[0]<<","<<Track2[1]<<","<<Track2[2]<<") and projected=("<<secondtrackproj[0]<<","<<secondtrackproj[1]<<","<<secondtrackproj[2]<<")"<<endl;
+  cout<<"Coplanarity Angle="<<CoplanarityAngle*180/TMath::Pi()<<endl;
+  cout<<"**************************************************"<<endl;
+#endif
+  /*
   //const double X[]={Beam[0],Track1[0],Track2[0],Beam[1],Track1[1],Track2[1],Beam[2],Track1[2],Track2[2]};
   //TMatrixD M(3,3);
   //M.SetMatrixArray(X);
@@ -949,14 +996,6 @@ vector <double> Reconstruction::GetKinematic(double ang1, double thetax1, double
   ProdVec[0]=Track1[1]*Track2[2]-Track2[1]*Track1[2];
   ProdVec[1]=Track1[2]*Track2[0]-Track2[2]*Track1[0];
   ProdVec[2]=Track1[0]*Track2[1]-Track2[0]*Track1[1];
-
-  /* //cout<<"Matrix="<<endl;
-  for(int i=0;i<3;i++){
-    for(int j=0;j<3;j++){
-     //cout<<M[i][j]<<endl;
-    }
-  }
-  */
   double NormProdVec=TMath::Sqrt(ProdVec[0]*ProdVec[0]+ProdVec[1]*ProdVec[1]+ProdVec[2]*ProdVec[2]);
   double NormBeam=TMath::Sqrt(Beam[0]*Beam[0]+Beam[1]*Beam[1]+Beam[2]*Beam[2]);
 
@@ -968,11 +1007,18 @@ vector <double> Reconstruction::GetKinematic(double ang1, double thetax1, double
  
   //cout<<"Norm Track1="<<NormTrack1<<" , Norm Track2="<<NormTrack2<<endl;
   //cout<<"Norm Beam="<<NormBeam<<" , Norm ProdVec="<<NormProdVec<<endl;
-  //cout<<"ProdScal="<<ProdScal<<endl;
-  Kinematic.push_back(Angle3D);
+  //cout<<"ProdScal="<<ProdScal<<endl;*/
+  Kinematic.push_back(CoplanarityAngle);
 
+  delete Track1;
+  delete Track2;
+  delete neutrinobeam;
+  delete firsttrackproj;
+  delete secondtrackproj;
+  
   return Kinematic;
 }
+/********************************************************************************/
 
 double Reconstruction::GetBeamAngle(double ang1, double thetax1, double thetay1){
   float Track1[3];
@@ -1387,15 +1433,23 @@ vector <double> Reconstruction::GetVertex(vector <Hit3D> Vec){
   return Vertex;
 }
 
-double Reconstruction::GetTrackEnergy(vector <Hit3D> Vec){
+
+
+/**Estimates the total charge of the track, corrected by the track angle (dx)**/
+double Reconstruction::GetTrackEnergyPerDistance(vector <Hit3D> Vec,double dx){
   double Energy=0;
   for(int ihit=0;ihit<Vec.size();ihit++){
-    if(Vec[ihit].used>1) continue;
-    if(Vec[ihit].ch<=7||Vec[ihit].ch>=24) Energy+=Vec[ihit].pe/2;
+    //if(Vec[ihit].used>1) continue;
+    if(!IsINGRID(Vec[ihit].mod,Vec[ihit].pln,Vec[ihit].ch)) Energy+=Vec[ihit].pe/2;
+       //   int pln,int ch)
+    //if(Vec[ihit].ch<=7||Vec[ihit].ch>=24) Energy+=Vec[ihit].pe/2;
     else Energy+=Vec[ihit].pe;
   }
+  if(dx!=0) Energy/=dx;
   return Energy;
 }
+/******************************************************************************/
+
 
 vector <int> Reconstruction::TrackComposition(vector <Hit3D> Vec, double VertexX,double VertexY,double VertexZ){
   vector <int> Compo;
@@ -1620,150 +1674,6 @@ vector <int> Reconstruction::TrackComposition(vector <Hit3D> Vec, double VertexX
    return VecAll;
 }*/
 
-
-
-
-
-/*vector <Hit3D> Reconstruction::Hit2DMatchingAllTracksPM(PMAnaSummary * recon){
-  int Mod=16;
-  IngridHitSummary * hit =new IngridHitSummary();
-  IngridHitSummary * hit2 =new IngridHitSummary();
-  vector <Hit3D> VecAll;
-  Hit3D hit3d,hit3d2;
-  vector <HitTemp> HitV;
-
-  double HitPln[NPlnPM+3][NView+1][NChPM+1];
-  for(int ipln=0;ipln<NPlnPM;ipln++){
-    for(int iview=0;iview<NView;iview++){
-      for(int ich=0;ich<NChPM;ich++){
-        HitPln[ipln][iview][ich]=0;
-      }
-    }
-  }
-
-  IngridHitSummary * Hit = new IngridHitSummary();
-  HitTemp Coord;
-  int ndouble;
-  // //cout<<"Ntracks="<<recon->Ntrack<<endl;
-  for(int itrk=0;itrk<recon->Ntrack;itrk++){
-    //if( recon->NhitTs(itrk)>100)//cout<<"NHits Track="<<recon->NhitTs(itrk)<<endl;
-    for(int ihit=0;ihit<recon->NhitTs(itrk);ihit++){
-      Hit=recon->GetIngridHitTrk(ihit,itrk);
-      //Coord.x=Hit->view;
-      //Coord.y=Hit->xy;
-      //Coord.z=Hit->z;
-      Coord.view=Hit->view;
-      Coord.ch=Hit->ch;
-      Coord.pln=Hit->pln;
-      Coord.trk=itrk;
-      Coord.hit=ihit;
-      HitV.push_back(Coord);
-
-      for(int ihit2=0;ihit2<HitV.size()-1;ihit2++){
-        if(HitV[ihit2]==Coord) {
-          ndouble++;
-          HitV.pop_back();
-        }
-      }
-    }
-  }
-
-  VecAll.clear();                                     
-  for(int ihit=0;ihit<HitV.size();ihit++){
-    hit=(IngridHitSummary*) recon->GetIngridHitTrk(HitV[ihit].hit,HitV[ihit].trk);
-    if(hit->view==1) continue;
-    HitTemp T;
-    if(hit->cyc==-2) continue;
-    for(int ihit2=0;ihit2<HitV.size();ihit2++){
-      hit2=(IngridHitSummary*) recon->GetIngridHitTrk(HitV[ihit2].hit,HitV[ihit2].trk);
-      if(hit->view==hit2->view) continue;
-      if(hit->mod!=hit2->mod) continue;
-      if(hit2->cyc==-2) continue;
-      if(hit->pln==hit2->pln){
-
-	hit3d.clear();
-	hit3d2.clear();
-
-	if(hit->mod==16) hit3d.z=hit->pln*4.6+2.3*hit->view+0.4;
-	else hit3d.z=107.45+hit->pln*10.7+hit->view+1.0;
-
-	bool MC=false;
-	if(MC) hit3d.pe=hit->pe;
-        else{
-          if((hit->pe + hit->lope)/2.<39) hit3d.pe=hit->pe;
-          else hit3d.pe=hit->lope;
-        }
-	hit3d.view=hit->view;
-	hit3d.pln=hit->pln;
-	hit3d.mod=hit->mod;
-
-	hit3d.time=hit->time;	
-
-	//if(hit->NSimHits()>1)//cout<<"NOOOOOOOOOOOOOOOOOOOOOO"<<endl;
-	//if(hit->NSimHits()>1)//cout<<"It shouldn't happen"<<endl;
-	if(MC==true && hit->NSimHits()!=0) {
-	  hit3d.truepe=((hit->GetIngridSimHit(0))->edeposit)*MeV2PEPM;
-	  //cout<<(hit->GetIngridSimHit(0))->pdg<<endl;
-	  hit3d.pdg=(hit->GetIngridSimHit(0))->pdg;
-	  hit3d.trackid=(hit->GetIngridSimHit(0))->trackid;
-	}
-	else hit3d.truepe=-1;
-
-	hit3d2.mod=hit2->mod;	
-	if(hit2->mod==16) hit3d2.z=hit2->pln*4.6+2.3*hit2->view+0.4;
-        else hit3d2.z=107.45+hit2->pln*10.7+hit2->view+1.0;
-	//if(hit2->mod==16) hit3d2.z=hit2->z;
-	//else hit3d2.z=hit2->z+107.45;
-
-	if(MC) hit3d2.pe=hit2->pe;
-	else{
-	  if((hit2->pe + hit2->lope)/2.<39) hit3d2.pe=hit2->pe;
-	  else hit3d2.pe=hit2->lope;
-	}
-	hit3d2.pln=hit2->pln;
-	hit3d2.view=hit2->view;
-	hit3d2.time=hit2->time;
-
-	if(MC && hit2->NSimHits()!=0) {
-	  if(hit->NSimHits()>1)//cout<<"It can happen"<<endl;
-	  hit3d2.truepe=((hit2->GetIngridSimHit(0))->edeposit)*MeV2PEPM;
-	  //cout<<(hit2->GetIngridSimHit(0))->pdg<<endl;
-	  hit3d2.pdg=(hit2->GetIngridSimHit(0))->pdg;
-	  hit3d2.trackid=(hit2->GetIngridSimHit(0))->trackid;
-	}
-
-	//if(hit->view==0) {
-	if(hit->mod==16){
-	  if(hit->ch<=7) hit->xy=5*hit->ch;
-	  else if(hit->ch<=23) hit->xy=5*8+2.5*(hit->ch-8);
-	  else hit->xy=5*8+2.5*16+5*(hit->ch-24);
-	}
-
-	if(hit2->mod==16){
-	  if(hit2->ch<=7) hit2->xy=5*hit2->ch;
-	  else if(hit2->ch<=23) hit2->xy=5*8+2.5*(hit2->ch-8);
-	  else hit2->xy=5*8+2.5*16+5*(hit2->ch-24);
-	}
-
-          hit3d.x=hit->xy;
-          hit3d.y=hit2->xy;
-          hit3d.ch=hit->ch;
-          hit3d2.x=hit->xy;
-          hit3d2.y=hit2->xy;
-          hit3d2.ch=hit2->ch;
-                                                              
-      HitPln[hit3d.pln][hit3d.view][hit3d.ch]++;
-      HitPln[hit3d2.pln][hit3d2.view][hit3d2.ch]++;
-      VecAll.push_back(hit3d);
-      VecAll.push_back(hit3d2);
-    }
-  }
- }
-  sort(VecAll.begin(),VecAll.end());
-
-return VecAll;
-}
-*/
 
 vector <Hit3D> Reconstruction::IsInTrk(vector <Hit3D> VecCluster, vector <Hit3D> VecAllTracks){
   for(int ihit=0;ihit<VecCluster.size();ihit++){

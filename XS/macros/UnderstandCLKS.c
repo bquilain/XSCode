@@ -1,5 +1,6 @@
+/**/
 {
-  TFile * f = new TFile("../../Reconstruction/app/mucl.root");
+  TFile * f = new TFile("../src/mucl.root");
   
   TH1F * PDF_Sci = (TH1F*) f->Get("hsci");
   TH1F * Cumulative_Sci = (TH1F*) f->Get("lsci");

@@ -353,6 +353,7 @@ int main(int argc, char **argv){
 	    sprintf(Command10,"Executable = %s/MC/Jobs/%sMC%d_Systematics%d_%d.sh",cINSTALLREPOSITORY,DetName,i,ErrorType,n);
 	    sprintf(Command20,"Output = %s/MC/Jobs/log_%sMC%d_Systematics%d_%d.txt",cINSTALLREPOSITORY,DetName,i,ErrorType,n);
 	    sprintf(Command30,"Error = %s/MC/Jobs/err_%sMC%d_Systematics%d_%d.txt",cINSTALLREPOSITORY,DetName,i,ErrorType,n);
+
 	    ofstream CondorMC(Name2);
 	    if(CondorMC){
 	      CondorMC<<Command10<<endl
@@ -366,7 +367,6 @@ int main(int argc, char **argv){
 		      <<"Notification    = Never"<<endl
 		      <<"QUEUE 1"<<endl;
 	    }
-	
 	  }
 	}
       
@@ -487,11 +487,10 @@ int main(int argc, char **argv){
 			      <<Command17<<endl
 			      <<Command18<<endl;
 		  }
-	
-	
-		sprintf(Command10,"Executable = ${INSTALLREPOSITORY}/MC/Jobs/PMData_Run%d_SubRun%d_Systematics%d_%d.sh",RunNum,SubRunNum,ErrorType,n);
-		sprintf(Command20,"Output = ${INSTALLREPOSITORY}/MC/Jobs/log_PMData_Run%d_SubRun%d_Systematics%d_%d.txt",RunNum,SubRunNum,ErrorType,n);
-		sprintf(Command30,"Error = ${INSTALLREPOSITORY}/MC/Jobs/err_PMData_Run%d_SubRun%d_Systematics%d_%d.txt",RunNum,SubRunNum,ErrorType,n);
+		
+		sprintf(Command10,"Executable = %s/MC/JobsSystematics/PMData_Run%d_SubRun%d_Systematics%d_%d.sh",cINSTALLREPOSITORY,RunNum,SubRunNum,ErrorType,n);
+		sprintf(Command20,"Output = %s/MC/JobsSystematics/log_PMData_Run%d_SubRun%d_Systematics%d_%d.txt",cINSTALLREPOSITORY,RunNum,SubRunNum,ErrorType,n);
+		sprintf(Command30,"Error = %s/MC/JobsSystematics/err_PMData_Run%d_SubRun%d_Systematics%d_%d.txt",cINSTALLREPOSITORY,RunNum,SubRunNum,ErrorType,n);
 		ofstream CondorData(Name2);
 		if(CondorData){
 		  CondorData<<Command10<<endl
@@ -514,8 +513,8 @@ int main(int argc, char **argv){
       }
     }
   }  
-
-
+  
+  
   ///////////////////////////////////PREREQUISITE//////////////////////////////////////////
   sprintf(Name1,"%s/MC/Jobs/Prerequisite.sh",cINSTALLREPOSITORY);
   sprintf(Name2,"%s/MC/Jobs/condorPrerequisite.sh",cINSTALLREPOSITORY);

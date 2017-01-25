@@ -31,7 +31,7 @@ class Reconstruction{
   vector <Hit3D> Hit2DMatchingAllTracksPM(PMAnaSummary * recon, bool MC);
   vector <double> GetAllTracksLength(vector <Hit3D> Vec);
   double GetTrackLength(vector <Hit3D> Vec);
-  double GetTrackEnergy(vector <Hit3D> Vec); 
+  double GetTrackEnergyPerDistance(vector <Hit3D> Vec, double dx); 
   vector <double> GetVertex(vector <Hit3D> Vec);
   vector <int> TrackComposition(vector <Hit3D> Vec, double Vx, double Vy, double Vz);
   vector <double> GetKinematic(double ang1, double thetax1, double thetay1,double ang2, double thetax2, double thetay2);
