@@ -287,7 +287,6 @@ bool INGRID_Dimension::get_expchXY(int mod, int view, int pln, int *ch, double a
 
 //added for prototype of WAGASCI
 bool INGRID_Dimension::get_pos_loli(int mod, int view, int pln, int ch, int grid, double *posx, double *posy, double *posz){
-
 	double x=0,y=0,z=0;
 	if(view==0){
 		x = 0;
@@ -332,7 +331,7 @@ bool INGRID_Dimension::get_pos_loli(int mod, int view, int pln, int ch, int grid
 
 
 bool INGRID_Dimension::get_grid_loli(int mod, int view, int pln, int ch, int *grid, int *gridch){
-	if(ch>=0 && ch<40){
+  if(ch>=0 && ch<40){ // also valid for mod != 15
 		*grid=0;
 		*gridch=ch;
 	}
@@ -353,6 +352,7 @@ bool INGRID_Dimension::get_grid_loli(int mod, int view, int pln, int ch, int *gr
 }
 
 bool INGRID_Dimension::get_pos_loli(int mod, int view, int pln, int ch, double *posx, double *posy, double *posz){
+
 	int grid,gridch;
 	this->get_grid_loli(mod, view, pln, ch, &grid, &gridch);
 	this->get_pos_loli (mod, view, pln, gridch,  grid, posx, posy, posz);
@@ -362,18 +362,23 @@ bool INGRID_Dimension::get_pos_loli(int mod, int view, int pln, int ch, double *
 
 
 bool INGRID_Dimension::get_pos_loli_xy(int mod, int view, int pln, int ch, double *posxy, double *posz){
-	int grid,gridch;
-	double x,y,z;
-	this->get_grid_loli(mod, view, pln, ch, &grid, &gridch);
-	this->get_pos_loli (mod, view, pln, gridch,  grid, &x, &y, &z);
-	if(view==0){
-		*posxy=y;
-	}
-	else if(view==1){
-		*posxy=x;
-	}
-	*posz =z;
-	return true;
+  if(mod==15){
+    int grid,gridch;
+    double x,y,z;
+    this->get_grid_loli(mod, view, pln, ch, &grid, &gridch);
+    this->get_pos_loli (mod, view, pln, gridch,  grid, &x, &y, &z);
+    if(view==0){
+      *posxy=y;
+    }
+    else if(view==1){
+      *posxy=x;
+    }
+    *posz =z;
+  }
+  else
+    get_posXY(mod,view,pln,ch,posxy,posz);
+  
+  return true;
 }
 
 

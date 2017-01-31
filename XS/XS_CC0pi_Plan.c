@@ -1,4 +1,3 @@
-
 #include<iostream>
 #include<sstream>
 #include<fstream>
@@ -54,9 +53,7 @@ INGRID_Dimension * IngDim = new INGRID_Dimension();
 #include "Corrections.cc"
 #include "Reconstruction.cc"
 #include "Xsec.cc"
-Reconstruction * Rec = new Reconstruction();
-Corrections * Cor = new Corrections();
-Xsec * XS = new Xsec();
+
 #define LIKELIHOODHERE
 //#define ALLSTUDY
 //#define DEBUG_PID
@@ -273,6 +270,7 @@ int main(int argc, char **argv)
 
   int c=-1;
   bool MC=false;
+  bool WM=false;
   int RandomIteration=-1;
   //char * RandomIteration = new char[256];
   //char * InputFileName = new char[256];
@@ -292,7 +290,7 @@ int main(int argc, char **argv)
 
   int XSEC=false;string xsec_file;
   
-  while ((c = getopt(argc, argv, "i:o:f:dmr:x:e:v:")) != -1) {
+  while ((c = getopt(argc, argv, "i:o:f:dmr:x:e:v:w")) != -1) {
     switch(c){
     case 'i':
       InputFileName=optarg;
@@ -309,6 +307,9 @@ int main(int argc, char **argv)
     case 'm':
       MC=true;
       break;
+    case 'w':
+      WM=true;
+      break;
     case 'x':
       XSEC=true;
       xsec_file=optarg;
@@ -321,7 +322,11 @@ int main(int argc, char **argv)
       break;
     }
   }
-
+  bool PM=!WM;
+  cout<<"Detector is "<<(PM?"PM":"WM")<<endl;
+  Reconstruction * Rec = new Reconstruction(PM);
+  Corrections * Cor = new Corrections();
+  Xsec * XS = new Xsec(PM);
 
   if(ErrorType==4){
     fPEAngle = new TFile((ErrorValue).c_str());
@@ -438,8 +443,8 @@ int main(int argc, char **argv)
   wtree              -> Branch   ("TrueMomentumPion",&TrueMomentumPion,"TrueMomentumPion/D");//ML
   wtree              -> Branch   ("TrackWidth[10][20]",&TrackWidth,"TrackWidth[10][20]/D");
   wtree              -> Branch   ("TrackAngle[10][20]",&TrackAngle,"TrackAngle[10][20]/D");
-  wtree              -> Branch   ("TrackThetaX[10][20]",&TrackThetaX,"TrackThetaX[10][20]/D");
-  wtree              -> Branch   ("TrackThetaY[10][20]",&TrackThetaY,"TrackThetaY[10][20]/D");
+  wtree              -> Branch   ("TrackThetaX[10][20]",&TrackThetaX,"TrackThetaX[10][20]/D");//ML
+  wtree              -> Branch   ("TrackThetaY[10][20]",&TrackThetaY,"TrackThetaY[10][20]/D");//ML
   wtree              -> Branch   ("TypeOfTrack[10][20]",&TypeOfTrack,"TypeOfTrack[10][20]/I");
   wtree              -> Branch   ("Sample[10][20]",&Sample,"Sample[10][20]/I");
   wtree              -> Branch   ("TotalCharge[10][20]",&TotalCharge,"TotalCharge[10][20]/D");
@@ -573,8 +578,8 @@ int main(int argc, char **argv)
       NIngBasRec=-1;
       TrueAngleMuon=-1;
       TrueMomentumMuon=-1;
-      TrueAnglePion=-1;
-      TrueMomentumPion=-1;
+      TrueAnglePion=-1;//ML
+      TrueMomentumPion=-1;//ML
       IsFV=false;
       IsDetected=false;
       FSIInt=-1;
@@ -642,9 +647,10 @@ int main(int argc, char **argv)
 	 }
 
 	 weight = 1;
-	 if(IsBkgH==1 || IsBkgV) weight=norm*totcrsne*pow(10.,-38.)*6.02*pow(10.,23.)*7.87*58.5;
-	 else if(IsSand==1) weight=norm*totcrsne*pow(10.,-38.)*6.02*pow(10.,23.)*(2.2*470);
-	 else weight=norm*totcrsne*pow(10.,-38.)*6.02*pow(10.,23.)*46.2;
+	 if(IsBkgH || IsBkgV) weight=norm*totcrsne*pow(10.,-38.)*6.02*pow(10.,23.)*7.87*58.5;
+	 else if(IsSand) weight=norm*totcrsne*pow(10.,-38.)*6.02*pow(10.,23.)*(2.2*470);
+	 else if(PM) weight=norm*totcrsne*pow(10.,-38.)*6.02*pow(10.,23.)*46.2;
+	 else weight=norm*totcrsne*pow(10.,-38.)*6.02*pow(10.,23.)*46.6;//for WM
       }
       else weight = Cor->GetMCCorrections(1,mod);
 
@@ -706,6 +712,7 @@ int main(int argc, char **argv)
 	  VecT=Rec->Reconstruction::Hit2DMatchingPM(evt,recon,HitV,VecT,MC);
 	  VecDouble.push_back(VecT);
 	}
+	// VecDouble[itrk] is the vector of all hits of track itrk, sorted by increasing z
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -752,25 +759,29 @@ int main(int argc, char **argv)
 	  /*************************Vec contains 3D Hits without any double counted******************************/
 	  HitV=Rec->Reconstruction::EraseDoubleHitsPM(recon,itrk,HitV);
 	  Vec=Rec->Reconstruction::Hit2DMatchingPM(evt,recon,HitV,Vec,MC);
-	  Vec=Rec->CountSharedHits(Vec,VecDouble,itrk);//fill used
+	  Vec=Rec->CountSharedHits(Vec,VecDouble,itrk);//fill the variable used
 	
 	  if(Vec.size()==0){
-	    cout<<"Stopped because no Hits are corresponding"<<endl;
+	    cout<<itrk<<" Stopped because no Hits are corresponding "<<recon->NhitTs(itrk)<<endl;
 	    continue;
 	  }
 	   
 
 	  /*******************************************Geometric properties of the tracks are estimated******************************/
+	  // following are not used (already computed in PMAna, LoliAna)
 	    double AngleX,AngleY,dx;
-	    vector <double> GeomVariables;
-	    GeomVariables.clear();
+	       vector <double> GeomVariables;
+	       /*GeomVariables.clear();
             GeomVariables=Rec->Reconstruction::GetTrackAngle(Vec);
-            dx=GeomVariables[2];
+            dx=GeomVariables[2];*/
 	    dx=1./TMath::Cos(DegRad((recon->angle)[itrk]));
 
 
 
-	    /****************************************Determine the Criteria for matching tracks*************************************/
+	    /**************************************Determine the Criteria for matching tracks*************************************/
+	    // cout<<Vec.size()<<" "<<recon->NhitTs(itrk)<<endl;
+	    //for(int i=0;i<Vec.size();i++) cout<<Vec[i].view<<endl;
+	    cout<<ievt<<" "<<irec<<" "<<itrk<<endl;
 	    vector <double> CriteriaPMINGRID=Rec->Reconstruction::GetMatchingPMINGRID(Vec);
 	    CriteriaAngleX[irec][itrk]=TMath::Abs(CriteriaPMINGRID[4]-CriteriaPMINGRID[0]);
 	    CriteriaAngleY[irec][itrk]=TMath::Abs(CriteriaPMINGRID[5]-CriteriaPMINGRID[1]);
@@ -805,7 +816,7 @@ int main(int argc, char **argv)
 	    //(recon->ing_endpln)[itrk]=Vec.back().pln;
 	    
 	    //1. Determine if the track should have reached INGRID if linearly extrapolated
-	    Geom=Rec->Reconstruction::HasGeomTrack(16,(recon->startxpln)[itrk],(recon->startxch)[itrk],DegRad((recon->thetax)[itrk]), (recon->startypln)[itrk],(recon->startych)[itrk],DegRad((recon->thetay)[itrk]));
+	    Geom=Rec->Reconstruction::HasGeomTrack((PM?16:15),(recon->startxpln)[itrk],(recon->startxch)[itrk],DegRad((recon->thetax)[itrk]), (recon->startypln)[itrk],(recon->startych)[itrk],DegRad((recon->thetay)[itrk]));
 	    //2. Determine the track sample
 	    TrackSample=Rec->Reconstruction::SelectTrackSample((recon->pm_stop)[itrk],Geom,(recon->ing_trk)[itrk],(recon->ing_stop)[itrk],(recon->ing_endpln)[itrk]);
 	    //3. Search for INGRID hits aligned with tracks in the PM, in the case the latter is not matched w/ any INGRID track
@@ -814,21 +825,25 @@ int main(int argc, char **argv)
             VecAll=Rec->Reconstruction::IsInTrk(VecAll,VecTrk);
 	                  /*******************************They are used to determine if tracks stops in INGRID in the first iron plane (before being reconstructed)*************/
 	    //Vec=Rec->Reconstruction::SearchIngridHit(Vec,VecAll,DegRad((recon->thetax)[itrk]), DegRad((recon->thetay)[itrk]),TrackSample);
-
+	    // ML 20170127 since it is also done is PMAna/LoliAna, I don't check it
 
 	    /****************************************Attenuation from the dx in the scintillator is applied*************************/
-            Vec=Cor->Corrections::GetFiberAttenuation(Vec);
+            Vec=Cor->Corrections::GetFiberAttenuation(Vec); 
 	    sort(Vec.begin(),Vec.end());
 	    
 	    //4. Determine the distance crossed in Plastic and Iron by the track
 	    vector <double> Dist;//
-	    Dist=Rec->Reconstruction::TrackPenetrationPM((recon->startxpln)[itrk],(recon->startxch)[itrk], DegRad((recon->thetax)[itrk]), (recon->startypln)[itrk],(recon->startych)[itrk], DegRad((recon->thetay)[itrk]),(recon->endxpln)[itrk],(recon->endxch)[itrk],(recon->endypln)[itrk],(recon->endych)[itrk],(recon->ing_startmod)[itrk],(recon->ing_startpln)[itrk], (recon->ing_endpln)[itrk],dx,(recon->pm_stop)[itrk]);
+	    Dist=Rec->Reconstruction::TrackPenetrationPM((recon->startxpln)[itrk],(recon->startxch)[itrk], DegRad((recon->thetax)[itrk]), (recon->startypln)[itrk],(recon->startych)[itrk], DegRad((recon->thetay)[itrk]),(recon->endxpln)[itrk],(recon->endxch)[itrk],(recon->endypln)[itrk],(recon->endych)[itrk],(recon->ing_startmod)[itrk],(recon->ing_startpln)[itrk], (recon->ing_endpln)[itrk],dx,TrackSample);
 	    
+	    /* ML : I consider the fcn to be working well...
 	    if((recon->ing_endpln)[itrk]>=9) Dist[1]=58.5/TMath::Cos(DegRad((recon->angle)[itrk]));
+	    // ML 20170125 if startmod==3 I force startpln to 0
+	    else if(recon->ing_startmod==3) Dist[1]=6.5*((recon->ing_endpln)[itrk])/TMath::Cos(DegRad((recon->angle)[itrk])); 
 	    else Dist[1]=6.5*((recon->ing_endpln)[itrk]-(recon->ing_startpln)[itrk])/TMath::Cos(DegRad((recon->angle)[itrk]));
 	    if((recon->ing_endpln)[itrk]<2 && recon->ing_trk[itrk]) cout<<"ONLY 2 PLANES"<<endl;
 	    if(dx!=dx || dx==0) {cout<<"Problem in dx evaluation"<<endl;continue;}   
-	    if((recon->ing_startmod)[itrk]!=(recon->ing_endmod)[itrk]){cout<<"Stopped because Ingrid module is changing"<<endl;continue;}
+	     if((recon->ing_startmod)[itrk]!=(recon->ing_endmod)[itrk]){cout<<"Stopped because Ingrid module is changing"<<endl;continue;}
+	    */
 
 	    if(Disp) cout<<"Track Number="<<itrk<<endl;
 	    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1148,7 +1163,7 @@ int main(int argc, char **argv)
 	    }
 
 
-	    
+	   
 	    vector <double> LastChan;
 	LastChan=Rec->Reconstruction::GetLastINGRIDChannel(Vec,TrackSample);
 	LastChannelINGRIDY[irec][itrk]=LastChan[0];
@@ -1174,7 +1189,7 @@ int main(int argc, char **argv)
 	CLMuon_KS[irec][itrk]=(recon->mucl)[itrk];
 	Momentum[irec][itrk]=TrueParticleNRJ;
 	PD[irec][itrk]=Dist[0];
-	if(TrackSample>=2) ID[irec][itrk]=Dist[1];
+	if(TrackSample>2) ID[irec][itrk]=Dist[1];//ML 20170127; was>=2
 	else ID[irec][itrk]=0;
 	Sample[irec][itrk]=TrackSample;
 	TotalCharge[irec][itrk]=Rec->Reconstruction::GetTrackEnergyPerDistance(Vec,dx);

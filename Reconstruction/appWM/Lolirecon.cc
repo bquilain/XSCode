@@ -30,8 +30,8 @@ using namespace std;
 
 #include "TApplication.h"
 //#include "PMrecon.hxx"
-#include "Lolirecon.hxx"
 #include "INGRID_Dimension.cxx"
+#include "Lolirecon.hxx"
 //#include "PMdisp.h"
 #include "Lolidisp.h"
 
@@ -45,6 +45,7 @@ using namespace std;
 #include "PMReconSummary.h"
 #include "NeutInfoSummary.h"
 
+
 //#define  STUDY_BADCHANNEL
 vector<int>  bad_mod;
 vector<int>  bad_pln;
@@ -54,10 +55,9 @@ void Add_Bad_Channel();
 bool Is_Bad_Channel(IngridHitSummary* thit);
 void fMode(int mode);
 
-//define in IngridConstants.h
-//const static char *dst_data          = "/home/t2kingrid/data/dst";
+const static char *dst_data          = "/home/t2kingrid/data/dst";
 const static char *out_data          = "/home/t2kingrid/data/dst";
-//const static char *cosmic_data       = "/home/t2kingrid/data/cosmic";
+const static char *cosmic_data       = "/home/t2kingrid/data/cosmic";
 
 //static const char *data_file_folder  = "/home/kikawa/scraid1/data/pm_ingrid";
 //static const char *calib_file_folder = "/home/kikawa/scraid1/data/pm_ingrid";

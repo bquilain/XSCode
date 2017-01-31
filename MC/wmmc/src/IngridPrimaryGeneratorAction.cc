@@ -464,7 +464,7 @@ void IngridPrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
         }
       }
     }
-    if( fdid==4 && module_mode == VERTICAL ) {
+    if( fdid==4 && ( module_mode == VERTICAL || module_mode == PROTON || module_mode == WAGASCI ) ) {//changed ML 2017/01/25 for BkgV study
       for( int m=0;m<7;m++ ) {
         if( fabs(pos[0]) <= 60 &&
             fabs(pos[1]+MOD_CEN_GAP*(3-m)) <= 60 ) {

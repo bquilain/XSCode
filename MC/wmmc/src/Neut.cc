@@ -62,8 +62,8 @@ int Neut::NtupleReadEvent(SecondaryVector &Secondary, float* direction)
     std::cout << iev << std::endl;
   }
   
-  if(Vector.Primary.Mode==0)
-    std::cout<<Vector.Primary.Mode<<" "<<Vector.Neutrino.ProductionMode<<" "<<Vector.Neutrino.Energy<<std::endl;
+  //if(Vector.Primary.Mode==0)
+  //  std::cout<<Vector.Primary.Mode<<" "<<Vector.Neutrino.ProductionMode<<" "<<Vector.Neutrino.Energy<<std::endl;
 
 
 #if 0

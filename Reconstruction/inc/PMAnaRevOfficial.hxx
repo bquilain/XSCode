@@ -815,6 +815,13 @@ void fTrackMatchX(Trk &trk,PMTrack &pmtrk, TrackPM &htrk){
   trk.endych=pmtrk.trk[0].endych;
   trk.thetax=htrk.ang;
   trk.thetay=pmtrk.trk[0].thetay;
+
+  //ML added 20170126
+  trk.intcptx=htrk.intcpt;
+  trk.intcpty=pmtrk.trk[0].intcpty;
+  trk.slopex=htrk.slope;
+  trk.slopey=pmtrk.trk[0].slopey;
+
   trk.hit.clear();
 
   for(int ihit=0;ihit<htrk.hit.size();ihit++){
@@ -885,6 +892,13 @@ void fTrackMatchY(Trk &trk,PMTrack &pmtrk, TrackPM &vtrk){
   trk.endych=vtrk.fxy;
   trk.thetax=pmtrk.trk[0].thetax;
   trk.thetay=vtrk.ang;
+
+  // ML added 20170126
+  trk.intcptx=pmtrk.trk[0].intcptx;
+  trk.intcpty=vtrk.intcpt;
+  trk.slopex=pmtrk.trk[0].slopex;
+  trk.slopey=vtrk.slope;
+
   trk.hit.clear();
 
   for(int ihit=0;ihit<vtrk.hit.size();ihit++){

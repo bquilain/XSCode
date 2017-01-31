@@ -37,9 +37,10 @@ using namespace std;
 
 #include "TApplication.h"
 //#include "PMrecon.hxx"
+#include "INGRID_Dimension.hxx"
 #include "Lolirecon.hxx"
 #include "LoliAna.hxx" 
-#include "INGRID_Dimension.hxx"
+
 
 #include "INGRIDEVENTSUMMARY.h"
 #include "IngridHitSummary.h"
@@ -54,11 +55,11 @@ using namespace std;
 
 #include "Lolidisp.h"
 
-//define in IngridConstants.h
-//const static int   GapbwBunch     = 581 ;    //[nsec]
-//const static int   TDCOffset      = 300;     //[nsec]
-//const static int   fExpBeamTime   = 200;     //[nsec]
-//const static int   beamontime     = 100;     //ontime
+
+const static int   GapbwBunch     = 581 ;    //[nsec]
+const static int   TDCOffset      = 300;     //[nsec]
+const static int   fExpBeamTime   = 200;     //[nsec]
+const static int   beamontime     = 100;     //ontime
 
 //#define  STUDY_BADCHANNEL
 vector<int>  bad_mod;
@@ -70,9 +71,8 @@ void fMode(int mode);
 bool Is_Bad_Channel(IngridHitSummary* thit);
 void GetNonRecHits(IngridEventSummary* evt, int cyc);//newly added
 
-//define in IngridConstants.h
-//const static char *dst_data          = "/home/kikawa/scraid1/data/pm_ingrid";
-//const static char *cosmic_data       = "/home/kikawa/scraid1/data/pm_ingrid";
+const static char *dst_data          = "/home/kikawa/scraid1/data/pm_ingrid";
+const static char *cosmic_data       = "/home/kikawa/scraid1/data/pm_ingrid";
 
 //static const char *data_file_folder  = "/home/kikawa/scraid1/data/pm_ingrid";
 //static const char *calib_file_folder = "/home/kikawa/scraid1/data/pm_ingrid";
@@ -211,6 +211,7 @@ int main(int argc,char *argv[]){
   PMReconSummary* recon;
   //PMReconSummary* recon = new PMReconSummary();
   PMAnaSummary* pmanasum = new PMAnaSummary();
+  PMAnaSummary* pmanasum2 = new PMAnaSummary();
   Hit                        hit;
   TrackPM                      track;
   TrackIng                     ingtrack;
@@ -374,10 +375,10 @@ int main(int argc,char *argv[]){
       
       for(int i=0;i<pmtrack.size();i++){
 	
-	if(pmtrack[i].Ntrack == 0)continue;
 	pmanasum->Clear();
 
 	reCalcIsohit(pmtrack[i],isoHitCut);
+	if(pmtrack[i].Ntrack == 0)continue;
 
 	//Vertex activity
 	int ninghit = evt -> NIngridModHits(15, cyc);
@@ -467,8 +468,8 @@ int main(int argc,char *argv[]){
 	  pmanasum -> x           .push_back(pmtrack[i].trk[t].x);
 	  pmanasum -> y           .push_back(pmtrack[i].trk[t].y);
 	  pmanasum -> z           .push_back(pmtrack[i].trk[t].z);
-	  pmanasum -> zx          .push_back(pmtrack[i].trk[t].zx);
-	  pmanasum -> zy          .push_back(pmtrack[i].trk[t].zy);
+	  pmanasum -> zx          .push_back(pmtrack[i].trk[t].intcptx);
+	  pmanasum -> zy          .push_back(pmtrack[i].trk[t].intcpty);
 
 	  pmanasum -> startxpln   .push_back(pmtrack[i].trk[t].startxpln);
 	  pmanasum -> startypln   .push_back(pmtrack[i].trk[t].startypln);
@@ -506,7 +507,7 @@ int main(int argc,char *argv[]){
 	    pmanasum -> mucl        .push_back(pmtrack[i].trk[t].mucl);
 
 
-	  if(pmtrack[i].trk[t].pdg==13 && pmtrack[i].trk[t].ing_trk && pmtrack[i].trk[t].mucl<0.05) cout<<ievt<<" "<<i<<" "<<t<<" "<<pmtrack[i].trk[t].mucl<<endl;
+	  //	  if(pmtrack[i].trk[t].pdg==13 && pmtrack[i].trk[t].ing_trk && pmtrack[i].trk[t].mucl<0.05) cout<<ievt<<" "<<i<<" "<<t<<" "<<pmtrack[i].trk[t].mucl<<endl;
 	  
 	  vector<Hits>::iterator iter;
 	  for(iter=pmtrack[i].trk[t].hit.begin();iter<pmtrack[i].trk[t].hit.end();iter++){
@@ -521,12 +522,12 @@ int main(int argc,char *argv[]){
 	    
 	    inghitsum->isohit=hit.isohit;
 	    pmanasum->AddIngridHitTrk(inghitsum,t);
-	  }
+	  }//hit
 	}
 	evt   -> AddPMAna(pmanasum);
+
       }
      
-
       //here I correct for propagation in the fiber - ML 2016/12/16
       int nHits=evt->NIngridModHits(15,cyc);
       int nAna=evt->NPMAnas();
@@ -535,13 +536,13 @@ int main(int argc,char *argv[]){
 	inghitsum=evt->GetIngridModHit(ihit, 15,cyc);
 	bool found=false;
 	for(int iana=0;iana<nAna;iana++){	
-	  pmanasum=evt->GetPMAna(iana);
-	  int nTracks=pmanasum->Ntrack;
+	  pmanasum2=evt->GetPMAna(iana);
+	  int nTracks=pmanasum2->Ntrack;
 	  int itrk;
 	  for(itrk=0;itrk<nTracks;itrk++){
-	    int nHits2=pmanasum->NhitTs(itrk);
+	    int nHits2=pmanasum2->NhitTs(itrk);
 	    for(int ihit2=0;ihit2<nHits2;ihit2++){
-	      inghitsum2=pmanasum->GetIngridHitTrk(ihit2,itrk);
+	      inghitsum2=pmanasum2->GetIngridHitTrk(ihit2,itrk);
 	      if(inghitsum->mod==inghitsum2->mod && inghitsum->view==inghitsum2->view && inghitsum->pln==inghitsum2->pln && inghitsum->ch==inghitsum2->ch){
 		found=true;
 		break;
@@ -552,15 +553,15 @@ int main(int argc,char *argv[]){
 
 	  if(found){
 	    //now iana and itrk are set to the first reco and track inghitsum belongs to
-	    double tx=pmanasum->thetax[0];
-	    double ty=pmanasum->thetay[0];
-	    double startx=(pmanasum->startxch[0]-100)/10;//cm
-	    double starty=(pmanasum->startych[0]-100)/10;//cm
+	    double tx=pmanasum2->thetax[0];
+	    double ty=pmanasum2->thetay[0];
+	    double startx=(pmanasum2->startxch[0]-100)/10;//cm
+	    double starty=(pmanasum2->startych[0]-100)/10;//cm
 	    
 	    double startz_x, startz_y, posixy; // I'm only interested in startz_x/y
 	    INGRID_Dimension *a_temp = new INGRID_Dimension();
-	    a_temp -> get_posi_lolirecon( 15, 0,pmanasum->startxpln[0],0,0, &posixy, &startz_x);
-	    a_temp -> get_posi_lolirecon( 15, 1,pmanasum->startypln[0],0,0, &posixy, &startz_y);
+	    a_temp -> get_posi_lolirecon( 15, 0,pmanasum2->startxpln[0],0,0, &posixy, &startz_x);
+	    a_temp -> get_posi_lolirecon( 15, 1,pmanasum2->startypln[0],0,0, &posixy, &startz_y);
 	    delete a_temp;
 	    
 	    double fiberLength;
@@ -572,8 +573,8 @@ int main(int argc,char *argv[]){
 	    if(fiberLength>100) fiberLength=100;
 	    if(fiberLength<0) fiberLength=0;
 	    
-	    inghitsum->pecorr -= fiberLength*fiberIndex/c_vac; // in ns
-	    //  cout<<"found! "<<ihit<<" "<<iana<<","<<pmanasum->ing_trk[itrk]<<" "<<nTracks<<","<<itrk<<" "<<nHits<<" "<<fiberLength<<" "<<fiberLength*fiberIndex/c_vac<<endl;
+	    inghitsum->timecorr -= fiberLength*fiberIndex/c_vac; // in ns
+	    //  cout<<"found! "<<ihit<<" "<<iana<<","<<pmanasum2->ing_trk[itrk]<<" "<<nTracks<<","<<itrk<<" "<<nHits<<" "<<fiberLength<<" "<<fiberLength*fiberIndex/c_vac<<endl;
 	    break;
 	  }
 	}//iana     
@@ -582,8 +583,8 @@ int main(int argc,char *argv[]){
 
       //now I correct hitcls by the mean delay (fiberLength=50)
       for(int iana=0;iana<nAna;iana++){	
-	pmanasum=evt->GetPMAna(iana);
-	pmanasum->clstime -= 50*fiberIndex/c_vac; // in ns
+	pmanasum2=evt->GetPMAna(iana);
+	pmanasum2->clstime -= 50*fiberIndex/c_vac; // in ns
       }
 
 

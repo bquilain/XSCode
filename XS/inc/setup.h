@@ -52,26 +52,27 @@ Int_t Ncyc = 12;
 int NMod=17;
 int NPln=11;
 int NPlnPM=18;
+int NPlnWM=24;
 int NView=2;
 int NCh=24;
 int NChPM=32;
+int NChWM=40;
 double IronCarbonRatio=7.87/1.03;
 double DNRateWM=2.4;
 double MeV2PE=46.0;
 double MeV2PEPM=38.6;
 double Beam[3]={0,-TMath::Sin(3.8*TMath::Pi()/180.),TMath::Cos(3.8*TMath::Pi()/180.)};
-double C[17]={-1.85,0.34,0.59,0.74,0.514,-0.37,1.25,-0.06,0.562,0.82,-0.47,0.6,-0.57,-0.45};
+double C[18]={-1.85,0.34,0.59,0.74,0.514,-0.37,1.25,-0.06,0.562,0.82,-0.47,0.6,-0.57,-0.45,0,0,0,0};
 const double Mmu=105.66/1000.;
 const double Mp=938.272/1000.;
 const double Mn=939.5659/1000.;
-
 const int StartRun=14000;
 const int EndRun=15999;
 const int StartSubRun=0;
 const int EndSubRun=300;
 const int StartRunList=14;//Which list will be read (14=>14000.txt). Necessary to use only run processed
 const int EndRunList=15;//Which list will be read (14=>14000.txt). Necessary to use only run processed
-double NMCfiles=500;
+double NMCfiles=10;
 double DataPOT=0.58;//In units of 10^21 POT
 const int StartError=0;
 const int EndError=0;//17;//34;//34;//41 for 2012 ;//17

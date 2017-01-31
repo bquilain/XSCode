@@ -56,6 +56,19 @@ using namespace std;
 INGRID_Dimension * IngD = new INGRID_Dimension();
 Reconstruction * Reco = new Reconstruction();
 //#define DEBUG
+
+Xsec::Xsec(bool PM){
+  _isPM=PM;
+}
+Xsec::~Xsec(){}
+
+void Xsec::SetDetector(bool PM){
+  _isPM=PM;
+}
+bool Xsec::GetDetector(){
+  return _isPM;
+}
+
 void Xsec::Initialize(){
 
   InitializeGlobal();
@@ -261,20 +274,19 @@ void Xsec::Initialize(){
 }
 
 
-void Xsec::DetermineNuType(int IsSand,int IsAnti,int IsNuE,int IsBkgH,int IsBkgV,int nutype, int intmode){
+void Xsec::DetermineNuType(bool&IsSand,bool&IsAnti,bool&IsNuE,bool&IsBkgH,bool&IsBkgV,int nutype, int intmode){
   IsSand=0;
   IsAnti=0;
   IsNuE=0;
   IsBkgH=0;
   IsBkgV=0;
-  
-  if(intmode==16){
+  if((_isPM && intmode==16) || (!_isPM && intmode==17)){
     //if(nutype==1) return 0;
     if(nutype==2) IsAnti=1;
     else if(nutype==3) IsNuE=1;
   }
-  else if(intmode<7) IsBkgH=1;
-  else if(intmode<14) IsBkgV=1;
+  else if(intmode>=0 && intmode<7) IsBkgH=1;
+  else if(intmode>=7 && intmode<14) IsBkgV=1;
   else IsSand=1;
 }
 
@@ -295,20 +307,6 @@ int Xsec::DetermineFSI(int IsSand,int IsAnti,int IsNuE,int IsBkgH,int IsBkgV,Ing
     else if(TMath::Abs(SimPart->pdg)==111) FSIPions0++;
     else if(TMath::Abs(SimPart->pdg)!=2112) FSIOther++;
   }
-  /*
-  if(FSIMuons==1){
-    if(FSINeutralPions==0){
-      if(FSIPions==0) FSIInt=0+FSIProtons;
-      if(FSIPions==1) FSIInt=10+FSIProtons;
-      else FSIInt=20+FSIProtons;
-    }
-    else FSIInt=30+FSIProtons;
-  }
-  else{
-    if(FSINeutralPions==0) FSIInt=50+FSIProtons;
-    else FSIInt=60+FSIProtons;
-  }
-  */
 
   if(FSIMuons==1){
     if(FSINeutralPions==0){
