@@ -115,7 +115,7 @@ int main(int argc, char **argv){
 	double ErrorValue=Start[ErrorType]+n*Step[ErrorType];
 	if(MC){
        
-	  for(int i=1;i<=NMCfiles;i++){
+	  for(int i=0;i<NMCfiles;i++){
 	    //for(int i=1;i<=2000;i++){//TEMP
 	    sprintf(Command1,"");
 	    sprintf(Command1_1,"");
@@ -149,11 +149,8 @@ int main(int argc, char **argv){
 
 	      //Run 1
 	      //NuMu
-	      if(i<=500) sprintf(InputFile,(PM?"${MCINPUTSTORAGE}/run1/11bfluka_nd2_numu_ch_%d.nt":"${MCINPUTSTORAGE_WM}/ingbg_5.3.6/13a_nd2_numu_h2o_%d.nt"),i);
-	      else if(i<=1000)sprintf(InputFile,(PM?Form("${MCINPUTSTORAGE}/run1add1/11bfluka_nd2_numu_ch_%d.nt",i-500):Form("${MCINPUTSTORAGE_WM}/ingbg_5.3.6/13a_nd2_numu_h2o_%d.nt",i)));
-	      else if(i<=1500)sprintf(InputFile,(PM?Form("${MCINPUTSTORAGE}/run1add2/11bfluka_nd2_numu_ch_%d.nt",i-1000):""));
-	      else sprintf(InputFile,(PM?Form("${MCINPUTSTORAGE}/run1add3/11bfluka_nd2_numu_ch_%d.nt",i-1500):""));
-
+	      if(i<1000) sprintf(InputFile,(PM?"${MCINPUTSTORAGE}/ingbg_5.3.6/13a_nd2_numu_ch_%d.nt":"${MCINPUTSTORAGE_WM}/ingbg_5.3.6/13a_nd2_numu_h2o_%d.nt"),i);
+	      else {cout<<"*** only 1000 NEUT files available ***"<<endl; return 0;}
 	      sprintf(Command1,"${INSTALLREPOSITORY}/MC/bin/Linux-g++/%s -o ${MCOUTPUTSTORAGE%s}/%sMC_Numu_Run1_%d.root -i %s -m %d -f 1",execMC,suffix,DetName,i,InputFile,MCDetID);
 	      
 	      //if(i<=500) sprintf(Command1,"${INSTALLREPOSITORY}/MC/bin/Linux-g++/%s -o ${MCOUTPUTSTORAGE}/PMMC_Numu_Run1_%d.root -i ${MCINPUTSTORAGE}/run1/11bfluka_nd2_numu_ch_%d.nt -m %d -f 1",execMC,i,i,MCDetID);
@@ -162,11 +159,8 @@ int main(int argc, char **argv){
 	      //else sprintf(Command1,"${INSTALLREPOSITORY}/MC/bin/Linux-g++/%s -o ${MCOUTPUTSTORAGE}/PMMC_Numu_Run1_%d.root -i ${MCINPUTSTORAGE}/run1add3/11bfluka_nd2_numu_ch_%d.nt -m %d -f 1",execMC,i,i-1500,MCDetID);
 	  
 	      //NuMuBar
-	      if(i<=500) sprintf(InputFile,(PM?Form("${MCINPUTSTORAGE}/numubar/11bfluka_nd2_numubar_ch_%d.nt",i):Form("${MCINPUTSTORAGE_WM}/ingbg_5.3.6/13a_nd2_numubar_h2o_%d.nt",i)));
-	      else if(i<=1000)sprintf(InputFile,(PM?Form("${MCINPUTSTORAGE}/run1add1nubar/11bfluka_nd2_numubar_ch_%d.nt",i-500):Form("${MCINPUTSTORAGE_WM}/ingbg_5.3.6/13a_nd2_numubar_h2o_%d.nt",i)));
-	      else if(i<=1500)sprintf(InputFile,(PM?Form("${MCINPUTSTORAGE}/run1add2nubar/11bfluka_nd2_numubar_ch_%d.nt",i-1000):""));
-	      else sprintf(InputFile,(PM?Form("${MCINPUTSTORAGE}/run1add3nubar/11bfluka_nd2_numubar_ch_%d.nt",i-1500):""));
-
+	      if(i<1000) sprintf(InputFile,(PM?"${MCINPUTSTORAGE}/ingbg_5.3.6/13a_nd2_numubar_ch_%d.nt":"${MCINPUTSTORAGE_WM}/ingbg_5.3.6/13a_nd2_numubar_h2o_%d.nt"),i);
+	      else {cout<<"*** only 1000 NEUT files available ***"<<endl; return 0;}
 	      sprintf(Command1_1,"${INSTALLREPOSITORY}/MC/bin/Linux-g++/%s -o ${MCOUTPUTSTORAGE%s}/%sMC_Numubar_Run1_%d.root -i %s -m %d -f 2",execMC,suffix,DetName,i,InputFile,MCDetID);
 
 	      // if(i<=500) sprintf(Command1_1,"${INSTALLREPOSITORY}/MC/bin/Linux-g++/%s -o ${MCOUTPUTSTORAGE}/PMMC_Numubar_Run1_%d.root -i ${MCINPUTSTORAGE}/numubar/run1/11bfluka_nd2_numubar_ch_%d.nt -m %d -f 2",execMC,i,i,MCDetID);
@@ -175,11 +169,8 @@ int main(int argc, char **argv){
 	      //else if(i<=2000) sprintf(Command1_1,"${INSTALLREPOSITORY}/MC/bin/Linux-g++/%s -o ${MCOUTPUTSTORAGE}/PMMC_Numubar_Run1_%d.root -i ${MCINPUTSTORAGE}/run1add3nubar/11bfluka_nd2_numubar_ch_%d.nt -m %d -f 2",execMC,i,i-1500,MCDetID);
 	  
 	      //NuE
-	      if(i<=500) sprintf(InputFile,(PM?Form("${MCINPUTSTORAGE}/nuerun1/11bfluka_nd2_nue_ch_%d.nt",i):Form("${MCINPUTSTORAGE_WM}/ingbg_5.3.6/13a_nd2_nue_h2o_%d.nt",i)));
-	      else if(i<=1000)sprintf(InputFile,(PM?Form("${MCINPUTSTORAGE}/nuerun1add1/11bfluka_nd2_nue_ch_%d.nt",i-500):Form("${MCINPUTSTORAGE_WM}/ingbg_5.3.6/13a_nd2_nue_h2o_%d.nt",i)));
-	      else if(i<=1500)sprintf(InputFile,(PM?Form("${MCINPUTSTORAGE}/nuerun1add2/11bfluka_nd2_nue_ch_%d.nt",i-1000):""));
-	      else sprintf(InputFile,(PM?Form("${MCINPUTSTORAGE}/nuerun1add3/11bfluka_nd2_nue_ch_%d.nt",i-1500):""));
-
+	      if(i<1000) sprintf(InputFile,(PM?"${MCINPUTSTORAGE}/ingbg_5.3.6/13a_nd2_nue_ch_%d.nt":"${MCINPUTSTORAGE_WM}/ingbg_5.3.6/13a_nd2_nue_h2o_%d.nt"),i);
+	      else {cout<<"*** only 1000 NEUT files available ***"<<endl; return 0;}
 	      sprintf(Command1_2,"${INSTALLREPOSITORY}/MC/bin/Linux-g++/%s -o ${MCOUTPUTSTORAGE%s}/%sMC_Nue_Run1_%d.root -i %s -m %d -f 3",execMC,suffix,DetName,i,InputFile,MCDetID);
 
 	      //if(i<=500) sprintf(Command1_2,"${INSTALLREPOSITORY}/MC/bin/Linux-g++/%s -o ${MCOUTPUTSTORAGE}/PMMC_Nue_Run1_%d.root -i ${MCINPUTSTORAGE}/nuerun1/11bfluka_nd2_nue_ch_%d.nt -m %d -f 3",execMC,i,i,MCDetID);
@@ -188,9 +179,8 @@ int main(int argc, char **argv){
 	      //else if(i<=2000) sprintf(Command1_2,"${INSTALLREPOSITORY}/MC/bin/Linux-g++/%s -o ${MCOUTPUTSTORAGE}/PMMC_Nue_Run1_%d.root -i ${MCINPUTSTORAGE}/nuerun1add3/11bfluka_nd2_nue_ch_%d.nt -m %d -f 3",execMC,i,i-1500,MCDetID);
 	  
 	      //Wall Bkg (mainly Sand Muons)
-	      if(i<=1000)sprintf(InputFile,(PM?Form("${MCINPUTSTORAGE}/wall/11b_nd7_numu_o_%d_0.nt",i):Form("${MCINPUTSTORAGE_WM}/wallbg_5.3.6/13a_nd7_numu_o_%d_1.nt",i)));
-	      else if(i<=2000)sprintf(InputFile,(PM?Form("${MCINPUTSTORAGE}/nuerun1add2/11b_nd7_numu_o_%d_1.nt",i-1000):""));
-	      
+	      if(i<1000)sprintf(InputFile,(PM?"${MCINPUTSTORAGE}/wallbg_5.3.6/13a_nd7_numu_o_%d_1.nt":"${MCINPUTSTORAGE_WM}/wallbg_5.3.6/13a_nd7_numu_o_%d_1.nt"),i);
+	      else {cout<<"*** only 1000 NEUT files available ***"<<endl; return 0;}	      
 	      sprintf(Command1_3,"${INSTALLREPOSITORY}/MC/bin/Linux-g++/%s -o ${MCOUTPUTSTORAGE%s}/%sMC_Wall_Run1_%d.root -i %s -m %d -f 1",execMC,suffix,DetName,i,InputFile,MCDetID);
 	      
 	      //if(i<=1000) sprintf(Command1_3,"${INSTALLREPOSITORY}/MC/bin/Linux-g++/%s -o ${MCOUTPUTSTORAGE}/PMMC_Wall_Run1_%d.root -i ${MCINPUTSTORAGE}/wall/11b_nd7_numu_o_%d_0.nt -m %d -f 1",execMC,i,i,MCDetID);
@@ -198,11 +188,8 @@ int main(int argc, char **argv){
 
 	      //Ingrid Bkg
 	      //Horizontal modules
-	      if(i<=500) sprintf(InputFile,(PM?"${MCINPUTSTORAGE}/nd3numurun1/11bfluka_nd3_numu_fe_%d.nt":"${MCINPUTSTORAGE_WM}/ingbg_5.3.6/13a_nd3_numu_fe_%d.nt"),i);
-	      else if(i<=1000)sprintf(InputFile,(PM?Form("${MCINPUTSTORAGE}/nd3numurun1add1/11bfluka_nd3_numu_fe_%d.nt",i-500):Form("${MCINPUTSTORAGE_WM}/ingbg_5.3.6/13a_nd3_numu_fe_%d.nt",i)));
-	      else if(i<=1500)sprintf(InputFile,(PM?Form("${MCINPUTSTORAGE}/nd3numurun1add2/11bfluka_nd3_numu_fe_%d.nt",i-1000):""));
-	      else sprintf(InputFile,(PM?Form("${MCINPUTSTORAGE}/nd3numurun1add3/11bfluka_nd3_numu_fe_%d.nt",i-1500):""));
-
+	      if(i<1000) sprintf(InputFile,(PM?"${MCINPUTSTORAGE}/ingbg_5.3.6/13a_nd3_numu_fe_%d.nt":"${MCINPUTSTORAGE_WM}/ingbg_5.3.6/13a_nd3_numu_fe_%d.nt"),i);
+	      else {cout<<"*** only 1000 NEUT files available ***"<<endl; return 0;}	      
 	      sprintf(Command1_4,"${INSTALLREPOSITORY}/MC/bin/Linux-g++/%s -o ${MCOUTPUTSTORAGE%s}/%sMC_INGRIDH_Run1_%d.root -i %s -m %d -f 1",execMC,suffix,DetName,i,InputFile,MCDetID);
 
 	      //if(i<=500) sprintf(Command1_4,"${INSTALLREPOSITORY}/MC/bin/Linux-g++/%s -o ${MCOUTPUTSTORAGE}/PMMC_INGRIDH_Run1_%d.root -i ${MCINPUTSTORAGE}/nd3numurun1/11bfluka_nd3_numu_fe_%d.nt -m %d -f 1",execMC,i,i,MCDetID);
@@ -211,11 +198,8 @@ int main(int argc, char **argv){
 	      //else if(i<=2000) sprintf(Command1_4,"${INSTALLREPOSITORY}/MC/bin/Linux-g++/%s -o ${MCOUTPUTSTORAGE}/PMMC_INGRIDH_Run1_%d.root -i ${MCINPUTSTORAGE}/nd3numurun1add3/11bfluka_nd3_numu_fe_%d.nt -m %d -f 1",execMC,i,i-1500,MCDetID);
 
 	      //Vertical modules
-	      if(i<=500) sprintf(InputFile,(PM?Form("${MCINPUTSTORAGE}/nd4numurun1/11bfluka_nd4_numu_fe_%d.nt",i):Form("${MCINPUTSTORAGE_WM}/ingbg_5.3.6/13a_nd4_numu_fe_%d.nt",i)));
-	      else if(i<=1000)sprintf(InputFile,(PM?Form("${MCINPUTSTORAGE}/nd4numurun1add1/11bfluka_nd4_numu_fe_%d.nt",i-500):Form("${MCINPUTSTORAGE_WM}/ingbg_5.3.6/13a_nd4_numu_fe_%d.nt",i)));
-	      else if(i<=1500)sprintf(InputFile,(PM?Form("${MCINPUTSTORAGE}/nd4numurun1add2/11bfluka_nd4_numu_fe_%d.nt",i-1000):""));
-	      else sprintf(InputFile,(PM?Form("${MCINPUTSTORAGE}/nd4numurun1add3/11bfluka_nd4_numu_fe_%d.nt",i-1500):""));
-
+	      if(i<1000) sprintf(InputFile,(PM?"${MCINPUTSTORAGE}/ingbg_5.3.6/13a_nd4_numu_fe_%d.nt":"${MCINPUTSTORAGE_WM}/ingbg_5.3.6/13a_nd4_numu_fe_%d.nt"),i);
+	      else {cout<<"*** only 1000 NEUT files available ***"<<endl; return 0;}	      
 	      sprintf(Command1_5,"${INSTALLREPOSITORY}/MC/bin/Linux-g++/%s -o ${MCOUTPUTSTORAGE%s}/%sMC_INGRIDV_Run1_%d.root -i %s -m %d -f 1",execMC,suffix,DetName,i,InputFile,MCDetID);
 
 	      //if(i<=500) sprintf(Command1_5,"${INSTALLREPOSITORY}/MC/bin/Linux-g++/%s -o ${MCOUTPUTSTORAGE}/PMMC_INGRIDV_Run1_%d.root -i ${MCINPUTSTORAGE}/nd4numurun1/11bfluka_nd4_numu_fe_%d.nt -m %d -f 1",execMC,i,i,MCDetID);
@@ -238,13 +222,12 @@ int main(int argc, char **argv){
 	      //ML tmp
 	      //sprintf(Command5,"source ${INSTALLREPOSITORY}/source_T2KReweight.sh"); 
 
-	      //NEUT 5.3.2
+	      //NEUT 5.3.2  -> now NEUT 5.3.6 (ML 2017/02/01)
 	      sprintf(Command6,"${INSTALLREPOSITORY}/XS/XS_CC0pi_Plan%s -i ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_ana.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s_Run1_%d_Plan.root -f 1 -m",suffix,suffix,DetName,i,DetName,i);
 	      //NEUT 5.1.4.2
 	      //sprintf(Command6,"${INSTALLREPOSITORY}/XS/XS_CC0pi_Plan -i ${MCOUTPUTSTORAGE}/PM_MC_Beam%d_BirksCorrectedMIP40_ReWeight_SciBar188_wNoise_KSana_woXtalk.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_Old_%d_Plan.root -f 1 -m",i,i);
 			    
-	      // ML tmp
-	      // sprintf(Command7,"${T2KREWEIGHTREPOSITORY}/app/genWeightsFromINGRID_2015.exe -i ${MCOUTPUTSTORAGE}/PMMC_Run1_%d.root -o ${MCOUTPUTSTORAGE}/PMMC_Run1_%d_ReWeight2015.root",i,i);
+	      //sprintf(Command7,"${T2KREWEIGHTREPOSITORY}/app/genWeightsFromINGRID_2015.exe -i ${MCOUTPUTSTORAGE}/PMMC_Run1_%d.root -o ${MCOUTPUTSTORAGE}/PMMC_Run1_%d_ReWeight2015.root",i,i);
 	    }
 
 	    else if(ErrorType==1) continue;

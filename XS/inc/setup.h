@@ -72,7 +72,7 @@ const int StartSubRun=0;
 const int EndSubRun=300;
 const int StartRunList=14;//Which list will be read (14=>14000.txt). Necessary to use only run processed
 const int EndRunList=15;//Which list will be read (14=>14000.txt). Necessary to use only run processed
-double NMCfiles=10;
+double NMCfiles=1000; // up to now only 1000 are available with NEUT 5.3.6
 double DataPOT=0.58;//In units of 10^21 POT
 const int StartError=0;
 const int EndError=0;//17;//34;//34;//41 for 2012 ;//17
