@@ -1,0 +1,15 @@
+Production 0: early February 2017
+
+------------------------------------------------
+
+Requests for next prod:
+- correct the peaks in the d-mu distribution
+- add a variable bool IsGrid for the WM to know if the true vertex is
+scinti or water
+- redefine FSIInt
+- use the same physics list in both MC (in prod 0: QGSP_BERT 3.3 in PM
+and QGSP_BIC 3.3 in WM)
+- check OOFV weights
+- MVA-based PID
+
+to be continued...

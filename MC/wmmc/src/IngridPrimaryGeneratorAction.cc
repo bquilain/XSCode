@@ -641,11 +641,35 @@ NEXTSTEP:
   }
   runaction -> GetEvtSum() -> AddNeut( neutinfo );
     */
+
+
+    // ############
+    // in case of isParticleGun option -p pdg, find the highest momentum particle of type pdg
+
+    G4double mom_max=0;
+    G4double IPART=-1;
+    if(isParticleGun){
+      for(int ipart=0; ipart<Secondary.NumParticle; ipart++) {
+	if( Secondary.TrackingFlag[ipart]==1 ) {
+	  if( Secondary.ParticleID[ipart]==particleGun_pdg){
+	    G4double mom = Secondary.AbsMomentum[ipart]*MeV;
+	    if(mom>mom_max){
+	      mom_max=mom;
+	      IPART=ipart;
+	    }
+	  }
+	}
+      }//ipart
+    }
+      
+
 	for(int ipart=0; ipart<Secondary.NumParticle; ipart++) {
   // #############################################################################
 	// ### consider only TrackingFlag for use non interacted particle in neucleus ###
   // #############################################################################
 		if( Secondary.TrackingFlag[ipart]==1 ) {
+
+		  if(isParticleGun && (ipart != IPART)) continue;
 
 #ifdef DEBUG2
 	    G4cout << "Particle:" << (neut->Vector).Secondary.ParticleID[ipart];
@@ -680,14 +704,11 @@ NEXTSTEP:
 			else if(Secondary.ParticleID[ipart]==2212)
 			  (runaction->p_theta_protons)->Fill(mom/GeV,dir.z());
 
-			if(isParticleGun && Secondary.ParticleID[ipart]!=particleGun_pdg){}
-			else{
 			  particleGun->SetParticleDefinition(particle);
 			  particleGun->SetParticleMomentumDirection(dir);
 			  particleGun->SetParticleEnergy(energy);
 			  particleGun->SetParticleTime(0.0*ns);			
 			  particleGun->GeneratePrimaryVertex(anEvent);
-			}
 
 
 #ifdef DEBUG2

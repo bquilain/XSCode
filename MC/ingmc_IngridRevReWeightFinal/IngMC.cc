@@ -43,10 +43,13 @@ int main(int argc, char** argv)
   double CBIRKS_values[3]={0.0185,0.0208,0.231}; // nominal 0.0208; Birks_Minus = 0.0185; Birks_Plus = 0.0231 
   int BirksIndex=1;
 
+ 	bool isParticleGun=false;
+	int particleGun_pdg=0;
+
 	int NumberOfEvent = 0;
 
 	int c = -1;
-	while ((c = getopt(argc, argv, "ho:i:m:b:f:B:")) != -1) {
+	while ((c = getopt(argc, argv, "ho:i:m:b:f:B:p:")) != -1) {
     switch(c){
 			case 'o':
 				sprintf(output,"%s",optarg);
@@ -71,12 +74,18 @@ int main(int argc, char** argv)
 				  exit(1);
 				}
 			        break;
+                        case 'p':
+			       // option -p : propagate only a single type of particle
+			       isParticleGun=true;
+			       particleGun_pdg=atoi(optarg);
+			        break;
 			case 'h':
 				std::cerr << "o:output root file name" << std::endl;
 				std::cerr << "i:input neut file" << std::endl;
 				std::cerr << "m:2(nd2) or 3(nd3) or 4(nd4)" << std::endl;
 				std::cerr << "b:batch command" << std::endl;
 				std::cerr << "B:Birks mode: 0(Birks_Minus) 1(nominal) 2(Birks_Plus)" << std::endl;
+				std::cerr << "p:particle gun mode: -p pdg will propagate only particles of type pdg" << std::endl;
 				exit(1);
 		}
 	}
@@ -137,9 +146,13 @@ int main(int argc, char** argv)
 	runManager->SetUserAction(tra);
 	G4cout << "TrackingAction init OK" << G4endl;
 
-	runManager-> SetUserAction(new IngridPrimaryGeneratorAction(neut, rac, evt, nd, flav));
-	G4cout << "PrimaryGenerator init OK" << G4endl;
-    
+	IngridPrimaryGeneratorAction* gen=new IngridPrimaryGeneratorAction(neut, rac, evt, nd, flav);
+	gen->SetParticleGun(isParticleGun, particleGun_pdg);
+	runManager-> SetUserAction(gen);
+	G4cout << "PrimaryGenerator init OK" ;
+    	if(isParticleGun) G4cout<<" ... propagating only particles of type " << particleGun_pdg << G4endl;
+	else G4cout<<G4endl;
+
   // user action classes... (optional)
 	runManager-> SetUserAction(rac);
 	runManager-> SetUserAction(evt);
