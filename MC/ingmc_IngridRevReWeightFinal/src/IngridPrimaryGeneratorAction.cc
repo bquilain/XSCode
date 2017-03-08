@@ -205,11 +205,16 @@ void IngridPrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
     //Proton Module
     if( fdid==2 ) {
 
-      double front =  total_mass_front_pm / (total_mass_front_pm + total_mass_sci_pm);
-    
+      // double front =  total_mass_front_pm / (total_mass_front_pm + total_mass_sci_pm);
+      // ML 2017/03/08: the previous one is wrong
+      double front = total_mass_front_pm / total_mass_sci_pm;     
+      double average_width=(2*width_ingrid+width_scibar)/3;
+
       if( front > (G4UniformRand()) ){
 	vertex_flag=0;
-	prob=sciing_region/scibar_region;
+	//	prob=sciing_region/scibar_region;
+	// ML 2017/03/08: the previous one is wrong
+	prob=average_width/width_scibar;
       }
       else if(fabs(pos[0])<=20&&fabs(pos[1])<=20){
 	vertex_flag=1;

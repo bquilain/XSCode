@@ -217,7 +217,7 @@ void IngridResponse::BirksSaturation2(G4double* edep, G4double* length, G4Track*
 }
 
 
-void IngridResponse::ApplyLightCollection(G4double* edep, G4int mod, G4int view, G4ThreeVector pos){
+void IngridResponse::ApplyLightCollection(G4double* edep, G4int mod, G4int view, G4int pln,G4ThreeVector pos){
   
   G4double x = 0.;
   G4int i = 0.;
@@ -225,7 +225,7 @@ void IngridResponse::ApplyLightCollection(G4double* edep, G4int mod, G4int view,
   if( view==topview ) x = fabs(scilen/2. + pos[0]/cm);
   else if( view==sideview ) x = fabs(scilen/2. + pos[1]/cm);
   
-  if(x<40||x>80||mod!=16){
+  if(x<40||x>80||mod!=16||pln==0){
     i=x/5;
     x=fabs(x-i*5-2.5);
     *edep *= exp(-1.*x/sciattleng);

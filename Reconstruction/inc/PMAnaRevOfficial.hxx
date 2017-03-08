@@ -483,19 +483,13 @@ bool fIngHitPMJoint( vector<TrackIng> &itrk, vector<TrackPM> &ptrk, bool vertica
 	      ptrk[i].ing_ipln   = 0;
 	      ptrk[i].ing_fpln   = pln;
 	      ptrk[i].ing_trk    = true;
-	      if(ch<4 || ch>20)ptrk[i].ing_stop = false;
-	      else ptrk[i].ing_stop = true;
 	      ptrk[i].iron_pene  = pln;
-
 	    }
 	    else{ //there is already a new ingrid hit added to this track
 	      if(ptrk[i].ing_fpln>pln)continue;
 	      ptrk[i].ing_fmod   = ingmod;
 	      ptrk[i].ing_fpln   = pln;
 	      ptrk[i].iron_pene  = pln;
-	      if(ch<4 | ch>20)ptrk[i].ing_stop = false;
-	      else ptrk[i].ing_stop = true;
-
 	    }
 
 	    jointed=true;
@@ -521,6 +515,9 @@ bool fIngHitPMJoint( vector<TrackIng> &itrk, vector<TrackPM> &ptrk, bool vertica
 	  hit.hit_id=ingnonrechits_id[ingmod][view][pln][ch];
 	  ptrk[joitra].hit.push_back(hit);
 	  ptrk[joitra].ing_trk=true; // for 'NO ! case2'
+	  if(ch<4 || ch>20)ptrk[joitra].ing_stop = false;
+	  else ptrk[joitra].ing_stop = true;
+	    
 #ifdef DEBUG_INGHIT	
 	  cout<<"hit added to track "<<joitra<<endl;
 #endif

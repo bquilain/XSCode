@@ -594,8 +594,6 @@ bool fIngHitPMJoint( vector<TrackIng> &itrk, vector<TrackPM> &ptrk, bool vertica
 	      ptrk[i].ing_ipln   = 0;
 	      ptrk[i].ing_fpln   = pln;
 	      ptrk[i].ing_trk    = true;
-	      if(ch<4 || ch>20)ptrk[i].ing_stop = false;
-	      else ptrk[i].ing_stop = true;
 	      ptrk[i].ing_num    = itrk.size();
 	      ptrk[i].iron_pene  = pln;
 
@@ -632,8 +630,6 @@ bool fIngHitPMJoint( vector<TrackIng> &itrk, vector<TrackPM> &ptrk, bool vertica
 	      ptrk[i].ing_fmod   = incmod;
 	      ptrk[i].ing_fpln   = pln;
 	      ptrk[i].iron_pene  = pln;
-	      if(ch<4 | ch>20)ptrk[i].ing_stop = false;
-	      else ptrk[i].ing_stop = true;
 	      itrk[ptrk[i].ing_num].fpln=pln;
 
 	      //added for matching study
@@ -678,6 +674,13 @@ bool fIngHitPMJoint( vector<TrackIng> &itrk, vector<TrackPM> &ptrk, bool vertica
 	  hit.isohit= true;
 	  ptrk[joitra].hit.push_back(hit);
 	  ptrk[joitra].ing_trk=true;
+	  if(ch<4 || ch>20)ptrk[joitra].ing_stop = false;
+	  else ptrk[joitra].ing_stop = true;
+
+	  //is the track ingrid_stop ?
+
+
+
 	  //	  cout<<"hit added to ptrk="<<joitra<<endl;
 	}
 
@@ -1817,6 +1820,8 @@ bool fPMAna(int mod=16, bool requireIngridTrack=true){
 #endif
 }*/
 
+  //cout<<"#h-2D-tracks="<<htrack.size()<<endl;
+  //cout<<"#v-2D-tracks="<<vtrack.size()<<endl;
   // step 1: matching of all tracks with ing_trk=true
   vector<int> id_h,id_v,track_h,track_v;
   vector<bool> tracked_h,tracked_v,used_h,used_v;
@@ -1872,6 +1877,7 @@ bool fPMAna(int mod=16, bool requireIngridTrack=true){
 	tracked_h[h]=true;
 	tracked_v[v]=true;
 
+	//	cout<<"Matching htrack "<<h<<(htrack[h].ing_trk? " I":"")<<" with vtrack "<<v<<(vtrack[v].ing_trk? " I":"")<<endl;
 	fTrackMatch(trk,htrack[h],vtrack[v]);
 	trk.hnum=h;
 	trk.vnum=v;
@@ -1949,7 +1955,11 @@ bool fPMAna(int mod=16, bool requireIngridTrack=true){
       
     }
   }
-  
+  /*
+  cout<<"\nafter ingrid vertexing #reco="<<pmtrack.size()<<endl;
+  for(int i=0;i<pmtrack.size();i++)
+    cout<<"reco "<<i<<" #tracks="<<pmtrack[i].trk.size()<<endl;
+  */
 
   int maxpdif; 
   if(mod==15)maxpdif=10;
@@ -1964,6 +1974,10 @@ bool fPMAna(int mod=16, bool requireIngridTrack=true){
 	  if(tracked_h[h])continue;
 	  for(int v=0;v<vtrack.size();v++){
 	    if(tracked_v[v])continue;	  
+	    //	    cout<<"Reco "<<k<<", pdif="<<pdif+1<<": try to match htrack "<<h<<" with vtrack "<<v<<endl;
+	    //cout<<htrack[h].fpln<<" "<<vtrack[v].fpln<<endl;
+	    //cout<<"delta_plan with support reco h="<<abs((pmtrack[k].trk[0].startxpln)-(htrack[h].ipln))<<" v="<<abs((pmtrack[k].trk[0].startypln)-(vtrack[v].ipln))<<", limit is "<<pln_th+2<<endl;
+	    //cout<<"delta_xy is y="<<fabs((pmtrack[k].trk[0].y)-(vtrack[v].ixy))<<" x="<<+fabs((pmtrack[k].trk[0].x)-(htrack[h].ixy))<<", limit is "<<ch_th<<endl;
 	    if((htrack[h].fpln-vtrack[v].fpln>pdif+1)||(vtrack[v].fpln-htrack[h].fpln>pdif))continue;
 	    if(abs((pmtrack[k].trk[0].startxpln)-(htrack[h].ipln))+abs((pmtrack[k].trk[0].startypln)-(vtrack[v].ipln))>pln_th+2)continue;
 	    if(fabs((pmtrack[k].trk[0].y)-(vtrack[v].ixy))+fabs((pmtrack[k].trk[0].x)-(htrack[h].ixy))>ch_th)continue;
@@ -1972,7 +1986,7 @@ bool fPMAna(int mod=16, bool requireIngridTrack=true){
 	    tracked_v[v]=true;
 	  
 	    trk.clear();
-	  
+	    //cout<<"Matching htrack "<<h<<(htrack[h].ing_trk? " I":"")<<" with vtrack "<<v<<(vtrack[v].ing_trk? " I":"")<<endl;	  
 	    fTrackMatch(trk,htrack[h],vtrack[v]);
 	    trk.hnum=h;
 	    trk.vnum=v;
@@ -1987,6 +2001,10 @@ bool fPMAna(int mod=16, bool requireIngridTrack=true){
 	}
       }
     }
+    /*    cout<<"\nafter all free matching #reco="<<pmtrack.size()<<endl;
+    for(int i=0;i<pmtrack.size();i++)
+      cout<<"reco "<<i<<" #tracks="<<pmtrack[i].trk.size()<<endl;
+    */
   }
   else { // ie !requireIngridTrack && no pmtrack (ie no vertex yet)
     // step 3b-i:  matching of all tracks (similar to step 1)
@@ -2164,7 +2182,10 @@ bool fPMAna(int mod=16, bool requireIngridTrack=true){
       pmtrack[k].trk[0].mucl = recalcMuCL(htrack[pmtrack[k].trk[0].hnum],vtrack[pmtrack[k].trk[0].vnum],trk.endypln,0);
     }
   }
-
+  /*  cout<<"\nafter final matching #reco="<<pmtrack.size()<<endl;
+  for(int i=0;i<pmtrack.size();i++)
+    cout<<"reco "<<i<<" #tracks="<<pmtrack[i].trk.size()<<endl;
+  */
 
   //#ifdef USEBACKTRK
   //  //Backward XY track
@@ -2447,7 +2468,7 @@ void reCalcIsohit(PMTrack& pmtrk, int isoHitCut){
       }
       else pmtrk.trk[t].hit[ihit].isohit=(NusedI[pmtrk.trk[t].hit[ihit].mod][pmtrk.trk[t].hit[ihit].view][pmtrk.trk[t].hit[ihit].pln][pmtrk.trk[t].hit[ihit].ch]<=1);
     }
-   
+    //    cout<<"track "<<t<<" #isohits="<<NisohitWM<<endl;   
     if(!pmtrk.trk[t].ing_trk && NisohitWM<isoHitCut) {
       pmtrk.trk.erase(pmtrk.trk.begin()+t);
       pmtrk.Ntrack--;

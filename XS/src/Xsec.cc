@@ -292,7 +292,7 @@ void Xsec::DetermineNuType(bool&IsSand,bool&IsAnti,bool&IsNuE,bool&IsBkgH,bool&I
 
 
 int Xsec::DetermineFSI(int IsSand,int IsAnti,int IsNuE,int IsBkgH,int IsBkgV,IngridEventSummary * evt){
-  int FSIMuons=0;int FSIPions=0;int FSIProtons=0;int FSIPions0=0;int FSIOther=0;int FSINeutralPions=0;
+  int FSIMuons=0;int FSIPions=0;int FSIProtons=0;int FSIOther=0;int FSINeutralPions=0;
   int FSIInt;
   IngridSimParticleSummary * SimPart;
 
@@ -304,20 +304,24 @@ int Xsec::DetermineFSI(int IsSand,int IsAnti,int IsNuE,int IsBkgH,int IsBkgV,Ing
     else if(TMath::Abs(SimPart->pdg)==111) FSINeutralPions++;
     else if(TMath::Abs(SimPart->pdg)==2212) FSIProtons++;
     else if(TMath::Abs(SimPart->pdg)==13) FSIMuons++;
-    else if(TMath::Abs(SimPart->pdg)==111) FSIPions0++;
-    else if(TMath::Abs(SimPart->pdg)!=2112) FSIOther++;
+    else if(TMath::Abs(SimPart->pdg)!=2112 && TMath::Abs(SimPart->pdg)!=22) FSIOther++;
   }
 
   if(FSIMuons==1){
-    if(FSINeutralPions==0){
-      if(FSIPions==0){
-	if(FSIProtons<2) FSIInt=FSIProtons;
-	else FSIInt=2;
+    if(FSIOther==0){
+      if(FSINeutralPions==0){
+	if(FSIPions==0){
+	  if(FSIProtons<2) FSIInt=FSIProtons;
+	  else FSIInt=2;
+	}
+	else if(FSIPions==1) FSIInt=3;
+	else FSIInt=5; // CCNpi+/-, N>1 are inside CCother
+	//else FSIInt=4;
       }
-      else if(FSIPions==1) FSIInt=3;
-      else FSIInt=4;
+      else if(FSINeutralPions==1 && FSIPions==0) FSIInt=4; // CC1pi0
+      else FSIInt=5; // CCNpiMpi0, N,M>1 are inside CCother
     }
-    else FSIInt=5;
+    else FSIInt=5; // CCother (events with other particles: K, eta, rho ...)
   }
   else{
     FSIInt=6;

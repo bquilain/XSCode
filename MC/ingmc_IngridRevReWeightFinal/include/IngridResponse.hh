@@ -14,7 +14,7 @@ public:
 
   double ApplyConversion(G4double* edep);
   void ApplyScintiResponse(G4double* edep, G4Track* aTrack);
-  void ApplyLightCollection(G4double* edep, G4int mod, G4int view, G4ThreeVector pos);//added
+  void ApplyLightCollection(G4double* edep, G4int mod, G4int view, G4int pln,G4ThreeVector pos);//added
   void ApplyFiberResponse(G4double* edep, G4double* time, G4int view, G4ThreeVector pos);
   void ApplyFiberResponseV(G4double* edep, G4double* time, G4int pln, G4ThreeVector pos);
   void ApplyMPPCResponse(G4double edep, G4int mod, G4double* pe);

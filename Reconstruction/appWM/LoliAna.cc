@@ -372,9 +372,9 @@ int main(int argc,char *argv[]){
      
       // isoHitCut is the minimal number of isolated it I require
       int isoHitCut=3;
-      
+      //      cout<<"\nMatching done!"<<endl;
       for(int i=0;i<pmtrack.size();i++){
-	
+	//cout<<"reco="<<i<<" nb of tracks="<<pmtrack[i].trk.size()<<endl;	
 	pmanasum->Clear();
 
 	reCalcIsohit(pmtrack[i],isoHitCut);
@@ -464,7 +464,7 @@ int main(int argc,char *argv[]){
 	for(int itrk=0;itrk<INGRIDRECON_MAXTRACKS;itrk++) pmanasum->nhitTs[itrk]=0;
 
 	for(int t=0;t<pmtrack[i].trk.size();t++){
-	  
+
 	  pmanasum -> x           .push_back(pmtrack[i].trk[t].x);
 	  pmanasum -> y           .push_back(pmtrack[i].trk[t].y);
 	  pmanasum -> z           .push_back(pmtrack[i].trk[t].z);

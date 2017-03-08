@@ -240,7 +240,7 @@ void IngridResponse::ApplyLightCollection(G4double* edep, G4int mod, G4int view,
     *edep *= exp(-1.*x/sciattleng_loli)*peratio[mod][view][pln][ch];
   }
   else if(mod==16){
- 	  if(x<40||x>80){
+ 	  if(x<40||x>80 || pln==0){
 	    i=x/5;
   	    x=fabs(x-i*5-2.5);
  	    //*edep *= exp(-1.*x/sciattleng)*peratio[mod][view][pln][ch];
