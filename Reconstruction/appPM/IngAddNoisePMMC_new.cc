@@ -37,19 +37,20 @@ INGRID_Dimension* fINGRID_Dimension;
 FileStat_t fs;
 
 int main(int argc,char *argv[]){
-   Double_t NDUMMY= 5.05; //### Poisson mean value of # of noise hit at each module
-   Double_t NDUMMY_INI= 5.05;
+  Double_t NDUMMY= 5.05; //### Poisson mean value of # of noise hit at each module
+  Double_t NDUMMY_INI= 5.05;
   TROOT        root ("GUI","GUI");
   TApplication app  ("App",0,0);
   fINGRID_Dimension = new INGRID_Dimension();
   int  run_number;
   int  sub_run_number;
   int  c=-1;
+  int  seed=-1;
   char FileName[300], Output[300];
   bool MC = false;
   bool WM=false;
 
-  while ((c = getopt(argc, argv, "f:o:n:w")) != -1) {
+  while ((c = getopt(argc, argv, "f:o:n:w:t:")) != -1) {
     switch(c){
     case 'f':
       sprintf(FileName, "%s", optarg);
@@ -59,6 +60,9 @@ int main(int argc,char *argv[]){
       break;
     case 'n':
       NDUMMY_INI=atof(optarg);
+      break;
+    case 't':
+      seed=atoi(optarg);
       break;
     case 'w':
       WM=true;
@@ -113,6 +117,8 @@ int main(int argc,char *argv[]){
   TF1*     fHtime = new TF1("fHtime","0.-0.096*x*x+133*x-32800", 320, 750);
   TF1*     fHpe   = new TF1("fHpe"  ,"gaus", -5, 5);
   fHpe           -> SetParameters(1, 0, 0.3);
+
+
   TRandom3 r; //### random number sheed
   int      startcyc = 4; //MC data is fille in cycle 4 
   int      endcyc   = 5;
@@ -153,12 +159,17 @@ int main(int argc,char *argv[]){
 
 	for(int idummyhit = 0; idummyhit < ndummyhit; idummyhit++){
 	  inghitsum   = new IngridHitSummary();
-	  double tpe  = (int)(r.Exp(-1./TMath::Log(0.26))) + 3 + fHpe->GetRandom() ; //### generate p.e.
+	  double mean_pe=3.;
+	  if(WM && mod==15) mean_pe=2.05; // see Koga's measurement
 
+	  double tpe  = (int)(r.Exp(-1./TMath::Log(0.26))) + mean_pe + fHpe->GetRandom() ; //### generate p.e.
 
+	  // ML 2017/03/17 nota: ttime distribution is different for WM, but second order
+	  //  nota2: I don't understand the time offset... but IDC
 	  int ttime = fHtime->GetRandom();              //### generate time
-
 	  inghitsum -> time  = ttime - 200 - 320;// - 580 * 5+50;       //### add offset 
+
+
 	  //cout << inghitsum -> time << endl;
 	  int view, pln, ch,tch;                            //### channel ID
 	  
@@ -180,7 +191,7 @@ int main(int argc,char *argv[]){
 	      ch = tch - 22 * (pln-11);
 	    }
 	  }
-	  else if(PM || mod==16){
+	  else if(PM && mod==16){
             tch   = r.Uniform(0, 1204+(1e-11) );
 
             if(tch < 48){//Front plane
@@ -207,8 +218,8 @@ int main(int argc,char *argv[]){
 
 	  }
 
-	  else if(WM || mod==15){
-            tch   = r.Uniform(0, 1280 );
+	  else if(WM &&  mod==15){
+            tch   = r.Uniform(0, 1280-(1e-11));
 
 	    pln  = (int) (tch/160);
 	    view = (int)((tch-pln*160)/80);
@@ -220,6 +231,7 @@ int main(int argc,char *argv[]){
 	  //Fill p.e., time, channel map
 	  inghitsum -> pe    = tpe;
 	  inghitsum -> lope  = tpe;
+	  inghitsum -> pecorr = tpe; // ML 2017/03/21
 	  inghitsum -> pln   = pln;
 	  inghitsum -> view  = view;
 	  inghitsum -> ch    = ch;

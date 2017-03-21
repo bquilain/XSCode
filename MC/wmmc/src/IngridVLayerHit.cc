@@ -88,10 +88,11 @@ IngridVLayerHit::IngridVLayerHit(G4int dID0, G4int P0, G4int trkID, G4double e, 
     gridcell_id_y1=-1;
     gridcell_id_y2=-1;
 
-    if(mod==15){	
-      //INGRID_Dimension *fdim = new INGRID_Dimension();
-      //fdim->get_loli_gridcell_id(mod,view,pln,ch,posinmod[0]/cm,posinmod[1]/cm,posinmod[2]/cm,&gridcell_id_x1,&gridcell_id_x2,&gridcell_id_y1,&gridcell_id_y2);
-    }   
+        if(mod==15){	
+      INGRID_Dimension *fdim = new INGRID_Dimension();
+      fdim->get_loli_gridcell_id(mod,view,pln,ch,posinmod[0]/cm,posinmod[1]/cm,posinmod[2]/cm,&gridcell_id_x1,&gridcell_id_x2,&gridcell_id_y1,&gridcell_id_y2);
+      if(fdim) delete fdim;
+      }   
 
 
 

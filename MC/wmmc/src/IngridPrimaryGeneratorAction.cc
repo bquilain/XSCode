@@ -170,7 +170,7 @@ void IngridPrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
 		break;
 	}
       }
-      G4float energy = sqrt(mumom*mumom+mass*mass);
+      G4float energy = sqrt(mumom*mumom+mass*mass)-mass;
       particleGun->SetParticleEnergy(energy);
 
 
@@ -248,7 +248,8 @@ void IngridPrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
       return;
   }
 
-
+  int Nsuccess_sand=1;
+  const int Ndraws_sand=1000;
   // start loop of neut file
   while(1){
     //G4cout << G4UniformRand() << G4endl;
@@ -328,11 +329,14 @@ void IngridPrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
     //Proton Module
     if( fdid==2 && module_mode==PROTON) {
 
-      double front =  total_mass_front_pm / (total_mass_front_pm + total_mass_sci_pm);
+      // double front =  total_mass_front_pm / (total_mass_front_pm + total_mass_sci_pm);
+      double front =  total_mass_front_pm / total_mass_sci_pm; // ML 2017/03/13
+      double average_width=(2*width_ingrid+width_scibar)/3;
     
       if( front > (G4UniformRand()) ){
 	vertex_flag=0;
-	prob=sciing_region/scibar_region;
+	//	prob=sciing_region/scibar_region;
+	prob=average_width/width_scibar;
       }
       else if(fabs(pos[0])<=20&&fabs(pos[1])<=20){
 	vertex_flag=1;
@@ -401,7 +405,8 @@ void IngridPrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
 
 
     if(fdid==2 && module_mode==WAGASCI){
-        pos[2]=46.6*(G4UniformRand());     // 0 < 46.6*rand < 46.6
+      //       pos[2]=46.6*(G4UniformRand());     // 0 < 46.6*rand < 46.6
+      pos[2]=48.0*(G4UniformRand());     // 0 < 48.0*rand < 48.0
     }
 
     if(fdid==3 && module_mode==WAGASCIBG){
@@ -410,7 +415,8 @@ void IngridPrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
 
 
     // jnubeam ndid = 7 (INGRID-upstream surface for BG study)
-    if(fdid==7){ // jnubeam ndid = 7(INGRID-upstream surface for BG study
+    /*  
+	if(fdid==7){ // jnubeam ndid = 7(INGRID-upstream surface for BG study
       G4double lx = pos[0]- HallX;
       if( fabs(lx) < HallRadiusMin ){
  	//G4cout << HallRadiusMin * HallRadiusMin - lx * lx <<G4endl;
@@ -423,7 +429,56 @@ void IngridPrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
 	//pos[2] = -1.*G4UniformRand()*(HallRadiusMax-HallRadiusMin)/370. * (1261.7-fabs(lx))+HallZ;
       }
     }
+    */
 
+    // only select hittable muon
+    if(fdid==7){ // jnubeam ndid = 7(INGRID-upstream surface for BG study
+      Nsuccess_sand=0;
+      bool CC=false;
+      for(int loop=0;loop<Ndraws_sand;loop++){
+        G4double lx = pos[0]- HallX;
+        if( fabs(lx) < HallRadiusMin ){
+	  pos[2] = -1.0 * sqrt( HallRadiusMin * HallRadiusMin - lx * lx ) - G4UniformRand()*(HallRadiusMax-HallRadiusMin)+HallZ;
+	}
+        else{
+          pos[2] = -1.0 *  G4UniformRand()*(HallRadiusMax-HallRadiusMin)+HallZ;
+	}
+	double nvec[3]={0,0,0};
+	double theta_calc,phi_calc;
+	//select the muon in CC wall events
+	for(int ipart=0; ipart<Secondary.NumParticle; ipart++) {
+	  if(Secondary.ParticleID[ipart]==13){
+	    CC=true;
+	    for(int ixyz=0; ixyz<3; ixyz++)nvec[ixyz] = Secondary.Momentum[ipart][ixyz]/ Secondary.AbsMomentum[ipart];
+
+	    if(loop>0){ // first attemp with original direction
+	      theta_calc = acos(nvec[2]);
+	      //draw the phi angle in [0,2*pi]
+	      phi_calc = 2*3.14*G4UniformRand();
+	      nvec[0]=cos(phi_calc)*sin(theta_calc);
+	      nvec[1]=sin(phi_calc)*sin(theta_calc);
+	      nvec[2]=cos(theta_calc);
+	      for(int ixyz=0; ixyz<3; ixyz++)Secondary.Momentum[ipart][ixyz] = Secondary.AbsMomentum[ipart] * nvec[ixyz];
+	    }
+	    break;
+	  }
+	  else continue;
+	}
+	//reject far event
+	float point_0[3]={0,0,-OFFSETPM}; // OFFSETPM is the center of PM/WM
+	float t = nvec[0]*(point_0[0]-pos[0]) + nvec[1]*(point_0[1]-pos[1]) + nvec[2]*(point_0[2]-pos[2]);
+	float point_1[3]={nvec[0]*t+pos[0], nvec[1]*t+pos[1], nvec[2]*t+pos[2]};
+	float dist = sqrt( pow(point_0[0]-point_1[0],2) + pow(point_0[1]-point_1[1],2) + pow(point_0[2]-point_1[2],2) );
+        if(dist<2*sqrt(50*50+50*50+30*30)){ // halfX^2 + halfY^2 + halfZ^2 -- the 2*sqrt is to have some more margin
+	  Nsuccess_sand++;
+        }
+      }
+
+      if(CC==0)continue;
+      if(Nsuccess_sand==0) continue;
+      std::cout << "Nsuccess= " << Nsuccess_sand << std::endl;
+      //      runaction->hLoopNum->Fill(TMath::Log10(Nsuccess_sand));
+    }
 
 
 
@@ -528,7 +583,8 @@ NEXTSTEP:
     simvertex -> ynu      = pos[1];
     simvertex -> znu      = pos[2];
     simvertex -> mod      = ID;
-    simvertex -> norm			= (neut->Vector).Neutrino.Norm;
+    simvertex -> norm	  = (neut->Vector).Neutrino.Norm;
+    if(fdid==7)    simvertex -> norm = (neut->Vector).Neutrino.Norm*Nsuccess_sand/((float)Ndraws_sand);
     simvertex -> totcrsne	= (neut->Vector).neutcrs.Totcrsne;
 
     //for Al density added by koga

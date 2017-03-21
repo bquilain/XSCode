@@ -122,6 +122,9 @@ void IngridPrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
   double prob;//for Proton Module
   int scitype;//scintillator type
 
+  int Nsuccess_sand=1;
+  const int Ndraws_sand=1000;
+
   // start loop of neut file
   while(1){
 
@@ -286,7 +289,7 @@ void IngridPrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
 
 
     // jnubeam ndid = 7 (INGRID-upstream surface for BG study)
-    else if(fdid==7){ // jnubeam ndid = 7(INGRID-upstream surface for BG study
+    /*    else if(fdid==7){ // jnubeam ndid = 7(INGRID-upstream surface for BG study
       G4double lx = pos[0]- HallX;
 #ifdef INT_BACK_WALL
       if( fabs(lx) < HallRadiusMin ){
@@ -303,6 +306,55 @@ void IngridPrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
 	pos[2] = -1.0 *  G4UniformRand()*(HallRadiusMax-HallRadiusMin)+HallZ;
       }
 #endif
+    }
+    */
+
+    // only select hittable muon -- ML 2017/03/2017
+    if(fdid==7){ // jnubeam ndid = 7(INGRID-upstream surface for BG study
+      Nsuccess_sand=0;
+      bool CC=false;
+      for(int loop=0;loop<1000;loop++){
+        G4double lx = pos[0]- HallX;
+        if( fabs(lx) < HallRadiusMin ){
+	  pos[2] = -1.0 * sqrt( HallRadiusMin * HallRadiusMin - lx * lx ) - G4UniformRand()*(HallRadiusMax-HallRadiusMin)+HallZ;
+	}
+        else{
+          pos[2] = -1.0 *  G4UniformRand()*(HallRadiusMax-HallRadiusMin)+HallZ;
+	}
+	double nvec[3]={0,0,0};
+	double theta_calc,phi_calc;
+	//select the muon in CC wall events
+	for(int ipart=0; ipart<Secondary.NumParticle; ipart++) {
+	  if(Secondary.ParticleID[ipart]==13){
+	    CC=true;
+	    for(int ixyz=0; ixyz<3; ixyz++)nvec[ixyz] = Secondary.Momentum[ipart][ixyz]/ Secondary.AbsMomentum[ipart];
+
+	    //re-draw the phi angle in [0,2*pi]
+	    if(loop>0){
+	      theta_calc = acos(nvec[2]);
+	      phi_calc = 2*3.14*G4UniformRand();
+	      nvec[0]=cos(phi_calc)*sin(theta_calc);
+	      nvec[1]=sin(phi_calc)*sin(theta_calc);
+	      nvec[2]=cos(theta_calc); // unchanged
+	      for(int ixyz=0; ixyz<3; ixyz++)Secondary.Momentum[ipart][ixyz] = Secondary.AbsMomentum[ipart] * nvec[ixyz];
+	    }
+	    break;
+	  }
+	  else continue;
+	}
+	//reject far event
+	float point_0[3]={0,0,-OFFSETPM};
+	float t = nvec[0]*(point_0[0]-pos[0]) + nvec[1]*(point_0[1]-pos[1]) + nvec[2]*(point_0[2]-pos[2]);
+	float point_1[3]={nvec[0]*t+pos[0], nvec[1]*t+pos[1], nvec[2]*t+pos[2]};
+	float dist = sqrt( pow(point_0[0]-point_1[0],2) + pow(point_0[1]-point_1[1],2) + pow(point_0[2]-point_1[2],2) );
+        if(dist<2*sqrt(60*60+60*60+50+50)){ // halfX^2 + halfY^2 + halfZ^2 -- the 2*sqrt is to have some more margin
+	  Nsuccess_sand++;
+        }
+      }
+
+      if(Nsuccess_sand==0) continue;
+      if(CC==0)continue;
+      std::cout << "Nsuccess=" << Nsuccess_sand << std::endl;
     }
 
 
@@ -396,7 +448,8 @@ NEXTSTEP:
     simvertex -> ynu      = pos[1];
     simvertex -> znu      = pos[2];
     simvertex -> mod      = ID;
-    simvertex -> norm			= (neut->Vector).Neutrino.Norm;
+    simvertex -> norm	  = (neut->Vector).Neutrino.Norm;
+    if(fdid==7)     simvertex -> norm = (neut->Vector).Neutrino.Norm*Nsuccess_sand/((float)Ndraws_sand);
     simvertex -> totcrsne	= (neut->Vector).neutcrs.Totcrsne;
 
     //removed for 11b (before using t2kreweight)                                                

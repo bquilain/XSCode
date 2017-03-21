@@ -164,7 +164,7 @@ void IngridHLayerSD::EndOfEvent(G4HCofThisEvent* HCTE)
   G4double time_tmp;
   G4ThreeVector posinmod;
   G4int mod;
-  G4int view;
+  G4int view,pln;
   G4int adc;
   G4int loadc;
   G4double pe;

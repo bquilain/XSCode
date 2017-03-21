@@ -4,9 +4,12 @@
 #include<iostream>
 #include<sstream>
 #include<fstream>
+#include "IngridConstants.h"
 using namespace std;
 
+#define VIEWMAX 2
 #define CHMAX 80
+#define PLNMAX 8
 #define MOD_WAGASCI 15
 
 #ifndef __INGRID_CONSTANTS__
@@ -55,12 +58,13 @@ const double loli_offsetxy_grid	  = - loli_scinti_width * loli_chnum/2. +2.335;/
 
 class INGRID_Dimension{
 private:
-
+  TFile* f;
+  TTree* t;
+  double position_xy[VIEWMAX][PLNMAX][CHMAX];
+  double position_z [VIEWMAX][PLNMAX][CHMAX];
   double VETOOffsetZ;
 public:
-  INGRID_Dimension(){
-
-  };
+  INGRID_Dimension();
   ~INGRID_Dimension(){};
   bool get_pos(int mod, int pln, int ch, bool tpl, bool veto, double *posxy, double *posz);
 

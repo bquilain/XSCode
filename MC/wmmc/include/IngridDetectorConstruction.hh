@@ -22,7 +22,7 @@ public:
   void DefineSpace();
   void DefineStructures();
 
-  G4Material *Air, *Fe, *Scinti, *Water, *Concrete, *Al;
+  G4Material *Air, *Fe, *Scinti, *Water, *Concrete, *Al, *SUS304;
   G4double WorldX, WorldY, WorldZ;
   G4double HallDirtRadiusMin, HallDirtRadiusMax, HallDirtHeight,
            HallDirtSPhi, HallDirtDPhi; //## Dirt Dimension

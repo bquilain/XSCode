@@ -195,13 +195,21 @@ G4VPhysicalVolume* IngridDetectorConstruction::Construct()
   ironLV->SetVisAttributes(ironVisAtt);
 
 
+  // Water tank (SUS304) BLOCK =========================================  
+
+  G4Box* SUS_box = new G4Box("SUS_box",(62.8+1.2)*cm,(62.8+1.6)*cm,(25.+0.4)*cm);	//2015/6/15
+  G4LogicalVolume *SUSLV = new G4LogicalVolume(SUS_box,SUS304,"SUSLV");
+  G4VisAttributes* SUSVisAtt = new G4VisAttributes(G4Colour(1.,0.,0.));
+  SUSLV->SetVisAttributes(SUSVisAtt);
+
+
   // Water BLOCK =========================================  
 
-  //G4Box* Water_box = new G4Box("Water_box",(50+1)*cm,(50+1)*cm,(24)*cm);//2013/6/11
-  G4Box* Water_box = new G4Box("Water_box",62.8*cm,62.8*cm,23.3*cm);	//2015/6/15
+  //G4Box* Water_box = new G4Box("Water_box",62.8*cm,62.8*cm,23.3*cm);	//2015/6/15
+  G4Box* Water_box = new G4Box("Water_box",62.8*cm,62.8*cm,25.*cm);	//2017/03/15
   G4LogicalVolume *WaterLV = new G4LogicalVolume(Water_box,Water,"WaterLV");
   G4VisAttributes* WaterVisAtt = new G4VisAttributes(G4Colour(0.,0.,1.));
-  //WaterLV->SetVisAttributes(WaterVisAtt);
+  WaterLV->SetVisAttributes(WaterVisAtt);
 
 
   // Al BLOCK ============================================
@@ -466,7 +474,7 @@ G4VPhysicalVolume* IngridDetectorConstruction::Construct()
   G4SubtractionSolid* vwscint_int = new G4SubtractionSolid("vwscint_int", vwscint_tmp, vglue, 0, G4ThreeVector(-3.9*mm,-0.9*mm,0*mm));
   G4LogicalVolume* vwscint_intLV = new G4LogicalVolume(vwscint_int,Scinti,"vwscint_intLV");
   G4VisAttributes* vwscint_intVisAtt = new G4VisAttributes(G4Color(0.,1.,0.));
-  //vwscint_intVisAtt->SetForceSolid(true);
+  vwscint_intVisAtt->SetForceSolid(true);
   vwscint_intLV->SetVisAttributes(vwscint_intVisAtt);
   
   //horizontal scintillator
@@ -475,7 +483,7 @@ G4VPhysicalVolume* IngridDetectorConstruction::Construct()
   G4SubtractionSolid* hwscint_int = new G4SubtractionSolid("hwscint_int", hwscint_tmp, hglue, 0, G4ThreeVector(0.9*mm,-3.9*mm,0*mm));
   G4LogicalVolume* hwscint_intLV = new G4LogicalVolume(hwscint_int,Scinti,"hwscint_intLV");
   G4VisAttributes* hwscint_intVisAtt = new G4VisAttributes(G4Color(0.,1.,0.));
-  //hwscint_intVisAtt->SetForceSolid(true);
+  hwscint_intVisAtt->SetForceSolid(true);
   hwscint_intLV->SetVisAttributes(hwscint_intVisAtt);
 
  
@@ -486,12 +494,13 @@ G4VPhysicalVolume* IngridDetectorConstruction::Construct()
   G4VSolid* vwgridscint_int = new G4SubtractionSolid("vwgridscint_int", vwgridscint_tmp, vglue, 0, G4ThreeVector(-3.9*mm,-0.9*mm,0*mm));  
   G4VSolid* vcut = new G4Box("vcut",13.1/2.*mm,3.1/2.*mm,3.5/2.*mm); //add 0.1mm to avoid bug
   for(int i=0;i<20;i++){
-  	G4VSolid* vwgridscint_tmp2 = new G4SubtractionSolid("", vwgridscint_int, vcut, 0, G4ThreeVector(5.5*mm,0*mm,(loli_offsetxy_grid + loli_cutwidth/2. + i*loli_cutgap)*cm));
-  	vwgridscint_int = vwgridscint_tmp2;
+    //  	G4VSolid* vwgridscint_tmp2 = new G4SubtractionSolid("", vwgridscint_int, vcut, 0, G4ThreeVector(5.5*mm,0*mm,(loli_offsetxy_grid + loli_cutwidth/2. + i*loli_cutgap)*cm));
+    G4VSolid* vwgridscint_tmp2 = new G4SubtractionSolid("", vwgridscint_int, vcut, 0, G4ThreeVector(5.5*mm,0*mm,(loli_offsetxy_grid + loli_scinti_thick/2. + i*loli_cutgap)*cm));
+    vwgridscint_int = vwgridscint_tmp2;
   }
   G4LogicalVolume* vwgridscint_intLV     = new G4LogicalVolume(vwgridscint_int,Scinti,"vwgridscint_intLV");
   G4VisAttributes* vwgridscint_intVisAtt = new G4VisAttributes(G4Color(0.,1.,0.));
-  //vwgridscint_intVisAtt->SetForceSolid(true);
+  vwgridscint_intVisAtt->SetForceSolid(true);
   vwgridscint_intLV->SetVisAttributes(vwgridscint_intVisAtt);
  
   //horizontal grid scintillator
@@ -501,12 +510,12 @@ G4VPhysicalVolume* IngridDetectorConstruction::Construct()
   G4VSolid* hwgridscint_int = new G4SubtractionSolid("hwgridscint_int", hwgridscint_tmp, hglue, 0, G4ThreeVector(0.9*mm,-3.9*mm,0*mm));
   G4VSolid* hcut = new G4Box("hcut",3.1/2.*mm,13./2.*mm,3.5/2.*mm); //add 0.1mm to avoid bug
   for(int i=0;i<20;i++){
-        G4VSolid* hwgridscint_tmp2 = new G4SubtractionSolid("", hwgridscint_int, hcut, 0, G4ThreeVector(0*mm,5.5*mm,(loli_offsetxy_grid + loli_cutwidth/2. + i*loli_cutgap)*cm));
+        G4VSolid* hwgridscint_tmp2 = new G4SubtractionSolid("", hwgridscint_int, hcut, 0, G4ThreeVector(0*mm,5.5*mm,(loli_offsetxy_grid + loli_scinti_thick/2. + i*loli_cutgap)*cm));
   	hwgridscint_int = hwgridscint_tmp2;
   }
   G4LogicalVolume* hwgridscint_intLV = new G4LogicalVolume(hwgridscint_int,Scinti,"hwgridscint_intLV");
   G4VisAttributes* hwgridscint_intVisAtt = new G4VisAttributes(G4Color(0.,0.,1.));
-  //hwgridscint_intVisAtt->SetForceSolid(true);
+  hwgridscint_intVisAtt->SetForceSolid(true);
   hwgridscint_intLV->SetVisAttributes(hwgridscint_intVisAtt);
 
  
@@ -810,8 +819,10 @@ G4VPhysicalVolume* IngridDetectorConstruction::Construct()
   
     else if(k==20 && mode==WAGASCI){
 
-	//2015/6/15 
-	new G4PVPlacement(0,G4ThreeVector(0,0,0),WaterLV,"watertarget",moduleLV[16],false,0,1); //water target
+	//2017/03/15 
+	new G4PVPlacement(0,G4ThreeVector(0,0,0),SUSLV,  "sustarget"  ,moduleLV[16],false,0,1); //water tank
+	new G4PVPlacement(0,G4ThreeVector(0,0,0),WaterLV,"watertarget",SUSLV       ,false,0,1); //water target
+
 
         INGRID_Dimension *fdim = new INGRID_Dimension();
 	for(int i=0;i<8;i++){
@@ -1138,6 +1149,10 @@ void IngridDetectorConstruction::DefineMaterial()
   G4Element* elFe = new G4Element(name="Iron", symbol="Fe", z=26., a);
   a = 27.0*g/mole;
   G4Element* elAl = new G4Element(name="Aluminium", symbol="Al", z=13., a);
+  a = 58.69*g/mole;
+  G4Element* elNi = new G4Element(name="Nickel", symbol="Ni", z=28., a);
+  a = 51.99*g/mole;
+  G4Element* elCr = new G4Element(name="Chromium", symbol="Cr", z=24., a);
 
   //Air
   density = 1.29*mg/cm3;
@@ -1153,8 +1168,8 @@ void IngridDetectorConstruction::DefineMaterial()
   //Water
   density = 1.000*g/cm3;
   Water = new G4Material(name="Water",density,nel=2);
-  Water->AddElement(elH,2);
   Water->AddElement(elO,1);
+  Water->AddElement(elH,2);
 
   //Al
   a = 26.98*g/mole;
@@ -1170,12 +1185,18 @@ void IngridDetectorConstruction::DefineMaterial()
   //Concrete
   density = 2.2*g/cm3;
   Concrete = new G4Material(name="Concrete", density, nel=6);
-
   Concrete->AddElement(elO, .53);
   Concrete->AddElement(elSi, .335);
   Concrete->AddElement(elCa, 0.06);
   Concrete->AddElement(elNa, 0.015);
   Concrete->AddElement(elFe, 0.02);
   Concrete->AddElement(elAl, 0.04);
+
+  //SUS304
+  density = 7.93*g/cm3;
+  SUS304 = new G4Material(name="SUS304", density, nel=3);
+  SUS304->AddElement(elFe, 0.72);
+  SUS304->AddElement(elCr, 0.19);
+  SUS304->AddElement(elNi, 0.09);
 
 }

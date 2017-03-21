@@ -52,7 +52,7 @@ INGRID_Dimension::INGRID_Dimension(){
     }
   }
   f->Close();
-  std::cout << "call DIMENSION" << std::endl;
+  //  std::cout << "call DIMENSION" << std::endl;
 }
 
 

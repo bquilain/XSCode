@@ -151,7 +151,7 @@ void IngridVLayerSD::EndOfEvent(G4HCofThisEvent* HCTE)
 	G4double time_tmp;
 	G4ThreeVector posinmod;
 	G4int mod;
-	G4int view;
+	G4int view,pln;
 	G4int adc;
 	G4int loadc;
 	G4double pe;
@@ -166,9 +166,10 @@ void IngridVLayerSD::EndOfEvent(G4HCofThisEvent* HCTE)
 		posinmod = cHit->GetPosInMod();
 		mod = cHit->GetMod();
 		view = cHit->GetView();
+		pln = cHit->GetPln();
 
 		//apply light collection
-		ingresp->ApplyLightCollection(&edep_tmp,mod,view,posinmod);
+		ingresp->ApplyLightCollection(&edep_tmp,mod,view,pln,posinmod);
 
 		//apply fiber attenuation
 		ingresp->ApplyFiberResponse(&edep_tmp,&time_tmp,view,posinmod);

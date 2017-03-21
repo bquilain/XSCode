@@ -58,7 +58,7 @@ const G4double Eff_PDE_loli = -1.;//
 const G4double ETC_CONST = 5.0;  // v3
 const G4double rPDE = 1.7;  // @deltaV = 1.1 V
 const G4double cross_after_rate = 0.09;//*1.051;  // @deltaV = 1.1 V
-const G4double cross_after_rate_loli = 0.05;//*1.051;  // @deltaV = 1.1 V
+const G4double cross_after_rate_loli = 0.18;//*1.051;  // @deltaV = 1.1 V
 
 
 
@@ -81,30 +81,27 @@ IngridResponse::IngridResponse()
   }
 
   cout<<"****** Set PE correction value ******"<<endl;
-  ifstream pedata   ("/export/scbn25/data1/taichiro/T2K/work/basesoft/git/watermodule/wmmc/pe.txt");
-  ifstream pedata_mc("/export/scbn25/data1/taichiro/T2K/work/basesoft/git/watermodule/wmmc/pe_mc.txt");
+  char * cINSTALLREPOSITORY = getenv("INSTALLREPOSITORY");
+  char Name_data[256],Name_mc[256];
+  sprintf(Name_data,"%s/MC/wmmc/pefile/pe_MRRUN7071.txt",cINSTALLREPOSITORY);
+  ifstream pedata   (Name_data);
+  sprintf(Name_mc,"%s/MC/wmmc/pefile/pe_mc.txt",cINSTALLREPOSITORY);
+  ifstream pedata_mc(Name_mc);
+  if(!pedata){
+    std::cout << "can not open pe file (data)" << std::endl;
+	return;
+  }
+  if(!pedata_mc){
+	std::cout << "can not open pe file (mc)"   << std::endl;
+	return;
+  }
   int imod,iview,ipln,ich;
   float pe,pe_mc;
   while(pedata >> imod >> iview >> ipln >> ich >> pe){
         pedata_mc >> imod >> iview >> ipln >> ich >> pe_mc;
-	peratio[imod][iview][ipln][ich]=pe/pe_mc;
+	if(pe_mc!=0)peratio[imod][iview][ipln][ich]=pe/pe_mc;
         //std::cout << "mod" << imod << " view" << iview << " pln" << ipln << " ch" << ich << " peratio" <<  peratio[imod][iview][ipln][ich] << std::endl;
   }
-
-  //added 2014/12/16
-  //for(int imod=0;imod<17;imod++){
-  //  for(int iview=0;iview<2;iview++){
-  //    for(int ipln=0;ipln<18;ipln++){
-  //      for(int ich=0;ich<32;ich++){
-  //        //pedata>>peratio[imod][iview][ipln][ich];
-  //        //std::cout << "mod " << imod << "view " << iview < "pln " << ipln << "ich "<< peratio[imod][iview][ipln][ich] << endl;
-  //        //if(ipln<11 && imod==10)std::cout << "mod " << imod << "view " << iview << "pln " << ipln << "ich "<< ich << " "<< peratio[imod][iview][ipln][ich] << endl;
-  //        //std::cout << "mod " << imod <<  endl;
-  //        //std::cout << "mod " << endl;
-  //      }
-  //    }
-  //  }
-  //}
 
   fdim = new INGRID_Dimension();
 }
@@ -210,8 +207,8 @@ void IngridResponse::ApplyLightCollection(G4double* edep, G4int mod, G4int view,
   if(mod<15){
     i=x/5;
     x=fabs(x-i*5-2.5);
-    //*edep *= exp(-1.*x/sciattleng)*INGRIDFactor*peratio[mod][view][pln][ch];
-    *edep *= exp(-1.*x/sciattleng)*INGRIDFactor;
+    *edep *= exp(-1.*x/sciattleng)*INGRIDFactor*peratio[mod][view][pln][ch];
+    //*edep *= exp(-1.*x/sciattleng)*INGRIDFactor;
   }
   else if(mod==15){
     double scposx,scposy,scposz;
@@ -243,14 +240,14 @@ void IngridResponse::ApplyLightCollection(G4double* edep, G4int mod, G4int view,
  	  if(x<40||x>80 || pln==0){
 	    i=x/5;
   	    x=fabs(x-i*5-2.5);
- 	    //*edep *= exp(-1.*x/sciattleng)*peratio[mod][view][pln][ch];
- 	    *edep *= exp(-1.*x/sciattleng);
+ 	    *edep *= exp(-1.*x/sciattleng)*peratio[mod][view][pln][ch];
+ 	    //*edep *= exp(-1.*x/sciattleng);
 	  }
 	  else{
 	    i=x/2.5;
    	    x=fabs(x-i*2.5-1.25);
-	    //*edep *= exp(-1.*x/sciattleng)*SciBarFactor*peratio[mod][view][pln][ch];
-	    *edep *= exp(-1.*x/sciattleng)*SciBarFactor;
+	    *edep *= exp(-1.*x/sciattleng)*SciBarFactor*peratio[mod][view][pln][ch];
+	    //*edep *= exp(-1.*x/sciattleng)*SciBarFactor;
 	  }
   }
 
