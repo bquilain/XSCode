@@ -37,13 +37,13 @@ using namespace std;
 #include <TSystem.h>
 #include <THStack.h>
 
-#include "INGRIDEVENTSUMMARY.h"
-#include "IngridHitSummary.h"
-#include "IngridSimHitSummary.h"
-#include "IngridSimVertexSummary.h"
-#include "IngridSimParticleSummary.h"
-#include "BeamInfoSummary.h"
-#include "IngridBasicReconSummary.h"
+//#include "INGRIDEVENTSUMMARY.h"
+//#include "IngridHitSummary.h"
+//#include "IngridSimHitSummary.h"
+//#include "IngridSimVertexSummary.h"
+//#include "IngridSimParticleSummary.h"
+//#include "BeamInfoSummary.h"
+//#include "IngridBasicReconSummary.h"
 
 int main(int argc, char **argv)
 {

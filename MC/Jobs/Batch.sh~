@@ -1,5 +1,0 @@
-#!/bin/zsh +x
-for i in {1..1000};do
-#    condor_submit condorPMMC_Sand${i}.sh
-    condor_submit condorPMMC${i}.sh
-done

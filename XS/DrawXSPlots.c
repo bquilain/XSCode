@@ -44,16 +44,17 @@ using namespace std;
 #include <THStack.h>
 #include <TBox.h>
 #include "setup.h"
-#include "Reconstruction.cc"
-#include "Xsec.cc"
+//#include "Reconstruction.cc"
+//#include "Xsec.cc"
 #define DEBUG
 
 int main(int argc, char ** argv){
 
   TApplication theApp("App",0,0);
   gStyle->SetOptFit(kTRUE);
-  Xsec * XS = new Xsec();
-  XS->Xsec::Initialize();
+  //  Xsec * XS = new Xsec();
+  //XS->Xsec::Initialize();
+  InitializeGlobal();
   
   double vLikelihood[NBinsTrueMom][NBinsTrueAngle][NBinsRecMom][NBinsRecAngle];
   double vUnfolding[NBinsTrueMom][NBinsTrueAngle][NBinsRecMom][NBinsRecAngle];
