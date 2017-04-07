@@ -1,9 +1,12 @@
-export INSTALLREPOSITORY=/home/mlicciardi/T2K/work/XSCode
-export MCINPUTSTORAGE=/home/cvson/scraid2/neutfile5d3d2
+export INSTALLREPOSITORY=/home/bquilain/CC0pi_XS/NewXSCode/XSCode
 export DATAINPUTSTORAGE=/export/scraid2/data/bquilain
+export MCINPUTSTORAGE_WM=/export/scraid4/data2/taichiro/neut
+export MCINPUTSTORAGE=${MCINPUTSTORAGE_WM}
 export MCOUTPUTSTORAGE=/export/scraid2/data/bquilain/MCfiles
+export MCOUTPUTSTORAGE_WM=/export/scraid2/data/bquilain/MCfiles
 export DATAOUTPUTSTORAGE=/export/scraid2/data/bquilain
-export INGRIDSOFTWARE=/home/mlicciardi/T2K/work/basesoft
+export INGRIDSOFTWARE=/home/bquilain/T2KSoftware2
+#export INGRIDSOFTWARE=/home/mlicciardi/T2K/work/basesoft
 
 #Set ND280 software package PATH
 export ND280ROOT=/home/mlicciardi/T2K/work/basesoft/ROOT/v5r22p00n00
