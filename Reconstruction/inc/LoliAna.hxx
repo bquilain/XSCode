@@ -1508,7 +1508,7 @@ void fTrackMatchX(Trk &trk,PMTrack &pmtrk, TrackPM &htrk){
     trk.hit.push_back(*it);
 
   for(it=pmtrk.trk[0].hit.begin();it<pmtrk.trk[0].hit.end();it++){
-    if((*it).view==1) continue;
+    if((*it).view==0) continue;
     if(trk.ing_trk){ // WM + ingrid until ing_endpln
       if((*it).mod==15 || (*it).pln<=trk.ing_endpln)
 	trk.hit.push_back(*it);
@@ -1661,7 +1661,7 @@ void fTrackMatchY(Trk &trk,PMTrack &pmtrk, TrackPM &vtrk){
     trk.hit.push_back(*it);
 
   for(it=pmtrk.trk[0].hit.begin();it<pmtrk.trk[0].hit.end();it++){
-    if((*it).view==0) continue;
+    if((*it).view==1) continue;
     if(trk.ing_trk){ // WM + ingrid until ing_endpln
       if((*it).mod==15 || (*it).pln<=trk.ing_endpln)
 	trk.hit.push_back(*it);
@@ -2451,7 +2451,7 @@ void reCalcIsohit(PMTrack& pmtrk, int isoHitCut){
     if(!pmtrk.trk[t].ing_trk && NisohitWM<isoHitCut) {
       pmtrk.trk.erase(pmtrk.trk.begin()+t);
       pmtrk.Ntrack--;
-      //      cout<<"track erased! "<<NisohitWM<<endl;
+      cout<<"track erased! "<<NisohitWM<<endl;
       if(pmtrk.Ntrack!=pmtrk.trk.size()) cout<<"*** bad Ntrack ***"<<endl;
       if(pmtrk.Ntrack==0) cout<<"*** error no more tracks ***"<<endl;
     }

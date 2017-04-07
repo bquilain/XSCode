@@ -37,7 +37,7 @@ using namespace std;
 
 #include "Lolirecon.hxx"
 //#include "LoliAna.hxx"
-#include "INGRID_Dimension.cxx"
+//#include "INGRID_Dimension.cxx"
 #include "IngridSimVertexSummary.h"
 #include "IngridSimParticleSummary.h"
 
@@ -236,21 +236,20 @@ float zposi(int mod,int view,int pln, int ch, int axis=0){
         INGRID_Dimension *fdim = new INGRID_Dimension();
         fdim -> get_posi_lolirecon( mod, view, pln, ch, axis, &posixy, &posiz); //mod view pln ch axis in recon
 	//posiz = 10. * posiz; //cm -> mm
-	if(axis==0)posiz = posiz*10  + 409.5; //shift
+	if(axis==0)posiz = posiz*10  + 409.5; //shift to align WM center with PM center
 	if(axis==1)posiz = posixy*10 + 600.; //shift
 	delete fdim;
   }
   else{
     if(view==0){
-      //posiz=5+105*pln+1074.5;
-      posiz=5+105*pln+1074.5+10;
+      posiz=5+105*pln+1074.5;
     }
     else{
-      //posiz=5+105*pln+1074.5+10;
-      posiz=5+105*pln+1074.5;
+      posiz=5+105*pln+1074.5+10;
     }
   }  
   return posiz;
+  // posiz=0 is the upstream surface of PM
 }
 
 float xyposi(int mod, int view, int pln,int ch, int axis=0){
@@ -1658,13 +1657,13 @@ bool fFindNearestTracks(int* a, int* b, float angle_th, float dist_th){
             if(pos[0][0][1]>pos[1][0][1]) swap(pos[0]   , pos[1]   );
             if(pos[0][1][1]>pos[1][0][1]) continue; // condidion (2)
             //** dist is the distance between two tracks at the middle points.
-            float dist=fabs(((pos[0][0][0]-pos[0][1][0])/(pos[0][0][1]-pos[0][1][1])+(pos[1][0][0]-pos[1][1][0])/(pos[1][0][1]-pos[1][1][1]))*(pos[0][1][1]-pos[1][0][1])/2.0-pos[0][1][0]+pos[1][0][0]);
-            if(dist>dist_th) continue; // condition (3)
+            float _dist=fabs(((pos[0][0][0]-pos[0][1][0])/(pos[0][0][1]-pos[0][1][1])+(pos[1][0][0]-pos[1][1][0])/(pos[1][0][1]-pos[1][1][1]))*(pos[0][1][1]-pos[1][0][1])/2.0-pos[0][1][0]+pos[1][0][0]);
+            if(_dist>dist_th) continue; // condition (3)
 
-            if(!candidate || joilik>sqrt(angle*angle/angle_th/angle_th+dist*dist/dist_th/dist_th)){
+            if(!candidate || joilik>sqrt(angle*angle/angle_th/angle_th+_dist*_dist/dist_th/dist_th)){
                 //** if more than one candidate is found, ...
                 *a=i; *b=j;
-                joilik=sqrt(angle*angle/angle_th/angle_th+dist*dist/dist_th/dist_th);
+                joilik=sqrt(angle*angle/angle_th/angle_th+_dist*_dist/dist_th/dist_th);
                 candidate=true;
             }
         }
@@ -1755,8 +1754,8 @@ Track fGetConnectedTrack(const vector<Hit> &hit, const vector<Track> &track, con
         //** Initialize **//
         int tmppln, tmpch;
         fdim->get_reconplnch_loli(mod, hit[0].view, hit[0].pln, hit[0].ch, 0, &tmppln, &tmpch);
-        tr.ipln = hit[0].pln;
-        tr.fpln = hit[0].pln;
+        tr.ipln = tmppln;
+        tr.fpln = tmppln;
         tr.iz   = zposi(mod, hit[0].view, tmppln, tmpch);
         tr.fz   = zposi(mod, hit[0].view, tmppln, tmpch);
         tr.ixy  = par[0]+par[1]*tr.iz;
@@ -1766,12 +1765,12 @@ Track fGetConnectedTrack(const vector<Hit> &hit, const vector<Track> &track, con
             int reconpln, reconch;
             fdim->get_reconplnch_loli(mod, hit[i].view, hit[i].pln, hit[i].ch, 0, &reconpln, &reconch);
             if(tr.iz>zposi(mod, hit[i].view, reconpln, reconch)){
-                tr.ipln = hit[i].pln;
+                tr.ipln = reconpln;
                 tr.iz   = zposi(mod, hit[i].view, reconpln, reconch);
                 tr.ixy  = par[0]+par[1]*tr.iz;
             }
             if(tr.fz<zposi(mod, hit[i].view, reconpln, reconch)){
-                tr.fpln = hit[i].pln;
+                tr.fpln = reconpln;
                 tr.fz   = zposi(mod, hit[i].view, reconpln, reconch);
                 tr.fxy  = par[0]+par[1]*tr.fz;
             }
@@ -1792,8 +1791,8 @@ Track fGetConnectedTrack(const vector<Hit> &hit, const vector<Track> &track, con
         //** Initialize **//
         int tmppln, tmpch;
         fdim->get_reconplnch_loli(mod, hit[0].view, hit[0].pln, hit[0].ch, 0, &tmppln, &tmpch);
-        tr.ipln = hit[0].pln;
-        tr.fpln = hit[0].pln;
+        tr.ipln = tmppln;
+        tr.fpln = tmppln;
         tr.ixy  = xyposi(mod, hit[0].view, tmppln, tmpch);
         tr.fxy  = xyposi(mod, hit[0].view, tmppln, tmpch);
         tr.iz   = par[0]+par[1]*tr.ixy;
@@ -1803,12 +1802,12 @@ Track fGetConnectedTrack(const vector<Hit> &hit, const vector<Track> &track, con
             int reconpln, reconch;
             fdim->get_reconplnch_loli(mod, hit[i].view, hit[i].pln, hit[i].ch, 0, &reconpln, &reconch);
             if(par[1]>0 != tr.ixy<xyposi(mod, hit[i].view, reconpln, reconch)){
-                tr.ipln = hit[i].pln;
+                tr.ipln = reconpln;
                 tr.ixy  = xyposi(mod, hit[i].view, reconpln, reconch);
                 tr.iz   = par[0]+par[1]*tr.ixy;
             }
             if(par[1]>0 != tr.fxy>xyposi(mod, hit[i].view, reconpln, reconch)){
-                tr.fpln = hit[i].pln;
+                tr.fpln = reconpln;
                 tr.fxy  = xyposi(mod, hit[i].view, reconpln, reconch);
                 tr.fz   = par[0]+par[1]*tr.fxy;
             }

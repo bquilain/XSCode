@@ -582,7 +582,7 @@ int num2pdg(int *trkpdg){
   return pdg;
 };
 
-TFile *fmucl = new TFile("/home/bquilain/CC0pi_XS/Reconstruction/appPM/mucl.root");
+TFile *fmucl = new TFile("$(INSTALLREPOSITORY)/Reconstruction/inc/PMmucl.root");
 TH1F* ling = (TH1F*)fmucl -> Get("ling");
 TH1F* lsci = (TH1F*)fmucl -> Get("lsci");
 
@@ -815,6 +815,13 @@ void fTrackMatchX(Trk &trk,PMTrack &pmtrk, TrackPM &htrk){
   trk.endych=pmtrk.trk[0].endych;
   trk.thetax=htrk.ang;
   trk.thetay=pmtrk.trk[0].thetay;
+
+  //ML added 20170126
+  trk.intcptx=htrk.intcpt;
+  trk.intcpty=pmtrk.trk[0].intcpty;
+  trk.slopex=htrk.slope;
+  trk.slopey=pmtrk.trk[0].slopey;
+
   trk.hit.clear();
 
   for(int ihit=0;ihit<htrk.hit.size();ihit++){
@@ -885,6 +892,13 @@ void fTrackMatchY(Trk &trk,PMTrack &pmtrk, TrackPM &vtrk){
   trk.endych=vtrk.fxy;
   trk.thetax=pmtrk.trk[0].thetax;
   trk.thetay=vtrk.ang;
+
+  // ML added 20170126
+  trk.intcptx=pmtrk.trk[0].intcptx;
+  trk.intcpty=vtrk.intcpt;
+  trk.slopex=pmtrk.trk[0].slopex;
+  trk.slopey=vtrk.slope;
+
   trk.hit.clear();
 
   for(int ihit=0;ihit<vtrk.hit.size();ihit++){
@@ -1300,5 +1314,37 @@ bool fPMAna(int TrackMatchingPlane, int VertexingPlane, double VertexingChannel,
   return (pmtrack.size()>0);
 };
 
+void reCalcIsohit(PMTrack& pmtrk, int isoHitCut){
+  //isoHitCut is the minimal number of isolated hit I require for a track.
+  //    cout<<"reCalcIsohit with cut at "<<isoHitCut<<endl;
+  int NusedPM[2][18][32]={{{0}}};
+  int NusedI[7][2][11][24]={{{{0}}}};
+
+  for(int t=0;t<pmtrk.trk.size();t++){
+    for(int ihit=0;ihit<pmtrk.trk[t].hit.size();ihit++){
+      if(pmtrk.trk[t].hit[ihit].mod==16) NusedPM[pmtrk.trk[t].hit[ihit].view][pmtrk.trk[t].hit[ihit].pln][pmtrk.trk[t].hit[ihit].ch]++;
+      else NusedI[pmtrk.trk[t].hit[ihit].mod][pmtrk.trk[t].hit[ihit].view][pmtrk.trk[t].hit[ihit].pln][pmtrk.trk[t].hit[ihit].ch]++;
+    }
+  }
+  for(int t=0;t<pmtrk.trk.size();t++){
+    int NisohitPM=0;
+    for(int ihit=0;ihit<pmtrk.trk[t].hit.size();ihit++){
+      if(pmtrk.trk[t].hit[ihit].mod==16){
+	pmtrk.trk[t].hit[ihit].isohit=(NusedPM[pmtrk.trk[t].hit[ihit].view][pmtrk.trk[t].hit[ihit].pln][pmtrk.trk[t].hit[ihit].ch]<=1);
+	if(pmtrk.trk[t].hit[ihit].isohit) NisohitPM++;
+      }
+      else pmtrk.trk[t].hit[ihit].isohit=(NusedI[pmtrk.trk[t].hit[ihit].mod][pmtrk.trk[t].hit[ihit].view][pmtrk.trk[t].hit[ihit].pln][pmtrk.trk[t].hit[ihit].ch]<=1);
+    }
+   
+    if(!pmtrk.trk[t].ing_trk && NisohitPM<isoHitCut) {
+      pmtrk.trk.erase(pmtrk.trk.begin()+t);
+      pmtrk.Ntrack--;
+      //cout<<"track erased! "<<NisohitPM<<endl;
+      if(pmtrk.Ntrack!=pmtrk.trk.size()) cout<<"*** bad Ntrack ***"<<endl;
+      if(pmtrk.Ntrack==0) cout<<"*** error no more tracks ***"<<endl;
+    }
+  }
+
+};
 
 #endif

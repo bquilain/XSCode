@@ -59,7 +59,6 @@ const static char *cosmic_data       = "/home/t2kingrid/data/cosmic";
 //static const char *dailycheck_folder = "/home/kikawa/scraid1/data/pm_ingrid";
 
 
-//#include "IngridConstants.h"
 long fcTime;
 int main(int argc,char *argv[]){
 

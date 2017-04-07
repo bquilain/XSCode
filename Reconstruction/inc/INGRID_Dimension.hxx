@@ -6,8 +6,6 @@
 #include<fstream>
 using namespace std;
 
-#include"IngridConstants.h"
-
 #define CHMAX 80
 #define MOD_WAGASCI 15
 
