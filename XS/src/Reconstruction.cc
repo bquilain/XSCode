@@ -52,10 +52,19 @@ using namespace std;
 #include "Reconstruction.h"
 #include "setup.h"
 #include "PMrecon.hxx"
+//#define DEBUG
 //#define DEBUG2
+
 //
 INGRID_Dimension * IngDimRec = new INGRID_Dimension();
 
+double DegRad(double angle){
+  return angle*TMath::Pi()/180.;
+}
+
+double RadDeg(double angle){
+  return angle*180./TMath::Pi();
+}
 
 vector <Hit3D> Reconstruction::ApplyPEError(vector <Hit3D> Vec, double angle){
     int BinAngle= (int) (angle/3);
@@ -85,13 +94,32 @@ vector <Hit3D> Reconstruction::ApplyPEError(vector <Hit3D> Vec, double angle){
 int Reconstruction::SelectTrackSample(bool pm_stop, bool Geom, bool has_ingrid, bool ingrid_stop, int ing_last_pln){
   int TrackSample;
 
-  if(has_ingrid && !ingrid_stop && ing_last_pln>=9) TrackSample=5;
-  else if(has_ingrid && !ingrid_stop) TrackSample=4;
-  else if(has_ingrid && ingrid_stop) TrackSample=3;
-  else if(!has_ingrid && !pm_stop && Geom) TrackSample=2;
-  else if(!has_ingrid && !pm_stop && !Geom) TrackSample=1;
-  else if(!has_ingrid && pm_stop && !Geom) TrackSample=0;
+  if(has_ingrid){
+    if(ingrid_stop){
+      if(ing_last_pln>=3) TrackSample=3;
+      else TrackSample=2;
+    }
+    else{
+      if(ing_last_pln>=9) TrackSample=5;
+      else TrackSample=4;
+    }
+  }
+  else{
+    if(pm_stop) TrackSample=0;
+    else TrackSample=1;
+  }
 
+  if(TrackSample>=NSamples){
+    cout<<"Problem in the number of track samples. Check Reconstruction::SelectTrackSample and setup.h agreement of NSamples"<<endl;
+    return 0;
+  }
+#ifdef DEBUG
+  cout<<endl<<"**************************************************"<<endl;
+  cout<<"Test of Reconstruction::SelectTrackSample"<<endl;
+  cout<<"Track sample="<<TrackSample<<", pm stop="<<pm_stop<<", ingrid track="<<has_ingrid<<", ing stop="<<ingrid_stop<<", last ing pln="<<ing_last_pln<<endl;
+  cout<<"**************************************************"<<endl;
+#endif
+  
   return TrackSample;
 }
 /***********************************************************/
@@ -554,7 +582,7 @@ vector <Hit3D> Reconstruction::Hit2DMatchingPM( IngridEventSummary* evt, PMAnaSu
     cout<<"Test of Reconstruction::Hit2DMatching"<<endl;
     cout<<"Gradient x="<<gradx<<", intcpt="<<intcptx/10.<<", thetax="<<thetax<<endl;
     cout<<"Gradient y="<<grady<<", intcpt="<<intcpty/10.<<", thetay="<<thetay<<endl;
-    cout<<"Hit pln="<<hit->pln<<", z position="<<zposi(hit->mod,hit->view,hit->pln)/10.<<", hit view="<<hit->view<<endl;
+    cout<<"Hit mod="<<hit->mod<<", Hit pln="<<hit->pln<<", z position="<<zposi(hit->mod,hit->view,hit->pln)/10.<<", hit view="<<hit->view<<endl;
   cout<<"**************************************************"<<endl;
 #endif
 
@@ -2138,6 +2166,7 @@ vector <double> Reconstruction::IngridTrack(int mod, int startplnx, int startchx
 }
 
 vector <double> Reconstruction::TrackPenetration(int Mod, int pln_iniX, double ch_iniX, double thetax,int pln_iniY, double ch_iniY, double thetay, int pln_finX, double ch_finX, int pln_finY, double ch_finY, double dx_Ing){
+
   //1plane in PM: careful if the channel is SciBar or Ingrid. 1plane = 2channels to cross. Look if the channel is a scibar or an Ingrid one?
   //for normal track: enter zini and zfinal? No plane ini and plane final:
   //dist=(plane final - plane ini + 1)*dxofchanneltype
@@ -2202,7 +2231,10 @@ vector <double> Reconstruction::TrackPenetration(int Mod, int pln_iniX, double c
 }
 
 
-vector <double> Reconstruction::TrackPenetrationPM(int pln_iniX, double ch_iniX, double thetax,int pln_iniY, double ch_iniY, double thetay, int pln_finX, double ch_finX, int pln_finY, double ch_finY, int IngMod, int pln_ini_Ing, int pln_fin_Ing, double dx_Ing, bool PMStop){
+
+vector <double> Reconstruction::TrackPenetrationPM(int pln_iniX, double ch_iniX, double thetax,int pln_iniY, double ch_iniY, double thetay, int pln_finX, double ch_finX, int pln_finY, double ch_finY, int IngMod, int pln_ini_Ing, int pln_fin_Ing, double angle, int tracksample, vector <Hit3D> * Vec){
+
+  
   //1plane in PM: careful if the channel is SciBar or Ingrid. 1plane = 2channels to cross. Look if the channel is a scibar or an Ingrid one?
   //for normal track: enter zini and zfinal? No plane ini and plane final:
   //dist=(plane final - plane ini + 1)*dxofchanneltype
@@ -2213,8 +2245,10 @@ vector <double> Reconstruction::TrackPenetrationPM(int pln_iniX, double ch_iniX,
   ch_finX/=10;
   ch_iniY/=10;
   ch_finY/=10;
+  double dx_Ing=ScintiThick/TMath::Cos(DegRad(angle));
   double dx_Sci=dx_Ing*1.3;
-  double dx_Iron=dx_Ing*6.5;  
+  double dx_Iron=dx_Ing*IronThick;  
+
 
   double *x_ini=new double();
   double *z_iniX=new double();
@@ -2227,50 +2261,97 @@ vector <double> Reconstruction::TrackPenetrationPM(int pln_iniX, double ch_iniX,
   int xch,ych;
   double DistCarbon=0;
   vector <double> Dist;
-  ////cout<<"Pln Ini="<<pln_iniX<<", Pln final="<<pln_finX<<endl;
-  for(int ipln=pln_iniX;ipln<pln_finX;ipln++){
-    expzX=(ipln-pln_iniX)*PlnThick_PM+*z_iniX;
-    expx=ch_iniX+((thetax>0)?1:-1)*expzX*TMath::Tan(thetax);//not forgot before to convert thetax in deg->rad
-    for(int numch=0;numch<48;numch++){
-      double diffxy=expx-numch*ScintiWidth;
-      if(-0.5*ScintiWidth<=diffxy&&diffxy<0.5*ScintiWidth){
-	xch=numch;
+  
+  for(int ipln=std::min(pln_iniX,pln_iniY);ipln<=std::max(pln_finX,pln_finY);ipln++){
+   
+    for(int iv=0;iv<2;iv++){
+      if(iv==0){
+	expzX=(ipln-pln_iniX)*PlnThick_PM+*z_iniX;
+	expx=ch_iniX+((thetax>0)?1:-1)*expzX*TMath::Tan(thetax);//not forgot before to convert thetax in deg->rad
+	for(int numch=0;numch<48;numch++){
+	  double diffxy=expx-numch*ScintiWidth;
+	  if(-0.5*ScintiWidth<=diffxy&&diffxy<0.5*ScintiWidth){
+	    xch=numch;
+	  }
+	}
+	if(xch<8||xch>23) DistCarbon+=dx_Ing;//ok now the question: IngDim is in which coordinate system? the Module one!
+	else DistCarbon+=dx_Sci;
+      
+	for(int ihit=0;ihit<(*Vec).size();ihit++){
+	  if(((*Vec)[ihit].mod == 16) && ((*Vec)[ihit].pln == ipln) && ((*Vec)[ihit].view == 0)){
+	    (*Vec)[ihit].dist_plastic=DistCarbon;
+	    (*Vec)[ihit].dist_iron=0;
+	  }
+	}
+      }
+      else{
+	expzY=(ipln-pln_iniY)*PlnThick_PM+*z_iniY;
+	expy=ch_iniY+((thetay>0)?1:-1)*expzY*TMath::Tan(thetay);//not forgot before to convert thetax in deg->rad
+	for(int numch=0;numch<48;numch++){
+	  double diffxy=expx-numch*ScintiWidth;
+	  if(-0.5*ScintiWidth<=diffxy&&diffxy<0.5*ScintiWidth){
+	    ych=numch;
+	  }
+	}
+	if(xch<8||xch>23) DistCarbon+=dx_Ing;//ok now the question: IngDim is in which coordinate system? the Module one!
+	else DistCarbon+=dx_Sci;
+	for(int ihit=0;ihit<(*Vec).size();ihit++){
+	  if(((*Vec)[ihit].mod == 16) && ((*Vec)[ihit].pln == ipln) && ((*Vec)[ihit].view == 1)){
+	    (*Vec)[ihit].dist_plastic=DistCarbon;
+	    (*Vec)[ihit].dist_iron=0;
+	  }
+	}
       }
     }
-    if(xch<8||xch>23) DistCarbon+=dx_Ing;//ok now the question: IngDim is in which coordinate system? the Module one!
-    else DistCarbon+=dx_Sci;
   }
-  //cout<<"X is over"<<endl;
-
-  for(int ipln=pln_iniY;ipln<pln_finY;ipln++){
-    expzY=(ipln-pln_iniY)*PlnThick_PM+*z_iniY;
-    expy=ch_iniY+((thetay>0)?1:-1)*expzY*TMath::Tan(thetay);//not forgot before to convert thetax in deg->rad
-    for(int numch=0;numch<48;numch++){
-      double diffxy=expx-numch*ScintiWidth;
-      if(-0.5*ScintiWidth<=diffxy&&diffxy<0.5*ScintiWidth){
-	ych=numch;
-      }
-    }
-    if(xch<8||xch>23) DistCarbon+=dx_Ing;//ok now the question: IngDim is in which coordinate system? the Module one!
-    else DistCarbon+=dx_Sci;
-  }
+  
   //cout<<"Y is over"<<endl;
   //cout<<"DistCarbon before Ingrid="<<DistCarbon<<endl;
   double DistIron=0;
+  if(tracksample>=2){
+    if(pln_fin_Ing>=9) DistIron=IronThick*(pln_fin_Ing-pln_ini_Ing-1)*dx_Ing/TMath::Cos(DegRad(angle));
+    else DistIron=IronThick*(pln_fin_Ing-pln_ini_Ing)/TMath::Cos(DegRad(angle));
+    
+    for(int ihit=0;ihit<(*Vec).size();ihit++){
+      if(((*Vec)[ihit].mod == IngMod)){
+	(*Vec)[ihit].dist_plastic=DistCarbon + dx_Ing*2*((*Vec)[ihit].pln-pln_ini_Ing+1);//dx_Ing*2 because we assume it crosses both the x and y scintillator layer.
+	double HitDistIron=0;
+	if((*Vec)[ihit].pln >=9) HitDistIron=IronThick*((*Vec)[ihit].pln-pln_ini_Ing-1)*dx_Ing/TMath::Cos(DegRad(angle));
+	else HitDistIron=IronThick*((*Vec)[ihit].pln-pln_ini_Ing)/TMath::Cos(DegRad(angle));
+	(*Vec)[ihit].dist_iron=HitDistIron;
+      }
+    }
+  
+    DistCarbon+=dx_Ing*2*(pln_fin_Ing-pln_ini_Ing);
+  }
+   /*
   if(!PMStop){
     DistCarbon+=dx_Ing*(pln_fin_Ing-pln_ini_Ing+1);
     if(pln_fin_Ing<=9) DistIron=dx_Iron*(pln_fin_Ing-pln_ini_Ing);
     else DistIron=dx_Iron*9;
-  }
+    }*/
   //if(DistIron!=DistIron)//cout<<"************************************************************************/"<<endl<<"dx="<<dx_Ing<<" , Plane ="<<pln_fin_Ing<<endl;
   
   Dist.push_back(DistCarbon);
   Dist.push_back(DistIron);
   //cout<<"Distance in Carbon="<<DistCarbon<<endl;
   //cout<<"Distance in Iron="<<DistIron<<endl;
-  double EqSciLength=DistIron*55.85/1.03+DistCarbon;//equivalent length of scintillators crossed by the particle
+  double EqSciLength=DistIron + DistCarbon/IronCarbonRatio;//equivalent length of scintillators crossed by the particle
   Dist.push_back(EqSciLength);
 
+#ifdef DEBUG
+  cout<<"**************************************************************************************"<<endl;
+  cout<<"Test of the distance in plastic and iron filling in Reconstruction::TrackPenetrationPM"<<endl;
+  cout<<"Track sample determined by Select sample="<<tracksample<<endl;
+  cout<<"Check inputs of the function first: XZ view, startpln="<<pln_iniX<<", startch="<<ch_iniX<<", angle="<<thetax<<", YZ view, startpln="<<pln_iniY<<", startch="<<ch_iniY<<", angle="<<thetay<<", initial plane ingrid="<<pln_ini_Ing<<", final plane ingrid="<<pln_fin_Ing<<", 3D angle="<<angle<<endl;
+    
+  for(int ihit=0;ihit<(*Vec).size();ihit++){
+    cout<<"Mod="<<(*Vec)[ihit].mod<<", pln="<<(*Vec)[ihit].pln<<", channel="<<(*Vec)[ihit].ch<<", view="<<(*Vec)[ihit].view<<", distance plastic="<<(*Vec)[ihit].dist_plastic<<", iron="<<(*Vec)[ihit].dist_iron<<endl;
+  }
+  cout<<"Total carbon length="<<DistCarbon<<", total iron length="<<DistIron<<", equivalent length="<<EqSciLength<<endl;
+    cout<<"**************************************************************************************"<<endl;
+#endif
+    
   return Dist;
 }
 
@@ -2615,7 +2696,7 @@ int Reconstruction::GetTrackParticle(IngridEventSummary *evt, PMAnaSummary * rec
       cout<<"Is selected: Particle="<<SimPart2->pdg<<"       :";
       cout<<"here is the rec thetax, thetay="<<(recon->thetay)[itrk]<<", "<<(recon->thetax)[itrk]<<", Angle 3D="<<(recon->angle)[itrk]<<", And here are the angles="<<thetaX<<", "<<thetaY<<", 3D="<<TMath::ACos(Scalar/Norm)*180/TMath::Pi()<<endl;
       cout<<"rec trk length="<<TrkLength<<", Simpart length="<<SimPart2->length<<endl;
-#endif DEBUG
+#endif
       
       
       PartNum=is;
@@ -2831,7 +2912,7 @@ vector <double> Reconstruction::GetMatchingPMINGRID(vector <Hit3D> Vec){
     ReducedChiSquareX_Ing=fx_Ing->GetChisquare()/fx_Ing->GetNDF();
     ReducedChiSquareY_Ing=fy_Ing->GetChisquare()/fy_Ing->GetNDF();
   }
-#ifdef DEBUG
+#ifdef DEBUG2
   cout<<"Angle X, PM="<<AngleX<<", INGRID="<<AngleX_Ing<<endl;
   cout<<"Angle Y, PM="<<AngleY<<", INGRID="<<AngleY_Ing<<endl;
   cout<<"Half X, PM="<<HalfX<<", INGRID="<<HalfX_Ing<<endl;

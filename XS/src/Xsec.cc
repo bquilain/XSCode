@@ -313,11 +313,14 @@ int Xsec::DetermineFSI(int IsSand,int IsAnti,int IsNuE,int IsBkgH,int IsBkgV,Ing
       else if(FSIPions==1) FSIInt=3;
       else FSIInt=4;
     }
-    else FSIInt=5;
+    else if(FSINeutralPions==1){
+      if(FSIPions==0) FSIInt=5;
+      else FSIInt=4;//If more pion that only one pi^0, consider that it is a Npions (example: CC 1pi+ + 1pi^0) 
+    }
+    else FSIInt=4;
   }
-  else{
-    FSIInt=6;
-  }
+  else FSIInt=6;
+
   if(IsSand) FSIInt=7;
   else if(IsBkgH) FSIInt=8;
   else if(IsBkgV) FSIInt=9;

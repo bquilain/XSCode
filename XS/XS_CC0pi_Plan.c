@@ -1,4 +1,3 @@
-
 #include<iostream>
 #include<sstream>
 #include<fstream>
@@ -25,6 +24,8 @@ using namespace std;
 #include <TVector.h>
 #include <TLegend.h>
 #include <TGraph.h>
+#include <TGraphErrors.h>
+#include <TSpline.h>
 #include <TGaxis.h>
 #include <TMarker.h>
 #include <TText.h>
@@ -35,9 +36,6 @@ using namespace std;
 #include <TString.h>
 #include <TSystem.h>
 #include <THStack.h>
-int LimitTracks=20;
-int LimitRecs=10;
-int NDials=175;
 #include "TApplication.h"
 #include "INGRIDEVENTSUMMARY.h"
 #include "IngridHitSummary.h"
@@ -58,13 +56,17 @@ Reconstruction * Rec = new Reconstruction();
 Corrections * Cor = new Corrections();
 Xsec * XS = new Xsec();
 #define LIKELIHOODHERE
+#define MVA
 //#define ALLSTUDY
 //#define DEBUG_PID
+//#define DEBUG_PID_BDT
 //#define DEBUG
 //#define XSEC_ERROR
 //#define DEBUG2
 //#define GENERATEWIDTH
 //double C[17]={-1.85,0.34,0.59,0.74,0.514,-0.37,1.25,-0.06,0.562,0.82,-0.47,0.6,-0.57,-0.45};
+const double positionerror=0.5;
+const double energyerror=0.5;
 
 TSpline3 * s_PMIng_Plan; TSpline3 * s_PMSci_Plan;TSpline3 * s_Ing_Plan;
 TSpline3 * sCL_PMIng_Plan; TSpline3 * sCL_PMSci_Plan;TSpline3 * sCL_Ing_Plan;
@@ -238,18 +240,194 @@ int GetMax(vector <int> V){
   return Max;
 }
 
-double DegRad(double angle){
-  return angle*TMath::Pi()/180.;
+
+int FSIInt=-1;
+int Num_Int=-1;
+int nTracks=-1;
+float weight=1;
+bool IsFV=false;
+bool IsDetected=false;
+bool IsSand=false;
+bool IsAnti=false;
+bool IsNuE=false;
+bool IsBkgH=false;
+bool IsBkgV=false;
+float POT;
+float Enu;
+float TrueAngleMuon;
+float TrueMomentumMuon;
+bool NewEvent;
+int NIngBasRec;
+int GoodSpill;
+int Spill;
+bool VIsDetected;
+bool VSelectionOV;
+bool VSelectionFV;
+float OpeningAngle;
+float CoplanarityAngle;
+
+float TrackAngle[LimitTracks];
+int TypeOfTrack[LimitTracks];
+float CLMuon[LimitTracks];
+float CLMuon_Plan[LimitTracks];
+float CLMuon_KS[LimitTracks];
+float CLMuon_Likelihood[LimitTracks];
+float ProportionHighPE[LimitTracks];
+float MeanHighPE[LimitTracks];
+float HighestPE[LimitTracks];
+float TotalCharge[LimitTracks];
+
+int NHits_PMIng[LimitTracks];
+int NHits_PMSci[LimitTracks];
+int NHits_Ing[LimitTracks];
+int LastChannelINGRIDX[LimitTracks];
+int LastChannelINGRIDY[LimitTracks];
+float TrackWidth[LimitTracks];
+float Momentum[LimitTracks];
+float ID[LimitTracks];
+float PD[LimitTracks];
+int Sample[LimitTracks];
+float CriteriaAngleX[LimitTracks];
+float CriteriaAngleY[LimitTracks];
+float CriteriaHalfWayX[LimitTracks];
+float CriteriaHalfWayY[LimitTracks];
+float EnergyDeposition[LimitTracks][LimitHits];
+float EnergyDepositionSpline[LimitTracks][LimitHits];
+int NViewsPerPlaneEnergyDeposition[LimitTracks][LimitHits];
+int NViewsPerPlaneEnergyDepositionNonIsolated[LimitTracks][LimitHits];
+float TransverseWidthNonIsolated[LimitTracks][LimitHits];
+float TransverseWidth[LimitTracks][LimitHits];
+
+float ReWeight[NDials];
+bool IsReconstructed[LimitTracks];
+bool GT[LimitTracks];
+
+//new
+vector <double> position[LimitTracks];
+vector <double> eposition[LimitTracks];
+vector <double> energydeposition[LimitTracks];
+vector <double> eenergydeposition[LimitTracks];
+
+TGraphErrors * gEnergyDeposition[LimitTracks];
+TSpline3 * sEnergyDeposition[LimitTracks];
+
+void ResetInputVariables(){
+  for(int itrk=0;itrk<LimitTracks;itrk++){
+    TrackAngle[itrk]=-1;
+    TrackWidth[itrk]=-1;
+    TypeOfTrack[itrk]=-1;
+    TotalCharge[itrk]=-1.;
+    CLMuon[itrk]=-1;
+    CLMuon_Plan[itrk]=-1;
+    CLMuon_KS[itrk]=-1;
+    CLMuon_Likelihood[itrk]=-1;
+    ProportionHighPE[itrk]=-1;
+    MeanHighPE[itrk]=-1;
+    HighestPE[itrk]=-1;
+    
+    NHits_PMIng[itrk]=0;
+    NHits_PMSci[itrk]=0;
+    NHits_Ing[itrk]=0;
+    LastChannelINGRIDX[itrk]=-1;
+    LastChannelINGRIDY[itrk]=-1;
+    Momentum[itrk]=-1;
+    ID[itrk]=0;
+    PD[itrk]=0;
+    Sample[itrk]=-1;
+    IsReconstructed[itrk]=false;
+    GT[itrk]=false;
+    CriteriaHalfWayX[itrk]=-1;
+    CriteriaHalfWayY[itrk]=-1;
+    CriteriaAngleX[itrk]=-1;
+    CriteriaAngleY[itrk]=-1;
+    for(int ihit=0;ihit<LimitHits;ihit++){
+      EnergyDeposition[itrk][ihit]=0;
+      EnergyDepositionSpline[itrk][ihit]=0;
+      NViewsPerPlaneEnergyDeposition[itrk][ihit]=0;
+      NViewsPerPlaneEnergyDepositionNonIsolated[itrk][ihit]=0;
+      TransverseWidthNonIsolated[itrk][ihit]=0;
+      TransverseWidth[itrk][ihit]=0;
+    }
+    position[itrk].clear();
+    eposition[itrk].clear();
+    energydeposition[itrk].clear();
+    eenergydeposition[itrk].clear();
+    //gEnergyDeposition[itrk]->Delete();
+    //sEnergyDeposition[itrk]->Delete();
+  }
+  
+  VIsDetected=false;
+  VSelectionFV=false;
+  VSelectionOV=false;
+  OpeningAngle=-1.;
+  CoplanarityAngle=-1.;
+  NewEvent=false;
+  
+  NIngBasRec=-1;
+  TrueAngleMuon=-1;
+  TrueMomentumMuon=-1;
+  IsFV=false;
+  IsDetected=false;
+  FSIInt=-1;
+  Num_Int=-1;
+  nTracks=-1;
+  weight=0;
+  Enu=0;
+  GoodSpill=0;
+  Spill=0;
+
 }
 
-double RadDeg(double angle){
-  return angle*180./TMath::Pi();
+
+#ifdef MVA
+float TrackAngleMVA;
+int TypeOfTrackMVA;
+float CLMuonMVA;
+float CLMuon_PlanMVA;
+float CLMuon_KSMVA;
+float CLMuon_LikelihoodMVA;
+float TotalChargeMVA;
+float TrackWidthMVA;
+float MomentumMVA;
+float IDMVA;
+float PDMVA;
+int SampleMVA;
+bool IsReconstructedMVA;
+bool GTMVA;
+float EnergyDepositionMVA[LimitHits];
+float EnergyDepositionSplineMVA[LimitHits];
+float TransverseWidthMVA[LimitHits];
+float TransverseWidthNonIsolatedMVA[LimitHits];
+
+void ResetInputVariablesMVA(){//Careful, only reset variables that are track dependent. It assumes that ResetInputVariables will reset the variables will reset the variables that are not track-dependent but event-dependent. In the version of 2017/02/15, it is the case. Please try to maintain this when you modify the code, or else, the event-dependent variables of wtreeMVA will never be reset!
+  TrackAngleMVA=-1;
+  TrackWidthMVA=-1;
+  TypeOfTrackMVA=-1;
+  TotalChargeMVA=-1.;
+  CLMuonMVA=-1;
+  CLMuon_PlanMVA=-1;
+  CLMuon_KSMVA=-1;
+  CLMuon_LikelihoodMVA=-1;  
+  MomentumMVA=-1;
+  IDMVA=0;
+  PDMVA=0;
+  SampleMVA=-1;
+  IsReconstructedMVA=false;
+  GTMVA=false;
+  for(int ihit=0;ihit<LimitHits;ihit++){
+    EnergyDepositionMVA[ihit]=0;
+    EnergyDepositionSplineMVA[ihit]=0;
+    TransverseWidthNonIsolatedMVA[ihit]=0;
+    TransverseWidthMVA[ihit]=0;
+  }
+
 }
-//
+#endif
 
 
 int main(int argc, char **argv)
 {
+
 #ifdef LIKELIHOODHERE
   TH1D * hTest_PMIng = new TH1D("hTest_PMIng","",600,0,300);
   TH1D * hTest_PMSci = new TH1D("hTest_PMSci","",600,0,300);
@@ -351,59 +529,6 @@ int main(int argc, char **argv)
   f_PMIng->SaveAs("testf.root");
   cout<<f_PMIng->Eval(16.8)<<endl;
   */
-  int FSIInt=-1;
-  int Num_Int=-1;
-  int nTracks=-1;
-  double weight=1;
-  bool IsFV=false;
-  bool IsDetected=false;
-  bool IsSand=false;
-  bool IsAnti=false;
-  bool IsNuE=false;
-  bool IsBkgH=false;
-  bool IsBkgV=false;
-  double POT;
-  double Enu;
-  double TrueAngleMuon;
-  double TrueMomentumMuon;
-  int NIngBasRec;
-  int GoodSpill;
-  int Spill;
-  int VnTracks[LimitRecs];
-  bool VIsDetected[LimitRecs];
-  bool VSelectionOV[LimitRecs];
-  bool VSelectionFV[LimitRecs];
-  double OpeningAngle[LimitRecs];
-  double CoplanarityAngle[LimitRecs];
-  double TrackAngle[LimitRecs][LimitTracks];
-  int TypeOfTrack[LimitRecs][LimitTracks];
-  double CLMuon[LimitRecs][LimitTracks];
-  double CLMuon_Plan[LimitRecs][LimitTracks];
-  double CLMuon_KS[LimitRecs][LimitTracks];
-  double CLMuon_Likelihood[LimitRecs][LimitTracks];
-  double ProportionHighPE[LimitRecs][LimitTracks];
-  double MeanHighPE[LimitRecs][LimitTracks];
-  double HighestPE[LimitRecs][LimitTracks];
-  double TotalCharge[LimitRecs][LimitTracks];
-  
-  int NHits_PMIng[LimitRecs][LimitTracks];
-  int NHits_PMSci[LimitRecs][LimitTracks];
-  int NHits_Ing[LimitRecs][LimitTracks];
-  int LastChannelINGRIDX[LimitRecs][LimitTracks];
-  int LastChannelINGRIDY[LimitRecs][LimitTracks];
-  double TrackWidth[LimitRecs][LimitTracks];
-  double Momentum[LimitRecs][LimitTracks];
-  double ID[LimitRecs][LimitTracks];
-  double PD[LimitRecs][LimitTracks];
-  int Sample[LimitRecs][LimitTracks];
-  double CriteriaAngleX[LimitRecs][LimitTracks];
-  double CriteriaAngleY[LimitRecs][LimitTracks];
-  double CriteriaHalfWayX[LimitRecs][LimitTracks];
-  double CriteriaHalfWayY[LimitRecs][LimitTracks];
-
-  double ReWeight[NDials];
-  bool IsReconstructed[LimitRecs][LimitTracks];
-  bool GT[LimitRecs][LimitTracks];
 
 
   TFile * wfile = new TFile((OutputFileName).c_str(),"recreate");
@@ -413,51 +538,110 @@ int main(int argc, char **argv)
   wtree              -> Branch   ("InteractionType",&Num_Int,"Num_Int/I");
   wtree              -> Branch   ("nIngBasRec",&NIngBasRec,"nIngBasRec/I");
   wtree              -> Branch   ("FSIInt",&FSIInt,"FSIInt/I");
-  wtree              -> Branch   ("nTracks[10]",VnTracks,"nTracks[10]/I");
-  wtree              -> Branch   ("weight",&weight,"weight/D");
-  wtree              -> Branch   ("ReWeight[175]",&ReWeight,"ReWeight[175]/D");
+  wtree              -> Branch   ("weight",&weight,"weight/F");
+  wtree              -> Branch   (Form("ReWeight[%d]",NDials),ReWeight,Form("ReWeight[%d]/F",NDials));
   wtree              -> Branch   ("IsFV",&IsFV,"IsFV/O");
   wtree              -> Branch   ("IsSand",&IsSand,"IsSand/O");
   wtree              -> Branch   ("IsAnti",&IsAnti,"IsAnti/O");
   wtree              -> Branch   ("IsNuE",&IsNuE,"IsNuE/O");
   wtree              -> Branch   ("IsBkgH",&IsBkgH,"IsBkgH/O");
   wtree              -> Branch   ("IsBkgV",&IsBkgV,"IsBkgV/O"); 
-  wtree              -> Branch   ("IsDetected[10]",&VIsDetected,"IsDetected[10]/O");
-  wtree              -> Branch   ("SelectionFV[10]",&VSelectionFV,"SelectionFV[10]/O");
-  wtree              -> Branch   ("SelectionOV[10]",&VSelectionOV,"SelectionOV[10]/O");
-  wtree              -> Branch   ("POT",&POT,"POT/D");
+  wtree              -> Branch   ("POT",&POT,"POT/F");
   wtree              -> Branch   ("GoodSpill",&GoodSpill,"GoodSpill/I");
   wtree              -> Branch   ("Spill",&Spill,"Spill/I");
-  wtree              -> Branch   ("Enu",&Enu,"Enu/D");
-  wtree              -> Branch   ("TrueAngleMuon",&TrueAngleMuon,"TrueAngleMuon/D");
-  wtree              -> Branch   ("TrueMomentumMuon",&TrueMomentumMuon,"TrueMomentumMuon/D");
-  wtree              -> Branch   ("TrackWidth[10][20]",&TrackWidth,"TrackWidth[10][20]/D");
-  wtree              -> Branch   ("TrackAngle[10][20]",&TrackAngle,"TrackAngle[10][20]/D");
-  wtree              -> Branch   ("TypeOfTrack[10][20]",&TypeOfTrack,"TypeOfTrack[10][20]/I");
-  wtree              -> Branch   ("Sample[10][20]",&Sample,"Sample[10][20]/I");
-  wtree              -> Branch   ("TotalCharge[10][20]",&TotalCharge,"TotalCharge[10][20]/D");
-  wtree              -> Branch   ("OpeningAngle[10]",&OpeningAngle,"OpeningAngle[10]/D");
-  wtree              -> Branch   ("CoplanarityAngle[10]",&CoplanarityAngle,"CoplanarityAngle[10]/D");
-  wtree              -> Branch   ("CLMuon[10][20]",&CLMuon,"CLMuon[10][20]/D"); 
-  wtree              -> Branch   ("CLMuon_Plan[10][20]",&CLMuon_Plan,"CLMuon_Plan[10][20]/D"); 
-  wtree              -> Branch   ("CLMuon_KS[10][20]",&CLMuon_KS,"CLMuon_KS[10][20]/D");
-  wtree              -> Branch   ("CLMuon_Likelihood[10][20]",&CLMuon_Likelihood,"CLMuon_Likelihood[10][20]/D");
-  wtree              -> Branch   ("ProportionHighPE[10][20]",&ProportionHighPE,"ProportionHighPE[10][20]/D");
-  wtree              -> Branch   ("MeanHighPE[10][20]",&MeanHighPE,"MeanHighPE[10][20]/D");
-  wtree              -> Branch   ("HighestPE[10][20]",&HighestPE,"HighestPE[10][20]/D");
-  wtree              -> Branch   ("LastChannelINGRIDX[10][20]",&LastChannelINGRIDX,"LastChannelINGRIDX[10][20]/I");                 
-  wtree              -> Branch   ("LastChannelINGRIDY[10][20]",&LastChannelINGRIDY,"LastChannelINGRIDY[10][20]/I");                 
-  wtree              -> Branch   ("Momentum[10][20]",&Momentum,"Momentum[10][20]/D");
-  wtree              -> Branch   ("IronDistance[10][20]",&ID,"IronDistance[10][20]/D");
-  wtree              -> Branch   ("PlasticDistance[10][20]",&PD,"PlasticDistance[10][20]/D");
-  wtree              -> Branch   ("IsReconstructed[10][20]",&IsReconstructed,"IsReconstructed[10][20]/O");
-  wtree              -> Branch   ("GeometricTrack[10][20]",&GT,"GeometricTrack[10][20]/O");                    
-  wtree              -> Branch   ("CriteriaAngleX[10][20]",&CriteriaAngleX,"CriteriaAngleX[10][20]/D");
-  wtree              -> Branch   ("CriteriaAngleY[10][20]",&CriteriaAngleY,"CriteriaAngleY[10][20]/D");
-  wtree              -> Branch   ("CriteriaHalfWayX[10][20]",&CriteriaHalfWayX,"CriteriaHalfWayX[10][20]/D");
-  wtree              -> Branch   ("CriteriaHalfWayY[10][20]",&CriteriaHalfWayY,"CriteriaHalfWayY[10][20]/D");
+  wtree              -> Branch   ("Enu",&Enu,"Enu/F");
+  wtree              -> Branch   ("TrueAngleMuon",&TrueAngleMuon,"TrueAngleMuon/F");
+  wtree              -> Branch   ("TrueMomentumMuon",&TrueMomentumMuon,"TrueMomentumMuon/F");
+  wtree              -> Branch   ("NewEvent",&NewEvent,"NewEvent/O");
+  wtree              -> Branch   ("nTracks",&nTracks,"nTracks/I");
+  wtree              -> Branch   ("IsDetected",&VIsDetected,"IsDetected/O");
+  wtree              -> Branch   ("SelectionFV",&VSelectionFV,"SelectionFV/O");
+  wtree              -> Branch   ("SelectionOV",&VSelectionOV,"SelectionOV/O");
+  wtree              -> Branch   ("OpeningAngle",&(OpeningAngle),"OpeningAngle/F");
+  wtree              -> Branch   ("CoplanarityAngle",&(CoplanarityAngle),"CoplanarityAngle/F");
+  //wtree              -> Branch   (Form("EnergyDepositionDistance[%d][%d]",LimitTracks,LimitHits),EnergyDepositionDistance,Form("EnergyDepositionDistance[%d][%d]/F",LimitTracks,LimitHits));
 
+  for(int itrk=0;itrk<LimitTracks;itrk++){
+    wtree              -> Branch   (Form("TrackWidth_track%d",itrk),&(TrackWidth[itrk]),Form("TrackWidth_track%d/F",itrk));
+    wtree              -> Branch   (Form("TrackAngle_track%d",itrk),&(TrackAngle[itrk]),Form("TrackAngle_track%d/F",itrk));
+    wtree              -> Branch   (Form("TypeOfTrack_track%d",itrk),&(TypeOfTrack[itrk]),Form("TypeOfTrack_track%d/I",itrk));
+    //wtree              -> Branch   (Form("TrackAngle_track%d",itrk),&(TrackAngle[itrk]),Form("TrackAngle_track%d/F",itrk));
+    wtree              -> Branch   (Form("IsReconstructed_track%d",itrk),&(IsReconstructed[itrk]),Form("IsReconstructed_track%d/O",itrk));
+    wtree              -> Branch   (Form("Sample_track%d",itrk),&(Sample[itrk]),Form("Sample_track%d/I",itrk));
 
+    
+    wtree              -> Branch   (Form("CLMuon_track%d",itrk),&(CLMuon[itrk]),Form("CLMuon_track%d/F",itrk));
+    wtree              -> Branch   (Form("CLMuon_Plan_track%d",itrk),&(CLMuon_Plan[itrk]),Form("CLMuon_Plan_track%d/F",itrk));
+    wtree              -> Branch   (Form("CLMuon_KS_track%d",itrk),&(CLMuon_KS[itrk]),Form("CLMuon_KS_track%d/F",itrk));
+    wtree              -> Branch   (Form("CLMuon_Likelihood_track%d",itrk),&(CLMuon_Likelihood[itrk]),Form("CLMuon_Likelihood_track%d/F",itrk));
+    wtree              -> Branch   (Form("IronDistance_track%d",itrk),&(ID[itrk]),Form("IronDistance_track%d/F",itrk));
+    wtree              -> Branch   (Form("PlasticDistance_track%d",itrk),&(PD[itrk]),Form("PlasticDistance_track%d/F",itrk));
+    wtree              -> Branch   (Form("GeometricTrack_track%d",itrk),&(GT[itrk]),Form("GeometricTrack_track%d/O",itrk));
+    wtree              -> Branch   (Form("TotalCharge_track%d",itrk),&(TotalCharge[itrk]),Form("TotalCharge_track%d/F",itrk));
+    wtree              -> Branch   (Form("MeanHighPE_track%d",itrk),&(MeanHighPE[itrk]),Form("MeanHighPE_track%d/F",itrk));
+    wtree              -> Branch   (Form("HighestPE_track%d",itrk),&(HighestPE[itrk]),Form("HighestPE_track%d/F",itrk));
+    wtree              -> Branch   (Form("ProportionHighPE_track%d",itrk),&(ProportionHighPE[itrk]),Form("ProportionHighPE_track%d/F",itrk));
+    wtree              -> Branch   (Form("Momentum_track%d",itrk),&(Momentum[itrk]),Form("Momentum_track%d/F",itrk));
+    for(int ihit=0; ihit<LimitHits;ihit++){
+      wtree              -> Branch   (Form("EnergyDeposition_track%d_hit%d",itrk,ihit),&(EnergyDeposition[itrk][ihit]),Form("EnergyDeposition_track%d_hit%d/F",itrk,ihit));
+      wtree              -> Branch   (Form("EnergyDepositionSpline_track%d_hit%d",itrk,ihit),&(EnergyDepositionSpline[itrk][ihit]),Form("EnergyDepositionSpline_track%d_hit%d/F",itrk,ihit));
+      wtree              -> Branch   (Form("TransverseWidth_track%d_hit%d",itrk,ihit),&(TransverseWidth[itrk][ihit]),Form("TransverseWidth_track%d_hit%d/F",itrk,ihit));
+      wtree              -> Branch   (Form("TransverseWidthNonIsolated_track%d_hit%d",itrk,ihit),&(TransverseWidthNonIsolated[itrk][ihit]),Form("TransverseWidthNonIsolated_track%d_hit%d/F",itrk,ihit));
+    }
+  }
+
+#ifdef MVA
+  //One entry per track. When loop over track, should reset the track-depedent variables only, not the 
+  
+  TTree*              wtreeMVA    = new TTree("wtreeMVA","wtreeMVA");
+  wtreeMVA->SetDirectory(wfile);
+  wtreeMVA              -> Branch   ("InteractionType",&Num_Int,"Num_Int/I");
+  wtreeMVA              -> Branch   ("nIngBasRec",&NIngBasRec,"nIngBasRec/I");
+  wtreeMVA              -> Branch   ("FSIInt",&FSIInt,"FSIInt/I");
+  wtreeMVA              -> Branch   ("weight",&weight,"weight/F");
+  wtreeMVA              -> Branch   (Form("ReWeight[%d]",NDials),ReWeight,Form("ReWeight[%d]/F",NDials));
+  wtreeMVA              -> Branch   ("IsFV",&IsFV,"IsFV/O");
+  wtreeMVA              -> Branch   ("IsSand",&IsSand,"IsSand/O");
+  wtreeMVA              -> Branch   ("IsAnti",&IsAnti,"IsAnti/O");
+  wtreeMVA              -> Branch   ("IsNuE",&IsNuE,"IsNuE/O");
+  wtreeMVA              -> Branch   ("IsBkgH",&IsBkgH,"IsBkgH/O");
+  wtreeMVA              -> Branch   ("IsBkgV",&IsBkgV,"IsBkgV/O"); 
+  wtreeMVA              -> Branch   ("POT",&POT,"POT/F");
+  wtreeMVA              -> Branch   ("GoodSpill",&GoodSpill,"GoodSpill/I");
+  wtreeMVA              -> Branch   ("Spill",&Spill,"Spill/I");
+  wtreeMVA              -> Branch   ("Enu",&Enu,"Enu/F");
+  wtreeMVA              -> Branch   ("TrueAngleMuon",&TrueAngleMuon,"TrueAngleMuon/F");
+  wtreeMVA              -> Branch   ("TrueMomentumMuon",&TrueMomentumMuon,"TrueMomentumMuon/F");
+  wtreeMVA              -> Branch   ("NewEvent",&NewEvent,"NewEvent/O");
+  wtreeMVA              -> Branch   ("nTracks",&nTracks,"nTracks/I");
+  wtreeMVA              -> Branch   ("IsDetected",&VIsDetected,"IsDetected/O");
+  wtreeMVA              -> Branch   ("SelectionFV",&VSelectionFV,"SelectionFV/O");
+  wtreeMVA              -> Branch   ("SelectionOV",&VSelectionOV,"SelectionOV/O");
+  wtreeMVA              -> Branch   ("OpeningAngle",&(OpeningAngle),"OpeningAngle/F");
+  wtreeMVA              -> Branch   ("CoplanarityAngle",&(CoplanarityAngle),"CoplanarityAngle/F");
+
+  wtreeMVA              -> Branch   (Form("TrackWidth"),&(TrackWidthMVA),Form("TrackWidth/F"));
+  wtreeMVA              -> Branch   (Form("TrackAngle"),&(TrackAngleMVA),Form("TrackAngle/F"));
+  wtreeMVA              -> Branch   (Form("TypeOfTrack"),&(TypeOfTrackMVA),Form("TypeOfTrack/I"));
+  wtreeMVA              -> Branch   (Form("IsReconstructed"),&(IsReconstructedMVA),Form("IsReconstructed/O"));
+  wtreeMVA              -> Branch   (Form("Sample"),&(SampleMVA),Form("Sample/I"));
+  wtreeMVA              -> Branch   (Form("CLMuon"),&(CLMuonMVA),Form("CLMuon/F"));
+  wtreeMVA              -> Branch   (Form("CLMuon_Plan"),&(CLMuon_PlanMVA),Form("CLMuon_Plan/F"));
+  wtreeMVA              -> Branch   (Form("CLMuon_KS"),&(CLMuon_KSMVA),Form("CLMuon_KS/F"));
+  wtreeMVA              -> Branch   (Form("CLMuon_Likelihood"),&(CLMuon_LikelihoodMVA),Form("CLMuon_Likelihood/F"));
+  wtreeMVA              -> Branch   (Form("IronDistance"),&(IDMVA),Form("IronDistance/F"));
+  wtreeMVA              -> Branch   (Form("PlasticDistance"),&(PDMVA),Form("PlasticDistance/F"));
+  wtreeMVA              -> Branch   (Form("GeometricTrack"),&(GTMVA),Form("GeometricTrack/O"));
+  wtreeMVA              -> Branch   (Form("TotalCharge"),&(TotalChargeMVA),Form("TotalCharge/F"));
+  wtreeMVA              -> Branch   (Form("Momentum"),&(MomentumMVA),Form("Momentum/F"));
+  for(int ihit=0; ihit<LimitHits;ihit++){
+    wtreeMVA              -> Branch   (Form("EnergyDeposition_hit%d",ihit),&(EnergyDepositionMVA[ihit]),Form("EnergyDeposition_hit%d/F",ihit));
+    wtreeMVA              -> Branch   (Form("EnergyDepositionSpline_hit%d",ihit),&(EnergyDepositionSplineMVA[ihit]),Form("EnergyDepositionSpline_hit%d/F",ihit));
+    wtreeMVA              -> Branch   (Form("TransverseWidth_hit%d",ihit),&(TransverseWidthMVA[ihit]),Form("TransverseWidth_hit%d/F",ihit));
+    wtreeMVA              -> Branch   (Form("TransverseWidthNonIsolated_hit%d",ihit),&(TransverseWidthNonIsolatedMVA[ihit]),Form("TransverseWidthNonIsolated_hit%d/F",ihit));
+  }
+
+#endif
   ////////////////////////XSEC error case//////////////////////
   TFile * _file1;
   TTree * weightstree;
@@ -519,61 +703,11 @@ int main(int argc, char **argv)
     ////////////////////////////////////////////////START THE LOOP//////////////////////////////////////////////////
 
     for(int ievt=0;ievt<nevt;ievt++){//loop over INGRID event (ingridsimvertex if MC, integration cycle of 580ns if data)
-    if((ievt%100)==0) cout<<"Processing "<<ievt<<endl;
+      if((ievt%100)==0) cout<<"Processing "<<ievt<<endl;
       evt->Clear("C");
+      ResetInputVariables();
       tree->GetEntry(ievt);//charge l'evt grace au link avec la branche
-    
-      for(int ibas=0;ibas<LimitRecs;ibas++){
-	for(int itrk=0;itrk<LimitTracks;itrk++){
-	  TrackAngle[ibas][itrk]=-1;
-	  TrackWidth[ibas][itrk]=-1;
-	  TypeOfTrack[ibas][itrk]=-1;
-	  TotalCharge[ibas][itrk]=-1.;
-	  CLMuon[ibas][itrk]=-1;
-	  CLMuon_Plan[ibas][itrk]=-1;
-	  CLMuon_KS[ibas][itrk]=-1;
-	  CLMuon_Likelihood[ibas][itrk]=-1;
-	  ProportionHighPE[ibas][itrk]=-1;
-	  MeanHighPE[ibas][itrk]=-1;
-	  HighestPE[ibas][itrk]=-1;
-
-	  NHits_PMIng[ibas][itrk]=0;
-	  NHits_PMSci[ibas][itrk]=0;
-	  NHits_Ing[ibas][itrk]=0;
-	  LastChannelINGRIDX[ibas][itrk]=-1;
-	  LastChannelINGRIDY[ibas][itrk]=-1;
-	  Momentum[ibas][itrk]=-1;
-	  ID[ibas][itrk]=-1;
-	  PD[ibas][itrk]=-1;
-	  Sample[ibas][itrk]=-1;
-	  IsReconstructed[ibas][itrk]=false;
-	  GT[ibas][itrk]=false;
-	  CriteriaHalfWayX[ibas][itrk]=-1;
-	  CriteriaHalfWayY[ibas][itrk]=-1;
-	  CriteriaAngleX[ibas][itrk]=-1;
-	  CriteriaAngleY[ibas][itrk]=-1;
-	}
-	VIsDetected[ibas]=false;
-	VSelectionFV[ibas]=false;
-	VSelectionOV[ibas]=false;
-	VnTracks[ibas]=-1;
-	OpeningAngle[ibas]=-1.;
-	CoplanarityAngle[ibas]=-1.;
-      }
-    
-      NIngBasRec=-1;
-      TrueAngleMuon=-1;
-      TrueMomentumMuon=-1;
-      IsFV=false;
-      IsDetected=false;
-      FSIInt=-1;
-      Num_Int=-1;
-      nTracks=0;
-      weight=0;
-      Enu=0;
-      GoodSpill=0;
-      Spill=0;
-
+      NewEvent=true;
       
       if(XSEC){
 	if(reweight->GetSize()!=NDials && ievt==0) cout<<"Problem: change NDials="<<NDials<<" into "<<reweight->GetSize()<<" in the CC0pi code"<<endl;
@@ -654,18 +788,24 @@ int main(int argc, char **argv)
 
 
 
-
+    
       //////////////////////////////////START THE LOOP ON THE RECONSTRUCTION (RECONSTRUCTED VERTEXES////////////////
       //cout<<NIngBasRec<<endl;
       NIngBasRec= evt->NPMAnas();
+      
+      if(NIngBasRec==0){
+	wtree->Fill();
+	ResetInputVariables();
+      }
+      
       for(int irec=0;irec<NIngBasRec;irec++){//loop on reconstruction: considered as same event => same time cluster, vertex reconstructed...
 	recon = (PMAnaSummary*) evt->GetPMAna(irec);	
 	nTracks=recon->Ntrack;
-
+	if(nTracks>LimitTracks) nTracks=LimitTracks;
 
 	///////////////////////////////SELECTIONS ARE DEFINED AND CHECKED///////////////////////////
 
-	Rec->Reconstruction::GetSelectionPM(&VSelectionFV[irec],&VSelectionOV[irec],recon,MC);
+	Rec->Reconstruction::GetSelectionPM(&VSelectionFV,&VSelectionOV,recon,MC);
 	/////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -710,8 +850,7 @@ int main(int argc, char **argv)
 	  VRecTrack.clear();	
 
 	  IsDetected=true;
-	  VIsDetected[irec]=true;
-	  VnTracks[irec]=nTracks;
+	  VIsDetected=true;
 	////////////////////////////////////////////////////////////////////////////////////////////	
 
 
@@ -754,10 +893,10 @@ int main(int argc, char **argv)
 
 	    /****************************************Determine the Criteria for matching tracks*************************************/
 	    vector <double> CriteriaPMINGRID=Rec->Reconstruction::GetMatchingPMINGRID(Vec);
-	    CriteriaAngleX[irec][itrk]=TMath::Abs(CriteriaPMINGRID[4]-CriteriaPMINGRID[0]);
-	    CriteriaAngleY[irec][itrk]=TMath::Abs(CriteriaPMINGRID[5]-CriteriaPMINGRID[1]);
-	    CriteriaHalfWayX[irec][itrk]=TMath::Abs(CriteriaPMINGRID[6]-CriteriaPMINGRID[2]);
-	    CriteriaHalfWayY[irec][itrk]=TMath::Abs(CriteriaPMINGRID[7]-CriteriaPMINGRID[3]);
+	    CriteriaAngleX[itrk]=TMath::Abs(CriteriaPMINGRID[4]-CriteriaPMINGRID[0]);
+	    CriteriaAngleY[itrk]=TMath::Abs(CriteriaPMINGRID[5]-CriteriaPMINGRID[1]);
+	    CriteriaHalfWayX[itrk]=TMath::Abs(CriteriaPMINGRID[6]-CriteriaPMINGRID[2]);
+	    CriteriaHalfWayY[itrk]=TMath::Abs(CriteriaPMINGRID[7]-CriteriaPMINGRID[3]);
 
 
 
@@ -804,13 +943,13 @@ int main(int argc, char **argv)
 	    
 	    //4. Determine the distance crossed in Plastic and Iron by the track
 	    vector <double> Dist;//
-	    Dist=Rec->Reconstruction::TrackPenetrationPM((recon->startxpln)[itrk],(recon->startxch)[itrk], DegRad((recon->thetax)[itrk]), (recon->startypln)[itrk],(recon->startych)[itrk], DegRad((recon->thetay)[itrk]),(recon->endxpln)[itrk],(recon->endxch)[itrk],(recon->endypln)[itrk],(recon->endych)[itrk],(recon->ing_startmod)[itrk],(recon->ing_startpln)[itrk], (recon->ing_endpln)[itrk],dx,(recon->pm_stop)[itrk]);
+	    Dist=Rec->Reconstruction::TrackPenetrationPM((recon->startxpln)[itrk],(recon->startxch)[itrk], DegRad((recon->thetax)[itrk]), (recon->startypln)[itrk],(recon->startych)[itrk], DegRad((recon->thetay)[itrk]),(recon->endxpln)[itrk],(recon->endxch)[itrk],(recon->endypln)[itrk],(recon->endych)[itrk],(recon->ing_startmod)[itrk],(recon->ing_startpln)[itrk], (recon->ing_endpln)[itrk], (recon->angle)[itrk], TrackSample, &Vec);
 	    
-	    if((recon->ing_endpln)[itrk]>=9) Dist[1]=58.5/TMath::Cos(DegRad((recon->angle)[itrk]));
-	    else Dist[1]=6.5*((recon->ing_endpln)[itrk]-(recon->ing_startpln)[itrk])/TMath::Cos(DegRad((recon->angle)[itrk]));
-	    if((recon->ing_endpln)[itrk]<2 && recon->ing_trk[itrk]) cout<<"ONLY 2 PLANES"<<endl;
+	    //if((recon->ing_endpln)[itrk]>=9) Dist[1]=58.5/TMath::Cos(DegRad((recon->angle)[itrk]));
+	    //else Dist[1]=6.5*((recon->ing_endpln)[itrk]-(recon->ing_startpln)[itrk])/TMath::Cos(DegRad((recon->angle)[itrk]));
+	    //if((recon->ing_endpln)[itrk]<2 && recon->ing_trk[itrk]) cout<<"ONLY 2 PLANES"<<endl;
 	    if(dx!=dx || dx==0) {cout<<"Problem in dx evaluation"<<endl;continue;}   
-	    if((recon->ing_startmod)[itrk]!=(recon->ing_endmod)[itrk]){cout<<"Stopped because Ingrid module is changing"<<endl;continue;}
+	    //if((recon->ing_startmod)[itrk]!=(recon->ing_endmod)[itrk]){cout<<"Stopped because Ingrid module is changing"<<endl;continue;}
 
 	    if(Disp) cout<<"Track Number="<<itrk<<endl;
 	    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -825,6 +964,7 @@ int main(int argc, char **argv)
 	    int Particle =-1;
 	    TrueParticleNRJ=-1;
 	    if(MC){
+	      //cout<<"Number of Sim particle in this event="<<evt->NIngridSimParticles()<<", type of the first ="<<evt->GetSimParticle(0)->pdg<<endl;;
 	      int SimPartNumber=Rec->Reconstruction::GetTrackParticle(evt, recon, itrk, TrkLength);
 	      SimPart=(IngridSimParticleSummary*) evt->GetSimParticle(SimPartNumber);
 	      Particle =SimPart->pdg;
@@ -842,7 +982,9 @@ int main(int argc, char **argv)
 	    double PEPlane[3][NPlnPM][2];
 	    double PEPlaneTot[3][NPlnPM][2];
 	    int Plane[3][NPlnPM][2];
-	    double PECorrected; 
+	    int PlaneNonIsolated[3][NPlnPM][2];
+	    double PECorrected;
+	    double DistanceBarycenter[3][NPlnPM][2];
 
 	    for(int ipln=0;ipln<NPlnPM;ipln++){
 	      for(int i=0;i<3;i++){
@@ -850,11 +992,13 @@ int main(int argc, char **argv)
 		  PEPlane[i][ipln][iview]=0;
 		  PEPlaneTot[i][ipln][iview]=0;
 		  Plane[i][ipln][iview]=0;
+		  PlaneNonIsolated[i][ipln][iview]=0;
+		  DistanceBarycenter[i][ipln][iview]=0;
 		}
 	      }
 	    }
 	    
-	    /*
+	    /*    
 	    for(int i=0;i<Vec.size();i++){
 	       if(Vec[i].used>1) continue;
 
@@ -879,7 +1023,7 @@ int main(int argc, char **argv)
 		  }
 		}
 		
-		else if(Plane[2][ipln][iview]!=0){
+		if(Plane[2][ipln][iview]!=0){
 		  PEPlaneTot[2][ipln][iview]=f_Ing_Plan->GetRandom();
 		  //cout<<"INGRID, plane="<<ipln<<", view="<<iview<<", PE="<<PEPlaneTot[2][ipln][iview]<<endl;
 		  hTestImmediate_Ing->Fill(PEPlaneTot[2][ipln][iview],weight);
@@ -904,7 +1048,7 @@ int main(int argc, char **argv)
 		Vec[i].pecorr=PECorrected*dx;
 	      }
 	    }
-	*/
+	    */
 
 	    //Idea is to remove first hits: check the first plane, whether x or y. Remove the first fourth planes
 	    //cout<<"Number of hits in the reco="<<VecTrk.size()<<", in the track="<<Vec.size()<<endl;
@@ -967,10 +1111,12 @@ int main(int argc, char **argv)
 #ifdef DEBUG2
 	    cout<<"Number of hits="<<Vec.size()<<endl;
 #endif
+	    sort(Vec.begin(),Vec.end());
+	    double ControlTrkLength = TMath::Sqrt(pow(Vec.back().x-Vec.front().x,2)+pow(Vec.back().y-Vec.front().y,2)+pow(Vec.back().z-Vec.front().z,2));
+
 	    for(int i=0;i<Vec.size();i++){
 	      
-	      if(Vec[i].used>1) continue;
-	      if(NCLHits<2){
+	      if(NCLHits<=2){
 		if(Vec[i].mod==16){
 		  if(Vec[i].view==0){ if(Vec[i].pln==(recon->startxpln)[itrk]) continue;}
 		  else{ if(Vec[i].pln==(recon->startypln)[itrk]) continue;}
@@ -982,28 +1128,46 @@ int main(int argc, char **argv)
 		  else{ if((Vec[i].pln==(recon->startypln)[itrk]) || (Vec[i].pln==((recon->startypln)[itrk]+1)) ) continue;}
 		}
 	      }
-#ifdef DEBUG2	      
-	      cout<<"Module="<<Vec[i].mod<<", plane="<<Vec[i].pln<<", channel="<<Vec[i].ch<<", view="<<Vec[i].view<<", pe="<<Vec[i].pe<<", corr="<<Vec[i].pecorr<<endl;
+	      
+	      double Distance = TMath::Sqrt(pow(Vec[i].x-Vec.front().x,2)+pow(Vec[i].y-Vec.front().y,2)+pow(Vec[i].z-Vec.front().z,2));
+	      
+#ifdef DEBUG2
+	      //if(DistanceBarycenter/Dist[2] > 1.) cout<<endl<<endl<<endl<<endl<<"CAREFUL: Track is too long, Track Length="<<Dist[2]<<endl<<endl<<endl;
+	      //cout<<"Module="<<Vec[i].mod<<", plane="<<Vec[i].pln<<", channel="<<Vec[i].ch<<", view="<<Vec[i].view<<", pe="<<Vec[i].pe<<", corr="<<Vec[i].pecorr<<", Distance="<<DistanceBarycenter/Dist[2]<<endl;
 #endif
 	      
+	      //All hits
+	      if(Vec[i].mod==16 && Reco->Reconstruction::IsINGRID(Vec[i].mod,Vec[i].pln,Vec[i].ch)) PlaneNonIsolated[1][Vec[i].pln][Vec[i].view]++;
+	      else if(Vec[i].mod==16 && !(Reco->Reconstruction::IsINGRID(Vec[i].mod,Vec[i].pln,Vec[i].ch))) PlaneNonIsolated[0][Vec[i].pln][Vec[i].view]++;
+	      else PlaneNonIsolated[2][Vec[i].pln][Vec[i].view]++;
+
+
+	      
+	      //Isolated hits
+	      if(NCLHits>2 && Vec[i].used>1) continue;
+
 	      if(Vec[i].mod==16 && Reco->Reconstruction::IsINGRID(Vec[i].mod,Vec[i].pln,Vec[i].ch)){
 		PECorrected=Vec[i].pecorr;
 		if(ErrorType==4) PECorrected=PECorrected+PECorrected*SystematicsPECorrected_PMIng;
 		PEPlane[1][Vec[i].pln][Vec[i].view]+=PECorrected;
 		Plane[1][Vec[i].pln][Vec[i].view]++;
+		DistanceBarycenter[1][Vec[i].pln][Vec[i].view]+=Vec[i].dist_plastic/IronCarbonRatio+Vec[i].dist_iron;
 	      }
 	      else if(Vec[i].mod==16 && !(Reco->Reconstruction::IsINGRID(Vec[i].mod,Vec[i].pln,Vec[i].ch))){
 		PECorrected=Vec[i].pecorr;
 		if(ErrorType==4) PECorrected=PECorrected+PECorrected*SystematicsPECorrected_PMSci;
 		PEPlane[0][Vec[i].pln][Vec[i].view]+=PECorrected;
 		Plane[0][Vec[i].pln][Vec[i].view]++;
+		DistanceBarycenter[0][Vec[i].pln][Vec[i].view]+=Vec[i].dist_plastic/IronCarbonRatio+Vec[i].dist_iron;
 	      }
 	      else{
 		PECorrected=Vec[i].pecorr;
 		if(ErrorType==4) PECorrected=PECorrected+PECorrected*SystematicsPECorrected_PMIng;
 		PEPlane[2][Vec[i].pln][Vec[i].view]+=PECorrected;
 		Plane[2][Vec[i].pln][Vec[i].view]++;
+		DistanceBarycenter[2][Vec[i].pln][Vec[i].view]+=Vec[i].dist_plastic/IronCarbonRatio+Vec[i].dist_iron;
 	      }
+
 	    }//End of loop over hits
 	    //cout<<"Now compare"<<endl;
 	    
@@ -1016,7 +1180,34 @@ int main(int argc, char **argv)
 	    for(int ipln=0;ipln<NPlnPM;ipln++){
 	      for(int iview=0;iview<2;iview++){
 		//if(NHits>2) break;
-		if(PEPlane[0][ipln][iview]!=0 || PEPlane[1][ipln][iview]!=0){//case PM & active plane
+		//cout<<"Pln="<<ipln<<", view="<<iview<<", PM is active="<<(PEPlane[0][ipln][iview]!=0 || PEPlane[1][ipln][iview]!=0)<<", INGRID active="<<(PEPlane[2][ipln][iview]!=0)<<endl;
+		
+		//All hits
+		if(PlaneNonIsolated[0][ipln][iview]!=0 || PlaneNonIsolated[1][ipln][iview]!=0){//case PM & active plane
+		  double Barycenter = (DistanceBarycenter[0][ipln][iview]+DistanceBarycenter[1][ipln][iview]) / (PlaneNonIsolated[0][ipln][iview]+PlaneNonIsolated[1][ipln][iview]);
+		  double RelativeBarycenter = Barycenter / Dist[2];
+		  double bindistancesize = (1. / (LimitHits-1));//number of separation between intervals = number of intervals -1, as usual...
+		  int bindistance = ((int) (RelativeBarycenter / bindistancesize));
+		  if(bindistance >= LimitHits) bindistance=LimitHits-1;
+		  NViewsPerPlaneEnergyDepositionNonIsolated[itrk][bindistance]++;
+		  TransverseWidthNonIsolated[itrk][bindistance]+=PlaneNonIsolated[0][ipln][iview]*2.5+PlaneNonIsolated[1][ipln][iview]*5.;
+		}
+		if(PlaneNonIsolated[2][ipln][iview]!=0){
+		  double Barycenter = (DistanceBarycenter[2][ipln][iview]) / (PlaneNonIsolated[2][ipln][iview]);
+		  double RelativeBarycenter = Barycenter / Dist[2];
+		  double bindistancesize = (1. / (LimitHits-1));//number of separation between intervals = number of intervals -1, as usual...
+		  int bindistance = ((int) (RelativeBarycenter / bindistancesize));
+		  if(bindistance >= LimitHits) bindistance=LimitHits-1;
+		  NViewsPerPlaneEnergyDepositionNonIsolated[itrk][bindistance]++;
+		  TransverseWidthNonIsolated[itrk][bindistance]+=PlaneNonIsolated[2][ipln][iview]*5.;
+		}
+	      
+
+
+
+	      
+		//Isolated
+		if(Plane[0][ipln][iview]!=0 || Plane[1][ipln][iview]!=0){//case PM & active plane
 		  if(Plane[0][ipln][iview]>=Plane[1][ipln][iview]){
 		    //cout<<"PM, plane="<<ipln<<", view="<<iview<<", PE="<<PEPlane[0][ipln][iview]+PEPlane[1][ipln][iview]<<endl;
 		    cl = sCL_PMSci_Plan->Eval(PEPlane[0][ipln][iview]+PEPlane[1][ipln][iview]);
@@ -1028,6 +1219,7 @@ int main(int argc, char **argv)
 		    cllikelihood_notmuon=CL_PMSci_NotMuon->Eval(PEPlane[0][ipln][iview]+PEPlane[1][ipln][iview]);
 		    CLLikelihood_Muon *= cllikelihood_muon;
 		    CLLikelihood_NotMuon *= cllikelihood_notmuon;
+		
 #ifdef DEBUG_PID
 		    cout<<"PM, plane="<<ipln<<", view="<<iview<<", PE="<<PEPlane[0][ipln][iview]+PEPlane[1][ipln][iview]<<", cl="<<cl<<", cllikelihoodmuon="<<cllikelihood_muon<<", not muon="<<cllikelihood_notmuon<<", number of hits SciBar="<<Plane[0][ipln][iview]<<", number of hits INGRID="<<Plane[1][ipln][iview]<<endl;
 #endif
@@ -1049,6 +1241,24 @@ int main(int argc, char **argv)
 		    //CLLikelihood_Muon *= CL_PMIng_Muon->Eval(PEPlane[0][ipln][iview]+PEPlane[1][ipln][iview]);
 		    //CLLikelihood_NotMuon *= CL_PMIng_NotMuon->Eval(PEPlane[0][ipln][iview]+PEPlane[1][ipln][iview]);
 		  }
+		  double Barycenter = (DistanceBarycenter[0][ipln][iview]+DistanceBarycenter[1][ipln][iview]) / (Plane[0][ipln][iview]+Plane[1][ipln][iview]);
+		  double RelativeBarycenter = Barycenter / Dist[2];
+		  double bindistancesize = (1. / (LimitHits-1));//number of separation between intervals = number of intervals -1, as usual...
+		  int bindistance = ((int) (RelativeBarycenter / bindistancesize));
+		  if(bindistance >= LimitHits) bindistance=LimitHits-1;
+
+#ifdef DEBUG_PID_BDT
+		  cout<<"PM, pln="<<ipln<<", view="<<iview<<", Distance="<<RelativeBarycenter<<", bindistance="<<bindistance<<", Energy deposition="<<PEPlane[0][ipln][iview]+PEPlane[1][ipln][iview]<<endl;
+#endif
+		  EnergyDeposition[itrk][bindistance]+=(PEPlane[0][ipln][iview]+PEPlane[1][ipln][iview]);
+		  NViewsPerPlaneEnergyDeposition[itrk][bindistance]++;
+		  TransverseWidth[itrk][bindistance]+=Plane[0][ipln][iview]*2.5+Plane[1][ipln][iview]*5.;
+		    
+		  position[itrk].push_back(RelativeBarycenter);
+		  eposition[itrk].push_back(positionerror);
+		  energydeposition[itrk].push_back(PEPlane[0][ipln][iview]+PEPlane[1][ipln][iview]);
+		  eenergydeposition[itrk].push_back(energyerror);
+		  
 		  NHits++;
 		  if(cl<0.1){
 		    HighPECount++;
@@ -1056,8 +1266,7 @@ int main(int argc, char **argv)
 		    if(PEPlane[0][ipln][iview]+PEPlane[1][ipln][iview]>MaxPE) MaxPE=PEPlane[0][ipln][iview]+PEPlane[1][ipln][iview];
 		  }
 		}
-		
-		else if(Plane[2][ipln][iview]!=0){
+		if(Plane[2][ipln][iview]!=0){
 		  //cout<<"INGRID, plane="<<ipln<<", view="<<iview<<", PE="<<PEPlane[2][ipln][iview]<<endl;
 		
 		  hTest_Ing->Fill(PEPlane[2][ipln][iview],weight);
@@ -1076,6 +1285,23 @@ int main(int argc, char **argv)
 		  //CLLikelihood_Muon *= CL_Ing_Muon->Eval(PEPlane[2][ipln][iview]);
 		  //CLLikelihood_NotMuon *= CL_Ing_NotMuon->Eval(PEPlane[2][ipln][iview]);
 		  NHits++;
+		  double Barycenter = (DistanceBarycenter[2][ipln][iview]) / (Plane[2][ipln][iview]);
+		  double RelativeBarycenter = Barycenter / Dist[2];
+		  double bindistancesize = (1. / (LimitHits-1));//number of separation between intervals = number of intervals -1, as usual...
+		  int bindistance = ((int) (RelativeBarycenter / bindistancesize));
+		  if(bindistance >= LimitHits) bindistance=LimitHits-1;
+
+#ifdef DEBUG_PID_BDT
+		  cout<<"INGRID, pln="<<ipln<<", view="<<iview<<", Distance="<<RelativeBarycenter<<", bindistance="<<bindistance<<", Energy deposition="<<PEPlane[2][ipln][iview]<<endl;
+#endif
+		  EnergyDeposition[itrk][bindistance]+=PEPlane[2][ipln][iview];
+		  NViewsPerPlaneEnergyDeposition[itrk][bindistance]++;
+		  TransverseWidth[itrk][bindistance]+=Plane[2][ipln][iview]*5;
+		  position[itrk].push_back(RelativeBarycenter);
+		  eposition[itrk].push_back(positionerror);
+		  energydeposition[itrk].push_back(PEPlane[2][ipln][iview]);
+		  eenergydeposition[itrk].push_back(energyerror);
+		  
 		  if(cl<0.1){
 		    HighPECount++;
 		    AverageHighPE+=PEPlane[2][ipln][iview];
@@ -1101,14 +1327,14 @@ int main(int argc, char **argv)
 		//", Sum part="<<Sum<<", Product part="<<CLPlan<<", number of hits="<<NHits<<", number of entries in Vec="<<Vec.size()<<", number of hits registered="<<recon->NhitTs(itrk)<<endl;
 	    }
 #endif
-	    ProportionHighPE[irec][itrk]=((double) HighPECount/NHits);
-	    MeanHighPE[irec][itrk]=AverageHighPE;
-	    if(HighPECount!=0) MeanHighPE[irec][itrk]/=HighPECount;
-	    HighestPE[irec][itrk]=MaxPE;
+	    ProportionHighPE[itrk]=((double) HighPECount/NHits);
+	    MeanHighPE[itrk]=AverageHighPE;
+	    if(HighPECount!=0) MeanHighPE[itrk]/=HighPECount;
+	    HighestPE[itrk]=MaxPE;
 	    //cout<<setprecision(3)<<"PMuon="<<PMuon<<", Like to be muon="<<CLLikelihood_Muon<<", not muon="<<CLLikelihood_NotMuon<<endl;
 	    
 	    CL_Likelihood=CLLikelihood_Muon*PMuon/(CLLikelihood_Muon*PMuon+CLLikelihood_NotMuon*P_NotMuon);
-	    //cout<<"Proportions of Max PE="<<ProportionHighPE[irec][itrk]<<", Highest PE="<<HighestPE[irec][itrk]<<", Mean High PE="<<MeanHighPE[irec][itrk]<<endl;
+	    //cout<<"Proportions of Max PE="<<ProportionHighPE[itrk]<<", Highest PE="<<HighestPE[itrk]<<", Mean High PE="<<MeanHighPE[itrk]<<endl;
 	    //cout<<"MuCL plan="<<MuCL<<", pdg="<<Particle<<endl<<", Likelihood Mucl="<<CL_Likelihood<<endl;
 
 	    
@@ -1132,70 +1358,257 @@ int main(int argc, char **argv)
 
 	    
 	    vector <double> LastChan;
-	LastChan=Rec->Reconstruction::GetLastINGRIDChannel(Vec,TrackSample);
-	LastChannelINGRIDY[irec][itrk]=LastChan[0];
-	LastChannelINGRIDX[irec][itrk]=LastChan[1];
-	TrackAngle[irec][itrk]=(recon->angle)[itrk];
-	TrackWidth[irec][itrk]=Rec->Reconstruction::GetINGRIDTrackWidth(Vec);
-	GT[irec][itrk]=Geom;
-	IsReconstructed[irec][itrk]=true;
-	TypeOfTrack[irec][itrk]=Particle;
-	CLMuon[irec][itrk]=CL;
-	CLMuon_Plan[irec][itrk]=CL_Plan;
-	CLMuon_Likelihood[irec][itrk]=CL_Likelihood;
-	if(CLMuon_Plan[irec][itrk]<0.05){
-	  LowCL+=weight;
-	  nLowCL++;
-	}
-	else if(CLMuon_Plan[irec][itrk]>0.95){
-	  HighCL+=weight;
-	  nHighCL++;
-	}
-	CLMuon_KS[irec][itrk]=(recon->mucl)[itrk];
-	Momentum[irec][itrk]=TrueParticleNRJ;
-	PD[irec][itrk]=Dist[0];
-	if(TrackSample>=2) ID[irec][itrk]=Dist[1];
-	else ID[irec][itrk]=0;
-	Sample[irec][itrk]=TrackSample;
-	TotalCharge[irec][itrk]=Rec->Reconstruction::GetTrackEnergyPerDistance(Vec,dx);
-	//cout<<"Energy of the track="<<Rec->Reconstruction::GetTrackEnergy(Vec)<<endl;
-
-	
-	//5. Determine the unit vector, opening angle and coplanarity
-	if(VnTracks[irec]==2){
-	  vector <double> Kinematic;
-	  Kinematic.clear();
-	  for(int itrk2=0;itrk2<VnTracks[irec];itrk2++){
-	    if(itrk2==itrk) continue;
-	    else{
-	      Kinematic=Rec->Reconstruction::GetKinematic(DegRad((recon->angle)[itrk]), DegRad((recon->thetax)[itrk]), DegRad((recon->thetay)[itrk]), DegRad((recon->angle)[itrk2]), DegRad((recon->thetax)[itrk2]), DegRad((recon->thetay)[itrk2]));
-	      
+	    LastChan=Rec->Reconstruction::GetLastINGRIDChannel(Vec,TrackSample);
+	    LastChannelINGRIDY[itrk]=LastChan[0];
+	    LastChannelINGRIDX[itrk]=LastChan[1];
+	    TrackAngle[itrk]=(recon->angle)[itrk];
+	    TrackWidth[itrk]=Rec->Reconstruction::GetINGRIDTrackWidth(Vec);
+	    GT[itrk]=Geom;
+	    IsReconstructed[itrk]=true;
+	    TypeOfTrack[itrk]=Particle;
+	    CLMuon[itrk]=CL;
+	    //if(CL_Plan!=-1) CLMuon_Plan[itrk]=TMath::Log(CL_Plan);
+	    CLMuon_Plan[itrk]=CL_Plan;
+	    CLMuon_Likelihood[itrk]=CL_Likelihood;
+	    if(CL_Plan<0.05){
+	      LowCL+=weight;
+	      nLowCL++;
 	    }
-	  }
-	  OpeningAngle[irec]=RadDeg(Kinematic[0]);
-	  CoplanarityAngle[irec]=RadDeg(Kinematic[1]);
-	  //cout<<"Opening="<<OpeningAngle[irec]<<", coplanarity="<<CoplanarityAngle[irec]<<endl;
-	}
-	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	    else if(CL_Plan>0.95){
+	      HighCL+=weight;
+	      nHighCL++;
+	    }
+	    CLMuon_KS[itrk]=(recon->mucl)[itrk];
+	    Momentum[itrk]=TrueParticleNRJ;
+	    PD[itrk]=Dist[0];
+	    if(TrackSample>=2) ID[itrk]=Dist[1];
+	    else ID[itrk]=0;
+	    Sample[itrk]=TrackSample;
+	    TotalCharge[itrk]=Rec->Reconstruction::GetTrackEnergyPerDistance(Vec,dx);
+	    //cout<<"Energy of the track="<<Rec->Reconstruction::GetTrackEnergy(Vec)<<endl;
 
-	
-#ifdef DEBUG2
-	if(Sample[irec][itrk]>=3){
-	  cout<<"New Track, having momentum="<<Momentum[irec][itrk]<<endl;
-	  cout<<"pm stop="<<(recon->pm_stop)[itrk]<<", has ingrid track="<<(recon->ing_trk)[itrk]<<", is stopped in ingrid="<<(recon->ing_stop)[itrk]<<", ingrid plane starts="<<(recon->ing_startpln)[itrk]<<", ingrid plane stop="<<(recon->ing_endpln)[itrk]<<", "<<endl; 
-	  /*  for(int ihit=0;ihit<Vec.size();ihit++){
-	    cout<<"Hit, module="<<Vec[ihit].mod<<", plane="<<Vec[ihit].pln<<", view="<<Vec[ihit].view<<", channel="<<Vec[ihit].ch<<endl;
-	    }*/
-	}
+
+	    //5. Determine the unit vector, opening angle and coplanarity
+	    if(nTracks==2){
+	      vector <double> Kinematic;
+	      Kinematic.clear();
+	      for(int itrk2=0;itrk2<nTracks;itrk2++){
+		if(itrk2==itrk) continue;
+		else{
+		  Kinematic=Rec->Reconstruction::GetKinematic(DegRad((recon->angle)[itrk]), DegRad((recon->thetax)[itrk]), DegRad((recon->thetay)[itrk]), DegRad((recon->angle)[itrk2]), DegRad((recon->thetax)[itrk2]), DegRad((recon->thetay)[itrk2]));
+		  
+		}
+	      }
+	      OpeningAngle=RadDeg(Kinematic[0]);
+	      CoplanarityAngle=RadDeg(Kinematic[1]);
+	      //cout<<"Opening="<<OpeningAngle<<", coplanarity="<<CoplanarityAngle<<endl;
+	    }
+	    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+#ifdef DEBUG_PID_BDT
+	    //cout<<"Total number of hits="<<recon->NhitTs(itrk)<<", hits of vector="<<Vec.size()<<endl;
+	    //for(int i=0;i<Vec.size();i++){
+	      //cout<<"Module="<<Vec[i].mod<<", plane="<<Vec[i].pln<<", channel="<<Vec[i].ch<<", view="<<Vec[i].view<<", pe="<<Vec[i].pe<<", corr="<<Vec[i].pecorr<</*", Distance="<<DistanceBarycenter/Dist[2]<<*/endl;
+	    //}
+	    cout<<"Hit registered in the graph used to make the spline:"<<endl;
+	    for(int i=0;i<energydeposition[itrk].size();i++){
+	      cout<<"Position="<<position[itrk][i]<<", dE/dx="<<energydeposition[itrk][i]<<endl;
+	    }
+	    
+	    cout<<"Type of particle="<<TypeOfTrack[itrk]<<", sample="<<Sample[itrk]<<", equivalent iron distance="<<ID[itrk]+(PD[itrk]/IronCarbonRatio)<<", distance in CH/Fe="<<PD[itrk]<<"/"<<ID[itrk]<<endl;
+	    
+	    //Energydeposition with length
+	    for(int ihit=0;ihit<LimitHits;ihit++){
+	      if(ihit==0) cout<<setprecision(3)<<"dE/dx = [ ";
+	      if(ihit<LimitHits-1) cout<<EnergyDeposition[itrk][ihit]<<", ";
+	      else cout<<EnergyDeposition[itrk][ihit]<<" ]"<<endl;
+	    }
+
+	    cout<<"Transverse width:"<<endl;
+	    
+	    //Energydeposition with length
+	    for(int ihit=0;ihit<LimitHits;ihit++){
+	      if(ihit==0) cout<<setprecision(3)<<"Transverse width = [ ";
+	      if(ihit<LimitHits-1) cout<<TransverseWidth[itrk][ihit]<<", ";
+	      else cout<<TransverseWidth[itrk][ihit]<<" ]"<<endl;
+	    }
+	    //NViews per plane
+	    for(int ihit=0;ihit<LimitHits;ihit++){
+	      if(ihit==0) cout<<setprecision(3)<<"Number of views = [ ";
+	      if(ihit<LimitHits-1) cout<<NViewsPerPlaneEnergyDeposition[itrk][ihit]<<", ";
+	      else cout<<NViewsPerPlaneEnergyDeposition[itrk][ihit]<<" ]"<<endl;
+	    }
 #endif
-	//cout<<"FSIInt test="<<FSIInt<<", typeoftrack="<<TypeOfTrack[irec][itrk]<<endl;
-	Vec.clear();
-	Vec2.clear();
-	VecAll.clear();
+
+	    //new
+	    gEnergyDeposition[itrk] = new TGraphErrors(energydeposition[itrk].size()+1,&position[itrk][0],&energydeposition[itrk][0],&eposition[itrk][0],&eenergydeposition[itrk][0]);
+	    sEnergyDeposition[itrk] = new TSpline3(Form("sEnergyDeposition[%d]",itrk),gEnergyDeposition[itrk]);
+	    double graphMinPosition = 1.;
+	    double graphMaxPosition = 0.;
+	    for(int i=0;i<position[itrk].size();i++){
+	      if(position[itrk][i]<graphMinPosition) graphMinPosition=position[itrk][i];
+	      if(position[itrk][i]>graphMaxPosition) graphMaxPosition=position[itrk][i];
+	    }
+	    
+	    double RelativePosition=0.;
+	    RangeRelativeDistance=*max_element(position[itrk].begin(), position[itrk].end())-0;
+	      
+	    for(int ihit=0;ihit<LimitHits;ihit++){
+	      //For EnergyDeposition
+	      if(NViewsPerPlaneEnergyDeposition[itrk][ihit]!=0){
+		EnergyDeposition[itrk][ihit]/=NViewsPerPlaneEnergyDeposition[itrk][ihit];
+		TransverseWidth[itrk][ihit]/=NViewsPerPlaneEnergyDeposition[itrk][ihit];
+	      }
+	      if(NViewsPerPlaneEnergyDepositionNonIsolated[itrk][ihit]!=0) TransverseWidthNonIsolated[itrk][ihit]/=NViewsPerPlaneEnergyDepositionNonIsolated[itrk][ihit];
+	    }
+
+	    bool Problem=false;	    
+	    for(int ihit=0;ihit<LimitHits;ihit++){
+	      	    /*
+	      if(EnergyDeposition[itrk][ihit]==0){//Average over the previous and next filled bins
+		double PreviousBinEnergy=EnergyDeposition[itrk][ihit-1];
+		double NextBinEnergy=0;
+		for(int ihit2=ihit+1;ihit2<LimitHits;ihit2++){
+		  if(EnergyDeposition[itrk][ihit2]==0) continue;
+		  else{
+		    NextBinEnergy=EnergyDeposition[itrk][ihit2];
+		    break;
+		  }
+		}
+		if(NextBinEnergy!=0 && PreviousBinEnergy!=0) EnergyDeposition[itrk][ihit]=(NextBinEnergy+PreviousBinEnergy)/2;
+		else if(NextBinEnergy!=0) EnergyDeposition[itrk][ihit]=NextBinEnergy;
+		else if(PreviousBinEnergy!=0) EnergyDeposition[itrk][ihit]=PreviousBinEnergy;
+		else cout<<"Problem in energy-distance bin filling"<<endl;
+	      }
+	    
+	    */
+	      //For EnergyDepositionSpline
+	      //cout<<"Limit of the graph range: ["<<graphMinPosition<<", "<<graphMaxPosition<<"]"<<endl;
+	      if(RelativePosition<=graphMaxPosition && RelativePosition>=graphMinPosition) EnergyDepositionSpline[itrk][ihit]=gEnergyDeposition[itrk]->Eval(RelativePosition);
+	      else if(RelativePosition>graphMaxPosition) EnergyDepositionSpline[itrk][ihit]=EnergyDepositionSpline[itrk][ihit-1];
+	      else{
+		double NextBinEnergy=0;
+		double RelativePosition2=0;
+		for(int ihit2=ihit+1;ihit2<LimitHits;ihit2++){
+		  RelativePosition2=((double) ihit2*(RangeRelativeDistance/(LimitHits-1)));
+		  //cout<<"RelativePosition ="<<RelativePosition2<<endl;
+		  if(RelativePosition2<=graphMaxPosition && RelativePosition2>=graphMinPosition){
+		    EnergyDepositionSpline[itrk][ihit]=gEnergyDeposition[itrk]->Eval(RelativePosition2);
+		    //cout<<"Final energy chosen = "<<EnergyDepositionSpline[itrk][ihit]<<endl;
+		    break;
+		  }
+		  else continue;
+		}
+	      }
+	      if((EnergyDeposition[itrk][ihit]!=EnergyDeposition[itrk][ihit]) || TMath::Abs(EnergyDeposition[itrk][ihit])>1000){
+		cout<<"Problem!"<<endl;
+		Problem=true;
+		//return 0;
+	      }
+	      if((EnergyDepositionSpline[itrk][ihit]!=EnergyDepositionSpline[itrk][ihit]) || TMath::Abs(EnergyDepositionSpline[itrk][ihit])>1000){
+		cout<<"Problem spline!"<<endl;
+		Problem=true;
+		//return 0;
+	      }
+	      RelativePosition += ((double) (RangeRelativeDistance/(LimitHits-1)));
+	    }
+
+
+	    
+#ifdef DEBUG_PID_BDT
+	    Problem=true;
+#endif
+
+	    if(Problem){
+	    cout<<"Range of the relative distance="<<RangeRelativeDistance<<", total distance="<<Dist[2]<<endl;
+	    cout<<"After correction: Type of particle="<<TypeOfTrack[itrk]<<", sample="<<Sample[itrk]<<", equivalent iron distance="<<ID[itrk]+(PD[itrk]/IronCarbonRatio)<<", distance in CH/Fe="<<PD[itrk]<<"/"<<ID[itrk]<<endl;
+		
+	    for(int ihit=0;ihit<LimitHits;ihit++){
+		if(ihit==0) cout<<setprecision(3)<<"dE/dx = [ ";
+		if(ihit<(LimitHits-1)) cout<<EnergyDeposition[itrk][ihit]<<", ";
+		else cout<<EnergyDeposition[itrk][ihit]<<" ]"<<endl;
+	    }
+	    cout<<"After linear: Type of particle="<<TypeOfTrack[itrk]<<", sample="<<Sample[itrk]<<", equivalent iron distance="<<ID[itrk]+(PD[itrk]/IronCarbonRatio)<<", distance in CH/Fe="<<PD[itrk]<<"/"<<ID[itrk]<<endl;
+
+	    for(int ihit=0;ihit<LimitHits;ihit++){
+	      if(ihit==0) cout<<setprecision(3)<<"dE/dx = [ ";
+	      //if(ihit<LimitHits-1) cout<<position[itrk][ihit]<<", ";
+	      if(ihit<(LimitHits-1)) cout<<EnergyDepositionSpline[itrk][ihit]<<", ";
+	      else cout<<EnergyDepositionSpline[itrk][ihit]<<" ]"<<endl;
+	    }
+	    cout<<"Check position of spline test="<<endl;
+	    double pos=0.;
+	    for(int ihit=0;ihit<LimitHits;ihit++){
+	      if(ihit==0) cout<<setprecision(3)<<"Pos = [ ";
+	      //if(ihit<LimitHits-1) cout<<position[itrk][ihit]<<", ";
+	      if(ihit<(LimitHits-1)) cout<<pos<<", ";
+	      else cout<<pos<<" ]"<<endl;
+	      pos += (RangeRelativeDistance/(LimitHits-1));
+	    }
+	    
+	    /*
+	    cout<<"After spline3: Type of particle="<<TypeOfTrack[itrk]<<", sample="<<Sample[itrk]<<", equivalent iron distance="<<ID[itrk]+(PD[itrk]/IronCarbonRatio)<<", distance in CH/Fe="<<PD[itrk]<<"/"<<ID[itrk]<<endl;
+	    pos=0.01;
+	    for(int ihit=0;ihit<LimitHits;ihit++){
+	      if(ihit==0) cout<<setprecision(3)<<"dE/dx = [ ";
+	      //if(ihit<LimitHits-1) cout<<position[itrk][ihit]<<", ";
+	      if(ihit<LimitHits-1) cout<<sEnergyDeposition[itrk]->Eval(pos)<<", ";
+	      else cout<<sEnergyDeposition[itrk]->Eval(ihit)<<" ]"<<endl;
+	      pos += (RangeRelativeDistance/(LimitHits-1));
+	      }*/
+	    cout<<"*****************************************************"<<endl;
+	    }
+	    
+
+	    
+#ifdef DEBUG2
+	    cout<<"*****************************************************"<<endl;
+	    cout<<"Distance="<<ihit<<", Energy deposition="<<EnergyDeposition[itrk][ihit]<<endl;
+	    if(Sample[itrk]>=3){
+	      cout<<"New Track, having momentum="<<Momentum[itrk]<<endl;
+	      cout<<"pm stop="<<(recon->pm_stop)[itrk]<<", has ingrid track="<<(recon->ing_trk)[itrk]<<", is stopped in ingrid="<<(recon->ing_stop)[itrk]<<", ingrid plane starts="<<(recon->ing_startpln)[itrk]<<", ingrid plane stop="<<(recon->ing_endpln)[itrk]<<", "<<endl; 
+	      /*  for(int ihit=0;ihit<Vec.size();ihit++){
+		  cout<<"Hit, module="<<Vec[ihit].mod<<", plane="<<Vec[ihit].pln<<", view="<<Vec[ihit].view<<", channel="<<Vec[ihit].ch<<endl;
+		  }*/
+	    }
+#endif	   
+
+	    Vec.clear();
+	    Vec2.clear();
+	    VecAll.clear();
+	    
+#ifdef MVA
+	    TrackAngleMVA=TrackAngle[itrk];
+	    TrackWidthMVA=TrackWidth[itrk];
+	    TypeOfTrackMVA=TypeOfTrack[itrk];
+	    TotalChargeMVA=TotalCharge[itrk];
+	    CLMuonMVA=CLMuon[itrk];
+	    CLMuon_PlanMVA=CLMuon_Plan[itrk];
+	    CLMuon_KSMVA=CLMuon_KS[itrk];
+	    CLMuon_LikelihoodMVA=CLMuon_Likelihood[itrk];
+	    MomentumMVA=Momentum[itrk];
+	    IDMVA=ID[itrk];
+	    PDMVA=PD[itrk];
+	    SampleMVA=Sample[itrk];
+	    IsReconstructedMVA=IsReconstructed[itrk];
+	    GTMVA=GT[itrk];
+	    for(int ihit=0;ihit<LimitHits;ihit++){
+	      EnergyDepositionMVA[ihit]=EnergyDeposition[itrk][ihit];
+	      EnergyDepositionSplineMVA[ihit]=EnergyDepositionSpline[itrk][ihit];
+	      TransverseWidthMVA[ihit]=TransverseWidth[itrk][ihit];
+	      TransverseWidthNonIsolatedMVA[ihit]=TransverseWidthNonIsolated[itrk][ihit];
+	    }
+	    wtreeMVA->Fill();
+	    ResetInputVariablesMVA();
+#endif
+	
 	}//Tracks
-	   
+	
+	wtree->Fill();
+	ResetInputVariables();	
+	
       }//Recons
-      wtree->Fill(); 
     }//Evt
     if(XSEC) _file1->Close();
 
@@ -1204,15 +1617,16 @@ int main(int argc, char **argv)
     cout<<"Low CL="<<LowCL<<", High="<<HighCL<<endl;
     cout<<"Nb Low CL="<<nLowCL<<", Nb High="<<nHighCL<<endl;
     wfile->cd();
-    wtree  -> Write();
+    
 #ifdef DEBUG
+    /*
     f_PMIng_Plan->SetNpx(300);
     f_PMSci_Plan->SetNpx(300);
     f_Ing_Plan->SetNpx(300);
     f_PMIng_Plan->Write();
     f_PMSci_Plan->Write();
     f_Ing_Plan->Write();
-
+    */
     CL_PMIng_Plan->Write();
     CL_PMSci_Plan->Write();
     CL_Ing_Plan->Write();
@@ -1236,6 +1650,7 @@ int main(int argc, char **argv)
 #endif
     wfile  -> Write();
     wfile  -> Close();
+
     if(Disp) theApp.Run();    
     return(0);
 }

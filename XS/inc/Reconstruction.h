@@ -43,7 +43,7 @@ class Reconstruction{
   bool HasGeomTrack(int mod, int startplnx, int startchx, double thetax, int startplny, int startchy, double thetay);
   vector <double> IngridTrack(int mod, int startplnx, int startchx, double thetax, int startplny, int startchy, double thetay);
   vector <double> TrackPenetration(int Mod, int pln_iniX, double ch_iniX, double thetax,int pln_iniY, double ch_iniY, double thetay, int pln_finX, double ch_finX, int pln_finY, double ch_finY, double dx_Ing);
-  vector <double> TrackPenetrationPM(int pln_iniX, double ch_iniX, double thetax, int pln_iniY, double ch_iniY, double thetay,int pln_finX, double ch_finX, int pln_finY, double ch_finY, int IngMod, int pln_ini_Ing, int pln_fin_Ing, double dx_Ing, bool Geom);
+  vector <double> TrackPenetrationPM(int pln_iniX, double ch_iniX, double thetax, int pln_iniY, double ch_iniY, double thetay,int pln_finX, double ch_finX, int pln_finY, double ch_finY, int IngMod, int pln_ini_Ing, int pln_fin_Ing, double angle, int tracksample, vector <Hit3D> *Vec);
   vector <double> ConvertTruePM(float ipos[4], float fpos[4]);
   int SelectTrackSample(bool pm_stop, bool Geom, bool has_ingrid, bool ingrid_stop, int ing_last_pln);
   double GetFSI(IngridEventSummary * evt);

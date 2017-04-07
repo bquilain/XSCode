@@ -5,8 +5,8 @@
 #include <fstream>
 #include <TMath.h>
 #include "setup.h"
-#include "Xsec.cc"
-Xsec * xs = new Xsec();
+//#include "Xsec.cc"
+//Xsec * xs = new Xsec();
 using namespace std;
 //0. No Error, nominal case
 //1. TO DO 
@@ -37,7 +37,10 @@ int main(int argc, char **argv){
   int c=-1;
   bool MC=false;bool Data=false;
   bool SelectionOnly=false;// if true, only the latest part of the analysis (selection & unfolding) are applied
-  while ((c = getopt(argc, argv, "mds")) != -1) {
+  bool PM=true;
+  bool ParticleGun=false;
+  
+  while ((c = getopt(argc, argv, "mdspwg")) != -1) {
     switch(c){
     case 'm':
       MC=true;
@@ -45,20 +48,42 @@ int main(int argc, char **argv){
     case 'd':
       Data=true;
       break;
+    case 'w':
+      PM=false;//watermodule
+      break;
+    case 'p':
+      PM=true;
+      break;
     case 's':
       SelectionOnly=true;
       break;
+    case 'g':
+      ParticleGun=true;
+      break;
     }      
   }  
+
   char Name1[100], Name2[100];
   char Command001[300], Command002[300], Command003[300], Command004[300], Command005[300], Command006[300];
   char Command01[300], Command02[300], Command03[300], Command04[300], Command05[300], Command06[300];
   char Command1_1[300], Command1_2[300], Command1_3[300], Command1_4[300], Command1_5[300], Command1_6[600];
-  char Command1[300], Command2[300], Command3[300], Command4[300], Command5[300], Command6[300], Command7[300], Command8[300], Command9[300], Command11[300], Command12[300], Command13[300],Command14[300], Command15[300], Command16[300], Command17[300], Command18[300];
+  char Command1[1000], Command2[300], Command3[300], Command4[300], Command5[300], Command6[300], Command7[300], Command8[300], Command9[300], Command11[300], Command12[300], Command13[300],Command14[300], Command15[300], Command16[300], Command17[300], Command18[300];
   char  Command10[300], Command20[300], Command30[300];
   char Name[16];
 
-  xs->Xsec::Initialize();
+  //  xs->Xsec::Initialize();
+  InitializeGlobal();
+  /////////// VARIABLES TO SWITCH FROM PM TO WM ////////////////////
+  char execMC[7];sprintf(execMC,(PM?"IngMC":"IngWMMC"));
+  char execRecon[25];sprintf(execRecon,(PM?"PMreconRevOfficial":"Lolirecon"));
+  char execAna[25];sprintf(execAna,(PM?"PMAnaRevOfficial":"LoliAna"));
+  int MCDetID=(PM?2:5);
+  char suffix[3];sprintf(suffix,(PM?"":"_WM"));
+  char DetName[2];sprintf(DetName,(PM?"PM":"WM"));
+  char ParticleGenerator[5];sprintf(ParticleGenerator,(ParticleGun?"_PG":""));
+  cout<<"Selected detector is "<<DetName<<endl;
+  cout<<"Selected particle generator is"<<(ParticleGun?" a particle gun":" neutrino event")<<endl;
+
 
   ///////////FOR THE PREREQUISITE, SO DO NOT CLEAN FOR EACH ERROR/////////////////////
   sprintf(Command01,"");
@@ -95,7 +120,7 @@ int main(int argc, char **argv){
 	double ErrorValue=Start[ErrorType]+n*Step[ErrorType];
 	if(MC){
        
-	  for(int i=1;i<=NMCfiles;i++){
+	  for(int i=0;i<NMCfiles;i++){
 	    //for(int i=1;i<=2000;i++){//TEMP
 	    sprintf(Command1,"");
 	    sprintf(Command1_1,"");
@@ -125,67 +150,107 @@ int main(int argc, char **argv){
 
 	  
 	      //################################################Create the total input file####################################################################################
+	      char InputFile[100];
+
 	      //Run 1
-	      //NuMu
-	      if(i<=500) sprintf(Command1,"${INSTALLREPOSITORY}/MC/ingmc_IngridRevReWeightFinal/bin/Linux-g++/IngMC -o ${MCOUTPUTSTORAGE}/PMMC_Numu_Run1_%d.root -i ${MCINPUTSTORAGE}/run1/11bfluka_nd2_numu_ch_%d.nt -m 2 -f 1",i,i);
-	      else if(i<=1000) sprintf(Command1,"${INSTALLREPOSITORY}/MC/ingmc_IngridRevReWeightFinal/bin/Linux-g++/IngMC -o ${MCOUTPUTSTORAGE}/PMMC_Numu_Run1_%d.root -i ${MCINPUTSTORAGE}/run1add1/11bfluka_nd2_numu_ch_%d.nt -m 2 -f 1",i,i-500);
-	      else if(i<=1500) sprintf(Command1,"${INSTALLREPOSITORY}/MC/ingmc_IngridRevReWeightFinal/bin/Linux-g++/IngMC -o ${MCOUTPUTSTORAGE}/PMMC_Numu_Run1_%d.root -i ${MCINPUTSTORAGE}/run1add2/11bfluka_nd2_numu_ch_%d.nt -m 2 -f 1",i,i-1000);
-	      else sprintf(Command1,"${INSTALLREPOSITORY}/MC/ingmc_IngridRevReWeightFinal/bin/Linux-g++/IngMC -o ${MCOUTPUTSTORAGE}/PMMC_Numu_Run1_%d.root -i ${MCINPUTSTORAGE}/run1add3/11bfluka_nd2_numu_ch_%d.nt -m 2 -f 1",i,i-1500);
-	  
-	      //NuMuBar
-	      //To Modify
-	      if(i<=500) sprintf(Command1_1,"${INSTALLREPOSITORY}/MC/ingmc_IngridRevReWeightFinal/bin/Linux-g++/IngMC -o ${MCOUTPUTSTORAGE}/PMMC_Numubar_Run1_%d.root -i ${MCINPUTSTORAGE}/numubar/run1/11bfluka_nd2_numubar_ch_%d.nt -m 2 -f 2",i,i);
-	      //if(i<=500) sprintf(Command1_1,"${INSTALLREPOSITORY}/MC/ingmc_IngridRevReWeightFinal/bin/Linux-g++/IngMC -o ${MCOUTPUTSTORAGE}/PMMC_Numubar_Run1_%d.root -i ${MCINPUTSTORAGE}/run1add1nubar/11bfluka_nd2_numubar_ch_%d.nt -m 2 -f 2",i,i);
-	      else if(i<=1000) sprintf(Command1_1,"${INSTALLREPOSITORY}/MC/ingmc_IngridRevReWeightFinal/bin/Linux-g++/IngMC -o ${MCOUTPUTSTORAGE}/PMMC_Numubar_Run1_%d.root -i ${MCINPUTSTORAGE}/run1add1nubar/11bfluka_nd2_numubar_ch_%d.nt -m 2 -f 2",i,i-500);
-	      else if(i<=1500) sprintf(Command1_1,"${INSTALLREPOSITORY}/MC/ingmc_IngridRevReWeightFinal/bin/Linux-g++/IngMC -o ${MCOUTPUTSTORAGE}/PMMC_Numubar_Run1_%d.root -i ${MCINPUTSTORAGE}/run1add2nubar/11bfluka_nd2_numubar_ch_%d.nt -m 2 -f 2",i,i-1000);
-	      else if(i<=2000) sprintf(Command1_1,"${INSTALLREPOSITORY}/MC/ingmc_IngridRevReWeightFinal/bin/Linux-g++/IngMC -o ${MCOUTPUTSTORAGE}/PMMC_Numubar_Run1_%d.root -i ${MCINPUTSTORAGE}/run1add3nubar/11bfluka_nd2_numubar_ch_%d.nt -m 2 -f 2",i,i-1500);
-	  
-	      //NuE
-	      if(i<=500) sprintf(Command1_2,"${INSTALLREPOSITORY}/MC/ingmc_IngridRevReWeightFinal/bin/Linux-g++/IngMC -o ${MCOUTPUTSTORAGE}/PMMC_Nue_Run1_%d.root -i ${MCINPUTSTORAGE}/nuerun1/11bfluka_nd2_nue_ch_%d.nt -m 2 -f 3",i,i);
-	      else if(i<=1000) sprintf(Command1_2,"${INSTALLREPOSITORY}/MC/ingmc_IngridRevReWeightFinal/bin/Linux-g++/IngMC -o ${MCOUTPUTSTORAGE}/PMMC_Nue_Run1_%d.root -i ${MCINPUTSTORAGE}/nuerun1add1/11bfluka_nd2_nue_ch_%d.nt -m 2 -f 3",i,i-500);
-	      else if(i<=1500) sprintf(Command1_2,"${INSTALLREPOSITORY}/MC/ingmc_IngridRevReWeightFinal/bin/Linux-g++/IngMC -o ${MCOUTPUTSTORAGE}/PMMC_Nue_Run1_%d.root -i ${MCINPUTSTORAGE}/nuerun1add2/11bfluka_nd2_nue_ch_%d.nt -m 2 -f 3",i,i-1000);
-	      else if(i<=2000) sprintf(Command1_2,"${INSTALLREPOSITORY}/MC/ingmc_IngridRevReWeightFinal/bin/Linux-g++/IngMC -o ${MCOUTPUTSTORAGE}/PMMC_Nue_Run1_%d.root -i ${MCINPUTSTORAGE}/nuerun1add3/11bfluka_nd2_nue_ch_%d.nt -m 2 -f 3",i,i-1500);
-	  
-	      //Wall Bkg (mainly Sand Muons)
-	      if(i<=1000) sprintf(Command1_3,"${INSTALLREPOSITORY}/MC/ingmc_IngridRevReWeightFinal/bin/Linux-g++/IngMC -o ${MCOUTPUTSTORAGE}/PMMC_Wall_Run1_%d.root -i ${MCINPUTSTORAGE}/wall/11b_nd7_numu_o_%d_0.nt -m 2 -f 1",i,i);
-	      else if(i<=2000) sprintf(Command1_3,"${INSTALLREPOSITORY}/MC/ingmc_IngridRevReWeightFinal/bin/Linux-g++/IngMC -o ${MCOUTPUTSTORAGE}/PMMC_Wall_Run1_%d.root -i ${MCINPUTSTORAGE}/wallset2/11b_nd7_numu_o_%d_1.nt -m 2 -f 1",i,i-1000);
+	      if(ParticleGun){
 
-	      //Ingrid Bkg
-	      //Horizontal modules
-	      if(i<=500) sprintf(Command1_4,"${INSTALLREPOSITORY}/MC/ingmc_IngridRevReWeightFinal/bin/Linux-g++/IngMC -o ${MCOUTPUTSTORAGE}/PMMC_INGRIDH_Run1_%d.root -i ${MCINPUTSTORAGE}/nd3numurun1/11bfluka_nd3_numu_fe_%d.nt -m 2 -f 1",i,i);
-	      else if(i<=1000) sprintf(Command1_4,"${INSTALLREPOSITORY}/MC/ingmc_IngridRevReWeightFinal/bin/Linux-g++/IngMC -o ${MCOUTPUTSTORAGE}/PMMC_INGRIDH_Run1_%d.root -i ${MCINPUTSTORAGE}/nd3numurun1add1/11bfluka_nd3_numu_fe_%d.nt -m 2 -f 1",i,i-500);
-	      else if(i<=1500) sprintf(Command1_4,"${INSTALLREPOSITORY}/MC/ingmc_IngridRevReWeightFinal/bin/Linux-g++/IngMC -o ${MCOUTPUTSTORAGE}/PMMC_INGRIDH_Run1_%d.root -i ${MCINPUTSTORAGE}/nd3numurun1add2/11bfluka_nd3_numu_fe_%d.nt -m 2 -f 1",i,i-1000);
-	      else if(i<=2000) sprintf(Command1_4,"${INSTALLREPOSITORY}/MC/ingmc_IngridRevReWeightFinal/bin/Linux-g++/IngMC -o ${MCOUTPUTSTORAGE}/PMMC_INGRIDH_Run1_%d.root -i ${MCINPUTSTORAGE}/nd3numurun1add3/11bfluka_nd3_numu_fe_%d.nt -m 2 -f 1",i,i-1500);
+		if(i<1000) sprintf(InputFile,(PM?"${MCINPUTSTORAGE}/ingbg_5.3.6/13a_nd2_numu_ch_%d.nt":"${MCINPUTSTORAGE_WM}/ingbg_5.3.6/13a_nd2_numu_h2o_%d.nt"),i);
+		else {cout<<"*** only 1000 NEUT files available ***"<<endl; return 0;}
 
-	      //Vertical modules
-	      if(i<=500) sprintf(Command1_5,"${INSTALLREPOSITORY}/MC/ingmc_IngridRevReWeightFinal/bin/Linux-g++/IngMC -o ${MCOUTPUTSTORAGE}/PMMC_INGRIDV_Run1_%d.root -i ${MCINPUTSTORAGE}/nd4numurun1/11bfluka_nd4_numu_fe_%d.nt -m 2 -f 1",i,i);
-	      else if(i<=1000) sprintf(Command1_5,"${INSTALLREPOSITORY}/MC/ingmc_IngridRevReWeightFinal/bin/Linux-g++/IngMC -o ${MCOUTPUTSTORAGE}/PMMC_INGRIDV_Run1_%d.root -i ${MCINPUTSTORAGE}/nd4numurun1add1/11bfluka_nd4_numu_fe_%d.nt -m 2 -f 1",i,i-500);
-	      else if(i<=1500) sprintf(Command1_5,"${INSTALLREPOSITORY}/MC/ingmc_IngridRevReWeightFinal/bin/Linux-g++/IngMC -o ${MCOUTPUTSTORAGE}/PMMC_INGRIDV_Run1_%d.root -i ${MCINPUTSTORAGE}/nd4numurun1add2/11bfluka_nd4_numu_fe_%d.nt -m 2 -f 1",i,i-1000);
-	      else if(i<=2000) sprintf(Command1_5,"${INSTALLREPOSITORY}/MC/ingmc_IngridRevReWeightFinal/bin/Linux-g++/IngMC -o ${MCOUTPUTSTORAGE}/PMMC_INGRIDV_Run1_%d.root -i ${MCINPUTSTORAGE}/nd4numurun1add3/11bfluka_nd4_numu_fe_%d.nt -m 2 -f 1",i,i-1500);
+		sprintf(Command1,"");
+		sprintf(Command1_1,"rm ${MCOUTPUTSTORAGE%s}/%sMC%s_Run1_%d.root \n hadd ${MCOUTPUTSTORAGE%s}/%sMC%s_Run1_%d.root",suffix,DetName,ParticleGenerator,i,suffix,DetName,ParticleGenerator,i);
 
-	      //Merge Files Together
-	      sprintf(Command1_6,"${INSTALLREPOSITORY}/XS/FinalMCOutputMaker -a ${MCOUTPUTSTORAGE}/PMMC_Numu_Run1_%d.root -b ${MCOUTPUTSTORAGE}/PMMC_Numubar_Run1_%d.root -c ${MCOUTPUTSTORAGE}/PMMC_Nue_Run1_%d.root -d ${MCOUTPUTSTORAGE}/PMMC_Wall_Run1_%d.root -e ${MCOUTPUTSTORAGE}/PMMC_INGRIDH_Run1_%d.root -f ${MCOUTPUTSTORAGE}/PMMC_INGRIDV_Run1_%d.root -o ${MCOUTPUTSTORAGE}/PMMC_Run1_%d.root",i,i,i,i,i,i,i);
+		for(int ip=0;ip<npdg;ip++){
+		  if(i==0) cout<<"pdg values tested="<<pdgValues[ip]<<endl;
+		  sprintf(Command1+strlen(Command1),"${INSTALLREPOSITORY}/MC/bin/Linux-g++/%s -o ${MCOUTPUTSTORAGE%s}/%sMC%s%d_Numu_Run1_%d.root -i %s -m %d -f 1 -p %d \n",execMC,suffix,DetName,ParticleGenerator,pdgValues[ip],i,InputFile,MCDetID,pdgValues[ip]);
+		  sprintf(Command1_1+strlen(Command1_1)," ${MCOUTPUTSTORAGE%s}/%sMC%s%d_Numu_Run1_%d.root",suffix,DetName,ParticleGenerator,pdgValues[ip],i);
+		}
+	      }
+	      else{
+		//NuMu
+		if(i<1000) sprintf(InputFile,(PM?"${MCINPUTSTORAGE}/ingbg_5.3.6/13a_nd2_numu_ch_%d.nt":"${MCINPUTSTORAGE_WM}/ingbg_5.3.6/13a_nd2_numu_h2o_%d.nt"),i);
+		else {cout<<"*** only 1000 NEUT files available ***"<<endl; return 0;}
+		sprintf(Command1,"${INSTALLREPOSITORY}/MC/bin/Linux-g++/%s -o ${MCOUTPUTSTORAGE%s}/%sMC_Numu_Run1_%d.root -i %s -m %d -f 1",execMC,suffix,DetName,i,InputFile,MCDetID);
+		
+		//if(i<=500) sprintf(Command1,"${INSTALLREPOSITORY}/MC/bin/Linux-g++/%s -o ${MCOUTPUTSTORAGE}/PMMC_Numu_Run1_%d.root -i ${MCINPUTSTORAGE}/run1/11bfluka_nd2_numu_ch_%d.nt -m %d -f 1",execMC,i,i,MCDetID);
+		//else if(i<=1000) sprintf(Command1,"${INSTALLREPOSITORY}/MC/bin/Linux-g++/%s -o ${MCOUTPUTSTORAGE}/PMMC_Numu_Run1_%d.root -i ${MCINPUTSTORAGE}/run1add1/11bfluka_nd2_numu_ch_%d.nt -m %d -f 1",execMC,i,i-500,MCDetID);
+		//else if(i<=1500) sprintf(Command1,"${INSTALLREPOSITORY}/MC/bin/Linux-g++/%s -o ${MCOUTPUTSTORAGE}/PMMC_Numu_Run1_%d.root -i ${MCINPUTSTORAGE}/run1add2/11bfluka_nd2_numu_ch_%d.nt -m %d -f 1",execMC,i,i-1000,MCDetID);
+		//else sprintf(Command1,"${INSTALLREPOSITORY}/MC/bin/Linux-g++/%s -o ${MCOUTPUTSTORAGE}/PMMC_Numu_Run1_%d.root -i ${MCINPUTSTORAGE}/run1add3/11bfluka_nd2_numu_ch_%d.nt -m %d -f 1",execMC,i,i-1500,MCDetID);
+		
+		//NuMuBar
+		if(i<1000) sprintf(InputFile,(PM?"${MCINPUTSTORAGE}/ingbg_5.3.6/13a_nd2_numubar_ch_%d.nt":"${MCINPUTSTORAGE_WM}/ingbg_5.3.6/13a_nd2_numubar_h2o_%d.nt"),i);
+		else {cout<<"*** only 1000 NEUT files available ***"<<endl; return 0;}
+		sprintf(Command1_1,"${INSTALLREPOSITORY}/MC/bin/Linux-g++/%s -o ${MCOUTPUTSTORAGE%s}/%sMC_Numubar_Run1_%d.root -i %s -m %d -f 2",execMC,suffix,DetName,i,InputFile,MCDetID);
+		
+		// if(i<=500) sprintf(Command1_1,"${INSTALLREPOSITORY}/MC/bin/Linux-g++/%s -o ${MCOUTPUTSTORAGE}/PMMC_Numubar_Run1_%d.root -i ${MCINPUTSTORAGE}/numubar/run1/11bfluka_nd2_numubar_ch_%d.nt -m %d -f 2",execMC,i,i,MCDetID);
+		//else if(i<=1000) sprintf(Command1_1,"${INSTALLREPOSITORY}/MC/bin/Linux-g++/%s -o ${MCOUTPUTSTORAGE}/PMMC_Numubar_Run1_%d.root -i ${MCINPUTSTORAGE}/run1add1nubar/11bfluka_nd2_numubar_ch_%d.nt -m %d -f 2",execMC,i,i-500,MCDetID);
+		//else if(i<=1500) sprintf(Command1_1,"${INSTALLREPOSITORY}/MC/bin/Linux-g++/%s -o ${MCOUTPUTSTORAGE}/PMMC_Numubar_Run1_%d.root -i ${MCINPUTSTORAGE}/run1add2nubar/11bfluka_nd2_numubar_ch_%d.nt -m %d -f 2",execMC,i,i-1000,MCDetID);
+		//else if(i<=2000) sprintf(Command1_1,"${INSTALLREPOSITORY}/MC/bin/Linux-g++/%s -o ${MCOUTPUTSTORAGE}/PMMC_Numubar_Run1_%d.root -i ${MCINPUTSTORAGE}/run1add3nubar/11bfluka_nd2_numubar_ch_%d.nt -m %d -f 2",execMC,i,i-1500,MCDetID);
+		
+		//NuE
+		if(i<1000) sprintf(InputFile,(PM?"${MCINPUTSTORAGE}/ingbg_5.3.6/13a_nd2_nue_ch_%d.nt":"${MCINPUTSTORAGE_WM}/ingbg_5.3.6/13a_nd2_nue_h2o_%d.nt"),i);
+		else {cout<<"*** only 1000 NEUT files available ***"<<endl; return 0;}
+		sprintf(Command1_2,"${INSTALLREPOSITORY}/MC/bin/Linux-g++/%s -o ${MCOUTPUTSTORAGE%s}/%sMC_Nue_Run1_%d.root -i %s -m %d -f 3",execMC,suffix,DetName,i,InputFile,MCDetID);
+		
+		//if(i<=500) sprintf(Command1_2,"${INSTALLREPOSITORY}/MC/bin/Linux-g++/%s -o ${MCOUTPUTSTORAGE}/PMMC_Nue_Run1_%d.root -i ${MCINPUTSTORAGE}/nuerun1/11bfluka_nd2_nue_ch_%d.nt -m %d -f 3",execMC,i,i,MCDetID);
+		//else if(i<=1000) sprintf(Command1_2,"${INSTALLREPOSITORY}/MC/bin/Linux-g++/%s -o ${MCOUTPUTSTORAGE}/PMMC_Nue_Run1_%d.root -i ${MCINPUTSTORAGE}/nuerun1add1/11bfluka_nd2_nue_ch_%d.nt -m %d -f 3",execMC,i,i-500,MCDetID);
+		//else if(i<=1500) sprintf(Command1_2,"${INSTALLREPOSITORY}/MC/bin/Linux-g++/%s -o ${MCOUTPUTSTORAGE}/PMMC_Nue_Run1_%d.root -i ${MCINPUTSTORAGE}/nuerun1add2/11bfluka_nd2_nue_ch_%d.nt -m %d -f 3",execMC,i,i-1000,MCDetID);
+		//else if(i<=2000) sprintf(Command1_2,"${INSTALLREPOSITORY}/MC/bin/Linux-g++/%s -o ${MCOUTPUTSTORAGE}/PMMC_Nue_Run1_%d.root -i ${MCINPUTSTORAGE}/nuerun1add3/11bfluka_nd2_nue_ch_%d.nt -m %d -f 3",execMC,i,i-1500,MCDetID);
+		
+		//Wall Bkg (mainly Sand Muons)
+		if(i<1000)sprintf(InputFile,(PM?"${MCINPUTSTORAGE}/wallbg_5.3.6/13a_nd7_numu_o_%d_1.nt":"${MCINPUTSTORAGE_WM}/wallbg_5.3.6/13a_nd7_numu_o_%d_1.nt"),i);
+		else {cout<<"*** only 1000 NEUT files available ***"<<endl; return 0;}	      
+		sprintf(Command1_3,"${INSTALLREPOSITORY}/MC/bin/Linux-g++/%s -o ${MCOUTPUTSTORAGE%s}/%sMC_Wall_Run1_%d.root -i %s -m %d -f 1",execMC,suffix,DetName,i,InputFile,MCDetID);
+		
+		//if(i<=1000) sprintf(Command1_3,"${INSTALLREPOSITORY}/MC/bin/Linux-g++/%s -o ${MCOUTPUTSTORAGE}/PMMC_Wall_Run1_%d.root -i ${MCINPUTSTORAGE}/wall/11b_nd7_numu_o_%d_0.nt -m %d -f 1",execMC,i,i,MCDetID);
+		//else if(i<=2000) sprintf(Command1_3,"${INSTALLREPOSITORY}/MC/bin/Linux-g++/%s -o ${MCOUTPUTSTORAGE}/PMMC_Wall_Run1_%d.root -i ${MCINPUTSTORAGE}/wallset2/11b_nd7_numu_o_%d_1.nt -m %d -f 1",execMC,i,i-1000,MCDetID);
+		
+		//Ingrid Bkg
+		//Horizontal modules
+		if(i<1000) sprintf(InputFile,(PM?"${MCINPUTSTORAGE}/ingbg_5.3.6/13a_nd3_numu_fe_%d.nt":"${MCINPUTSTORAGE_WM}/ingbg_5.3.6/13a_nd3_numu_fe_%d.nt"),i);
+		else {cout<<"*** only 1000 NEUT files available ***"<<endl; return 0;}	      
+		sprintf(Command1_4,"${INSTALLREPOSITORY}/MC/bin/Linux-g++/%s -o ${MCOUTPUTSTORAGE%s}/%sMC_INGRIDH_Run1_%d.root -i %s -m %d -f 1",execMC,suffix,DetName,i,InputFile,MCDetID);
+		
+		//if(i<=500) sprintf(Command1_4,"${INSTALLREPOSITORY}/MC/bin/Linux-g++/%s -o ${MCOUTPUTSTORAGE}/PMMC_INGRIDH_Run1_%d.root -i ${MCINPUTSTORAGE}/nd3numurun1/11bfluka_nd3_numu_fe_%d.nt -m %d -f 1",execMC,i,i,MCDetID);
+		//else if(i<=1000) sprintf(Command1_4,"${INSTALLREPOSITORY}/MC/bin/Linux-g++/%s -o ${MCOUTPUTSTORAGE}/PMMC_INGRIDH_Run1_%d.root -i ${MCINPUTSTORAGE}/nd3numurun1add1/11bfluka_nd3_numu_fe_%d.nt -m %d -f 1",execMC,i,i-500,MCDetID);
+		//else if(i<=1500) sprintf(Command1_4,"${INSTALLREPOSITORY}/MC/bin/Linux-g++/%s -o ${MCOUTPUTSTORAGE}/PMMC_INGRIDH_Run1_%d.root -i ${MCINPUTSTORAGE}/nd3numurun1add2/11bfluka_nd3_numu_fe_%d.nt -m %d -f 1",execMC,i,i-1000,MCDetID);
+		//else if(i<=2000) sprintf(Command1_4,"${INSTALLREPOSITORY}/MC/bin/Linux-g++/%s -o ${MCOUTPUTSTORAGE}/PMMC_INGRIDH_Run1_%d.root -i ${MCINPUTSTORAGE}/nd3numurun1add3/11bfluka_nd3_numu_fe_%d.nt -m %d -f 1",execMC,i,i-1500,MCDetID);
+		
+		//Vertical modules
+		if(i<1000) sprintf(InputFile,(PM?"${MCINPUTSTORAGE}/ingbg_5.3.6/13a_nd4_numu_fe_%d.nt":"${MCINPUTSTORAGE_WM}/ingbg_5.3.6/13a_nd4_numu_fe_%d.nt"),i);
+		else {cout<<"*** only 1000 NEUT files available ***"<<endl; return 0;}	      
+		sprintf(Command1_5,"${INSTALLREPOSITORY}/MC/bin/Linux-g++/%s -o ${MCOUTPUTSTORAGE%s}/%sMC_INGRIDV_Run1_%d.root -i %s -m %d -f 1",execMC,suffix,DetName,i,InputFile,MCDetID);
+		
+		//if(i<=500) sprintf(Command1_5,"${INSTALLREPOSITORY}/MC/bin/Linux-g++/%s -o ${MCOUTPUTSTORAGE}/PMMC_INGRIDV_Run1_%d.root -i ${MCINPUTSTORAGE}/nd4numurun1/11bfluka_nd4_numu_fe_%d.nt -m %d -f 1",execMC,i,i,MCDetID);
+		//else if(i<=1000) sprintf(Command1_5,"${INSTALLREPOSITORY}/MC/bin/Linux-g++/%s -o ${MCOUTPUTSTORAGE}/PMMC_INGRIDV_Run1_%d.root -i ${MCINPUTSTORAGE}/nd4numurun1add1/11bfluka_nd4_numu_fe_%d.nt -m %d -f 1",execMC,i,i-500,MCDetID);
+		//else if(i<=1500) sprintf(Command1_5,"${INSTALLREPOSITORY}/MC/bin/Linux-g++/%s -o ${MCOUTPUTSTORAGE}/PMMC_INGRIDV_Run1_%d.root -i ${MCINPUTSTORAGE}/nd4numurun1add2/11bfluka_nd4_numu_fe_%d.nt -m %d -f 1",execMC,i,i-1000,MCDetID);
+		//else if(i<=2000) sprintf(Command1_5,"${INSTALLREPOSITORY}/MC/bin/Linux-g++/%s -o ${MCOUTPUTSTORAGE}/PMMC_INGRIDV_Run1_%d.root -i ${MCINPUTSTORAGE}/nd4numurun1add3/11bfluka_nd4_numu_fe_%d.nt -m %d -f 1",execMC,i,i-1500,MCDetID);
+
+		//Merge Files Together
+
+		sprintf(Command1_6,"${INSTALLREPOSITORY}/XS/FinalMCOutputMaker -a ${MCOUTPUTSTORAGE%s}/%sMC_Numu_Run1_%d.root -b ${MCOUTPUTSTORAGE%s}/%sMC_Numubar_Run1_%d.root -c ${MCOUTPUTSTORAGE%s}/%sMC_Nue_Run1_%d.root -d ${MCOUTPUTSTORAGE%s}/%sMC_Wall_Run1_%d.root -e ${MCOUTPUTSTORAGE%s}/%sMC_INGRIDH_Run1_%d.root -f ${MCOUTPUTSTORAGE%s}/%sMC_INGRIDV_Run1_%d.root -o ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d.root",suffix,DetName,i,suffix,DetName,i,suffix,DetName,i,suffix,DetName,i,suffix,DetName,i,suffix,DetName,i,suffix,DetName,i);
+	      }
 	      //##########################################################################################################################
 
 	  
-
-	  
+	      // need for Loli_addcrosstalk for WM here
+	      	  
 	      //sprintf(Command1,"bin/Linux-g++/IngMC -o ${MCOUTPUTSTORAGE}/PMMC_Run1_%d.root -i /export/scraid2/data/bquilain/neutfile_pm/11bfluka_nd2_numu_ch_%d.nt -m 2 -f 2",i,i);
-	      sprintf(Command2,"${INSTALLREPOSITORY}/Reconstruction/appPM/IngAddNoisePMMC_new -f ${MCOUTPUTSTORAGE}/PMMC_Run1_%d.root -o ${MCOUTPUTSTORAGE}/PMMC_Run1_%d_wNoise.root",i,i);
-	      sprintf(Command3,"${INSTALLREPOSITORY}/Reconstruction/appPM/PMreconRevOfficial -r 14000 -s 0 -f ${MCOUTPUTSTORAGE}/PMMC_Run1_%d_wNoise.root -o ${MCOUTPUTSTORAGE}/PMMC_Run1_%d_wNoise_recon.root",i,i);
-	      sprintf(Command4,"${INSTALLREPOSITORY}/Reconstruction/appPM/PMAnaRevOfficial -r 14000 -s 0 -f ${MCOUTPUTSTORAGE}/PMMC_Run1_%d_wNoise_recon.root -o ${MCOUTPUTSTORAGE}/PMMC_Run1_%d_wNoise_ana.root",i,i);
-	      sprintf(Command5,"source ${INSTALLREPOSITORY}/source_T2KReweight.sh");
-	      //NEUT 5.3.2
-	      sprintf(Command6,"${INSTALLREPOSITORY}/XS/XS_CC0pi_Plan -i ${MCOUTPUTSTORAGE}/PMMC_Run1_%d_wNoise_ana.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_Run1_%d_Plan.root -f 1 -m",i,i);
+	      sprintf(Command2,"${INSTALLREPOSITORY}/Reconstruction/app%s/IngAddNoisePMMC_new -f ${MCOUTPUTSTORAGE%s}/%sMC%s_Run1_%d.root -o ${MCOUTPUTSTORAGE%s}/%sMC%s_Run1_%d_wNoise.root %s",DetName,suffix,DetName,ParticleGenerator,i,suffix,DetName,ParticleGenerator,i,(PM?"":Form("-n %2.1f -w",DNRateWM)));
+	      sprintf(Command3,"${INSTALLREPOSITORY}/Reconstruction/app%s/%s -r 14000 -s 0 -f ${MCOUTPUTSTORAGE%s}/%sMC%s_Run1_%d_wNoise.root -o ${MCOUTPUTSTORAGE%s}/%sMC%s_Run1_%d_wNoise_recon.root",DetName,execRecon,suffix,DetName,ParticleGenerator,i,suffix,DetName,ParticleGenerator,i);
+	      sprintf(Command4,"${INSTALLREPOSITORY}/Reconstruction/app%s/%s -r 14000 -s 0 -f ${MCOUTPUTSTORAGE%s}/%sMC%s_Run1_%d_wNoise_recon.root -o ${MCOUTPUTSTORAGE%s}/%sMC%s_Run1_%d_wNoise_ana.root %s",DetName, execAna,suffix,DetName,ParticleGenerator,i,suffix,DetName,ParticleGenerator,i,(ParticleGun?"-N":""));
+	      //ML tmp
+	      //sprintf(Command5,"source ${INSTALLREPOSITORY}/source_T2KReweight.sh"); 
+
+	      //NEUT 5.3.2  -> now NEUT 5.3.6 (ML 2017/02/01)
+	      sprintf(Command6,"${INSTALLREPOSITORY}/XS/XS_CC0pi_Plan%s -i ${MCOUTPUTSTORAGE%s}/%sMC%s_Run1_%d_wNoise_ana.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s%s_Run1_%d_Plan.root -f 1 -m",suffix,suffix,DetName,ParticleGenerator,i,DetName,ParticleGenerator,i);
 	      //NEUT 5.1.4.2
 	      //sprintf(Command6,"${INSTALLREPOSITORY}/XS/XS_CC0pi_Plan -i ${MCOUTPUTSTORAGE}/PM_MC_Beam%d_BirksCorrectedMIP40_ReWeight_SciBar188_wNoise_KSana_woXtalk.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_Old_%d_Plan.root -f 1 -m",i,i);
 			    
-	      //sprintf(Command6,"source ${INSTALLREPOSITORY}/source_T2KReweight.sh");
-	      sprintf(Command7,"${T2KREWEIGHTREPOSITORY}/app/genWeightsFromINGRID_2015.exe -i ${MCOUTPUTSTORAGE}/PMMC_Run1_%d.root -o ${MCOUTPUTSTORAGE}/PMMC_Run1_%d_ReWeight2015.root",i,i);
-	      //sprintf(Command6,"${INSTALLREPOSITORY}/Reconstruction/appPM/PMAnaRevOfficial -r 14000 -s 0 -f ${MCOUTPUTSTORAGE}/PMMC_Run1_%d_wNoise_recon.root -o ${MCOUTPUTSTORAGE}/PMMC_Run1_%d_wNoise_ana.root",i,i);
-	      //sprintf(Command5,"${INSTALLREPOSITORY}/XS/XS_CC0pi -i ${MCOUTPUTSTORAGE}/PMMC_Run1_%d_wNoise_ana.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_Run1_%d.root -f 1 -m",i,i);
-	      //sprintf(Command6,"${INSTALLREPOSITORY}/XS/XS_CC0pi_Plan_BNJDistributions -i ${MCOUTPUTSTORAGE}/PMMC_Run1_%d_wNoise_ana.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_Run1_%d_Plan_BNJ.root -f 1 -m",i,i);
+	      //sprintf(Command7,"${T2KREWEIGHTREPOSITORY}/app/genWeightsFromINGRID_2015.exe -i ${MCOUTPUTSTORAGE}/PMMC_Run1_%d.root -o ${MCOUTPUTSTORAGE}/PMMC_Run1_%d_ReWeight2015.root",i,i);
 	    }
+
 	    else if(ErrorType==1) continue;
 	    else if(ErrorType==2){//Dark noise values.
 	      sprintf(Command1,"${INSTALLREPOSITORY}/XS/IngAddNoisePMMC -f ${MCOUTPUTSTORAGE}/PMMC_Run1_%d.root -o ${MCOUTPUTSTORAGE}/PMMC_Run1_%d_wNoise_Systematics%d_%d.root -n %2.1f",i,i,ErrorType,n,ErrorValue);  
@@ -266,50 +331,33 @@ int main(int argc, char **argv){
 	      }
 	    */
       
-	    sprintf(Name1,"%s/MC/JobsSystematics/PMMC%d_Systematics%d_%d.sh",cINSTALLREPOSITORY,i,ErrorType,n);
-	    sprintf(Name2,"%s/MC/JobsSystematics/condorPMMC%d_Systematics%d_%d.sh",cINSTALLREPOSITORY,i,ErrorType,n);
-	    if(i==0) cout<<Name1<<" is created, and for other neutfiles also (number of neutfile = NMCFiles: see inc/setup.h"<<endl;
+	    sprintf(Name1,"%s/MC/Jobs/%sMC%d_Systematics%d_%d.sh",cINSTALLREPOSITORY,DetName,i,ErrorType,n);
+	    sprintf(Name2,"%s/MC/Jobs/condor%sMC%d_Systematics%d_%d.sh",cINSTALLREPOSITORY,DetName,i,ErrorType,n);
+	    if(i==1) cout<<Name1<<" is created, and for other neutfiles also (number of neutfile = NMCFiles: see inc/setup.h"<<endl;
 	    ofstream ScriptMC(Name1);
 	    if(ScriptMC)
 	      {
 		ScriptMC<<"#!/bin/bash +x"<<endl
-		  /*		    <<Command1<<endl
-		    <<Command1_1<<endl
-		    <<Command1_2<<endl
-		    <<Command1_3<<endl
-	            <<Command1_4<<endl
-		    <<Command1_5<<endl
-		    <<Command1_6<<endl
-		    <<Command2<<endl
-		    <<Command3<<endl
-		    <<Command4<<endl
-		    <<Command5<<endl*/
+		  //<<Command1<<endl
+		  //<<Command1_1<<endl
+		  //<<Command1_2<<endl
+		  //<<Command1_3<<endl
+		  //<<Command1_4<<endl
+		  //<<Command1_5<<endl
+		  //<<Command1_6<<endl
+		  //<<Command2<<endl
+		  //<<Command3<<endl
+		  //<<Command4<<endl
+		  //<<Command5<<endl
 			<<Command6<<endl;
 		//		    <<Command7<<endl;
 	      }
       
 	
-<<<<<<< HEAD
-	sprintf(Command10,"Executable = %s/MC/JobsSystematics/PMMC%d_Systematics%d_%d.sh",cINSTALLREPOSITORY,i,ErrorType,n);
-	sprintf(Command20,"Output = %s/MC/JobsSystematics/log_PMMC%d_Systematics%d_%d.txt",cINSTALLREPOSITORY,i,ErrorType,n);
-	sprintf(Command30,"Error = %s/MC/JobsSystematics/err_PMMC%d_Systematics%d_%d.txt",cINSTALLREPOSITORY,i,ErrorType,n);
-	ofstream CondorMC(Name2);
-	if(CondorMC){
-	  CondorMC<<Command10<<endl
-		<<"Universe        = vanilla"<<endl
-		<<"Rank            = kflops"<<endl
-		<<"Getenv          = True"<<endl
-		<<"Requirements    = CpuIsBusy == FALSE && (machine != \"scbn00\" && machine != \"scbn01.hepnet.scphys.kyoto-u.ac.jp\" )"<<endl
-		<<"Arguments      =  ${Process)"<<endl
-		<<Command20<<endl
-		<<Command30<<endl
-		<<"Notification    = Never"<<endl
-		<<"QUEUE 1"<<endl;
-	}
-=======
-	    sprintf(Command10,"Executable = ${INSTALLREPOSITORY}/MC/JobsSystematics/PMMC%d_Systematics%d_%d.sh",i,ErrorType,n);
-	    sprintf(Command20,"Output = ${INSTALLREPOSITORY}/MC/JobsSystematics/log_PMMC%d_Systematics%d_%d.txt",i,ErrorType,n);
-	    sprintf(Command30,"Error = ${INSTALLREPOSITORY}/MC/JobsSystematics/err_PMMC%d_Systematics%d_%d.txt",i,ErrorType,n);
+	    sprintf(Command10,"Executable = %s/MC/Jobs/%sMC%d_Systematics%d_%d.sh",cINSTALLREPOSITORY,DetName,i,ErrorType,n);
+	    sprintf(Command20,"Output = %s/MC/Jobs/log_%sMC%d_Systematics%d_%d.txt",cINSTALLREPOSITORY,DetName,i,ErrorType,n);
+	    sprintf(Command30,"Error = %s/MC/Jobs/err_%sMC%d_Systematics%d_%d.txt",cINSTALLREPOSITORY,DetName,i,ErrorType,n);
+
 	    ofstream CondorMC(Name2);
 	    if(CondorMC){
 	      CondorMC<<Command10<<endl
@@ -323,8 +371,6 @@ int main(int argc, char **argv){
 		      <<"Notification    = Never"<<endl
 		      <<"QUEUE 1"<<endl;
 	    }
->>>>>>> 850ffb1e21c768fdd071325351fc736653a40b69
-	
 	  }
 	}
       
@@ -353,8 +399,8 @@ int main(int argc, char **argv){
 		if(SubRunNum<StartSubRun || SubRunNum>EndSubRun) continue;
 		cout<<RunNumber<<", SubRun="<<SubRunNumber<<endl;
 	   
-		//sprintf(Name1,"${INSTALLREPOSITORY}/MC/JobsSystematics/PMData_%d_%d.sh",RunNum,SubRunNum);
-		//sprintf(Name2,"${INSTALLREPOSITORY}/MC/JobsSystematics/condorPMData%d_%d.sh",RunNum,SubRunNum);
+		//sprintf(Name1,"${INSTALLREPOSITORY}/MC/Jobs/PMData_%d_%d.sh",RunNum,SubRunNum);
+		//sprintf(Name2,"${INSTALLREPOSITORY}/MC/Jobs/condorPMData%d_%d.sh",RunNum,SubRunNum);
 
 		sprintf(Command1,"");
 		sprintf(Command1_1,"");
@@ -420,9 +466,9 @@ int main(int argc, char **argv){
 		  sprintf(Command4,"${INSTALLREPOSITORY}/XS/XS_CC0pi_Plan -i ${DATAOUTPUTSTORAGE_RECONSTRUCTED}/ingrid_%08d_%04d_pmmergedKSPManabsd_woXTalk_Systematics%d_%d.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%08d_%04d_Systematics%d_%d.root -f 1 -n 5",RunNum,SubRunNum,ErrorType,n,RunNum,SubRunNum,ErrorType,n);
 		}
 		else continue;
-		sprintf(Name1,"%s/MC/JobsSystematics/PMData_Run%d_SubRun%d_Systematics%d_%d.sh",cINSTALLREPOSITORY,RunNum,SubRunNum,ErrorType,n);
-		sprintf(Name2,"%s/MC/JobsSystematics/condorPMData_Run%d_SubRun%d_Systematics%d_%d.sh",cINSTALLREPOSITORY,RunNum,SubRunNum,ErrorType,n);
-		cout<<"Name="<<Name1<<endl;
+		sprintf(Name1,"%s/MC/Jobs/PMData_Run%d_SubRun%d_Systematics%d_%d.sh",cINSTALLREPOSITORY,RunNum,SubRunNum,ErrorType,n);
+		sprintf(Name2,"%s/MC/Jobs/condorPMData_Run%d_SubRun%d_Systematics%d_%d.sh",cINSTALLREPOSITORY,RunNum,SubRunNum,ErrorType,n);
+		cout<<Name1<<endl;
 		ofstream ScriptData(Name1);
 		if(ScriptData)
 		  {
@@ -445,29 +491,10 @@ int main(int argc, char **argv){
 			      <<Command17<<endl
 			      <<Command18<<endl;
 		  }
-	
-	
-<<<<<<< HEAD
-	sprintf(Command10,"Executable = %s/MC/JobsSystematics/PMData_Run%d_SubRun%d_Systematics%d_%d.sh",cINSTALLREPOSITORY,RunNum,SubRunNum,ErrorType,n);
-	sprintf(Command20,"Output = %s/MC/JobsSystematics/log_PMData_Run%d_SubRun%d_Systematics%d_%d.txt",cINSTALLREPOSITORY,RunNum,SubRunNum,ErrorType,n);
-	sprintf(Command30,"Error = %s/MC/JobsSystematics/err_PMData_Run%d_SubRun%d_Systematics%d_%d.txt",cINSTALLREPOSITORY,RunNum,SubRunNum,ErrorType,n);
-	ofstream CondorData(Name2);
-	if(CondorData){
-	  CondorData<<Command10<<endl
-		<<"Universe        = vanilla"<<endl
-		<<"Rank            = kflops"<<endl
-		<<"Getenv          = True"<<endl
-		<<"Requirements    = CpuIsBusy == FALSE && (machine != \"scbn00\" && machine != \"scbn01.hepnet.scphys.kyoto-u.ac.jp\" )"<<endl
-		<<"Arguments      =  ${Process)"<<endl
-		<<Command20<<endl
-		<<Command30<<endl
-		<<"Notification    = Never"<<endl
-		<<"QUEUE 1"<<endl;
-	}	
-=======
-		sprintf(Command10,"Executable = ${INSTALLREPOSITORY}/MC/JobsSystematics/PMData_Run%d_SubRun%d_Systematics%d_%d.sh",RunNum,SubRunNum,ErrorType,n);
-		sprintf(Command20,"Output = ${INSTALLREPOSITORY}/MC/JobsSystematics/log_PMData_Run%d_SubRun%d_Systematics%d_%d.txt",RunNum,SubRunNum,ErrorType,n);
-		sprintf(Command30,"Error = ${INSTALLREPOSITORY}/MC/JobsSystematics/err_PMData_Run%d_SubRun%d_Systematics%d_%d.txt",RunNum,SubRunNum,ErrorType,n);
+		
+		sprintf(Command10,"Executable = %s/MC/Jobs/PMData_Run%d_SubRun%d_Systematics%d_%d.sh",cINSTALLREPOSITORY,RunNum,SubRunNum,ErrorType,n);
+		sprintf(Command20,"Output = %s/MC/Jobs/log_PMData_Run%d_SubRun%d_Systematics%d_%d.txt",cINSTALLREPOSITORY,RunNum,SubRunNum,ErrorType,n);
+		sprintf(Command30,"Error = %s/MC/Jobs/err_PMData_Run%d_SubRun%d_Systematics%d_%d.txt",cINSTALLREPOSITORY,RunNum,SubRunNum,ErrorType,n);
 		ofstream CondorData(Name2);
 		if(CondorData){
 		  CondorData<<Command10<<endl
@@ -487,20 +514,17 @@ int main(int argc, char **argv){
 	  }
 	  //cout<<endl;
 	}
->>>>>>> 850ffb1e21c768fdd071325351fc736653a40b69
       }
     }
   }  
-
-
+  
+  
   ///////////////////////////////////PREREQUISITE//////////////////////////////////////////
-  sprintf(Name1,"%s/MC/JobsSystematics/Prerequisite.sh",cINSTALLREPOSITORY);
-  sprintf(Name2,"%s/MC/JobsSystematics/condorPrerequisite.sh",cINSTALLREPOSITORY);
-  //sprintf(Name1,"$(INSTALLREPOSITORY)/MC/JobsSystematics/Prerequisite.sh");
-  //sprintf(Name2,"$(INSTALLREPOSITORY)/MC/JobsSystematics/condorPrerequisite.sh");
-  //sprintf(Name1,"/export/scraid3/data/bquilain/CC0pi_XS/MC/JobsSystematics/Prerequisite.sh");
-  //sprintf(Name2,"/export/scraid3/data/bquilain/CC0pi_XS/MC/JobsSystematics/condorPrerequisite.sh");
-  cout<<"Name="<<Name1<<endl;
+  sprintf(Name1,"%s/MC/Jobs/Prerequisite.sh",cINSTALLREPOSITORY);
+  sprintf(Name2,"%s/MC/Jobs/condorPrerequisite.sh",cINSTALLREPOSITORY);
+  //sprintf(Name1,"$(INSTALLREPOSITORY)/MC/Jobs/Prerequisite.sh");
+  //sprintf(Name2,"$(INSTALLREPOSITORY)/MC/Jobs/condorPrerequisite.sh");
+  cout<<Name1<<endl;
   ofstream Script(Name1);
   if(Script)
     {
@@ -512,9 +536,9 @@ int main(int argc, char **argv){
     }
   
   
-  sprintf(Command10,"Executable = ${INSTALLREPOSITORY}/MC/JobsSystematics/Prerequisite.sh");
-  sprintf(Command20,"Output = ${INSTALLREPOSITORY}/MC/JobsSystematics/log_Prerequisite.txt");
-  sprintf(Command30,"Error = ${INSTALLREPOSITORY}/MC/JobsSystematics/err_Prerequisite.txt");
+  sprintf(Command10,"Executable = ${INSTALLREPOSITORY}/MC/Jobs/Prerequisite.sh");
+  sprintf(Command20,"Output = ${INSTALLREPOSITORY}/MC/Jobs/log_Prerequisite.txt");
+  sprintf(Command30,"Error = ${INSTALLREPOSITORY}/MC/Jobs/err_Prerequisite.txt");
   ofstream CondorPre(Name2);
   if(CondorPre){
     CondorPre<<Command10<<endl
@@ -544,12 +568,12 @@ int main(int argc, char **argv){
       sprintf(Command005,"");
       sprintf(Command006,"");
 
-      sprintf(Name1,"%s/MC/JobsSystematics/Postrequisite_Systematics%d_%d.sh",cINSTALLREPOSITORY,ErrorType,n);
-      sprintf(Name2,"%s/MC/JobsSystematics/condorPostrequisite_Systematics%d_%d.sh",cINSTALLREPOSITORY,ErrorType,n);
-      cout<<"Name="<<Name1<<endl;
+      sprintf(Name1,"%s/MC/Jobs/Postrequisite_Systematics%d_%d.sh",cINSTALLREPOSITORY,ErrorType,n);
+      sprintf(Name2,"%s/MC/Jobs/condorPostrequisite_Systematics%d_%d.sh",cINSTALLREPOSITORY,ErrorType,n);
+      cout<<Name1<<endl;
       ofstream ScriptPost(Name1);
       if(ErrorType==0){
-	sprintf(Command001,"${INSTALLREPOSITORY}/XS/CC0piSelection -i ${INSTALLREPOSITORY}/XS/root_input/XSFormat_Run1_%s_Plan.root -o ${INSTALLREPOSITORY}/XS/files/MCSelected_Systematics%d_%d -s 1 -e %d -v %3.3f -m -p %2.2f","%d",ErrorType,n,ErrorType,ErrorValue,DataPOT);
+	sprintf(Command001,"${INSTALLREPOSITORY}/XS/CC0piSelection -i ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s%s_Run1_%s_Plan.root -o ${INSTALLREPOSITORY}/XS/files/MCSelected_%s%s_Systematics%d_%d -s 1 -e %d -v %3.3f -m -p %2.2f",DetName,ParticleGenerator,"%d",DetName,ParticleGenerator,ErrorType,n,ErrorType,ErrorValue,DataPOT);
 	sprintf(Command002,"${INSTALLREPOSITORY}/XS/CC0piSelection -i ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s_%s.root -o ${INSTALLREPOSITORY}/XS/files/DataSelected_Systematics%d_%d -s 1 -e %d -v %3.3f","%08d","%04d",ErrorType,n,ErrorType,ErrorValue);
 	sprintf(Command004,"${INSTALLREPOSITORY}/XS/UnfoldingOptimisation_Dvt -d ${INSTALLREPOSITORY}/XS/files/DataSelected_Systematics%d_%d -m ${INSTALLREPOSITORY}/XS/files/MCSelected_Systematics%d_%d -o ${INSTALLREPOSITORY}/XS/files/DataUnfolded_Systematics%d_%d -n 1",ErrorType,n,ErrorType,n,ErrorType,n);
       }
@@ -578,10 +602,10 @@ int main(int argc, char **argv){
 		    <<Command003<<endl
 		    <<Command004<<endl;
 	}
-      
-      sprintf(Command10,"Executable = ${INSTALLREPOSITORY}/MC/JobsSystematics/Postrequisite_Systematics%d_%d.sh",ErrorType,n);
-      sprintf(Command20,"Output = ${INSTALLREPOSITORY}/MC/JobsSystematics/log_Postrequisite_Systematics%d_%d.txt",ErrorType,n);
-      sprintf(Command30,"Error = ${INSTALLREPOSITORY}/MC/JobsSystematics/err_Postrequisite_Systematics%d_%d.txt",ErrorType,n);
+      sprintf(Command10,"Executable = %s/MC/Jobs/Postrequisite_Systematics%d_%d.sh",cINSTALLREPOSITORY,ErrorType,n);
+      sprintf(Command20,"Output = %s/MC/Jobs/log_Postrequisite_Systematics%d_%d.txt",cINSTALLREPOSITORY,ErrorType,n);
+      sprintf(Command30,"Error = %s/MC/Jobs/err_Postrequisite_Systematics%d_%d.txt",cINSTALLREPOSITORY,ErrorType,n);
+
       ofstream CondorPost(Name2);
       if(CondorPost){
 	CondorPost<<Command10<<endl
@@ -594,10 +618,11 @@ int main(int argc, char **argv){
 		  <<Command30<<endl
 		  <<"Notification    = Never"<<endl
 		  <<"QUEUE 1"<<endl;
+	
       }
     }
   }
-
+  
 
 
   
