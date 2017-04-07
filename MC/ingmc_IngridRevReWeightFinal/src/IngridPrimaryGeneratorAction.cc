@@ -87,6 +87,8 @@ IngridPrimaryGeneratorAction(Neut *neut0,IngridRunAction* rac, IngridEventAction
   particleGun = new G4ParticleGun(n_particle);
   particleTable = G4ParticleTable::GetParticleTable();
   G4String particleName;
+  isParticleGun=false;
+  particleGun_pdg=0;
 
   runaction->NotEntry = 0;
 }
@@ -95,6 +97,14 @@ IngridPrimaryGeneratorAction(Neut *neut0,IngridRunAction* rac, IngridEventAction
 IngridPrimaryGeneratorAction::~IngridPrimaryGeneratorAction()
 {
   if( particleGun!=NULL ) { delete particleGun; particleGun=NULL; }
+}
+
+//
+
+// option -p : propagate only a single type of particle
+void IngridPrimaryGeneratorAction::SetParticleGun(bool isGun, int pdg){
+  isParticleGun=isGun;
+  particleGun_pdg=pdg;
 }
 
 //
@@ -489,11 +499,34 @@ NEXTSTEP:
   }
   runaction -> GetEvtSum() -> AddNeut( neutinfo );
     */
-	for(int ipart=0; ipart<Secondary.NumParticle; ipart++) {
+
+    // ############
+    // in case of isParticleGun option -p pdg, find the highest momentum particle of type pdg
+
+    G4double mom_max=0;
+    G4double IPART=-1;
+    if(isParticleGun){
+      for(int ipart=0; ipart<Secondary.NumParticle; ipart++) {
+	if( Secondary.TrackingFlag[ipart]==1 ) {
+	  if( Secondary.ParticleID[ipart]==particleGun_pdg){
+	    G4double mom = Secondary.AbsMomentum[ipart]*MeV;
+	    if(mom>mom_max){
+	      mom_max=mom;
+	      IPART=ipart;
+	    }
+	  }
+	}
+      }//ipart
+    }
+      
+
+    for(int ipart=0; ipart<Secondary.NumParticle; ipart++) {
   // #############################################################################
 	// ### consider only TrackingFlag for use non interacted particle in neucleus ###
   // #############################################################################
 		if( Secondary.TrackingFlag[ipart]==1 ) {
+
+		  if(isParticleGun && (ipart != IPART)) continue;
 
 #ifdef DEBUG2
 	    G4cout << "Particle:" << (neut->Vector).Secondary.ParticleID[ipart];
@@ -508,22 +541,20 @@ NEXTSTEP:
 
 			G4ParticleDefinition* particle;
 			particle = particleTable->FindParticle(Secondary.ParticleID[ipart]);
-			particleGun->SetParticleDefinition(particle);
 
 			double nvec[3];
 			for(int ixyz=0; ixyz<3; ixyz++)
 				nvec[ixyz] = Secondary.Momentum[ipart][ixyz]/ Secondary.AbsMomentum[ipart];
 			G4ThreeVector dir(nvec[0], nvec[1], nvec[2]);
-			particleGun->SetParticleMomentumDirection(dir);
 
 			G4double mass = particle->GetPDGMass();
 			G4double mom = Secondary.AbsMomentum[ipart]*MeV;
 			G4double energy = sqrt(mass*mass+mom*mom) - mass;
-			particleGun->SetParticleEnergy(energy);
-		
-			particleGun->SetParticleTime(0.0*ns);
 
-			//
+			particleGun->SetParticleDefinition(particle);
+			particleGun->SetParticleMomentumDirection(dir);
+			particleGun->SetParticleEnergy(energy);
+			particleGun->SetParticleTime(0.0*ns);
 			particleGun->GeneratePrimaryVertex(anEvent);
 
 #ifdef DEBUG2

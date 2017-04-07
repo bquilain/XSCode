@@ -20,6 +20,7 @@ public:
 
 public:
   void GeneratePrimaries(G4Event* anEvent);
+  void SetParticleGun(bool, int);
 
 private:
   G4ParticleGun* particleGun;
@@ -30,6 +31,10 @@ private:
 
   IngridRunAction* runaction;
   IngridEventAction* eventaction;
+
+  // for option -p : propagate only a single type of particle
+  bool isParticleGun;
+  int particleGun_pdg;
   
   Neut *neut_fe;
 };

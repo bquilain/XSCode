@@ -6,11 +6,15 @@ ROOTLIBS     	:= $(shell root-config --libs)
 ROOTGLIBS    	:= $(shell root-config --glibs)
 CXXFLAGS	+= $(ROOTCFLAGS)
 
+TMVACFLAGS       = -I$(TMVASYS)/
+CXXFLAGS        += $(TMVACFLAGS)
+TMVALIBS         = -L$(TMVASYS)/lib $(TMVASYS)/lib/libTMVA.1.so $(shell root-config --libs) -lMLP -lTreePlayer -lMinuit
+
 #LIB = $(INSTALLREPOSITORY)/CC0pi_XS/MC/ingmc_IngridRevReWeightFinal/lib_New
 LIB = $(INSTALLREPOSITORY)/libs/libsPM/lib_5.34
 #lib
 
-LIBS 		= $(ROOTGLIBS) \
+LIBS 		= $(ROOTGLIBS) $(TMVALIBS)\
           -lm $(LIB)/INGRIDEVENTSUMMARY.so $(LIB)/IngridHitSummary.so \
           $(LIB)/IngridSimHitSummary.so $(LIB)/IngridSimVertexSummary.so \
           $(LIB)/IngridSimParticleSummary.so $(LIB)/BeamInfoSummary.so \
@@ -25,22 +29,22 @@ CXXFLAGS += -I$(LIB) -I$(SRC) -I$(INC)
 
 #TARGET= IngAddNoisePMMC CompareCalibrationsPM GeneratePEAngleDistributions HitEfficiency GenerateHitEfficiencyMask Draw_CompareCalibrationsPM GeneratePDFMuCL_Plan XS_CC0pi_Plan SandSelection_Plan CC0piSelection UnfoldingOptimisation DrawXSPlots XSFileGenerator
 #TARGET= GenerateHitEfficiencyMask
-TARGET= CC0piSelection XS_CC0pi_Plan XSFileGenerator UnfoldingOptimisation UnfoldingOptimisation_Dvt DrawXSPlots_Toys GeneratePDFMuCL_Likelihood GeneratePDFMuCL_Plan IngAddNoisePMMC HitEfficiency CompareCalibrationsPM GeneratePEAngleDistributions GenerateHitEfficiencyMask DrawReconstructedEventsPlots_Dvt FinalMCOutputMaker
+TARGET= CC0piSelection_Dvt XS_CC0pi_Plan_Dvt XSFileGenerator UnfoldingOptimisation UnfoldingOptimisation_Dvt DrawXSPlots_Toys GeneratePDFMuCL_Likelihood_Dvt GeneratePDFMuCL_Plan IngAddNoisePMMC HitEfficiency CompareCalibrationsPM GeneratePEAngleDistributions GenerateHitEfficiencyMask DrawReconstructedEventsPlots_Dvt FinalMCOutputMaker
 #DrawTrueEventsPlots_Dvt
 
 all: $(TARGET)
 IngAddNoisePMMC: IngAddNoisePMMC.o
-XS_CC0pi_Plan: XS_CC0pi_Plan.o
+XS_CC0pi_Plan_Dvt: XS_CC0pi_Plan_Dvt.o
 UnfoldingOptimisation: UnfoldingOptimisation.o
 GeneratePDFMuCL_Plan: GeneratePDFMuCL_Plan.o
-GeneratePDFMuCL_Likelihood: GeneratePDFMuCL_Likelihood.o
+GeneratePDFMuCL_Likelihood_Dvt: GeneratePDFMuCL_Likelihood_Dvt.o
 CompareCalibrationsPM: CompareCalibrationsPM.o
 GeneratePEAngleDistributions: GeneratePEAngleDistributions.o
 HitEfficiency: HitEfficiency.o
 GenerateHitEfficiencyMask: GenerateHitEfficiencyMask.o
 Draw_CompareCalibrationsPM: Draw_CompareCalibrationsPM.o
 SandSelection_Plan: SandSelection_Plan.o
-CC0piSelection: CC0piSelection.o
+CC0piSelection_Dvt: CC0piSelection_Dvt.o
 DrawXSPlots: DrawXSPlots.o
 DrawXSPlots_Toys: DrawXSPlots_Toys.o
 XSFileGenerator: XSFileGenerator.o
