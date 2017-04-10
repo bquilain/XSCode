@@ -9,14 +9,15 @@
 
 using namespace std;
 
-INGRID_Dimension::INGRID_Dimension(){
-  f = TFile::Open("/export/scbn25/data1/taichiro/T2K/work/basesoft/git/watermodule/wmmc/assembly_checklist.root","READ");
-  t = (TTree*) f->Get("tree");
+//------------------------------------------------
+void Initialize_INGRID_Dimension(){
+  TFile* f = TFile::Open("/export/scbn25/data1/taichiro/T2K/work/basesoft/git/watermodule/wmmc/assembly_checklist.root","READ");
+  TTree* t = (TTree*) f->Get("tree");
   double xy1,xy3,xy0;
   int view,pln,ch;
   t -> SetBranchAddress("xy1",&xy1);
   t -> SetBranchAddress("xy3",&xy3);
-  t -> SetBranchAddress("view",&view);
+ t -> SetBranchAddress("view",&view);
   t -> SetBranchAddress("pln",&pln);
   t -> SetBranchAddress("ch",&ch);
   for(int i=0;i<t->GetEntries();i++){
@@ -29,10 +30,13 @@ INGRID_Dimension::INGRID_Dimension(){
       position_xy[view][pln][ch] = position_xy[view][pln][ch] - xy0; //mm->cm
     }
     else{
+      // we measured the xy position only for plan scintillators
       position_xy[view][pln][ch] = 0;
     }
   }
+  t->Delete();
   f->Close();
+  f->Delete();
 
   f = TFile::Open("/export/scbn25/data1/taichiro/T2K/work/basesoft/git/watermodule/wmmc/position_module_z.root","READ");
   t = (TTree*) f->Get("tree");
@@ -51,8 +55,18 @@ INGRID_Dimension::INGRID_Dimension(){
     	position_z [view][pln][ch_temp] = position_z [view][pln][ch_temp] - z0;
     }
   }
+  t->Delete();
   f->Close();
+  f->Delete();
   //  std::cout << "call DIMENSION" << std::endl;
+
+  /*  for(int view=0;view<VIEWMAX;view++){
+    for(int pln=0;pln<8;pln++){
+      for(int ch=0;ch<CHMAX;ch++){
+	cout<<view<<" "<<pln<<" "<<ch<<" "<<position_xy[view][pln][ch]<<" "<<position_z[view][pln][ch]<<endl;
+      }
+    }
+    }*/
 }
 
 
@@ -378,7 +392,7 @@ bool INGRID_Dimension::get_pos_loli(int mod, int view, int pln, int ch, int grid
 	//return true;
 
 
-
+  
 	//Based on measurement
 	double x=0,y=0,z=0;
 	if(view==0){

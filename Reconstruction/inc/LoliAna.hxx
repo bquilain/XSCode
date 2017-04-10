@@ -45,7 +45,7 @@ float ch_th =150;
 int diff_th=10;
 float ang_th=35;
 float pos_th=85;
-
+int Ipln_th=2; //number of planes fIngridHitPMJoint is looking at
 double TTCL;//for mucl
 int   nCL;  //for mucl
 
@@ -374,7 +374,7 @@ bool fIngSortTrack(vector<TrackIng> &a){
   std::stable_sort(a.begin(), a.end(), withcenter);
 };
 
-bool fIngPMJoint(vector<TrackIng> &itrk, vector<TrackPM> &ptrk, bool vertical, int mod){
+bool fIngPMJoint(vector<TrackIng> &itrk, vector<TrackPM> &ptrk, bool vertical, int mod, double AngleCut=ang_th, double TransverseCut=pos_th){
 
   float diff_ang, diff_pos, joilik=-1e-5;
   int joitra=-1;
@@ -402,10 +402,10 @@ bool fIngPMJoint(vector<TrackIng> &itrk, vector<TrackPM> &ptrk, bool vertical, i
       diff_ang=ptrk[i].ang-itrk[j].ang;
       diff_pos=(ptrk[i].intcpt+ptrk[i].slope*zpos)-(itrk[j].intcpt+itrk[j].slope*zpos);
 
-      if(fabs(diff_ang)<ang_th&&fabs(diff_pos)<pos_th){
+      if(fabs(diff_ang)<AngleCut&&fabs(diff_pos)<TransverseCut){
 	//	cout<<"ptrk candidate="<<i<<endl;
 	if(jointed){
-	  if(joilik>sqrt(fabs(diff_ang)*fabs(diff_ang)/ang_th/ang_th+fabs(diff_pos)*fabs(diff_pos)/pos_th/pos_th)) {
+	  if(joilik>sqrt(fabs(diff_ang)*fabs(diff_ang)/AngleCut/AngleCut+fabs(diff_pos)*fabs(diff_pos)/TransverseCut/TransverseCut)) {
 	    // ptrk[joitra].ing_trk=false;
 	    //NO ! case1: there is maybe an other ingrid track attached to ptrk[joitra]
 	    //       -> to avoid that: check the mod of last hit in ptrk[joitra]
@@ -460,7 +460,7 @@ bool fIngPMJoint(vector<TrackIng> &itrk, vector<TrackPM> &ptrk, bool vertical, i
 
 	jointed=true;
 	joitra=i;
-	joilik=sqrt(fabs(diff_ang)*fabs(diff_ang)/ang_th/ang_th+fabs(diff_pos)*fabs(diff_pos)/pos_th/pos_th);
+	joilik=sqrt(fabs(diff_ang)*fabs(diff_ang)/AngleCut/AngleCut+fabs(diff_pos)*fabs(diff_pos)/TransverseCut/TransverseCut);
 	hasingtrk=true;
 
       }//if
@@ -535,7 +535,7 @@ bool fIngPMJoint(vector<TrackIng> &itrk, vector<TrackPM> &ptrk, bool vertical, i
 
 
 
-bool fIngHitPMJoint( vector<TrackIng> &itrk, vector<TrackPM> &ptrk, bool vertical, int mod){
+bool fIngHitPMJoint( vector<TrackIng> &itrk, vector<TrackPM> &ptrk, bool vertical, int mod, int TransverseCut=pos_th, int nINGRIDPlanes=Ipln_th){
  
   float diff_pos,joilik=-1e-5;
   int joitra=-1;
@@ -547,7 +547,7 @@ bool fIngHitPMJoint( vector<TrackIng> &itrk, vector<TrackPM> &ptrk, bool vertica
 
   for(int incmod=0;incmod<7;incmod++){
     if(!vertical && incmod!=3) continue; //ML: I restrict horizontal hits to mod3
-    for(int pln=0;pln<2;pln++){
+    for(int pln=0;pln<nINGRIDPlanes;pln++){
       for(int ch=0;ch<24;ch++){
 	//if(incmod!=3)continue;	
 	if(ingnonrechits[incmod][view][pln][ch]<2.5)continue;
@@ -569,11 +569,11 @@ bool fIngHitPMJoint( vector<TrackIng> &itrk, vector<TrackPM> &ptrk, bool vertica
 
 	  diff_pos = (ptrk[i].intcpt+ptrk[i].slope*zpos) - xypos;// ML corr
 	  //cout<<i<<" diff_pos calculated...";
-	  if(fabs(diff_pos)<pos_th){
+	  if(fabs(diff_pos)<TransverseCut){
 	    //cout<<i<<" diff_pos candidate"<<endl;
 
 	    if(jointed){
-	      if(joilik>fabs(diff_pos)/pos_th){
+	      if(joilik>fabs(diff_pos)/TransverseCut){
 		// ptrk[joitra].ing_trk=false;
 		//NO ! case1: there is maybe an other ingrid hit attached to ptrk[joitra]
 		//       -> to avoid that: check the mod of last hit in ptrk[joitra]
@@ -652,7 +652,7 @@ bool fIngHitPMJoint( vector<TrackIng> &itrk, vector<TrackPM> &ptrk, bool vertica
 
 	    jointed=true;
 	    joitra=i;
-	    joilik=fabs(diff_pos)/pos_th;
+	    joilik=fabs(diff_pos)/TransverseCut;
 	    hasingtrk=true;
 
 	  }//if
@@ -1771,7 +1771,7 @@ void fTrackMatchBackY(Trk &trk,PMTrack &pmtrk, TrackPM &vtrk){
 
 
 
-bool fPMAna(int mod=16, bool requireIngridTrack=true){
+bool fPMAna(int mod=16, int TrackMatchingPlane=diff_th, int VertexingPlane=pln_th, double VertexingChannel=ch_th, double AngleCut=ang_th,double TransverseCut=pos_th,int nINGRIDPlanes=Ipln_th,bool requireIngridTrack=true){
 
   PMTrack track;
   Trk     trk;
@@ -1786,11 +1786,11 @@ bool fPMAna(int mod=16, bool requireIngridTrack=true){
 
   //2016/6/26   
   //2016/11/24 ML requireIngridTrack added for new option -N
-  bool ah=!fIngPMJoint(hingtrack,htrack,false,mod);
-  bool av=!fIngPMJoint(vingtrack,vtrack,true,mod);
+  bool ah=!fIngPMJoint(hingtrack,htrack,false,mod,AngleCut,TransverseCut);
+  bool av=!fIngPMJoint(vingtrack,vtrack,true,mod,AngleCut,TransverseCut);
 #ifdef USEINGHIT
-  bool bh=!fIngHitPMJoint(hingtrack,htrack,false,mod);
-  bool bv=!fIngHitPMJoint(vingtrack,vtrack,true,mod);
+  bool bh=!fIngHitPMJoint(hingtrack,htrack,false,mod,TransverseCut,nINGRIDPlanes);
+  bool bv=!fIngHitPMJoint(vingtrack,vtrack,true,mod,TransverseCut,nINGRIDPlanes);
 #else
   bool bh=true;
   bool bv=true;
@@ -1828,7 +1828,7 @@ bool fPMAna(int mod=16, bool requireIngridTrack=true){
   tracked_h.clear();tracked_v.clear();
   for(int i=0;i<htrack.size();i++)tracked_h.push_back(false);
   for(int j=0;j<vtrack.size();j++)tracked_v.push_back(false);
-  for(int dif=0;dif<diff_th;dif++){
+  for(int dif=0;dif<TrackMatchingPlane;dif++){
     //for(int pln=0;pln<plnmax(16)-1;pln++){//16 means PM
     for(int pln=0;pln<plnmax(mod,0,0,0)-1;pln++){//mod view pln ch axis
       id_h.clear();id_v.clear();
@@ -1900,8 +1900,8 @@ bool fPMAna(int mod=16, bool requireIngridTrack=true){
 
       if(pmtrack[i].Ntrack == 0||pmtrack[j].Ntrack == 0)continue;
 
-      if(abs((pmtrack[i].trk[0].startxpln)-(pmtrack[j].trk[0].startxpln))+abs((pmtrack[i].trk[0].startypln)-(pmtrack[j].trk[0].startypln))>pln_th)continue;
-      if(fabs((pmtrack[i].trk[0].y)-(pmtrack[j].trk[0].y))+fabs((pmtrack[i].trk[0].x)-(pmtrack[j].trk[0].x))>ch_th)continue;
+      if(abs((pmtrack[i].trk[0].startxpln)-(pmtrack[j].trk[0].startxpln))+abs((pmtrack[i].trk[0].startypln)-(pmtrack[j].trk[0].startypln))>VertexingPlane)continue;
+      if(fabs((pmtrack[i].trk[0].y)-(pmtrack[j].trk[0].y))+fabs((pmtrack[i].trk[0].x)-(pmtrack[j].trk[0].x))>VertexingChannel)continue;
 
 
       bool former = false;
@@ -1961,13 +1961,11 @@ bool fPMAna(int mod=16, bool requireIngridTrack=true){
     cout<<"reco "<<i<<" #tracks="<<pmtrack[i].trk.size()<<endl;
   */
 
-  int maxpdif; 
-  if(mod==15)maxpdif=10;
-  else       maxpdif=4;
+
 
   if(requireIngridTrack || pmtrack.size()>0){
     // step 3a: matching of tracks w/ !ing_trk + remaining unmatched tracks w/ ing_trk
-    for(int pdif=0;pdif<maxpdif;pdif++){
+    for(int pdif=0;pdif<TrackMatchingPlane;pdif++){
       for(int k=0;k<pmtrack.size();k++){
 	if(pmtrack[k].Ntrack==0)continue;
 	for(int h=0;h<htrack.size();h++){
@@ -1979,8 +1977,8 @@ bool fPMAna(int mod=16, bool requireIngridTrack=true){
 	    //cout<<"delta_plan with support reco h="<<abs((pmtrack[k].trk[0].startxpln)-(htrack[h].ipln))<<" v="<<abs((pmtrack[k].trk[0].startypln)-(vtrack[v].ipln))<<", limit is "<<pln_th+2<<endl;
 	    //cout<<"delta_xy is y="<<fabs((pmtrack[k].trk[0].y)-(vtrack[v].ixy))<<" x="<<+fabs((pmtrack[k].trk[0].x)-(htrack[h].ixy))<<", limit is "<<ch_th<<endl;
 	    if((htrack[h].fpln-vtrack[v].fpln>pdif+1)||(vtrack[v].fpln-htrack[h].fpln>pdif))continue;
-	    if(abs((pmtrack[k].trk[0].startxpln)-(htrack[h].ipln))+abs((pmtrack[k].trk[0].startypln)-(vtrack[v].ipln))>pln_th+2)continue;
-	    if(fabs((pmtrack[k].trk[0].y)-(vtrack[v].ixy))+fabs((pmtrack[k].trk[0].x)-(htrack[h].ixy))>ch_th)continue;
+	    if(abs((pmtrack[k].trk[0].startxpln)-(htrack[h].ipln))+abs((pmtrack[k].trk[0].startypln)-(vtrack[v].ipln))>VertexingPlane)continue;
+	    if(fabs((pmtrack[k].trk[0].y)-(vtrack[v].ixy))+fabs((pmtrack[k].trk[0].x)-(htrack[h].ixy))>VertexingChannel)continue;
 	  
 	    tracked_h[h]=true;
 	    tracked_v[v]=true;
@@ -1991,10 +1989,12 @@ bool fPMAna(int mod=16, bool requireIngridTrack=true){
 	    trk.hnum=h;
 	    trk.vnum=v;
 	    pmtrack[k].trk.push_back(trk);
-	    //pmtrack[k].vetowtracking = pmtrack[k].vetowtracking || trk.vetowtracking;
-	    //pmtrack[k].edgewtracking = pmtrack[k].edgewtracking || trk.edgewtracking;
+	    pmtrack[k].vetowtracking = pmtrack[k].vetowtracking || trk.vetowtracking;
+	    pmtrack[k].edgewtracking = pmtrack[k].edgewtracking || trk.edgewtracking;
+	    /* ML 2017/03/13 for consistency with PM code
 	    pmtrack[k].vetowtracking = pmtrack[k].vetowtracking;
 	    pmtrack[k].edgewtracking = pmtrack[k].edgewtracking;
+	    */
 	    if(trk.ing_trk)pmtrack[k].Ningtrack++; // corr ML
 	    pmtrack[k].Ntrack++;
 	  }
@@ -2009,7 +2009,7 @@ bool fPMAna(int mod=16, bool requireIngridTrack=true){
   else { // ie !requireIngridTrack && no pmtrack (ie no vertex yet)
     // step 3b-i:  matching of all tracks (similar to step 1)
     //    cout<<" step 3b : event with no INGRID 3D track...";
-    for(int dif=0;dif<diff_th;dif++){
+    for(int dif=0;dif<TrackMatchingPlane;dif++){
       for(int pln=0;pln<plnmax(15,0,0,0)-1;pln++){//16 means PM
 	id_h.clear();id_v.clear();
 	used_h.clear();used_v.clear();
@@ -2078,8 +2078,8 @@ bool fPMAna(int mod=16, bool requireIngridTrack=true){
 
 	if(pmtrack[i].Ntrack == 0||pmtrack[j].Ntrack == 0)continue;
 
-	if(abs((pmtrack[i].trk[0].startxpln)-(pmtrack[j].trk[0].startxpln))+abs((pmtrack[i].trk[0].startypln)-(pmtrack[j].trk[0].startypln))>pln_th)continue;
-	if(fabs((pmtrack[i].trk[0].y)-(pmtrack[j].trk[0].y))+fabs((pmtrack[i].trk[0].x)-(pmtrack[j].trk[0].x))>ch_th)continue;
+	if(abs((pmtrack[i].trk[0].startxpln)-(pmtrack[j].trk[0].startxpln))+abs((pmtrack[i].trk[0].startypln)-(pmtrack[j].trk[0].startypln))>VertexingPlane)continue;
+	if(fabs((pmtrack[i].trk[0].y)-(pmtrack[j].trk[0].y))+fabs((pmtrack[i].trk[0].x)-(pmtrack[j].trk[0].x))>VertexingChannel)continue;
 
 	bool former = false;
 
@@ -2145,8 +2145,8 @@ bool fPMAna(int mod=16, bool requireIngridTrack=true){
 
     for(int h=0;h<htrack.size();h++){
       if(tracked_h[h])continue;
-      if(abs((pmtrack[k].trk[0].startxpln)-(htrack[h].ipln))>pln_th+2)continue;
-      if(fabs((pmtrack[k].trk[0].x)-(htrack[h].ixy))>ch_th)continue;
+      if(abs((pmtrack[k].trk[0].startxpln)-(htrack[h].ipln))>VertexingPlane)continue;
+      if(fabs((pmtrack[k].trk[0].x)-(htrack[h].ixy))>VertexingChannel)continue;
       tracked_h[h]=true;
       trk.clear();
       fTrackMatchX(trk,pmtrack[k],htrack[h]);
@@ -2164,8 +2164,8 @@ bool fPMAna(int mod=16, bool requireIngridTrack=true){
     }
     for(int v=0;v<vtrack.size();v++){
       if(tracked_v[v])continue;
-      if(abs((pmtrack[k].trk[0].startypln)-(vtrack[v].ipln))>pln_th+2)continue;
-      if(fabs((pmtrack[k].trk[0].y)-(vtrack[v].ixy))>ch_th)continue;
+      if(abs((pmtrack[k].trk[0].startypln)-(vtrack[v].ipln))>VertexingPlane)continue;
+      if(fabs((pmtrack[k].trk[0].y)-(vtrack[v].ixy))>VertexingChannel)continue;
       tracked_v[v]=true;
       trk.clear();
       fTrackMatchY(trk,pmtrack[k],vtrack[v]);

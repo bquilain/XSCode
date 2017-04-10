@@ -50,7 +50,7 @@ int main(int argc,char *argv[]){
   bool MC = false;
   bool WM=false;
 
-  while ((c = getopt(argc, argv, "f:o:n:w:t:")) != -1) {
+  while ((c = getopt(argc, argv, "f:o:n:wt:")) != -1) {
     switch(c){
     case 'f':
       sprintf(FileName, "%s", optarg);

@@ -199,6 +199,9 @@ int main(int argc,char *argv[]){
   //IngridBasicReconSummary* recon = new IngridBasicReconSummary();
   PMReconSummary* recon = new PMReconSummary();
   //Hit                        hit;
+
+  Initialize_INGRID_Dimension();
+
   
   const int VIEW=2;
   const int PLN=8;
@@ -209,8 +212,8 @@ int main(int argc,char *argv[]){
 
   for(int ievt=Nini; ievt<nevt; ievt++){
 
-    //if(ievt%100==0)cout << "analyze event# " << ievt<<endl;
-    cout << "analyze event# " << ievt<<endl;
+    if(ievt%100==0)cout << "analyze event# " << ievt<<endl;
+    //    cout << "analyze event# " << ievt<<endl;
     wsummary -> Clear();
     evt      -> Clear();
     tree     -> GetEntry(ievt);
@@ -259,13 +262,14 @@ int main(int argc,char *argv[]){
           if(ch_s>=40 && ch_s<60)     {ch_min=40;ch_max=60;}
           else if(ch_s>=60 && ch_s<80){ch_min=60;ch_max=80;}
           else if(ch_s<40)continue;
-	  //cout<<"\nreference hit (view,pln,ch,pe)="<<view_s<<" "<<pln_s<<" "<<ch_s<<" "<<pe_s<<" time="<<inghitsum->time<<endl;
+	  //cout<<"reference hit (view,pln,ch,pe)="<<view_s<<" "<<pln_s<<" "<<ch_s<<" pe="<<pe_s<<endl;
 	  //cout<<"position x="<<posxy_s[0]<<" y="<<posxy_s[1]<<" grid_id: x="<<inghitsum->gridcell_id_y1<<" y="<<inghitsum->gridcell_id_x1<<endl;
           for(int ch=ch_min;ch<ch_max;ch++){
             double posxy[3];
             fdim_temp->get_pos_loli(mod,view,pln_s,ch,&posxy[0],&posxy[1],&posxy[2]);//cm
 	    //	    cout<<ch<<" view_s="<<view_s<<" posxy_s="<<posxy_s[view_s]<<" posxy="<<posxy[view_s]<<endl;
-            if( fabs(posxy_s[view_s]-posxy[view_s]) <5. && pln_s<2) pe_cross[view][pln_s][ch]+= r.Poisson(pe_s * crossrate_submod0);//poisson
+	    cout<<posxy_s[view_s]<<" "<<posxy[view_s]<<" "<<fabs(posxy_s[view_s]-posxy[view_s])<<endl;
+            if( fabs(posxy_s[view_s]-posxy[view_s]) <5. && pln_s<2){ pe_cross[view][pln_s][ch]+= r.Poisson(pe_s * crossrate_submod0);cout<<pe_cross[view][pln_s][ch]<<endl;}//poisson
             if( fabs(posxy_s[view_s]-posxy[view_s]) <5. && pln_s>=2)pe_cross[view][pln_s][ch]+= r.Poisson(pe_s * crossrate_submod123);//poisson
           }
         }
@@ -308,7 +312,7 @@ int main(int argc,char *argv[]){
 		if(Is_Bad_Channel( hit ))continue;
 		evt->AddIngridModHit(hit, mod, cyc);
 		evt->AddIngridSimHit(simhit);
-		//cout<<"\ncross-talk added to hit (view,pln,ch)="<<view<<" "<<pln<<" "<<ch<<", pe_cross="<<pe_cross[view][pln][ch]<<endl;
+		//cout<<"\ncross-talk added, new hit (view,pln,ch)="<<view<<" "<<pln<<" "<<ch<<", pe_cross="<<pe_cross[view][pln][ch]<<endl;
 	      }
 	    }
 	  }

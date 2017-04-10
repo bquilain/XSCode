@@ -1,6 +1,7 @@
 #include<iostream>
 #include<sstream>
 #include<fstream>
+#include<ctime>
 using namespace std;
 #include <iomanip.h>
 #include <sys/stat.h>
@@ -55,9 +56,9 @@ void Add_Bad_Channel();
 bool Is_Bad_Channel(IngridHitSummary* thit);
 void fMode(int mode);
 
-const static char *dst_data          = "/home/t2kingrid/data/dst";
+//const static char *dst_data          = "/home/t2kingrid/data/dst";
 const static char *out_data          = "/home/t2kingrid/data/dst";
-const static char *cosmic_data       = "/home/t2kingrid/data/cosmic";
+//const static char *cosmic_data       = "/home/t2kingrid/data/cosmic";
 
 //static const char *data_file_folder  = "/home/kikawa/scraid1/data/pm_ingrid";
 //static const char *calib_file_folder = "/home/kikawa/scraid1/data/pm_ingrid";
@@ -91,7 +92,16 @@ int main(int argc,char *argv[]){
   Int_t Nini = 0;
   bool disp = false;
   bool cosmic = false;
-  while ((c = getopt(argc, argv, "r:s:f:cado:i:")) != -1) {
+
+  bool Error=false;
+  int ErrorType;
+  double ErrorValue=0;
+  int ActivePlaneCriteria=0; // ?? tbd
+  int VetoUpstreamCriteria=0;// ?? tbd
+  double VetoEdgeCriteria=0; // ?? tbd
+  double FVCriteria=80;//cm, size of FV, always centered
+
+  while ((c = getopt(argc, argv, "r:s:f:cado:i:e:v:")) != -1) {
     switch(c){
     case 'r':
       run_number=atoi(optarg);
@@ -123,9 +133,29 @@ int main(int argc,char *argv[]){
     case 'i':
       Nini=atoi(optarg);
       break;
-
+    case 'e':
+      Error=true;
+      ErrorType=atoi(optarg);
+      break;
+    case 'v':
+      ErrorValue=atof(optarg);
+      break;
     }
   }
+
+  if(Error){
+    if(ErrorType==7) ActivePlaneCriteria = (int) ErrorValue;
+    else if(ErrorType==8) VetoUpstreamCriteria = (int) ErrorValue;
+    else if(ErrorType==9) VetoEdgeCriteria=(double) ErrorValue;
+    else if(ErrorType==10) FVCriteria=(double) ErrorValue;
+  }
+  
+  FVCriteria=(1200.-10.*FVCriteria)/2.; 
+  // WM center is (600,600)mm in transverse plane (same as PM)
+  // 80cm means 100mm margin on the edge of the WM and 200mm margin wrt PM dimensions
+
+  cout<<"VetoCriteria="<<VetoUpstreamCriteria<<", EdgeCriteria="<<VetoEdgeCriteria<<", FV exclusion="<<FVCriteria<<"mm"<<endl;
+
   FileStat_t fs;
   // ifstream timing;
 
@@ -183,6 +213,10 @@ int main(int argc,char *argv[]){
   //IngridBasicReconSummary* recon = new IngridBasicReconSummary();
   PMReconSummary* recon = new PMReconSummary();
   Hit                        hit;
+
+  Initialize_INGRID_Dimension();
+
+
   for(int ievt=Nini; ievt<nevt; ievt++){
 
     if(ievt%100==0)cout << "analyze event# " << ievt<<endl;
@@ -192,7 +226,7 @@ int main(int argc,char *argv[]){
 
     for( int cyc=Scyc; cyc<Ncyc; cyc++ ){  //### Cycle Loop
       for( int mod=0; mod<Nmod; mod++ ){   //### Module Loop
-	
+
         allhit.clear();
 	int ninghit = evt -> NIngridModHits(mod, cyc);
 
@@ -238,16 +272,15 @@ int main(int argc,char *argv[]){
 	  allhit_for_disp.push_back(hit);
 	}
 
-
 	if(allhit.size()<2)continue;
 	fSortTime(allhit);
 	while(fFindTimeClster(allhit, hitcls, fcTime)){
-	  
+
 	  int nactnum;
 	  recon->nactpln = fNactpln(mod);
 	  nactnum = fNactpln(mod);
 	  if(mod!=15){
-	  	if(recon->nactpln < 3)continue;
+	  	if(recon->nactpln < ActivePlaneCriteria)continue;
 	  }
 	  recon->layerpe = fLayerpe(mod);
 	  //if(recon->layerpe < 6.5)continue;
@@ -258,7 +291,7 @@ int main(int argc,char *argv[]){
           int alltrack_size_bak=0;
           int Nconnect=0;
 	  if(mod==15){
-	  	fTracking_loli(mod);
+	    fTracking_loli(mod, VetoUpstreamCriteria, VetoEdgeCriteria, FVCriteria);
         	alltrack_size_bak=(int)alltrack.size();
       	 	while(fConnectTracks(20, 2*25)){
         	    Nconnect++;
@@ -266,7 +299,7 @@ int main(int argc,char *argv[]){
         	}
 	  }
 	  else{
-		fTracking(mod);
+	    fTracking(mod, VetoUpstreamCriteria, VetoEdgeCriteria, FVCriteria);
 	  }
 	  
 	  for(int i=0;i<(int)alltrack.size();i++){
@@ -301,7 +334,6 @@ int main(int argc,char *argv[]){
 	    //evt   -> AddPMRecon( recon );
 	    evt   -> AddPMModRecon( recon , mod, cyc, alltrack[i].view);
 	  }
-
 	  
 	  //if(disp&&(mod==15 || mod==3)){
 	  if(disp&&mod==15){
@@ -364,6 +396,61 @@ int main(int argc,char *argv[]){
 
 }
 
+
+//update from Koga, 2017/03/21, copy from Loli_addcrosstalk_slit.cc
+const int bad_num = 6+13+22+2;
+int       bad_id[bad_num][4] =
+  {// mod, view,  pln,  ch, 
+    //INGRID 6
+    {    2,    0,   13,    2},
+    {    3,    0,   10,   14},
+    {    4,    1,   10,    9},
+    {    4,    1,    0,   15},
+    {    4,    1,    7,   21},
+    {    4,    1,    4,   14},
+    //WM MPPC 13
+    {   15,    1,    2,   75},
+    {   15,    1,    4,   21},
+    {   15,    1,    4,   20},
+    {   15,    1,    4,   49},
+    {   15,    1,    4,   71},
+    {   15,    1,    5,   19},
+    {   15,    1,    5,   20},
+    {   15,    1,    5,   71},
+    {   15,    1,    5,   70},
+    {   15,    1,    4,   48},
+    {   15,    1,    5,   48},
+    {   15,    1,    0,   74},
+    {   15,    1,    0,    0},
+    //WM scinti 22
+    {   15,    0,    0,   20},
+    {   15,    0,    0,   21},
+    {   15,    0,    0,   26},
+    {   15,    0,    0,   27},
+    {   15,    0,    0,   28},
+    {   15,    0,    0,   30},
+    {   15,    0,    0,   54},
+    {   15,    0,    0,   78},
+    {   15,    0,    4,   40},
+    {   15,    0,    4,   60},
+    {   15,    0,    5,   56},
+    {   15,    0,    7,   61},
+    {   15,    0,    7,   79},
+    {   15,    0,    0,   39},
+    {   15,    1,    2,   40},
+    {   15,    1,    3,   67},
+    {   15,    1,    7,   24},
+    {   15,    1,    7,   32},
+    {   15,    1,    7,   63},
+    {   15,    1,    7,   64},
+    {   15,    1,    7,   71},
+    {   15,    1,    7,   75},
+    //PM 2
+    {   16,    0,   14,    0},
+    {   16,    1,    9,   21}
+  };
+
+/*
 const int bad_num = 20;
 int       bad_id[bad_num][4] =
   {// mod, view,  pln,  ch, 
@@ -389,7 +476,7 @@ int       bad_id[bad_num][4] =
     {   15,    0,   10,   15}  //added 2010/12/4 ??               
     //{    3,    1,    1,   11}  //added 2010/12/4 ??               
   };
-
+*/
 void Add_Bad_Channel(){
   bad_mod. clear();
   bad_view.clear();

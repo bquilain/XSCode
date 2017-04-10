@@ -40,6 +40,7 @@ float ch_th =150;
 int diff_th=4;
 float ang_th=35;
 float pos_th=85;
+int Ipln_th=2; //number of planes fIngridHitPMJoint is looking at
 
 double TTCL;//for MuCL
 int   nCL;  //for MuCL
@@ -432,17 +433,17 @@ bool fIngPMJoint(vector<TrackIng> &itrk, vector<TrackPM> &ptrk, bool vertical, d
 };
 
 
-bool fIngHitPMJoint( vector<TrackIng> &itrk, vector<TrackPM> &ptrk, bool vertical, double TransverseCut){
+bool fIngHitPMJoint( vector<TrackIng> &itrk, vector<TrackPM> &ptrk, bool vertical, double TransverseCut=pos_th, int nINGRIDPlanes=Ipln_th){
   float diff_pos,joilik=-1e-5;
   int joitra=-1;
   bool jointed;
   bool hasingtrk=false;
   int view=vertical;
-  int PlaneMax=2;
+
 
   for(int ingmod=0;ingmod<Cmod;ingmod++){
     if(view==0 && ingmod!=3) continue; //ML: I restrict horizontal hits to mod3
-    for(int pln=0;pln<PlaneMax;pln++){
+    for(int pln=0;pln<nINGRIDPlanes;pln++){
       for(int ch=0;ch<Cch;ch++){
 	if(ingnonrechits_pe[ingmod][view][pln][ch]<2.5)continue;
 
@@ -953,7 +954,7 @@ void fTrackMatchY(Trk &trk,PMTrack &pmtrk, TrackPM &vtrk){
 
 
 
-bool fPMAna(int TrackMatchingPlane, int VertexingPlane, double VertexingChannel, double AngleCut,double TransverseCut){
+bool fPMAna(int TrackMatchingPlane=diff_th, int VertexingPlane=pln_th, double VertexingChannel=ch_th, double AngleCut=ang_th,double TransverseCut=pos_th,int nINGRIDPlanes=Ipln_th){
 
   //  VertexingChannel=10*VertexingChannel;
   //TransverseCut=10*TransverseCut;
@@ -972,8 +973,8 @@ bool fPMAna(int TrackMatchingPlane, int VertexingPlane, double VertexingChannel,
   bool ah=!fIngPMJoint(hingtrack,htrack,false,AngleCut,TransverseCut);
   bool av=!fIngPMJoint(vingtrack,vtrack,true,AngleCut,TransverseCut);
 
-  bool bh=!fIngHitPMJoint(hingtrack,htrack,false,TransverseCut);
-  bool bv=!fIngHitPMJoint(vingtrack,vtrack,true,TransverseCut);
+  bool bh=!fIngHitPMJoint(hingtrack,htrack,false,TransverseCut,nINGRIDPlanes);
+  bool bv=!fIngHitPMJoint(vingtrack,vtrack,true,TransverseCut,nINGRIDPlanes);
 
   if(requireIngridTrack){
     if(ah && bh) return false;
@@ -1110,7 +1111,7 @@ bool fPMAna(int TrackMatchingPlane, int VertexingPlane, double VertexingChannel,
 
   if(requireIngridTrack || pmtrack.size()>0){
     // step 3a: matching of tracks w/ !ing_trk + remaining unmatched tracks w/ ing_trk
-    for(int pdif=0;pdif<4;pdif++){
+    for(int pdif=0;pdif<TrackMatchingPlane;pdif++){
       for(int k=0;k<pmtrack.size();k++){
 	if(pmtrack[k].Ntrack==0)continue;
 	for(int h=0;h<htrack.size();h++){

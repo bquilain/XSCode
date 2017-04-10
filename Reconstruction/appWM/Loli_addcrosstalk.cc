@@ -183,6 +183,9 @@ int main(int argc,char *argv[]){
   //IngridBasicReconSummary* recon = new IngridBasicReconSummary();
   PMReconSummary* recon = new PMReconSummary();
   //Hit                        hit;
+
+  Initialize_INGRID_Dimension();
+
   for(int ievt=Nini; ievt<nevt; ievt++){
 
     if(ievt%100==0)cout << "analyze event# " << ievt<<endl;

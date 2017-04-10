@@ -97,6 +97,7 @@ int main(int argc,char *argv[]){
   int TrackMatching=diff_th;
   double AngleCut=ang_th;//degrees
   double TransverseCut=pos_th;//mm
+  int nINGRIDPlanes=2; // number of planes fIngridHitPMJoint is looking at
   bool Error=false;
   int ErrorType=0;
   float ErrorValue=0.;
@@ -155,6 +156,7 @@ int main(int argc,char *argv[]){
     else if(ErrorType==15) TransverseCut = (double) ErrorValue;
   }
   cout<<"Matching plane="<<TrackMatching<<", Vertexing plane="<<VertexingPlane<<", Channel="<<VertexingChannel<<"cm, Angle cut="<<AngleCut<<"°, Transverse cut="<<TransverseCut<<"cm"<<endl;
+  cout<<"Fonction fIngHitPMJoint() looking for hits in first "<<nINGRIDPlanes<<" of INGRID"<<endl;
   cout<<(requireIngridTrack? "1 Ingrid track required" : "no Ingrid track required")<<endl;
   FileStat_t fs;
   // ifstream timing;
@@ -357,8 +359,7 @@ int main(int argc,char *argv[]){
 
 
       //cout<<endl;
-
-      if(!fPMAna(TrackMatching,VertexingPlane,VertexingChannel,AngleCut,TransverseCut))continue;
+      if(!fPMAna(TrackMatching,VertexingPlane,VertexingChannel,AngleCut,TransverseCut, nINGRIDPlanes))continue;
 
       // isoHitCut is the minimal number of isolated it I require
       int isoHitCut=3;

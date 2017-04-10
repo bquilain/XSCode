@@ -55,11 +55,11 @@ using namespace std;
 
 #include "Lolidisp.h"
 
-
-const static int   GapbwBunch     = 581 ;    //[nsec]
-const static int   TDCOffset      = 300;     //[nsec]
-const static int   fExpBeamTime   = 200;     //[nsec]
-const static int   beamontime     = 100;     //ontime
+// already defined in IngridConstants
+//const static int   GapbwBunch     = 581 ;    //[nsec]
+//const static int   TDCOffset      = 300;     //[nsec]
+//const static int   fExpBeamTime   = 200;     //[nsec]
+//const static int   beamontime     = 100;     //ontime
 
 //#define  STUDY_BADCHANNEL
 vector<int>  bad_mod;
@@ -71,8 +71,8 @@ void fMode(int mode);
 bool Is_Bad_Channel(IngridHitSummary* thit);
 void GetNonRecHits(IngridEventSummary* evt, int cyc);//newly added
 
-const static char *dst_data          = "/home/kikawa/scraid1/data/pm_ingrid";
-const static char *cosmic_data       = "/home/kikawa/scraid1/data/pm_ingrid";
+//const static char *dst_data          = "/home/kikawa/scraid1/data/pm_ingrid";
+//const static char *cosmic_data       = "/home/kikawa/scraid1/data/pm_ingrid";
 
 //static const char *data_file_folder  = "/home/kikawa/scraid1/data/pm_ingrid";
 //static const char *calib_file_folder = "/home/kikawa/scraid1/data/pm_ingrid";
@@ -109,10 +109,20 @@ int main(int argc,char *argv[]){
   Int_t Nini = 0;
   bool disp = false; 
   bool cosmic = false;
+  // to evaluate systematics
+  int VertexingPlane  =pln_th;//planes
+  double VertexingChannel =ch_th;//mm
+  int TrackMatching=diff_th; // planes
+  double AngleCut=ang_th;//degrees
+  double TransverseCut=pos_th;//mm
+  int nINGRIDPlanes=2; // number of planes fIngridHitPMJoint is looking at
+  bool Error=false;
+  int ErrorType=0;
+  float ErrorValue=0.;
 
   bool requireIngridTrack=true; //ML 2016/11/24 for new option -N
 
-  while ((c = getopt(argc, argv, "r:s:f:cado:i:N")) != -1) {
+  while ((c = getopt(argc, argv, "r:s:f:cado:i:e:v:N")) != -1) {
     switch(c){
     case 'r':
       run_number=atoi(optarg);
@@ -145,13 +155,29 @@ int main(int argc,char *argv[]){
     case 'i':
       Nini=atoi(optarg);
       break;
+    case 'e':
+      Error=true;
+      ErrorType=atoi(optarg);
+      break;
+    case 'v':
+      ErrorValue=atof(optarg);
+      break;
     case 'N':
       requireIngridTrack=false;
       break;
     }
   }
+  if(Error){
+    if(ErrorType==11) VertexingPlane = (int) ErrorValue;
+    else if(ErrorType==12) VertexingChannel = (double) ErrorValue;
+    else if(ErrorType==13) TrackMatching = (int) ErrorValue;
+    else if(ErrorType==14) AngleCut = (double) ErrorValue;
+    else if(ErrorType==15) TransverseCut = (double) ErrorValue;
+  }
 
   // ML 2016/11/24
+  cout<<"Matching plane="<<TrackMatching<<", Vertexing plane="<<VertexingPlane<<", Channel="<<VertexingChannel<<"cm, Angle cut="<<AngleCut<<"°, Transverse cut="<<TransverseCut<<"cm"<<endl;
+  cout<<"Fonction fIngHitPMJoint() looking for hits in first "<<nINGRIDPlanes<<" of INGRID"<<endl;
   cout<<(requireIngridTrack? "1 Ingrid track required" : "no Ingrid track required")<<endl;
 
 
@@ -221,6 +247,8 @@ int main(int argc,char *argv[]){
   LoadMuCL("$(INSTALLREPOSITORY)/Reconstruction/inc/sandmuon_WM_distributions_54k_cut4pe5.root",false);
   int biasedMuCL=0;
 
+  Initialize_INGRID_Dimension();
+
   for(int ievt=Nini; ievt<nevt; ievt++){
 
     if(ievt%100==0)cout << "analyze event# " << ievt<<endl;
@@ -272,7 +300,7 @@ int main(int argc,char *argv[]){
 	      hits.view  = inghitsum->view;
 	      hits.pln   = inghitsum->pln;
 	      hits.ch    = inghitsum->ch;
-	      hits.pe    = inghitsum->pecorr; //2017-01-17 to read calib info
+	      hits.pe    = inghitsum->pecorr+inghitsum->pe_cross; //2017-01-17 to read calib info and 2017/03/21 to read crosstalk
 	      hits.lope  = inghitsum->lope;
 	      hits.isohit= inghitsum->isohit;
 
@@ -368,7 +396,7 @@ int main(int argc,char *argv[]){
       GetNonRecHits(evt,cyc);//newly added
       
       // ML 2016/11/24 requireIngridTrack for new option -N
-      if(!fPMAna(15,requireIngridTrack))continue;
+      if(!fPMAna(15,TrackMatching,VertexingPlane,VertexingChannel,AngleCut,TransverseCut,nINGRIDPlanes,requireIngridTrack))continue;
      
       // isoHitCut is the minimal number of isolated it I require
       int isoHitCut=3;
@@ -688,7 +716,59 @@ int main(int argc,char *argv[]){
   cout<<"biased MuCL="<<biasedMuCL<<" (Nisohits<3)"<<endl;
 }
 
-
+//update from Koga, 2017/03/21, copy from Loli_addcrosstalk_slit.cc
+const int bad_num = 6+13+22+2;
+int       bad_id[bad_num][4] =
+  {// mod, view,  pln,  ch, 
+    //INGRID 6
+    {    2,    0,   13,    2},
+    {    3,    0,   10,   14},
+    {    4,    1,   10,    9},
+    {    4,    1,    0,   15},
+    {    4,    1,    7,   21},
+    {    4,    1,    4,   14},
+    //WM MPPC 13
+    {   15,    1,    2,   75},
+    {   15,    1,    4,   21},
+    {   15,    1,    4,   20},
+    {   15,    1,    4,   49},
+    {   15,    1,    4,   71},
+    {   15,    1,    5,   19},
+    {   15,    1,    5,   20},
+    {   15,    1,    5,   71},
+    {   15,    1,    5,   70},
+    {   15,    1,    4,   48},
+    {   15,    1,    5,   48},
+    {   15,    1,    0,   74},
+    {   15,    1,    0,    0},
+    //WM scinti 22
+    {   15,    0,    0,   20},
+    {   15,    0,    0,   21},
+    {   15,    0,    0,   26},
+    {   15,    0,    0,   27},
+    {   15,    0,    0,   28},
+    {   15,    0,    0,   30},
+    {   15,    0,    0,   54},
+    {   15,    0,    0,   78},
+    {   15,    0,    4,   40},
+    {   15,    0,    4,   60},
+    {   15,    0,    5,   56},
+    {   15,    0,    7,   61},
+    {   15,    0,    7,   79},
+    {   15,    0,    0,   39},
+    {   15,    1,    2,   40},
+    {   15,    1,    3,   67},
+    {   15,    1,    7,   24},
+    {   15,    1,    7,   32},
+    {   15,    1,    7,   63},
+    {   15,    1,    7,   64},
+    {   15,    1,    7,   71},
+    {   15,    1,    7,   75},
+    //PM 2
+    {   16,    0,   14,    0},
+    {   16,    1,    9,   21}
+  };
+/*
 const int bad_num = 20;
 int       bad_id[bad_num][4] =
   {// mod, view,  pln,  hh, 
@@ -714,7 +794,7 @@ int       bad_id[bad_num][4] =
     {   15,    0,   10,   15}  //added 2010/12/4 ??               
     //{    3,    1,    1,   11}  //added 2010/12/4 ??               
   };
-
+*/
 void Add_Bad_Channel(){
   bad_mod. clear();
   bad_view.clear();

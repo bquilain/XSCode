@@ -10,7 +10,7 @@
 using namespace std;
 
 #define VIEWMAX 2
-//#define PLNMAX 8
+//#define PLNMAX 8 because alreadyb defined in Const.hh
 #define CHMAX 80
 #define MOD_WAGASCI 15
 
@@ -54,15 +54,17 @@ const double loli_cutwidth	  = 0.35;  //cm width of grid cut
 const double loli_cutthick	  = 1.3;   //cm thickness of grid cut
 const double loli_offsetxy_grid	  = - loli_scinti_width * loli_chnum/2. +2.335;//cm distance between first grid and edge of scintillator 
 
+const double position=1.3;
+
+static double position_xy[VIEWMAX][PLNMAX][CHMAX]={{{0}}};
+static double position_z [VIEWMAX][PLNMAX][CHMAX]={{{0}}};
+void Initialize_INGRID_Dimension();
+
 class INGRID_Dimension{
 private:
-  TFile* f;
-  TTree* t;
-  double position_xy[VIEWMAX][PLNMAX][CHMAX];
-  double position_z [VIEWMAX][PLNMAX][CHMAX];
-  double VETOOffsetZ;
+
 public:
-  INGRID_Dimension();
+  INGRID_Dimension(){};
 
   ~INGRID_Dimension(){};
 

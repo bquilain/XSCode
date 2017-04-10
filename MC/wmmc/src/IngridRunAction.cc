@@ -30,7 +30,7 @@ IngridRunAction::IngridRunAction(char* output)
   p_theta_piPos = new TH2D("pthetapiPos","",100,0,5,100,-1,1);  
   p_theta_piNeg = new TH2D("pthetapiNeg","",100,0,5,100,-1,1);  
   p_theta_protons = new TH2D("pthetaprotons","",100,0,5,100,-1,1);  
-
+  hLoopNum = new TH1D("hLoopNum","",30,0,3);
   //
   //TBranch * EvtBr = tree->GetBranch("fDefaultReco.");
   tree->Branch("fDefaultReco.","IngridEventSummary",&evt,64000,99);
@@ -151,6 +151,12 @@ void IngridRunAction::EndOfRunAction(const G4Run* aRun)
     if(p_theta_piPos) delete p_theta_piPos;
     if(p_theta_protons) delete p_theta_protons;
 
+    /*    TFile * fLoopNum=new TFile("LoopNum.root","recreate");
+    fLoopNum->cd();
+    hLoopNum->GetXaxis()->SetTitle("log_{10}(loop_num)");
+    hLoopNum->Write();
+    fLoopNum->Close();*/
+    if(hLoopNum) delete hLoopNum;
 }
 
  

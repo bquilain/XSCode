@@ -37,8 +37,9 @@ public:
   TH2D * p_theta_piPos;
   TH2D * p_theta_piNeg;
   TH2D * p_theta_protons;
+  TH1D * hLoopNum;
   bool produceDistributions;
-
+  
   double HitEff() { return hiteff/100.; }	
 
   //variables for t2kreweight                                                                   

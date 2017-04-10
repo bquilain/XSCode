@@ -7,6 +7,7 @@
 //#include "QGSP_BERT_HP.hh"
 //#include "G4NeutronHPData.hh"
 
+#include "INGRID_Dimension.hh"
 #include "IngridDetectorConstruction.hh"
 //#include "ND280mPhysicsList.hh"
 #include "IngridPrimaryGeneratorAction.hh"
@@ -23,6 +24,13 @@
 #define PROTON 2
 #define HORIZONTAL 3
 #define VERTICAL 4 
+
+// For watermodule (measured position of the bars)-------------------
+// filling is done in the end of this code
+/*double position_xy[VIEWMAX][PLNMAX][CHMAX];
+double position_z [VIEWMAX][PLNMAX][CHMAX];
+void Initialize_INGRID_Dimension();
+*/
 
 // ====================================================================
 //     main
@@ -92,6 +100,8 @@ int main(int argc, char** argv)
     G4cout << "Select neutrino flavor" << G4endl;
     exit(1);
   }
+
+  Initialize_INGRID_Dimension();
 
   // run manager
   G4RunManager* runManager= new G4RunManager;  //G4cout << G4endl;
@@ -169,7 +179,7 @@ int main(int argc, char** argv)
 	}
 
 	else { // batch mode
-			runManager->BeamOn(NumberOfEvent);
+	  			runManager->BeamOn(NumberOfEvent);
 	}
 
   // terminating...
@@ -183,3 +193,55 @@ int main(int argc, char** argv)
 
 }
 
+//------------------------------------------------
+/*
+void Initialize_INGRID_Dimension(){
+  TFile* f = TFile::Open("/export/scbn25/data1/taichiro/T2K/work/basesoft/git/watermodule/wmmc/assembly_checklist.root","READ");
+  TTree* t = (TTree*) f->Get("tree");
+  double xy1,xy3,xy0;
+  int view,pln,ch;
+  t -> SetBranchAddress("xy1",&xy1);
+  t -> SetBranchAddress("xy3",&xy3);
+  t -> SetBranchAddress("view",&view);
+  t -> SetBranchAddress("pln",&pln);
+  t -> SetBranchAddress("ch",&ch);
+  for(int i=0;i<t->GetEntries();i++){
+    t -> GetEntry(i);
+    if(ch==0){
+        xy0 = (xy1+xy3)/2./10. + 1.;//offset
+    }
+    if(ch<40){
+      position_xy[view][pln][ch] = (xy1+xy3)/2./10.; //mm->cm
+      position_xy[view][pln][ch] = position_xy[view][pln][ch] - xy0; //mm->cm
+    }
+    else{
+      position_xy[view][pln][ch] = 0;
+    }
+  }
+  t->Delete();
+  f->Close();
+  f->Delete();
+
+  f = TFile::Open("/export/scbn25/data1/taichiro/T2K/work/basesoft/git/watermodule/wmmc/position_module_z.root","READ");
+  t = (TTree*) f->Get("tree");
+  double z;
+  double z0;
+  t -> SetBranchAddress("z",&z);
+  t -> SetBranchAddress("view",&view);
+  t -> SetBranchAddress("pln",&pln);
+  for(int i=0;i<t->GetEntries();i++){
+    t -> GetEntry(i);
+    if(i==0){
+        z0 = z/10.;//offset
+    }
+    for(int ch_temp=0;ch_temp<80;ch_temp++){
+    	position_z [view][pln][ch_temp] = z/10.; //mm->cm
+    	position_z [view][pln][ch_temp] = position_z [view][pln][ch_temp] - z0;
+    }
+  }
+  t->Delete();
+  f->Close();
+  f->Delete();
+  //  std::cout << "call DIMENSION" << std::endl;
+}
+*/

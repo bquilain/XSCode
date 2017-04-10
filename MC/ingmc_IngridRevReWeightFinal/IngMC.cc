@@ -40,7 +40,7 @@ int main(int argc, char** argv)
   int flav = 0;
   // 1:numu, 2:numubar, 3:nue, 4:nuebar
 
-  double CBIRKS_values[3]={0.0185,0.0208,0.231}; // nominal 0.0208; Birks_Minus = 0.0185; Birks_Plus = 0.0231 
+  double CBIRKS_values[3]={0.0185,0.0208,0.0231}; // nominal 0.0208; Birks_Minus = 0.0185; Birks_Plus = 0.0231 
   int BirksIndex=1;
 
  	bool isParticleGun=false;

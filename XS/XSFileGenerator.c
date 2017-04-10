@@ -17,7 +17,7 @@ using namespace std;
 //6: Beam related background (in fact, this mainly evaluate sand muons)
 //7: 2D reconstruction error
 //8: VetoUpstreamCriteria: nominal=0 planes, vary from 0->2 per 1 plane step
-//9: VetoEdgeCriteria: nominal=80cm, vary 70->100 per 10cm steps
+//9: VetoEdgeCriteria: nominal=80mm, vary 60->100 per 20mm steps ; ML 2017/03/14
 //10: FVCriteria: nominal=100cm, vary 50->100 per 10 cms steps
 //11: Vertexing, plane tolerance: nominal=2, vary 2->4 per 1 plane steps
 //12: Vertexing, transverse tolerance: nominal=15cm, vary 15cm->20cm per 2.5cm steps
@@ -68,7 +68,7 @@ int main(int argc, char **argv){
   char Name[16];
 
   //  xs->Xsec::Initialize();
-  InitializeGlobal();
+  InitializeGlobal(PM);
   /////////// VARIABLES TO SWITCH FROM PM TO WM ////////////////////
   char execMC[7];sprintf(execMC,(PM?"IngMC":"IngWMMC"));
   char execRecon[25];sprintf(execRecon,(PM?"PMreconRevOfficial":"Lolirecon"));
@@ -78,7 +78,7 @@ int main(int argc, char **argv){
   char DetName[2];sprintf(DetName,(PM?"PM":"WM"));
   cout<<"Selected detector is "<<DetName<<endl;
 
-
+  char InputFile[100];
 
   ///////////FOR THE PREREQUISITE, SO DO NOT CLEAN FOR EACH ERROR/////////////////////
   sprintf(Command01,"");
@@ -145,7 +145,7 @@ int main(int argc, char **argv){
 
 	  
 	      //################################################Create the total input file####################################################################################
-	      char InputFile[100];
+
 
 	      //Run 1
 	      //NuMu
@@ -213,17 +213,17 @@ int main(int argc, char **argv){
 	      //##########################################################################################################################
 
 	  
-	      // need for Loli_addcrosstalk for WM here
-	      	  
-	      //sprintf(Command1,"bin/Linux-g++/IngMC -o ${MCOUTPUTSTORAGE}/PMMC_Run1_%d.root -i /export/scraid2/data/bquilain/neutfile_pm/11bfluka_nd2_numu_ch_%d.nt -m 2 -f 2",i,i);
-	      sprintf(Command2,"${INSTALLREPOSITORY}/Reconstruction/app%s/IngAddNoisePMMC_new -f ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d.root -o ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise.root %s",DetName,suffix,DetName,i,suffix,DetName,i,(PM?"":Form("-n %2.1f -w",DNRateWM)));
-	      sprintf(Command3,"${INSTALLREPOSITORY}/Reconstruction/app%s/%s -r 14000 -s 0 -f ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise.root -o ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_recon.root",DetName,execRecon,suffix,DetName,i,suffix,DetName,i);
-	      sprintf(Command4,"${INSTALLREPOSITORY}/Reconstruction/app%s/%s -r 14000 -s 0 -f ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_recon.root -o ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_ana.root",DetName, execAna,suffix,DetName,i,suffix,DetName,i);
+	      // need for Loli_addcrosstalk_slit for WM here
+	      if(!PM) sprintf(Command2,"${INSTALLREPOSITORY}/Reconstruction/appWM/Loli_addcrosstalk_slit -f ${MCOUTPUTSTORAGE_WM}/WMMC_Run1_%d.root -o ${MCOUTPUTSTORAGE_WM}/WMMC_Run1_%d_wXtalk.root",i,i);     	  
+
+	      sprintf(Command3,"${INSTALLREPOSITORY}/Reconstruction/app%s/IngAddNoisePMMC_new -f ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d%s.root -o ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise.root %s",DetName,suffix,DetName,i,(PM?"":"_wXtalk"),suffix,DetName,i,(PM?"":Form("-n %2.1f -w",DNRateWM)));
+	      sprintf(Command4,"${INSTALLREPOSITORY}/Reconstruction/app%s/%s -r 14000 -s 0 -f ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise.root -o ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_recon.root",DetName,execRecon,suffix,DetName,i,suffix,DetName,i);
+	      sprintf(Command5,"${INSTALLREPOSITORY}/Reconstruction/app%s/%s -r 14000 -s 0 -f ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_recon.root -o ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_ana.root",DetName, execAna,suffix,DetName,i,suffix,DetName,i);
 	      //ML tmp
 	      //sprintf(Command5,"source ${INSTALLREPOSITORY}/source_T2KReweight.sh"); 
 
 	      //NEUT 5.3.2  -> now NEUT 5.3.6 (ML 2017/02/01)
-	      sprintf(Command6,"${INSTALLREPOSITORY}/XS/XS_CC0pi_Plan%s -i ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_ana.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s_Run1_%d_Plan.root -f 1 -m",suffix,suffix,DetName,i,DetName,i);
+	      sprintf(Command6,"${INSTALLREPOSITORY}/XS/XS_CC0pi_Plan%s -i ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_ana.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s_Run1_%d_PlanDev.root -f 1 -m%s",suffix,suffix,DetName,i,DetName,i,(PM?"":"w"));
 	      //NEUT 5.1.4.2
 	      //sprintf(Command6,"${INSTALLREPOSITORY}/XS/XS_CC0pi_Plan -i ${MCOUTPUTSTORAGE}/PM_MC_Beam%d_BirksCorrectedMIP40_ReWeight_SciBar188_wNoise_KSana_woXtalk.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_Old_%d_Plan.root -f 1 -m",i,i);
 			    
@@ -232,11 +232,10 @@ int main(int argc, char **argv){
 
 	    else if(ErrorType==1) continue;
 	    else if(ErrorType==2){//Dark noise values.
-	      sprintf(Command1,"${INSTALLREPOSITORY}/XS/IngAddNoisePMMC -f ${MCOUTPUTSTORAGE}/PMMC_Run1_%d.root -o ${MCOUTPUTSTORAGE}/PMMC_Run1_%d_wNoise_Systematics%d_%d.root -n %2.1f",i,i,ErrorType,n,ErrorValue);  
-	      sprintf(Command2,"${INSTALLREPOSITORY}/Reconstruction/appPM/PMreconRevOfficial -r 14000 -s 0 -f ${MCOUTPUTSTORAGE}/PMMC_Run1_%d_wNoise_Systematics%d_%d.root -o ${MCOUTPUTSTORAGE}/PMMC_Run1_%d_wNoise_recon_Systematics%d_%d.root",i,ErrorType,n,i,ErrorType,n);
-	      sprintf(Command3,"${INSTALLREPOSITORY}/Reconstruction/appPM/PMAnaRevOfficial -r 14000 -s 0 -f ${MCOUTPUTSTORAGE}/PMMC_Run1_%d_wNoise_recon_Systematics%d_%d.root -o ${MCOUTPUTSTORAGE}/PMMC_Run1_%d_wNoise_ana_Systematics%d_%d.root",i,ErrorType,n,i,ErrorType,n);
-	      sprintf(Command4,"source ${INSTALLREPOSITORY}/source_T2KReweight.sh");
-	      sprintf(Command5,"${INSTALLREPOSITORY}/XS/XS_CC0pi_Plan -i ${MCOUTPUTSTORAGE}/PMMC_Run1_%d_wNoise_ana_Systematics%d_%d.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_Run1_%d_Systematics%d_%d_Plan.root -f 1 -m",i,ErrorType,n,i,ErrorType,n);    
+	      sprintf(Command1,"${INSTALLREPOSITORY}/Reconstruction/app%s/IngAddNoisePMMC_new -f ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d.root -o ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_Systematics%d_%d.root -n %2.1f",DetName,suffix,DetName,i,suffix,DetName,i,ErrorType,n,ErrorValue);  
+	      sprintf(Command2,"${INSTALLREPOSITORY}/Reconstruction/app%s/%s -r 14000 -s 0 -f ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_Systematics%d_%d.root -o ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_recon_Systematics%d_%d.root",DetName,execRecon,suffix,DetName,i,ErrorType,n,suffix,DetName,i,ErrorType,n);
+	      sprintf(Command3,"${INSTALLREPOSITORY}/Reconstruction/app%s/%s -r 14000 -s 0 -f ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_recon_Systematics%d_%d.root -o ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_ana_Systematics%d_%d.root",DetName,execAna,suffix,DetName,i,ErrorType,n,suffix,DetName,i,ErrorType,n);
+	      sprintf(Command4,"${INSTALLREPOSITORY}/XS/XS_CC0pi_Plan%s -i ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_ana_Systematics%d_%d.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s_Run1_%d_Systematics%d_%d_Plan.root -f 1 -m%s",suffix,suffix,DetName,i,ErrorType,n,DetName,i,ErrorType,n,(PM?"":"w"));
 	    }
 	    else if(ErrorType==3){//One should give in input the file name of the data/MC difference
 	      //The best thing would be just to generate everything w/ an option
@@ -253,44 +252,32 @@ int main(int argc, char **argv){
 
 	    }
 	    else if(ErrorType==5){
-	      //pre-requisite if you change the MC: do 2 copies and change the Birks constant (cf memo): generate MC w/ Birks constant variation from 0.0208+-0.0023 cm/MeV
-	      //ErrorValue=185;
-	      //1. Change birks constant to minus value in src/IngridResponse.cc: 0.0208->0.0185
-	      //2. Run this MC
-	      //1. Change birks constant to minus value in src/IngridResponse.cc: 0.0208->0.0231
-	      //2. Run this MC
-
-	      if(n==0){
-		sprintf(Command1,"${INSTALLREPOSITORY}/MC/ingmc_IngridRevReWeightFinal/Birks_Minus/bin/Linux-g++/IngMC -o ${MCOUTPUTSTORAGE}/PMMC_Run1_%d_Systematics%d_%d.root -i ${MCINPUTSTORAGE}/run1/11bfluka_nd2_numu_ch_%d.nt -m 2 -f 1",i,ErrorType,n,i);
-		sprintf(Command2,"${INSTALLREPOSITORY}/Reconstruction/appPM/IngAddNoisePMMC_new -f ${MCOUTPUTSTORAGE}/PMMC_Run1_%d_Systematics%d_%d.root -o ${MCOUTPUTSTORAGE}/PMMC_Run1_%d_wNoise_Systematics%d_%d.root",i,ErrorType,n,i,ErrorType,n);
-		sprintf(Command3,"${INSTALLREPOSITORY}/Reconstruction/appPM/PMreconRevOfficial -r 14000 -s 0 -f ${MCOUTPUTSTORAGE}/PMMC_Run1_%d_wNoise_Systematics%d_%d.root -o ${MCOUTPUTSTORAGE}/PMMC_Run1_%d_wNoise_recon_Systematics%d_%d.root",i,ErrorType,n,i,ErrorType,n);
-		sprintf(Command4,"${INSTALLREPOSITORY}/Reconstruction/appPM/PMAnaRevOfficial -r 14000 -s 0 -f ${MCOUTPUTSTORAGE}/PMMC_Run1_%d_wNoise_recon_Systematics%d_%d.root -o ${MCOUTPUTSTORAGE}/PMMC_Run1_%d_wNoise_ana_Systematics%d_%d.root",i,ErrorType,n,i,ErrorType,n);
-		sprintf(Command5,"source ${INSTALLREPOSITORY}/source_T2KReweight.sh");
-		sprintf(Command6,"${INSTALLREPOSITORY}/XS/XS_CC0pi_Plan -i ${MCOUTPUTSTORAGE}/PMMC_Run1_%d_wNoise_ana_Systematics%d_%d.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_Run1_%d_Systematics%d_%d_Plan.root -f 1 -m",i,ErrorType,n,i,ErrorType,n);
-	      }
-	      if(n==1){
-		//ErrorValue=231;
-		sprintf(Command1,"${INSTALLREPOSITORY}/MC/ingmc_IngridRevReWeightFinal/Birks_Plus/bin/Linux-g++/IngMC -o ${MCOUTPUTSTORAGE}/PMMC_Run1_%d_Systematics%d_%d.root -i ${MCINPUTSTORAGE}/run1/11bfluka_nd2_numu_ch_%d.nt -m 2 -f 1",i,ErrorType,n,i);
-		sprintf(Command2,"${INSTALLREPOSITORY}/Reconstruction/appPM/IngAddNoisePMMC_new -f ${MCOUTPUTSTORAGE}/PMMC_Run1_%d_Systematics%d_%d.root -o ${MCOUTPUTSTORAGE}/PMMC_Run1_%d_wNoise_Systematics%d_%d.root",i,ErrorType,n,i,ErrorType,n);
-		sprintf(Command3,"${INSTALLREPOSITORY}/Reconstruction/appPM/PMreconRevOfficial -r 14000 -s 0 -f ${MCOUTPUTSTORAGE}/PMMC_Run1_%d_wNoise_Systematics%d_%d.root -o ${MCOUTPUTSTORAGE}/PMMC_Run1_%d_wNoise_recon_Systematics%d_%d.root",i,ErrorType,n,i,ErrorType,n);
-		sprintf(Command4,"${INSTALLREPOSITORY}/Reconstruction/appPM/PMAnaRevOfficial -r 14000 -s 0 -f ${MCOUTPUTSTORAGE}/PMMC_Run1_%d_wNoise_recon_Systematics%d_%d.root -o ${MCOUTPUTSTORAGE}/PMMC_Run1_%d_wNoise_ana_Systematics%d_%d.root",i,ErrorType,n,i,ErrorType,n);
-		sprintf(Command5,"source ${INSTALLREPOSITORY}/source_T2KReweight.sh");
-		sprintf(Command6,"${INSTALLREPOSITORY}/XS/XS_CC0pi_Plan -i ${MCOUTPUTSTORAGE}/PMMC_Run1_%d_wNoise_ana_Systematics%d_%d.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_Run1_%d_Systematics%d_%d_Plan.root -f 1 -m",i,ErrorType,n,i,ErrorType,n);
-	      }
+	      // the value of the Birks constant is an option
+	      // -B (0,1,or 2) for (-1sigma, nominal, or +1sigma) [0.0185,0.0208,0.0231]
+	      int birksindex=2*n;
+	      sprintf(InputFile,(PM?"${MCINPUTSTORAGE}/ingbg_5.3.6/13a_nd2_numu_ch_%d.nt":"${MCINPUTSTORAGE_WM}/ingbg_5.3.6/13a_nd2_numu_h2o_%d.nt"),i);
+	      sprintf(Command1,"${INSTALLREPOSITORY}/MC/bin/Linux-g++/%s -o ${MCOUTPUTSTORAGE%s}/%sMC_Numu_Run1_%d.root -i %s -m %d -f 1 -B %d",execMC,suffix,DetName,i,InputFile,MCDetID,2*n);
+	      // *** -B option not implemented yet for WM
+	      // re-run FinalOutputMaker with background files (unmodified) ?
+	      sprintf(Command2,"${INSTALLREPOSITORY}/Reconstruction/app%s/IngAddNoisePMMC_new -f ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_Sytematics%d_%d.root -o ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_Systematics%d_%d.root %s",DetName,suffix,DetName,i,ErrorType,n,suffix,DetName,i,ErrorType,n,(PM?"":Form("-n %2.1f -w",DNRateWM)));  
+	      sprintf(Command3,"${INSTALLREPOSITORY}/Reconstruction/app%s/%s -r 14000 -s 0 -f ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_Systematics%d_%d.root -o ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_recon_Systematics%d_%d.root",DetName,execRecon,suffix,DetName,i,ErrorType,n,suffix,DetName,i,ErrorType,n);
+	      sprintf(Command4,"${INSTALLREPOSITORY}/Reconstruction/app%s/%s -r 14000 -s 0 -f ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_recon_Systematics%d_%d.root -o ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_ana_Systematics%d_%d.root",DetName,execAna,suffix,DetName,i,ErrorType,n,suffix,DetName,i,ErrorType,n);
+	      sprintf(Command5,"${INSTALLREPOSITORY}/XS/XS_CC0pi_Plan%s -i ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_ana_Systematics%d_%d.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s_Run1_%d_Systematics%d_%d_Plan.root -f 1 -m%s",suffix,suffix,DetName,i,ErrorType,n,DetName,i,ErrorType,n,(PM?"":"w"));
 	    }
 	    else if(ErrorType==6){
-	      //sprintf(Command1,"${INSTALLREPOSITORY}/XS/CC0piSelection -s 1 -w %2.2f",ErrorValue);
+	      // done at the level of CC0piSelection.c
+	      // sprintf(Command1,"${INSTALLREPOSITORY}/XS/CC0piSelection -s 1 -w %2.2f",ErrorValue);
 	    }
 	    else if(ErrorType>=7 && ErrorType<=10){
-	      sprintf(Command1,"${INSTALLREPOSITORY}/Reconstruction/appPM/PMreconRevOfficial -r 14000 -s 0 -f ${MCOUTPUTSTORAGE}/PMMC_Run1_%d_wNoise.root -o ${MCOUTPUTSTORAGE}/PMMC_Run1_%d_wNoise_recon_Systematics%d_%d.root -e %d -v %3.1f",i,i,ErrorType,n,ErrorType,ErrorValue);
-	      sprintf(Command2,"${INSTALLREPOSITORY}/Reconstruction/appPM/PMAnaRevOfficial -r 14000 -s 0 -f ${MCOUTPUTSTORAGE}/PMMC_Run1_%d_wNoise_recon_Systematics%d_%d.root -o ${MCOUTPUTSTORAGE}/PMMC_Run1_%d_wNoise_ana_Systematics%d_%d.root",i,ErrorType,n,i,ErrorType,n);
-	      sprintf(Command3,"source ${INSTALLREPOSITORY}/source_T2KReweight.sh");
-	      sprintf(Command4,"${INSTALLREPOSITORY}/XS/XS_CC0pi_Plan -i ${MCOUTPUTSTORAGE}/PMMC_Run1_%d_wNoise_ana_Systematics%d_%d.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_Run1_%d_Systematics%d_%d_Plan.root -f 1 -m",i,ErrorType,n,i,ErrorType,n);
+	      // modif of PMrecon - use the pre-existing files as an input
+	      sprintf(Command1,"${INSTALLREPOSITORY}/Reconstruction/app%s/%s -r 14000 -s 0 -f ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise.root -o ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_recon_Systematics%d_%d.root -e %d -v %3.1f",DetName,execRecon,suffix,DetName,i,suffix,DetName,i,ErrorType,n,ErrorType,ErrorValue);
+	      sprintf(Command2,"${INSTALLREPOSITORY}/Reconstruction/app%s/%s -r 14000 -s 0 -f ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_recon_Systematics%d_%d.root -o ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_ana_Systematics%d_%d.root",DetName,execAna,suffix,DetName,i,ErrorType,n,suffix,DetName,i,ErrorType,n);
+	      sprintf(Command3,"${INSTALLREPOSITORY}/XS/XS_CC0pi_Plan%s -i ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_ana_Systematics%d_%d.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s_Run1_%d_Systematics%d_%d_Plan.root -f 1 -m%s",suffix,suffix,DetName,i,ErrorType,n,DetName,i,ErrorType,n,(PM?"":"w"));
 	    }
-	    else if(ErrorType>=11 && ErrorType<=15){
-	      sprintf(Command1,"${INSTALLREPOSITORY}/Reconstruction/appPM/PMAnaRevOfficial -r 14000 -s 0 -f ${MCOUTPUTSTORAGE}/PMMC_Run1_%d_wNoise_recon.root -o ${MCOUTPUTSTORAGE}/PMMC_Run1_%d_wNoise_ana_Systematics%d_%d.root -e %d -v %3.1f",i,i,ErrorType,n,ErrorType,ErrorValue);
-	      sprintf(Command2,"source ${INSTALLREPOSITORY}/source_T2KReweight.sh");
-	      sprintf(Command3,"${INSTALLREPOSITORY}/XS/XS_CC0pi_Plan -i ${MCOUTPUTSTORAGE}/PMMC_Run1_%d_wNoise_ana_Systematics%d_%d.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_Run1_%d_Systematics%d_%d_Plan.root -f 1 -m",i,ErrorType,n,i,ErrorType,n);
+	    else if(ErrorType>=11 && ErrorType<=15){ 
+	      // modif of PMAna - use the pre-existing files as an input
+	      sprintf(Command1,"${INSTALLREPOSITORY}/Reconstruction/app%s/%s -r 14000 -s 0 -f ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_recon.root -o ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_ana_Systematics%d_%d.root -e %d -v %3.1f",DetName,execAna,suffix,DetName,i,suffix,DetName,i,ErrorType,n,ErrorType,ErrorValue);
+	      sprintf(Command2,"${INSTALLREPOSITORY}/XS/XS_CC0pi_Plan%s -i ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_ana_Systematics%d_%d.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s_Run1_%d_Systematics%d_%d_Plan.root -f 1 -m%s",suffix,suffix,DetName,i,ErrorType,n,DetName,i,ErrorType,n,(PM?"":"w"));
 	    }
 	    else if(ErrorType==16) continue;
 	    //sprintf(Command2,"${INSTALLREPOSITORY}/XS/XS_CC0pi_Plan -i ${MCOUTPUTSTORAGE}/PMMC_Run1_%d_wNoise_ana.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_Run1_%d_Plan_ReWeight2015.root -f 1 -m",i,i);
@@ -317,17 +304,17 @@ int main(int argc, char **argv){
 	    if(ScriptMC)
 	      {
 		ScriptMC<<"#!/bin/bash +x"<<endl
-			<<Command1<<endl
-			<<Command1_1<<endl
-			<<Command1_2<<endl
-			<<Command1_3<<endl
-			<<Command1_4<<endl
-			<<Command1_5<<endl
-			<<Command1_6<<endl
-			<<Command2<<endl
-			<<Command3<<endl
-			<<Command4<<endl
-			<<Command5<<endl
+		  <<Command1<<endl
+		  <<Command1_1<<endl
+		  <<Command1_2<<endl
+		  <<Command1_3<<endl
+		  <<Command1_4<<endl
+		  <<Command1_5<<endl
+		  <<Command1_6<<endl
+		  <<Command2<<endl
+		  <<Command3<<endl
+		  <<Command4<<endl
+		  <<Command5<<endl
 			<<Command6<<endl;
 		//		    <<Command7<<endl;
 	      }

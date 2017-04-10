@@ -5,8 +5,10 @@ export MCINPUTSTORAGE=${MCINPUTSTORAGE_WM}
 export DATAINPUTSTORAGE=/export/scraid2/data/bquilain
 # need DATAINPUTSTORAGE_WM
 #export MCOUTPUTSTORAGE=/export/scraid2/data/bquilain/MCfiles
-export MCOUTPUTSTORAGE=/export/scraid4/data2/mlicciardi/PM_MCFiles/XSFileGenerator
-export MCOUTPUTSTORAGE_WM=/export/scraid4/data2/mlicciardi/WaterModule_MCFiles/XSFileGenerator
+export MCOUTPUTSTORAGE=/export/scraid4/data2/mlicciardi/XSFiles/Prod0/PM
+export MCOUTPUTSTORAGE_WM=/export/scraid4/data2/mlicciardi/XSFiles/Prod0/WM
+export MCOUTPUTSTORAGE_dev=/export/scraid4/data2/mlicciardi/XSFiles/dev/PM
+export MCOUTPUTSTORAGE_dev_WM=/export/scraid4/data2/mlicciardi/XSFiles/dev/WM
 export DATAOUTPUTSTORAGE=/export/scraid2/data/bquilain
 # need DATAOUTPUTSTORAGE_WM
 export INGRIDSOFTWARE=/home/mlicciardi/T2K/work/basesoft

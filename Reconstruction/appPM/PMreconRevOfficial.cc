@@ -87,7 +87,6 @@ int main(int argc,char *argv[]){
   bool Error=false;
   int ErrorType;
   double ErrorValue=0;
-  bool Reconstruction2D=false;
   int ActivePlaneCriteria=3;
   int VetoUpstreamCriteria=0;
   double VetoEdgeCriteria=80;
@@ -139,10 +138,10 @@ int main(int argc,char *argv[]){
     if(ErrorType==7) ActivePlaneCriteria = (int) ErrorValue;
     else if(ErrorType==8) VetoUpstreamCriteria = (int) ErrorValue;
     else if(ErrorType==9) VetoEdgeCriteria=(double) ErrorValue;
-    else if(ErrorType==10) FVCriteria=(double) ErrorValue;
+    else if(ErrorType==10) FVCriteria=(double) ErrorValue;//in cm
   }
-  double test=(1200-10.*FVCriteria)/2.;
-  cout<<"VetoCriteria="<<VetoUpstreamCriteria<<", EdgeCriteria="<<VetoEdgeCriteria<<", FV="<<test<<endl;
+  FVCriteria=(1200.-10.*FVCriteria)/2.; // 100cm means 100mm margin on the edge of the detector
+  cout<<"VetoCriteria="<<VetoUpstreamCriteria<<", EdgeCriteria="<<VetoEdgeCriteria<<", FV exclusion="<<FVCriteria<<"mm"<<endl;
 
   FileStat_t fs;
   // ifstream timing;
@@ -253,7 +252,6 @@ int main(int argc,char *argv[]){
 	fSortTime(allhit);
 	while(fFindTimeClster(allhit, hitcls, fcTime)){
 	  
-
 	  recon->nactpln = fNactpln(mod);
 	  if(recon->nactpln < ActivePlaneCriteria)continue;
 	  recon->layerpe = fLayerpe(mod);

@@ -486,6 +486,7 @@ int hit_n[2][500],hit_id[2][500][200];
 bool isohit[2][500][200];
 
 bool fTracking(int mod, int VetoUpstreamCriteria, double VetoEdgeCriteria, double FVCriteria){
+
   memset(hit,0,sizeof(hit));
   memset(hitnum,-1,sizeof(hitnum));
   alltrack.clear();
@@ -930,7 +931,7 @@ bool fTracking(int mod, int VetoUpstreamCriteria, double VetoEdgeCriteria, doubl
     for(int TRA=0;TRA<ntrack[VIEW];TRA++){
       if(ttrack[VIEW][TRA]==false)continue;
       //if(plane[VIEW][TRA][ntracl[VIEW][TRA]-1]==0){vetowtracking[VIEW][TRA]=true;}
-      if((mod!=16&&plane[VIEW][TRA][ntracl[VIEW][TRA]-1]<=VetoUpstreamCriteria)||(mod==16&&plane[VIEW][TRA][ntracl[VIEW][TRA]-1]<=VetoUpstreamCriteria+1)){vetowtracking[VIEW][TRA]=true;}
+      if((mod!=16&&plane[VIEW][TRA][ntracl[VIEW][TRA]-1]<=VetoUpstreamCriteria)||(mod==16&&plane[VIEW][TRA][ntracl[VIEW][TRA]-1]<=VetoUpstreamCriteria)){vetowtracking[VIEW][TRA]=true;}
       if(plane[VIEW][TRA][0]==plnmax(mod)-1){track_stop[VIEW][TRA]=false;}
 
 #ifdef PMEDGE
@@ -961,24 +962,28 @@ bool fTracking(int mod, int VetoUpstreamCriteria, double VetoEdgeCriteria, doubl
 
 
     //*****side veto*****
+    // loop over all hits in the side veto planes to see if one could be the beginning of the track
     for(int TRA=0;TRA<ntrack[VIEW];TRA++){
       vetodist[VIEW][TRA]=1e5;
       if(ttrack[VIEW][TRA]==false)continue;
       for(HIT=0;HIT<hit[VIEW];HIT++){
 	if(pln[VIEW][HIT]>=plnmax(mod)){
+	  // cout<<"side veto is hit, mod="<<mod<<" plane="<<pln[VIEW][HIT]<<endl;
+	  //if >=2 layers (46*2 in PM or 107*2 in I) between the track starting point 
+	  // and what would be the entering point of the track on the side of the module,
+	  // the track really starts inside the module -> no need to look for hits in side vetos
 	  if(par[VIEW][TRA][1]>0){
-	    //if(vposixy(mod,pln[VIEW][HIT])==1255)continue;
 	    if(vposixy(mod,pln[VIEW][HIT])>0)continue;
 	    if(XX[VIEW][TRA][ntracl[VIEW][TRA]-1]-(0-par[VIEW][TRA][0])/par[VIEW][TRA][1]>46*2&&mod==16)continue;
 	    if(XX[VIEW][TRA][ntracl[VIEW][TRA]-1]-(0-par[VIEW][TRA][0])/par[VIEW][TRA][1]>107*2&&mod!=16)continue;
 	  }
 	  else if(par[VIEW][TRA][1]<0){
-	    //if(vposixy(mod,pln[VIEW][HIT])==-55)continue;
 	    if(vposixy(mod,pln[VIEW][HIT])<0)continue;
 	    if(XX[VIEW][TRA][ntracl[VIEW][TRA]-1]-(1200-par[VIEW][TRA][0])/par[VIEW][TRA][1]>46*2&&mod==16)continue;
 	    if(XX[VIEW][TRA][ntracl[VIEW][TRA]-1]-(1200-par[VIEW][TRA][0])/par[VIEW][TRA][1]>107*2&&mod!=16)continue;
 	  }
 	  else continue;
+	  // dis is the distance of the hit to the track (orthogonal projection)
 	  dis=fabs(par[VIEW][TRA][1]*vposiz(mod,ch[VIEW][HIT])-vposixy(mod,pln[VIEW][HIT])+par[VIEW][TRA][0])/sqrt((par[VIEW][TRA][1])*(par[VIEW][TRA][1])+1);
 	  if(dis<VetoEdgeCriteria)vetowtracking[VIEW][TRA]=true;
 	  if(dis<vetodist[VIEW][TRA])vetodist[VIEW][TRA]=dis;
@@ -993,20 +998,18 @@ bool fTracking(int mod, int VetoUpstreamCriteria, double VetoEdgeCriteria, doubl
       for(HIT=0;HIT<hit[VIEW];HIT++){
 	if(pln[VIEW][HIT]>=plnmax(mod)){
 	  if(par[VIEW][TRA][1]>0){
-	    //if(vposixy(mod,pln[VIEW][HIT])==1255)continue;
 	    if(vposixy(mod,pln[VIEW][HIT])<0)continue;
 	    if(XX[VIEW][TRA][0]-(1200-par[VIEW][TRA][0])/par[VIEW][TRA][1]>46*2&&mod==16)continue;
 	    if(XX[VIEW][TRA][0]-(1200-par[VIEW][TRA][0])/par[VIEW][TRA][1]>107*2&&mod!=16)continue;
 	  }
 	  else if(par[VIEW][TRA][1]<0){
-	    //if(vposixy(mod,pln[VIEW][HIT])==-55)continue;
 	    if(vposixy(mod,pln[VIEW][HIT])>0)continue;
 	    if(XX[VIEW][TRA][0]-(0-par[VIEW][TRA][0])/par[VIEW][TRA][1]>46*2&&mod==16)continue;
 	    if(XX[VIEW][TRA][0]-(0-par[VIEW][TRA][0])/par[VIEW][TRA][1]>107*2&&mod!=16)continue;
 	  }
 	  else continue;
 	  dis=fabs(par[VIEW][TRA][1]*vposiz(mod,ch[VIEW][HIT])-vposixy(mod,pln[VIEW][HIT])+par[VIEW][TRA][0])/sqrt((par[VIEW][TRA][1])*(par[VIEW][TRA][1])+1);
-	  if(dis<80)track_stop[VIEW][TRA]=false;
+	  if(dis<VetoEdgeCriteria)track_stop[VIEW][TRA]=false;
 	}
       }
     }

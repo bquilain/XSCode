@@ -8,9 +8,9 @@
 
 using namespace std;
 
-INGRID_Dimension::INGRID_Dimension(){
-  f = TFile::Open("/export/scbn25/data1/taichiro/T2K/work/basesoft/git/watermodule/wmmc/assembly_checklist.root","READ");
-  t = (TTree*) f->Get("tree");
+void Initialize_INGRID_Dimension(){
+  TFile*  f = TFile::Open("/export/scbn25/data1/taichiro/T2K/work/basesoft/git/watermodule/wmmc/assembly_checklist.root","READ");
+  TTree* t = (TTree*) f->Get("tree");
   double xy1,xy3,xy0;
   int view,pln,ch;
   t -> SetBranchAddress("xy1",&xy1);
@@ -31,7 +31,9 @@ INGRID_Dimension::INGRID_Dimension(){
       position_xy[view][pln][ch] = 0;
     }
   }
+  t->Delete();
   f->Close();
+  f->Delete();
 
   f = TFile::Open("/export/scbn25/data1/taichiro/T2K/work/basesoft/git/watermodule/wmmc/position_module_z.root","READ");
   t = (TTree*) f->Get("tree");
@@ -50,8 +52,10 @@ INGRID_Dimension::INGRID_Dimension(){
     	position_z [view][pln][ch_temp] = position_z [view][pln][ch_temp] - z0;
     }
   }
+  t->Delete();
   f->Close();
-  std::cout << "call DIMENSION" << std::endl;
+  f->Delete();
+  //  std::cout << "call DIMENSION" << std::endl;
 }
 
 
@@ -335,7 +339,8 @@ bool INGRID_Dimension::get_expchXY(int mod, int view, int pln, int *ch, double a
 
 //added for prototype of WAGASCI
 bool INGRID_Dimension::get_pos_loli(int mod, int view, int pln, int ch, int grid, double *posx, double *posy, double *posz){
-	double x=0,y=0,z=0;
+	// based on design 
+	/*
 	if(view==0){
 		x = 0;
 		if(grid==0){
@@ -365,6 +370,49 @@ bool INGRID_Dimension::get_pos_loli(int mod, int view, int pln, int ch, int grid
 		else if(grid==2){
 			x = loli_offsetxy_grid + loli_cutwidth/2.     + loli_cutgap * ch;	//offset + cut width + loop
 			z = loli_firstoffset_z + loli_scinti_thick    + loli_offset_hv +  loli_scinti_width/2. + loli_gap * pln; //offset + offset + offset + scinti width + loop
+		}
+		else return false;
+	}
+	else return false;
+	//std::cout << "INGRID_Dimension " << x << " " << y << " " << z << "\n";
+	*posx = x;
+	*posy = y;
+	*posz = z;
+	return true;
+	*/
+
+
+	//Based on measurement
+	double x=0,y=0,z=0;
+	if(view==0){
+		x = 0;
+		if(grid==0){
+			y = loli_offsetxy      + loli_scinti_width/2. + position_xy[view][pln][ch]; //offset + scinti width + loop
+			z = loli_firstoffset_z + loli_scinti_thick/2. + position_z [view][pln][ch]; //offset + scinti width + loop
+		}
+		else if(grid==1){
+			y = loli_offsetxy_grid + loli_cutwidth/2.     + loli_cutgap * ch;	//offset + cut width + loop
+			z = loli_firstoffset_z + loli_scinti_thick    + loli_scinti_width/2. + position_z [0][pln][ch]; //offset + offset + scinti width + loop
+		}
+		else if(grid==2){
+			y = loli_offsetxy_grid + loli_cutwidth/2.     + loli_cutgap * ch;	//offset + cut width + loop
+			z = loli_firstoffset_z + loli_scinti_thick    + loli_scinti_width/2. + position_z [1][pln][ch]; //offset + offset + offset + scinti width + loop
+		}
+		else return false;
+	}
+	else if(view==1){
+		y = 0;
+		if(grid==0){
+			x = loli_offsetxy      + loli_scinti_width/2. + position_xy[view][pln][ch];  //offset + scinti width + loop
+			z = loli_firstoffset_z + loli_scinti_thick/2. + position_z [view][pln][ch];  //offset + offset + scinti width + loop
+		}
+		else if(grid==1){
+			x = loli_offsetxy_grid + loli_cutwidth/2.     + loli_cutgap * ch;	//offset + cut width + loop
+			z = loli_firstoffset_z + loli_scinti_thick    + loli_scinti_width/2. + position_z [0][pln][ch]; //offset + offset + offset + scinti width + loop
+		}
+		else if(grid==2){
+			x = loli_offsetxy_grid + loli_cutwidth/2.     + loli_cutgap * ch;	//offset + cut width + loop
+			z = loli_firstoffset_z + loli_scinti_thick    + loli_scinti_width/2. + position_z [1][pln][ch]; //offset + offset + offset + scinti width + loop
 		}
 		else return false;
 	}

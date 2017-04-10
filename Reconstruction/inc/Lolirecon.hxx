@@ -646,7 +646,8 @@ double joint_th = 25.;
 
 
 
-bool fTracking(int mod, int axis=0, int N_long=1){
+bool fTracking(int mod,int VetoUpstreamCriteria, double VetoEdgeCriteria, double FVCriteria, int axis=0, int N_long=1){
+
   memset(hit,0,sizeof(hit));
   memset(hitnum,-1,sizeof(hitnum));
   if(mod!=15){
@@ -828,7 +829,11 @@ bool fTracking(int mod, int axis=0, int N_long=1){
     //*****Define value of cells*****
     memset(value[VIEW],0,sizeof(value[VIEW]));
     memset(nvalue[VIEW],0,sizeof(nvalue[VIEW]));
+    time_t Time, Time_prev;
     for(int jndex=0;jndex<MAX_CELLVALUE;jndex++){
+      /*      if(jndex==0) time(&Time_prev); else Time_prev=Time;
+      time(&Time);
+      cout<<jndex<<" dt="<<Time-Time_prev<<endl;*/
       for(PLN=0;PLN<plnmax(mod, VIEW, PLN, axis)-2;PLN++){
 	//for(DIST=0;DIST<2;DIST++){
 	for(DIST=0;DIST<6;DIST++){
@@ -1155,13 +1160,18 @@ bool fTracking(int mod, int axis=0, int N_long=1){
       f->Delete();
     }
 
+    int VetoUpstreamCriteriaWM=1;
+    if(VetoUpstreamCriteria==0) VetoUpstreamCriteriaWM=1; //accept >1st Y-plane
+    else if(VetoUpstreamCriteria==1) VetoUpstreamCriteriaWM=3-VIEW;//accept >2nd X-plane
+    else if(VetoUpstreamCriteria==2) VetoUpstreamCriteriaWM=4; //accept >2nd Y-plane
+
     //*****upstream veto & edge channel cut*****
     memset(vetowtracking[VIEW],false,sizeof(vetowtracking[VIEW]));
     memset(edgewtracking[VIEW],false,sizeof(edgewtracking[VIEW]));
     memset(track_stop[VIEW],true,sizeof(track_stop[VIEW]));
     for(TRA=0;TRA<ntrack[VIEW];TRA++){
       if(!ttrack[VIEW][TRA])continue;
-      if((mod<15&&plane[VIEW][TRA][ntracl[VIEW][TRA]-1]==0) || (mod==15&&plane[VIEW][TRA][ntracl[VIEW][TRA]-1]<=2) || (mod==16&&plane[VIEW][TRA][ntracl[VIEW][TRA]-1]<=1) ){vetowtracking[VIEW][TRA]=true;}
+      if((mod<15&&plane[VIEW][TRA][ntracl[VIEW][TRA]-1]<=VetoUpstreamCriteria) || (mod==15&&plane[VIEW][TRA][ntracl[VIEW][TRA]-1]<=VetoUpstreamCriteriaWM) ){vetowtracking[VIEW][TRA]=true;}
       if(plane[VIEW][TRA][0]==plnmax(mod, VIEW, plane[VIEW][TRA][0] , axis)-1){track_stop[VIEW][TRA]=false;}
 
 #ifdef PMEDGE
@@ -1183,8 +1193,8 @@ bool fTracking(int mod, int axis=0, int N_long=1){
       //if(par[VIEW][TRA][1]*(zposi(mod,VIEW,plane[VIEW][TRA][ntracell[VIEW][TRA]]))+par[VIEW][TRA][0]>1100){edgewtracking[VIEW][TRA]=true;}
       //if(par[VIEW][TRA][1]*(zposi(mod,VIEW,plane[VIEW][TRA][ntracell[VIEW][TRA]],0,axis))+par[VIEW][TRA][0]<200){edgewtracking[VIEW][TRA]=true;}
       //if(par[VIEW][TRA][1]*(zposi(mod,VIEW,plane[VIEW][TRA][ntracell[VIEW][TRA]],0,axis))+par[VIEW][TRA][0]>1000){edgewtracking[VIEW][TRA]=true;}
-      if(par[VIEW][TRA][1]*(zposi(mod,VIEW,plane[VIEW][TRA][ntracell[VIEW][TRA]],0,axis))+par[VIEW][TRA][0]<200){edgewtracking[VIEW][TRA]=true;}
-      if(par[VIEW][TRA][1]*(zposi(mod,VIEW,plane[VIEW][TRA][ntracell[VIEW][TRA]],0,axis))+par[VIEW][TRA][0]>1000){edgewtracking[VIEW][TRA]=true;}
+      if(par[VIEW][TRA][1]*(zposi(mod,VIEW,plane[VIEW][TRA][ntracell[VIEW][TRA]],0,axis))+par[VIEW][TRA][0]<FVCriteria){edgewtracking[VIEW][TRA]=true;}
+      if(par[VIEW][TRA][1]*(zposi(mod,VIEW,plane[VIEW][TRA][ntracell[VIEW][TRA]],0,axis))+par[VIEW][TRA][0]>1200-FVCriteria){edgewtracking[VIEW][TRA]=true;}
 
       if(par[VIEW][TRA][1]*(zposi(mod,VIEW,plane[VIEW][TRA][0],0,axis))+par[VIEW][TRA][0]<100){track_stop[VIEW][TRA]=false;}
       if(par[VIEW][TRA][1]*(zposi(mod,VIEW,plane[VIEW][TRA][0],0,axis))+par[VIEW][TRA][0]>1100){track_stop[VIEW][TRA]=false;}
@@ -1201,25 +1211,19 @@ bool fTracking(int mod, int axis=0, int N_long=1){
       for(HIT=0;HIT<hit[VIEW];HIT++){
 	if(pln[VIEW][HIT]>=plnmax(mod, VIEW, pln[VIEW][HIT], axis)){
 	  if(par[VIEW][TRA][1]>0){
-	    //if(vposixy(mod,pln[VIEW][HIT])==1255)continue;
 	    if(vposixy(mod,pln[VIEW][HIT])>0)continue;
-	    //if(XX[VIEW][TRA][ntracl[VIEW][TRA]-1]-(0-par[VIEW][TRA][0])/par[VIEW][TRA][1]>46*2&&mod==16)continue;
-	    //if(XX[VIEW][TRA][ntracl[VIEW][TRA]-1]-(0-par[VIEW][TRA][0])/par[VIEW][TRA][1]>107*2&&mod!=16)continue;
 	    if(XX[VIEW][TRA][ntracl[VIEW][TRA]-1]-(0-par[VIEW][TRA][0])/par[VIEW][TRA][1]>46*2&&mod==16)continue;
 	    if(XX[VIEW][TRA][ntracl[VIEW][TRA]-1]-(0-par[VIEW][TRA][0])/par[VIEW][TRA][1]>107*2&&mod<15)continue;
 	  }
 	  else if(par[VIEW][TRA][1]<0){
-	    //if(vposixy(mod,pln[VIEW][HIT])==-55)continue;
 	    if(vposixy(mod,pln[VIEW][HIT])<0)continue;
-	    //if(XX[VIEW][TRA][ntracl[VIEW][TRA]-1]-(1200-par[VIEW][TRA][0])/par[VIEW][TRA][1]>46*2&&mod==16)continue;
-	    //if(XX[VIEW][TRA][ntracl[VIEW][TRA]-1]-(1200-par[VIEW][TRA][0])/par[VIEW][TRA][1]>107*2&&mod!=16)continue;
 	    if(XX[VIEW][TRA][ntracl[VIEW][TRA]-1]-(1200-par[VIEW][TRA][0])/par[VIEW][TRA][1]>46*2&&mod==16)continue;
 	    if(XX[VIEW][TRA][ntracl[VIEW][TRA]-1]-(1200-par[VIEW][TRA][0])/par[VIEW][TRA][1]>107*2&&mod<15)continue;
 	  }
 	  else continue;
 	  if(mod==15)continue;
-	  dis=fabs(par[VIEW][TRA][1]*vposiz(mod,ch[VIEW][HIT])-vposixy(mod,pln[VIEW][HIT])+par[VIEW][TRA][0])/sqrt((par[VIEW][TRA][1])*(par[VIEW][TRA][1])+1);
-	  if(dis<80)vetowtracking[VIEW][TRA]=true;
+	  dis=fabs(par[VIEW][TRA][1]*vposiz(mod,ch[VIEW][HIT])-vposixy(mod,pln[VIEW][HIT])+par[VIEW][TRA][0])/sqrt(par[VIEW][TRA][1]*par[VIEW][TRA][1]+1);
+	  if(dis<VetoEdgeCriteria)vetowtracking[VIEW][TRA]=true;
 	  if(dis<vetodist[VIEW][TRA])vetodist[VIEW][TRA]=dis;
 	}
       }
@@ -1232,21 +1236,19 @@ bool fTracking(int mod, int axis=0, int N_long=1){
       for(HIT=0;HIT<hit[VIEW];HIT++){
 	if(pln[VIEW][HIT]>=plnmax(mod, VIEW, pln[VIEW][HIT], axis)){
 	  if(par[VIEW][TRA][1]>0){
-	    //if(vposixy(mod,pln[VIEW][HIT])==1255)continue;
 	    if(vposixy(mod,pln[VIEW][HIT])<0)continue;
 	    if(XX[VIEW][TRA][0]-(1200-par[VIEW][TRA][0])/par[VIEW][TRA][1]>46*2&&mod==16)continue;
 	    if(XX[VIEW][TRA][0]-(1200-par[VIEW][TRA][0])/par[VIEW][TRA][1]>107*2&&mod!=16)continue;
 	  }
 	  else if(par[VIEW][TRA][1]<0){
-	    //if(vposixy(mod,pln[VIEW][HIT])==-55)continue;
 	    if(vposixy(mod,pln[VIEW][HIT])>0)continue;
 	    if(XX[VIEW][TRA][0]-(0-par[VIEW][TRA][0])/par[VIEW][TRA][1]>46*2&&mod==16)continue;
 	    if(XX[VIEW][TRA][0]-(0-par[VIEW][TRA][0])/par[VIEW][TRA][1]>107*2&&mod!=16)continue;
 	  }
 	  else continue;
 	  if(mod==15)continue;
-	  dis=fabs(par[VIEW][TRA][1]*vposiz(mod,ch[VIEW][HIT])-vposixy(mod,pln[VIEW][HIT])+par[VIEW][TRA][0])/sqrt((par[VIEW][TRA][1])*(par[VIEW][TRA][1])+1);
-	  if(dis<80)track_stop[VIEW][TRA]=false;
+	  dis=fabs(par[VIEW][TRA][1]*vposiz(mod,ch[VIEW][HIT])-vposixy(mod,pln[VIEW][HIT])+par[VIEW][TRA][0])/sqrt(par[VIEW][TRA][1]*par[VIEW][TRA][1]+1);
+	  if(dis<VetoEdgeCriteria)track_stop[VIEW][TRA]=false;
 	}
       }
     }
@@ -1508,8 +1510,7 @@ bool fTracking(int mod, int axis=0, int N_long=1){
 };
 
 
-bool fTracking_loli(int mod){
-
+bool fTracking_loli(int mod,int VetoUpstreamCriteria, double VetoEdgeCriteria, double FVCriteria){
   	alltrack.clear();
 	int N_long=5;
 	vector<Hit> hit_temp;
@@ -1523,7 +1524,7 @@ bool fTracking_loli(int mod){
 		hitcls[i].ch   = reconch;
 		hitcls[i].used = 0;
 	}
-	fTracking(mod,0,N_long);
+	fTracking(mod,VetoUpstreamCriteria,VetoEdgeCriteria,FVCriteria,0,N_long);
 
 	//recon long track along xy axis
 	for(int i=0;i<alltrack.size();i++){
@@ -1546,7 +1547,7 @@ bool fTracking_loli(int mod){
 		hitcls[i].pln= reconpln;
 		hitcls[i].ch = reconch;
 	}
-	fTracking(mod,1,N_long);
+	fTracking(mod,VetoUpstreamCriteria,VetoEdgeCriteria,FVCriteria,1,N_long);
 
 
 
@@ -1573,7 +1574,7 @@ bool fTracking_loli(int mod){
 		hitcls[i].pln  = reconpln;
 		hitcls[i].ch   = reconch;
 	}
-	fTracking(mod,0,1);
+	fTracking(mod,VetoUpstreamCriteria,VetoEdgeCriteria,FVCriteria,0,1);
 	//recon track along xy axis
 	for(int i=0;i<alltrack.size();i++){
 		//for(int j=0;j<alltrack[i].hitid.size();j++){
@@ -1595,9 +1596,7 @@ bool fTracking_loli(int mod){
 		hitcls[i].pln= reconpln;
 		hitcls[i].ch = reconch;
 	}
-	fTracking(mod,1,1);
-
-
+	fTracking(mod,VetoUpstreamCriteria,VetoEdgeCriteria,FVCriteria,1,1);
 
 
 
@@ -1617,7 +1616,7 @@ bool fFindNearestTracks(int* a, int* b, float angle_th, float dist_th){
      * If more than one candidate is found, calculate joilik=sqrt((angle/angle_th)^2+(dist/dist_th)^2) for each candidate and select minimum one.
      * If no candidate is found, return false.
      */
-    cout << "Find nearest tracks" << endl;
+    //cout << "Find nearest tracks" << endl;
     const int Ntrack=(int)alltrack.size();
     float joilik=1e-6;
     bool candidate=false;
@@ -1644,7 +1643,7 @@ bool fFindNearestTracks(int* a, int* b, float angle_th, float dist_th){
              *  else fitaxis=1 (fit along xy-axis).
              */
             int fitaxis=(fabs(alltrack[i].ang-alltrack[j].ang)>90.0 || fabs(alltrack[i].ang+alltrack[j].ang)>90.0);
-            cout << "fitaxis " << fitaxis << " angle i " << alltrack[i].ang << " angle j " << alltrack[j].ang << endl;
+            //cout << "fitaxis " << fitaxis << " angle i " << alltrack[i].ang << " angle j " << alltrack[j].ang << endl;
             if(fitaxis){
                 swap(pos[0][0][0], pos[0][0][1]);
                 swap(pos[0][1][0], pos[0][1][1]);
@@ -1672,7 +1671,7 @@ bool fFindNearestTracks(int* a, int* b, float angle_th, float dist_th){
 };
 
 void fGetHitFromTrack(vector<Hit> &hit, const vector<Track> &track){
-    cout << "Get hit from track" << endl;
+  //cout << "Get hit from track" << endl;
     vector<Hit>::iterator it;
     for(int i=0; i<(int)track.size(); i++){
         for(int j=0; j<(int)track[i].hitid.size(); j++){
@@ -1687,7 +1686,7 @@ void fGetHitFromTrack(vector<Hit> &hit, const vector<Track> &track){
 };
 
 void fFitAllHit(const vector<Hit> &hit, vector<float> &par, int axis, bool disp=false, int mod=15){
-    cout << "Fit all hit" << endl;
+  //cout << "Fit all hit" << endl;
     vector<float> x, y, xe, ye;
     const int Nhits=(int)hit.size();
     INGRID_Dimension* fdim=new INGRID_Dimension();
@@ -1698,7 +1697,7 @@ void fFitAllHit(const vector<Hit> &hit, vector<float> &par, int axis, bool disp=
         y.push_back (xyposi  (mod, hit[i].view, reconpln, reconch, axis));
         xe.push_back(scithick(mod, hit[i].view, reconpln, y.at(i), axis)/sqrt(3));
         ye.push_back(sciwidth(mod, hit[i].view, reconpln, reconch, axis)/sqrt(3));
-	std::cout << mod <<  " " << hit[i].view <<  " " << hit[i].pln <<  " " << hit[i].ch << " " << reconpln <<  " " << reconch <<  " " << axis << " " << x[i] << " " << y[i] << std::endl;
+	//	std::cout << mod <<  " " << hit[i].view <<  " " << hit[i].pln <<  " " << hit[i].ch << " " << reconpln <<  " " << reconch <<  " " << axis << " " << x[i] << " " << y[i] << std::endl;
     }
     delete fdim;
     TGraphErrors* g=new TGraphErrors(Nhits, &x[0], &y[0], &xe[0], &ye[0]);
@@ -1707,10 +1706,10 @@ void fFitAllHit(const vector<Hit> &hit, vector<float> &par, int axis, bool disp=
     const float deltax=(fabs(x[Nhits-1]-x[0])<deltamin ? deltamin : (x[Nhits-1]-x[0])); //avoid initial parameter=0
     const float deltay=(fabs(y[Nhits-1]-y[0])<deltamin ? deltamin : (y[Nhits-1]-y[0]));
     f->SetParameters(y[0]-x[0]*deltay/deltax, deltay/deltax);
-    cout << "par before fit: " << f->GetParameter(0) << ", " << f->GetParameter(1) << endl;
+    //    cout << "par before fit: " << f->GetParameter(0) << ", " << f->GetParameter(1) << endl;
     g->Fit("f", "WQ"); //ignore errors. Any better solutions?
     //cout << "par after  fit: " << f->GetParameter(0) << ", " << f->GetParameter(1) << " / Chisquare " << f->GetChisquare() << endl;
-    cout << "par after  fit: " << f->GetParameter(0) << ", " << f->GetParameter(1) << " / Chisquare " << f->GetChisquare() << " " << 180./3.14*atan(f->GetParameter(1)) << " " << 180./3.14*atan(1./f->GetParameter(1)) << endl;
+    //    cout << "par after  fit: " << f->GetParameter(0) << ", " << f->GetParameter(1) << " / Chisquare " << f->GetChisquare() << " " << 180./3.14*atan(f->GetParameter(1)) << " " << 180./3.14*atan(1./f->GetParameter(1)) << endl;
     if(disp){
         TCanvas* c_allhit=new TCanvas("c_allhit", "c_allhit");
         g->Draw("AP");
@@ -1726,7 +1725,7 @@ void fFitAllHit(const vector<Hit> &hit, vector<float> &par, int axis, bool disp=
 };
 
 Track fGetConnectedTrack(const vector<Hit> &hit, const vector<Track> &track, const vector<float> &par, int axis, int mod=15){
-    cout << "Get connected track" << endl;
+  //cout << "Get connected track" << endl;
     Track tr;
     tr.clear();
     tr.mod    = mod;
@@ -1845,8 +1844,8 @@ bool fConnectTracks(float angle_th, float dist_th){ //hosomi 160622
      */
     int a, b;
     if(!fFindNearestTracks(&a, &b, angle_th, dist_th)) return false;
-    for(int i=0; i<(int)alltrack[a].hitid.size(); i++) cout << "track a hitid: " << alltrack[a].hitid[i] << " isohit: " << alltrack[a].isohit[i] << endl;
-    for(int i=0; i<(int)alltrack[b].hitid.size(); i++) cout << "track b hitid: " << alltrack[b].hitid[i] << " isohit: " << alltrack[b].isohit[i] <<endl;
+    //    for(int i=0; i<(int)alltrack[a].hitid.size(); i++) cout << "track a hitid: " << alltrack[a].hitid[i] << " isohit: " << alltrack[a].isohit[i] << endl;
+    //for(int i=0; i<(int)alltrack[b].hitid.size(); i++) cout << "track b hitid: " << alltrack[b].hitid[i] << " isohit: " << alltrack[b].isohit[i] <<endl;
 
     vector<Hit> hit_connect;
     vector<Track> track_connect;
@@ -1860,7 +1859,7 @@ bool fConnectTracks(float angle_th, float dist_th){ //hosomi 160622
      *  else fitaxis=1 (fit along xy-axis).
      */
     int fitaxis=(fabs(alltrack[a].ang-alltrack[b].ang)>90.0 || fabs(alltrack[a].ang+alltrack[b].ang)>90.0);
-    cout << "fitaxis " << fitaxis << " angle a " << alltrack[a].ang << " angle b " << alltrack[b].ang << endl;
+    // cout << "fitaxis " << fitaxis << " angle a " << alltrack[a].ang << " angle b " << alltrack[b].ang << endl;
     vector<float> par;
     fFitAllHit(hit_connect, par, fitaxis);
 
