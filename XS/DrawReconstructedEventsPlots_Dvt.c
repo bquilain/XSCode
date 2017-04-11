@@ -52,6 +52,8 @@ using namespace std;
 
 int main(int argc, char ** argv){
 
+  char * cINSTALLREPOSITORY = getenv("INSTALLREPOSITORY");
+
   //TApplication theApp("App",0,0);
   gStyle->SetOptFit(kTRUE);
   Xsec * XS = new Xsec();
@@ -79,15 +81,29 @@ int main(int argc, char ** argv){
   //double BinningMom[NBinsMom+1]=BinningTrueMom;
   //double BinningAngle[NBinsAngle+1]=BinningTrueAngle;
 #endif
-  
+
+  bool PM=true;  
+
   int c=-1;
-  while ((c = getopt(argc, argv, "o:")) != -1) {
+  while ((c = getopt(argc, argv, "o:wp")) != -1) {
     switch(c){
     case 'o':
       OutputName=optarg;
       break;      
+    case 'p':
+      PM=true;
+      break;      
+    case 'w':
+      PM=false;
+      break;      
+
     }
   }
+
+  char suffix[3];sprintf(suffix,(PM?"":"_WM"));
+  char DetName[2];sprintf(DetName,(PM?"PM":"WM"));
+  cout<<"Selected detector is "<<DetName<<endl;
+
 
   cout<<"CAREFUL: TO UNDERSTAND -> When XS error is varied, XS of 0 is different from the nominal MC that I have!!!!"<<endl; 
   char * txtDataName = new char[256];
@@ -340,13 +356,13 @@ int main(int argc, char ** argv){
       double ErrorValue=Start[ErrorType]+n*Step[ErrorType];
       
 #ifdef RECONSTRUCTED
-      sprintf(txtMCName,"/home/bquilain/CC0pi_XS/XS/files/MCSelected_Systematics%d_%d.txt",ErrorType,n);
+      //      sprintf(txtMCName,"${INSTALLREPOSITORY}/XS/files/MCSelected_Systematics%d_%d.txt",ErrorType,n);
+      sprintf(txtMCName,"%s/XS/Selection1000_cutBkg%s.txt",cINSTALLREPOSITORY,DetName);
       XS->Xsec::LoadInputFiles_OnlySelectedData(txtMCName,MCReconstructedEvents);
-
       
       if(ErrorType>=7 && ErrorType<=Systematics_Detector_End) sprintf(txtDataName,"/home/bquilain/CC0pi_XS/XS/files/DataSelected_Systematics%d_%d.txt",ErrorType,n);
       else if(ErrorType==0 && EndError>=7 && StartError<=Systematics_Detector_End) sprintf(txtDataName,"/home/bquilain/CC0pi_XS/XS/files/DataSelected_Systematics%d_%d.txt",ErrorType,n); 
-      else sprintf(txtDataName,"/home/bquilain/CC0pi_XS/XS/files/MCSelected_Systematics0_0.txt");
+      else sprintf(txtDataName,"%s/XS/Selection1000_cutBkg%s.txt",cINSTALLREPOSITORY,DetName);
       //cout<<"good"<<endl;
       XS->Xsec::LoadInputFiles_OnlySelectedData(txtDataName,DataReconstructedEvents);
 #else
@@ -794,7 +810,7 @@ int main(int argc, char ** argv){
       ErrorTotalStatistics_Plus[e0][e1]=RelativeError;
       ErrorTotalStatistics_Minus[e0][e1]=-RelativeError;
       
-      NominalMC_RecMom->SetBinContent(e0+1,e1+1,Value);
+      //      NominalMC->SetBinContent(e0+1,e1+1,Value);
       sliceNominalMC_RecMom[e1]->SetBinContent(e0+1,Value);
       sliceNominalMC_RecMom[e1]->SetBinError(e0+1,ErrorSquared);
       
@@ -816,7 +832,7 @@ int main(int argc, char ** argv){
     for(int e1=0;e1<NBinsAngle;e1++){//loop over effect 1
       Value+=NominalMC->GetBinContent(e0+1,e1+1);
     }
-#ifdef RECONSTRUCTED    
+#ifndef RECONSTRUCTED    
     for(int e1=0;e1<NBinsAngle;e1++){//loop over effect 1
       
       for(int f1=0;f1<NBinsAngle;f1++){//loop over effect 1
@@ -838,7 +854,7 @@ int main(int argc, char ** argv){
 
     cout<<"Mom="<<BinningRecMom[e0]<<", value="<<Value<<", "<<Error<<endl;
     NominalMC_RecMom->SetBinContent(e0+1,Value);
-    NominalMC_RecMom->SetBinError(e0+1,ErrorSquared);
+    NominalMC_RecMom->SetBinError(e0+1,Error);
 
     boxErrorStat_RecMom[e0] = new TBox(NominalMC_RecMom->GetXaxis()->GetBinLowEdge(e0+1),Value-Error,NominalMC_RecMom->GetXaxis()->GetBinUpEdge(e0+1),Value+Error);
     boxErrorStat_RecMom[e0]->SetFillColor(kRed);
@@ -850,7 +866,7 @@ int main(int argc, char ** argv){
     for(int e0=0;e0<NBinsMom;e0++){//loop over effect 1
       Value+=NominalMC->GetBinContent(e0+1,e1+1);
     }
-#ifdef RECONSTRUCTED
+#ifndef RECONSTRUCTED
     for(int e0=0;e0<NBinsMom;e0++){//loop over effect 1
       for(int f0=0;f0<NBinsMom;f0++){//loop over effect 1
 	//ErrorSquared+=Covariance[ErrorType][ErrorType][e0][e1][e0][f1];      
@@ -871,7 +887,7 @@ int main(int argc, char ** argv){
 
     cout<<"Angle="<<BinningRecAngle[e1]<<", value="<<Value<<", "<<Error<<endl;
     NominalMC_RecAngle->SetBinContent(e1+1,Value);
-    NominalMC_RecAngle->SetBinError(e1+1,ErrorSquared);
+    NominalMC_RecAngle->SetBinError(e1+1,Error);
 
     boxErrorStat_RecAngle[e1] = new TBox(NominalMC_RecAngle->GetXaxis()->GetBinLowEdge(e1+1),Value-Error,NominalMC_RecAngle->GetXaxis()->GetBinUpEdge(e1+1),Value+Error);
     boxErrorStat_RecAngle[e1]->SetFillColor(kRed);
@@ -1070,7 +1086,8 @@ int main(int argc, char ** argv){
     for(int e1=0;e1<NBinsAngle;e1++){//loop over effect 1
       double Value=0;double ErrorSquared=0;double Error=0;
       ErrorSquared=NominalMC->GetBinError(e0+1,e1+1);
-      Error=TMath::Sqrt(ErrorSquared);
+      //      Error=TMath::Sqrt(ErrorSquared); ML 2017/03/09
+      Error=ErrorSquared;
       NominalMC->SetBinError(e0+1,e1+1,Error);
       sliceNominalMC_RecMom[e1]->SetBinError(e0+1,Error);
       sliceNominalMC_RecAngle[e0]->SetBinError(e1+1,Error);
@@ -1080,13 +1097,15 @@ int main(int argc, char ** argv){
   for(int e0=0;e0<NBinsMom;e0++){//loop over effect 0
     double Value=0;double ErrorSquared=0;double Error=0;
     ErrorSquared=NominalMC_RecMom->GetBinError(e0+1);
-    Error=TMath::Sqrt(ErrorSquared);
+    //    Error=TMath::Sqrt(ErrorSquared);
+    Error=ErrorSquared;
     NominalMC_RecMom->SetBinError(e0+1,Error);
   }
   for(int e1=0;e1<NBinsAngle;e1++){//loop over effect 0
     double Value=0;double ErrorSquared=0;double Error=0;
     ErrorSquared=NominalMC_RecAngle->GetBinError(e1+1);
-    Error=TMath::Sqrt(ErrorSquared);
+    //    Error=TMath::Sqrt(ErrorSquared);
+    Error=ErrorSquared;
     NominalMC_RecAngle->SetBinError(e1+1,Error);
   }
   //#####################################END OF PUT BACK TOTAL ERROR TO SQRT (COVARIANCE)################################

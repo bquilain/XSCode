@@ -51,7 +51,7 @@ using namespace std;
 #include "Hit.h"
 #include "Reconstruction.h"
 #include "setup.h"
-#include "PMrecon.hxx"
+#include "Lolirecon.hxx" // extends functions of PMrecon so suitable for PM&WM
 //#define DEBUG
 //#define DEBUG2
 
@@ -269,7 +269,7 @@ vector <Hit3D> Reconstruction::CountSharedHits(vector <Hit3D> Vec, vector< vecto
 }
 
 
-vector <HitTemp> Reconstruction::EraseDoubleHits(IngridBasicReconSummary * recon, int itrk, vector <HitTemp> HitV){
+/*vector <HitTemp> Reconstruction::EraseDoubleHits(IngridBasicReconSummary * recon, int itrk, vector <HitTemp> HitV){
   //cout<<"hello"<<endl;
   HitV.clear();
   IngridHitSummary * Hit = new IngridHitSummary();
@@ -298,6 +298,7 @@ vector <HitTemp> Reconstruction::EraseDoubleHits(IngridBasicReconSummary * recon
   return HitV;
   
 }
+*/
 
 vector <HitTemp> Reconstruction::EraseDoubleHitsPM(PMAnaSummary * recon, int itrk, vector <HitTemp> HitV){
   HitTemp Coord;
@@ -337,7 +338,7 @@ vector <HitTemp> Reconstruction::EraseDoubleHitsPM(PMAnaSummary * recon, int itr
   //cout<<"return HitV"<<endl;
   return HitV;
 }
-
+/*
 vector <HitTemp> Reconstruction::EraseDoubleHitsAllTracks(IngridBasicReconSummary * recon, vector <HitTemp> HitV){
   //cout<<"hello"<<endl;
   HitV.clear();
@@ -371,7 +372,7 @@ vector <HitTemp> Reconstruction::EraseDoubleHitsAllTracks(IngridBasicReconSummar
   return HitV;
   // for(int ihit=0;ihit<HitV.size();ihit++){
 }
-
+*/
 
 vector <HitTemp> Reconstruction::EraseDoubleHitsAllTracksPM(PMAnaSummary * recon, vector <HitTemp> HitV){
   //cout<<"hello"<<endl;
@@ -405,7 +406,7 @@ vector <HitTemp> Reconstruction::EraseDoubleHitsAllTracksPM(PMAnaSummary * recon
 }
 
 
-vector <Hit3D> Reconstruction::Hit2DMatching( IngridEventSummary* evt, IngridBasicReconSummary * recon,vector <HitTemp> HitV,vector <Hit3D> Vec, bool MC){
+/*vector <Hit3D> Reconstruction::Hit2DMatching( IngridEventSummary* evt, IngridBasicReconSummary * recon,vector <HitTemp> HitV,vector <Hit3D> Vec, bool MC){
   Vec.clear();
   IngridHitSummary * hit=new IngridHitSummary();
   IngridHitSummary * hit2=new IngridHitSummary();
@@ -468,7 +469,7 @@ vector <Hit3D> Reconstruction::Hit2DMatching( IngridEventSummary* evt, IngridBas
 	      hit3d.pdg=SimPart->pdg;
 	      break;
 	    }
-	    }*/
+	    }
 	}
 	else hit3d.truepe=-1;
 
@@ -500,7 +501,7 @@ vector <Hit3D> Reconstruction::Hit2DMatching( IngridEventSummary* evt, IngridBas
 	      hit3d2.pdg=SimPart->pdg;
 	      break;
 	    }
-	    }*/
+	    }
 	}
 
 	//if(hit->view==0) {
@@ -518,7 +519,7 @@ vector <Hit3D> Reconstruction::Hit2DMatching( IngridEventSummary* evt, IngridBas
           hit3d2.x=hit->xy;
           hit3d2.y=hit2->xy;
           hit3d.ch=hit->ch;
-	  }*/
+	  }
 	HitPln[hit3d.pln][hit3d.view][hit3d.ch]++;
 	HitPln[hit3d2.pln][hit3d2.view][hit3d2.ch]++;
 	Vec.push_back(hit3d);
@@ -543,7 +544,7 @@ vector <Hit3D> Reconstruction::Hit2DMatching( IngridEventSummary* evt, IngridBas
   sort(Vec.begin(),Vec.end());
   return Vec;
 }
-
+*/
 
 vector <Hit3D> Reconstruction::Hit2DMatchingPM( IngridEventSummary* evt, PMAnaSummary * recon,vector <HitTemp> HitV,vector <Hit3D> Vec, bool MC){
   
@@ -1070,7 +1071,7 @@ double Reconstruction::GetBeamAngle(double ang1, double thetax1, double thetay1)
 
 
 
-vector <Hit3D> Reconstruction::SeveralHitsPlane(IngridBasicReconSummary * recon,vector <HitTemp> HitV,vector <Hit3D> Vec){
+/*vector <Hit3D> Reconstruction::SeveralHitsPlane(IngridBasicReconSummary * recon,vector <HitTemp> HitV,vector <Hit3D> Vec){
   vector <Hit3D> Vec2;
   Hit3D hit3d, hit3d2, hitall;
   
@@ -1113,7 +1114,7 @@ vector <Hit3D> Reconstruction::SeveralHitsPlane(IngridBasicReconSummary * recon,
   hitall.clear();
   return Vec2;
 }
-
+*/
 
 vector <Hit3D> Reconstruction::SeveralHitsPlanePM(PMAnaSummary * recon,vector <HitTemp> HitV,vector <Hit3D> Vec){
   vector <Hit3D> Vec2;
@@ -1162,7 +1163,7 @@ vector <Hit3D> Reconstruction::SeveralHitsPlanePM(PMAnaSummary * recon,vector <H
 
 
 
-vector <Hit3D> Reconstruction::Hit2DMatchingCluster(IngridEventSummary* evt, IngridBasicReconSummary * recon,vector <HitTemp> HitV,vector <Hit3D> Vec){
+/*vector <Hit3D> Reconstruction::Hit2DMatchingCluster(IngridEventSummary* evt, IngridBasicReconSummary * recon,vector <HitTemp> HitV,vector <Hit3D> Vec){
   //cout<<"Change Z and X/Y of hits in Hit2DMatchingClusterPM before to use"<<endl;
   int Mod=recon->hitmod;
   IngridHitSummary * hit =new IngridHitSummary();
@@ -1251,13 +1252,13 @@ vector <Hit3D> Reconstruction::Hit2DMatchingCluster(IngridEventSummary* evt, Ing
   /*  for(int ihit=0;ihit<VecAll.size();ihit++){
     VecAll[ihit].pe/=HitPln[VecAll[ihit].pln][VecAll[ihit].view][VecAll[ihit].ch];
   }
-  */
+  
   sort(VecAll.begin(),VecAll.end());
   hit->Clear();
   hit2->Clear();
   return VecAll;
 }
-
+*/
 
 
 vector <Hit3D> Reconstruction::Hit2DMatchingClusterPM(IngridEventSummary* evt, PMAnaSummary * recon){
@@ -1521,7 +1522,7 @@ vector <int> Reconstruction::TrackComposition(vector <Hit3D> Vec, double VertexX
 }
 
 
-vector <Hit3D> Reconstruction::Hit2DMatchingAllTracks(IngridBasicReconSummary * recon){
+/*vector <Hit3D> Reconstruction::Hit2DMatchingAllTracks(IngridBasicReconSummary * recon){
   int Mod=16;
   IngridHitSummary * hit =new IngridHitSummary();
   IngridHitSummary * hit2 =new IngridHitSummary();
@@ -1567,7 +1568,7 @@ vector <Hit3D> Reconstruction::Hit2DMatchingAllTracks(IngridBasicReconSummary * 
   /*cout<<"Vector HitV:"<<endl;
    for(int ihit=0;ihit<HitV.size();ihit++){
    //cout<<HitV[ihit].x<<"  "<<HitV[ihit].y<<"  "<<HitV[ihit].z<<endl;
-    }*/
+    }
 
   VecAll.clear();                                     
   for(int ihit=0;ihit<HitV.size();ihit++){
@@ -1591,7 +1592,7 @@ vector <Hit3D> Reconstruction::Hit2DMatchingAllTracks(IngridBasicReconSummary * 
 	if(hit2->mod==16) hit3d.z=hit->z;
 	else hit3d.z=hit->z+107.45;
 	cout<<"v2="<<hit3d.z<<", plane="<<hit3d.pln<<", channel="<<hit3d.ch<<endl;
-	*/
+	
 	//if(hit->mod==16 && (hit->ch>7 && hit->ch<24)) cout<<"hit pe="<<hit->pe<<", hit lope="<<hit->lope<<endl;
 	bool MC=false;
 	if(MC) hit3d.pe=hit->pe;
@@ -1619,7 +1620,7 @@ vector <Hit3D> Reconstruction::Hit2DMatchingAllTracks(IngridBasicReconSummary * 
 	      hit3d.pdg=SimPart->pdg;
 	      break;
 	    }
-	    }*/
+	    }
 	}
 	else hit3d.truepe=-1;
 
@@ -1649,7 +1650,7 @@ vector <Hit3D> Reconstruction::Hit2DMatchingAllTracks(IngridBasicReconSummary * 
 	      hit3d2.pdg=SimPart->pdg;
 	      break;
 	    }
-	    }*/
+	    }
 	}
 
 	//if(hit->view==0) {
@@ -1679,7 +1680,7 @@ vector <Hit3D> Reconstruction::Hit2DMatchingAllTracks(IngridBasicReconSummary * 
           hit3d2.x=hit->xy;
           hit3d2.y=hit2->xy;
           hit3d.ch=hit->ch;
-	  }*/
+	  }
                                                               
       HitPln[hit3d.pln][hit3d.view][hit3d.ch]++;
       HitPln[hit3d2.pln][hit3d2.view][hit3d2.ch]++;
@@ -1694,13 +1695,13 @@ vector <Hit3D> Reconstruction::Hit2DMatchingAllTracks(IngridBasicReconSummary * 
     //cout<<"Hit/Pln="<<HitPln[VecAll[ihit].pln][VecAll[ihit].view]<<endl;
     VecAll[ihit].pe/=HitPln[VecAll[ihit].pln][VecAll[ihit].view][VecAll[ihit].ch];
   }
-  */
-  /* //cout<<"Vec All:"<<endl;
+  
+   //cout<<"Vec All:"<<endl;
   for(int ihit=0;ihit<VecAll.size();ihit++){
    //cout<<VecAll[ihit].x<<"  "<<VecAll[ihit].y<<"  "<<VecAll[ihit].z<<"  "<<VecAll[ihit].pe<<endl;
-    }*/
+    }
    return VecAll;
-}
+}*/
 
 vector <Hit3D> Reconstruction::IsInTrk(vector <Hit3D> VecCluster, vector <Hit3D> VecAllTracks){
   for(int ihit=0;ihit<VecCluster.size();ihit++){

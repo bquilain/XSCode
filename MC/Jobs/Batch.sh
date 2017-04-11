@@ -1,5 +1,4 @@
 #!/bin/zsh +x
-for i in {1..100};do
-#    condor_submit condorPMMC_Sand${i}.sh
-    condor_submit condorPMMC${i}.sh
+for i in {0..49};do
+    condor_submit condorPMMC${i}_Systematics0_0.sh
 done

@@ -35,9 +35,9 @@ using namespace std;
 #include <TSystem.h>
 #include <THStack.h>
 #include <TSpline.h>
-int LimitTracks=20;
+//int LimitTracks=20;
 int LimitRecs=5;
-int NDials=175;
+//int NDials=175;
 #include "TApplication.h"
 #include "INGRIDEVENTSUMMARY.h"
 #include "IngridHitSummary.h"
@@ -77,6 +77,7 @@ int GetMax(vector <int> V){
   return Max;
 }
 
+/* already done in Reconstruction.cc
 double DegRad(double angle){
   return angle*TMath::Pi()/180.;
 }
@@ -84,7 +85,7 @@ double DegRad(double angle){
 double RadDeg(double angle){
   return angle*180./TMath::Pi();
 }
-//
+*/
 
 int main(int argc, char **argv)
 {

@@ -41,7 +41,8 @@ using namespace std;
 #include "IngridSimParticleSummary.h"
 #include "BeamInfoSummary.h"
 #include "IngridBasicReconSummary.h"
-#include "PMAnaSummary.h"
+//#include "PMAnaSummary.h"
+#include "IngridConstants.h"
 #include "setup.h"
 #include "Reconstruction.cc"
 Reconstruction *Rec=new Reconstruction();
@@ -54,6 +55,7 @@ bool IsINGRID(int ch){
   else Ing=false;
   return Ing;
 }
+/* already defined in Reconstruction.cc
 double DegRad(double angle){
   return angle*TMath::Pi()/180.;
 }
@@ -61,6 +63,7 @@ double DegRad(double angle){
 double RadDeg(double angle){
   return angle*180./TMath::Pi();
 }
+*/
 
 int main(int argc, char **argv){
   cout<<"hello"<<endl;
@@ -104,7 +107,7 @@ int main(int argc, char **argv){
   double Nmod=17;
   TFile* _file0 = NULL;
   char FileMC[500], FileData[256];
-  cout<<"Hello BNJ"<<endl;
+  cout<<"Hello Matt :)"<<endl;
   if(MC) cout<<"Analyzing MC"<<endl;
   else cout<<"Analyzing Data"<<endl;
   double Nhits, NhitsMC;

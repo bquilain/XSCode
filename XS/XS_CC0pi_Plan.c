@@ -587,6 +587,9 @@ int main(int argc, char **argv)
     wtree              -> Branch   (Form("HighestPE_track%d",itrk),&(HighestPE[itrk]),Form("HighestPE_track%d/F",itrk));
     wtree              -> Branch   (Form("ProportionHighPE_track%d",itrk),&(ProportionHighPE[itrk]),Form("ProportionHighPE_track%d/F",itrk));
     wtree              -> Branch   (Form("Momentum_track%d",itrk),&(Momentum[itrk]),Form("Momentum_track%d/F",itrk));
+    wtree              -> Branch   (Form("LastChannelINGRIDX_track%d",itrk),&(LastChannelINGRIDX[itrk]),Form("LastChannelINGRIDX_track%d/I",itrk));
+    wtree              -> Branch   (Form("LastChannelINGRIDY_track%d",itrk),&(LastChannelINGRIDY[itrk]),Form("LastChannelINGRIDY_track%d/I",itrk));
+
     for(int ihit=0; ihit<LimitHits;ihit++){
       wtree              -> Branch   (Form("EnergyDeposition_track%d_hit%d",itrk,ihit),&(EnergyDeposition[itrk][ihit]),Form("EnergyDeposition_track%d_hit%d/F",itrk,ihit));
       wtree              -> Branch   (Form("EnergyDepositionSpline_track%d_hit%d",itrk,ihit),&(EnergyDepositionSpline[itrk][ihit]),Form("EnergyDepositionSpline_track%d_hit%d/F",itrk,ihit));
@@ -624,7 +627,6 @@ int main(int argc, char **argv)
   wtreeMVA              -> Branch   ("SelectionOV",&VSelectionOV,"SelectionOV/O");
   wtreeMVA              -> Branch   ("OpeningAngle",&(OpeningAngle),"OpeningAngle/F");
   wtreeMVA              -> Branch   ("CoplanarityAngle",&(CoplanarityAngle),"CoplanarityAngle/F");
-
   wtreeMVA              -> Branch   (Form("TrackWidth"),&(TrackWidthMVA),Form("TrackWidth/F"));
   wtreeMVA              -> Branch   (Form("TrackAngle"),&(TrackAngleMVA),Form("TrackAngle/F"));
   wtreeMVA              -> Branch   (Form("TypeOfTrack"),&(TypeOfTrackMVA),Form("TypeOfTrack/I"));
@@ -639,6 +641,8 @@ int main(int argc, char **argv)
   wtreeMVA              -> Branch   (Form("GeometricTrack"),&(GTMVA),Form("GeometricTrack/O"));
   wtreeMVA              -> Branch   (Form("TotalCharge"),&(TotalChargeMVA),Form("TotalCharge/F"));
   wtreeMVA              -> Branch   (Form("Momentum"),&(MomentumMVA),Form("Momentum/F"));
+
+
   for(int ihit=0; ihit<LimitHits;ihit++){
     wtreeMVA              -> Branch   (Form("EnergyDeposition_hit%d",ihit),&(EnergyDepositionMVA[ihit]),Form("EnergyDeposition_hit%d/F",ihit));
     wtreeMVA              -> Branch   (Form("EnergyDepositionSpline_hit%d",ihit),&(EnergyDepositionSplineMVA[ihit]),Form("EnergyDepositionSpline_hit%d/F",ihit));
@@ -896,7 +900,11 @@ int main(int argc, char **argv)
 
 
 
-	    /****************************************Determine the Criteria for matching tracks*************************************/
+
+	    /**************************************Determine the Criteria for matching tracks*************************************/
+	    // cout<<Vec.size()<<" "<<recon->NhitTs(itrk)<<endl;
+	    //for(int i=0;i<Vec.size();i++) cout<<Vec[i].view<<endl;
+
 	    vector <double> CriteriaPMINGRID=Rec->Reconstruction::GetMatchingPMINGRID(Vec);
 	    CriteriaAngleX[itrk]=TMath::Abs(CriteriaPMINGRID[4]-CriteriaPMINGRID[0]);
 	    CriteriaAngleY[itrk]=TMath::Abs(CriteriaPMINGRID[5]-CriteriaPMINGRID[1]);

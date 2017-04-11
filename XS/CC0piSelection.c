@@ -56,8 +56,7 @@ using namespace std;
 #include "TMVA/Tools.h"
 //My libs
 #include "setup.h"
-#include "Xsec.cc"
-#include "Reconstruction.cc"
+//#include "Reconstruction.cc"
 #define DEBUG
 #define DEBUG2
 //#define DEBUG3
@@ -66,7 +65,6 @@ using namespace std;
 //#define TEMPORARY
 //#define DEBUGMVA
 
-Xsec * XS = new Xsec();
 char Type[32];
 char Name[256];
 char Name0[256];
@@ -234,6 +232,8 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
   float PlasticDistance[LimitTracks];
   int Sample[LimitTracks];//Geometric properties of the track, defined in Reconstruction::SelectTrackSample
   bool IsReconstructed[LimitTracks];
+  int LastChannelIX[LimitTracks];
+  int LastChannelIY[LimitTracks];
   float ReWeight[NDials];
   float TrackWidth[LimitTracks];
   float EnergyDeposition[LimitTracks][LimitHits];// = new vector<float> [LimitTracks];
@@ -251,7 +251,7 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
   wtree->SetBranchAddress("FSIInt",&FSIInt);
   wtree->SetBranchAddress("nIngBasRec",&nIngBasRec);
   wtree->SetBranchAddress("InteractionType",&Num_Int);
-  wtree->SetBranchAddress("nTracks",nTracks);
+  wtree->SetBranchAddress("nTracks",&nTracks);
   wtree->SetBranchAddress("NewEvent",&NewEvent);
   wtree->SetBranchAddress("nIngBasRec",&nIngBasRec);
   wtree->SetBranchAddress("InteractionType",&Num_Int);  
@@ -275,8 +275,9 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
   wtree->SetBranchAddress("IsDetected",&IsDetected);
   wtree->SetBranchAddress("OpeningAngle",&OpeningAngle);
   wtree->SetBranchAddress("CoplanarityAngle",&CoplanarityAngle);
-  wtree->SetBranchAddress(Form("ReWeight[%d]",Ndials),ReWeight);
+  wtree->SetBranchAddress(Form("ReWeight[%d]",NDials),ReWeight);
   wtree->SetBranchAddress("POT",&POT);
+
 
   for(int itrk=0;itrk<LimitTracks;itrk++){
     wtree->SetBranchAddress(Form("TrackAngle_track%d",itrk),&(TrackAngle[itrk]));
@@ -297,6 +298,8 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
     wtree->SetBranchAddress(Form("MeanHighPE_track%d",itrk),&(MeanHighPE[itrk]));
     wtree->SetBranchAddress(Form("HighestPE_track%d",itrk),&(HighestPE[itrk]));
     wtree->SetBranchAddress(Form("Momentum_track%d",itrk),&(Momentum[itrk]));
+    wtree->SetBranchAddress(Form("LastChannelINGRIDX_track%d",itrk),&(LastChannelIX[itrk]));
+    wtree->SetBranchAddress(Form("LastChannelINGRIDY_track%d",itrk),&(LastChannelIY[itrk]));
 
     for(int ihit=0; ihit<LimitHits;ihit++){
       wtree->SetBranchAddress(Form("EnergyDeposition_track%d_hit%d",itrk,ihit),&(EnergyDeposition[itrk][ihit]));
@@ -1359,8 +1362,6 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
     }
 
   }   
-  
-      
 
   cout<<"Test bonjour"<<endl;
   
@@ -1403,7 +1404,7 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
     
     //Select your CL
     for(int itrk=0;itrk<LimitTracks;itrk++){
-      ChosenCL[itrk]=(_isPM?: TMath::Log(CLMuon_Plan[itrk]) : CLMuon_KS[irec]);
+      ChosenCL[itrk]=(_isPM? (TMath::Log(CLMuon_Plan[itrk])) : CLMuon_KS[itrk]);
       
       // ML tmp
       /*
@@ -1416,8 +1417,17 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
     }
     //
     if(IsData){FSIInt=0;Num_Int=0;}
-    else weight*=ScalingMC;//Adjust the MC distribution to the amount of data we process
+    else {
+      //********************
+      if(IsSand||IsBkgH||IsBkgV){
+	if(weight>1000) continue;
+	// continue;
+      }
+      //******************** tmp
+      weight*=ScalingMC;//Adjust the MC distribution to the amount of data we process
+    }
     if(IsSand) weight*=(1+SandReweight);
+
 
     ////////////////DETERMINE THE REWEIGHTING OF THE EVENT IF SYSTEMATICS ERROR FLUX
 
@@ -1436,12 +1446,6 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
     }
     //cout<<ReWeight[5]<<endl;
 
-    //********************
-    if(IsSand||IsBkgH || IsBkgV){
-      //if(weight>1000) continue;
-      continue;
-    }
-    //******************** tmp
     
     bool IsNuMu=((!IsSand) && (!IsAnti) && (!IsNuE) && (!IsBkgH) && (!IsBkgV));
     if(IsData && (!GoodSpill || !Spill)) continue;
@@ -1486,7 +1490,7 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
     
       bool MuonFound=false;
       int MuonTrue;int MuonRec=0;
-      int PionTrue, int PionRec=0;
+      int PionTrue; int PionRec=0;
       int MuonTrueMVA;int MuonRecMVA=0;
       int LowestMuCL=0;
       bool Trash=false;
@@ -1597,10 +1601,10 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
 	  if(ChosenCL[itrk]<ChosenCL[LowestMuCL]) LowestMuCL=itrk;
 
 	  if(Plots){
-	    if(SelectionFV[irec] && !IsData){
-	      if(TMath::Abs(TypeOfTrack[irec][itrk])==13) hMuCL_TrueMuon->Fill(ChosenCL[itrk],weight);
-	      else if(TMath::Abs(TypeOfTrack[irec][itrk])==211) hMuCL_TruePion->Fill(ChosenCL[itrk],weight);
-	      else if(TMath::Abs(TypeOfTrack[irec][itrk])==2212) hMuCL_TrueProton->Fill(ChosenCL[itrk],weight);
+	    if(SelectionFV && !IsData){
+	      if(TMath::Abs(TypeOfTrack[itrk])==13) hMuCL_TrueMuon->Fill(ChosenCL[itrk],weight);
+	      else if(TMath::Abs(TypeOfTrack[itrk])==211) hMuCL_TruePion->Fill(ChosenCL[itrk],weight);
+	      else if(TMath::Abs(TypeOfTrack[itrk])==2212) hMuCL_TrueProton->Fill(ChosenCL[itrk],weight);
 	      else hMuCL_TrueOthers->Fill(ChosenCL[itrk],weight);
 	      //cout<<"hello, particle is="<<TMath::Abs(TypeOfTrack[irec][itrk])<<endl;
 	    }
@@ -1615,24 +1619,24 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
 	
 #endif
 	}
-             
+
 	if(Plots){
 	  //if(SelectionOV[irec]){//MC case: muon at 99%. If data, one should only take long tracks since gamma contamination
 	    
-	  if(SelectionFV[irec] && !IsData){
+	  if(SelectionFV && !IsData){
 
-	    double eqdist=IronDistance[irec][itrk]+(PlasticDistance[irec][itrk]/IronCarbonRatio);
+	    double eqdist=IronDistance[itrk]+(PlasticDistance[itrk]/IronCarbonRatio);
 	      
-	    if(IsFV && TMath::Abs(TypeOfTrack[irec][itrk])==13 && Sample[irec][itrk]==3) { //stopping muons
-	      Pmu_vs_IronDist->Fill(eqdist,Momentum[irec][itrk],weight);	  		   
-	      if(eqdist<6 && Momentum[irec][itrk]>0.5) cout<<eqdist<<" plastic="<<PlasticDistance[irec][itrk]<<" angle="<<TrackAngle[irec][itrk]<<" mom="<<Momentum[irec][itrk]<<" last channels="<<LastChannelIX[irec][itrk]<<" "<<LastChannelIY[irec][itrk]<<endl;
+	    if(IsFV && TMath::Abs(TypeOfTrack[itrk])==13 && Sample[itrk]==3) { //stopping muons
+	      Pmu_vs_IronDist->Fill(eqdist,Momentum[itrk],weight);	  		   
+	      if(eqdist<6 && Momentum[itrk]>0.5) cout<<eqdist<<" plastic="<<PlasticDistance[itrk]<<" angle="<<TrackAngle[itrk]<<" mom="<<Momentum[itrk]<<" last channels="<<LastChannelIX[itrk]<<" "<<LastChannelIY[itrk]<<endl;
 	    }
 		  
-	    if(IsFV && TMath::Abs(TypeOfTrack[irec][itrk])==2212 && Sample[irec][itrk]==3)//stopping protons
-	      Pp_vs_IronDist->Fill(eqdist,Momentum[irec][itrk],weight);	  		   
+	    if(IsFV && TMath::Abs(TypeOfTrack[itrk])==2212 && Sample[itrk]==3)//stopping protons
+	      Pp_vs_IronDist->Fill(eqdist,Momentum[itrk],weight);	  		   
 		  
-	    if(IsFV && TMath::Abs(TypeOfTrack[irec][itrk])==211 && Sample[irec][itrk]==3)//stopping pions
-	      Ppi_vs_IronDist->Fill(eqdist,Momentum[irec][itrk],weight);	  		   
+	    if(IsFV && TMath::Abs(TypeOfTrack[itrk])==211 && Sample[itrk]==3)//stopping pions
+	      Ppi_vs_IronDist->Fill(eqdist,Momentum[itrk],weight);	  		   
 		  
 	      
 	    double distratio = 0.01;//not 0, to avoid being just limits between two bins.
@@ -1673,19 +1677,19 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
   
 	  
       if(Selection==2){ // CC1pi
-	if(TMath::Abs(TypeOfTrack[irec][MuonRec])==13) MuonRec_TruePDG_val[0]+=weight;
-	else if(TMath::Abs(TypeOfTrack[irec][MuonRec])==211) MuonRec_TruePDG_val[1]+=weight;
-	else if(TMath::Abs(TypeOfTrack[irec][MuonRec])==2212) MuonRec_TruePDG_val[2]+=weight;
+	if(TMath::Abs(TypeOfTrack[MuonRec])==13) MuonRec_TruePDG_val[0]+=weight;
+	else if(TMath::Abs(TypeOfTrack[MuonRec])==211) MuonRec_TruePDG_val[1]+=weight;
+	else if(TMath::Abs(TypeOfTrack[MuonRec])==2212) MuonRec_TruePDG_val[2]+=weight;
 	else MuonRec_TruePDG_val[3]+=weight;
 	    
-	if(Sample[irec][MuonRec]<Sample[irec][PionRec]){
+	if(Sample[MuonRec]<Sample[PionRec]){
 	  // switch PionRec && MuonRec
 	  int pion_tmp=MuonRec;
 	  int mu_tmp=PionRec;
 
-	  if(TMath::Abs(TypeOfTrack[irec][mu_tmp])==13) MuonRec_TruePDG_switch_val[0]+=weight;
-	  else if(TMath::Abs(TypeOfTrack[irec][mu_tmp])==211) MuonRec_TruePDG_switch_val[1]+=weight;
-	  else if(TMath::Abs(TypeOfTrack[irec][mu_tmp])==2212) MuonRec_TruePDG_switch_val[2]+=weight;
+	  if(TMath::Abs(TypeOfTrack[mu_tmp])==13) MuonRec_TruePDG_switch_val[0]+=weight;
+	  else if(TMath::Abs(TypeOfTrack[mu_tmp])==211) MuonRec_TruePDG_switch_val[1]+=weight;
+	  else if(TMath::Abs(TypeOfTrack[mu_tmp])==2212) MuonRec_TruePDG_switch_val[2]+=weight;
 	  else MuonRec_TruePDG_switch_val[3]+=weight;
 
 	  if(false){
@@ -1706,7 +1710,7 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
       for(int itrk=0;itrk<nTracks;itrk++){
 	if(!IsReconstructed[itrk]) continue;
 	if(ChosenCL[itrk]>MuonCut) MuonLike++;
-	else if(ChosenCL[itrk]<ProtonCut && (_isPM? true: _mucl[itrk]>=0)) ProtonLike++;
+	else if(ChosenCL[itrk]<ProtonCut && (_isPM? true: ChosenCL[itrk]>=0)) ProtonLike++;
 	// for WM, mucl=-1 corresponds to undetremined tracks (to few isohits)
 	else Undetermined++;
       }
@@ -1739,9 +1743,9 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
       MuonIDTotal->Fill(TrueMomentumMuon,TrueAngleMuon,weight);
       
       // for CC1pi MuonSample2 is set to 5
-      if(Selection==1 && (Sample[irec][MuonRec]!=MuonSample1)&&(Sample[irec][MuonRec]!=MuonSample2)) continue; // ML done later for CC1pi
+      if(Selection==1 && (Sample[MuonRec]!=MuonSample1)&&(Sample[MuonRec]!=MuonSample2)) continue; // ML done later for CC1pi
       
-      int nRecTracks=nTracks[irec]-nBadRecTracks;
+      int nRecTracks=nTracks-nBadRecTracks;
       
       if(Plots){
 	if(nRecTracks==1) hMuCL[FSIInt]->Fill(ChosenCL[MuonRec],weight);
@@ -1749,21 +1753,21 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
 	if(nRecTracks==2 && MuonLike==1 && Undetermined==0){
 	  hMuCL_Lowest[FSIInt]->Fill(ChosenCL[LowestMuCL],weight);
 	  if(ChosenCL[LowestMuCL]<-1){
-	    if(FSIInt<3) PE_Lowest_CC0pi->Fill(ProportionHighPE[irec][LowestMuCL],MeanHighPE[irec][LowestMuCL],weight);
-	    else PE_Lowest_Other->Fill(ProportionHighPE[irec][LowestMuCL],MeanHighPE[irec][LowestMuCL],weight);		    
+	    if(FSIInt<3) PE_Lowest_CC0pi->Fill(ProportionHighPE[LowestMuCL],MeanHighPE[LowestMuCL],weight);
+	    else PE_Lowest_Other->Fill(ProportionHighPE[LowestMuCL],MeanHighPE[LowestMuCL],weight);		    
 	  }
 	}
       }
       hNTracks[FSIInt]->Fill(nRecTracks,weight);
-      hRecMom[FSIInt]->Fill(IronDistance[irec][MuonRec]+(PlasticDistance[irec][MuonRec]/IronCarbonRatio),weight);
-      hRecAngle[FSIInt]->Fill(TrackAngle[irec][MuonRec],weight);
+      hRecMom[FSIInt]->Fill(IronDistance[MuonRec]+(PlasticDistance[MuonRec]/IronCarbonRatio),weight);
+      hRecAngle[FSIInt]->Fill(TrackAngle[MuonRec],weight);
       //if(FSIInt<3) cout<<"CC0pi true, "<<MuonLike<<", "<<Undetermined<<", "<<ProtonLike<<endl;
       //else cout<<MuonLike<<", "<<Undetermined<<", "<<ProtonLike<<endl;
       if(MuonLike==1 && Undetermined==0/*&& nRecTracks<=2*/){//CC0pi
-	//cout<<"Interaction value="<<FSIInt<<", Ion distance="<<IronDistance[irec][MuonRec]+(PlasticDistance[irec][MuonRec]/IronCarbonRatio)<<endl;
+	//cout<<"Interaction value="<<FSIInt<<", Ion distance="<<IronDistance[MuonRec]+(PlasticDistance[MuonRec]/IronCarbonRatio)<<endl;
 
 	//TEMPORARY
-	if(nRecTracks==2) hSampleSecondTrack[FSIInt]->Fill(Sample[irec][LowestMuCL]);
+	if(nRecTracks==2) hSampleSecondTrack[FSIInt]->Fill(Sample[LowestMuCL]);
 	//
 		
 	if(Selection==1){
@@ -1791,10 +1795,10 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
 	      MCSelected[BinTrueMom][BinTrueAngle][BinRecMom][BinRecAngle]+=weight;
 	      Efficiency[BinTrueMom][BinTrueAngle]+=weight;
 #ifdef DEBUG
-	      if((IronDistance[irec][MuonRec]+(PlasticDistance[irec][MuonRec]/IronCarbonRatio))<40 && TrueMomentumMuon>1){
+	      if((IronDistance[MuonRec]+(PlasticDistance[MuonRec]/IronCarbonRatio))<40 && TrueMomentumMuon>1){
 		cout<<"evt number="<<ievt<<", number of tracks="<<nRecTracks<<endl;
 		for(int itrk=0;itrk<nRecTracks;itrk++){
-		  cout<<"CL="<<_mucl[itrk]<<", distance="<<IronDistance[irec][itrk]+(PlasticDistance[irec][itrk]/IronCarbonRatio)<<", sample="<<Sample[irec][itrk]<<endl;
+		  cout<<"CL="<<ChosenCL[itrk]<<", distance="<<IronDistance[itrk]+(PlasticDistance[itrk]/IronCarbonRatio)<<", sample="<<Sample[itrk]<<endl;
 		}
 	      }
 #endif
@@ -1812,10 +1816,10 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
 	nEventsInter[3][FSIInt]+=weight;
 	      
 	if(nRecTracks>3) continue;
-	if(Sample[irec][MuonRec]>2){//only ingrid tracks
-	  hRecMom_CC1pi_full[FSIInt]->Fill(IronDistance[irec][MuonRec]+(PlasticDistance[irec][MuonRec]/IronCarbonRatio),weight);
-	  hRecAngle_CC1pi_full[FSIInt]->Fill(TrackAngle[irec][MuonRec],weight);
-	  if(Sample[irec][MuonRec]==3) MuCL_vs_IronDist->Fill(IronDistance[irec][MuonRec]+(PlasticDistance[irec][MuonRec]/IronCarbonRatio),_mucl[MuonRec],weight);
+	if(Sample[MuonRec]>2){//only ingrid tracks
+	  hRecMom_CC1pi_full[FSIInt]->Fill(IronDistance[MuonRec]+(PlasticDistance[MuonRec]/IronCarbonRatio),weight);
+	  hRecAngle_CC1pi_full[FSIInt]->Fill(TrackAngle[MuonRec],weight);
+	  if(Sample[MuonRec]==3) MuCL_vs_IronDist->Fill(IronDistance[MuonRec]+(PlasticDistance[MuonRec]/IronCarbonRatio),ChosenCL[MuonRec],weight);
 	}
 	      
 	if(Selection==2){
@@ -1834,11 +1838,11 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
 	  }
 		
 
-	  if((Sample[irec][MuonRec]!=MuonSample1)&&(Sample[irec][MuonRec]!=MuonSample2)) continue;
+	  if((Sample[MuonRec]!=MuonSample1)&&(Sample[MuonRec]!=MuonSample2)) continue;
 	  nEvents[5]+=weight;
 	  nEventsInter[5][FSIInt]+=weight;
-	  hRecMom_CC1pi[FSIInt]->Fill(IronDistance[irec][MuonRec]+(PlasticDistance[irec][MuonRec]/IronCarbonRatio),weight);
-	  hRecAngle_CC1pi[FSIInt]->Fill(TrackAngle[irec][MuonRec],weight);
+	  hRecMom_CC1pi[FSIInt]->Fill(IronDistance[MuonRec]+(PlasticDistance[MuonRec]/IronCarbonRatio),weight);
+	  hRecAngle_CC1pi[FSIInt]->Fill(TrackAngle[MuonRec],weight);
 				
 	  DataSelected[BinRecMom][BinRecAngle]+=weight;
 	  if(!IsData){
@@ -1851,18 +1855,18 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
 	      BkgSelected[BinRecMom][BinRecAngle]+=weight;
 	    }
 	  }
-	  if(Sample[irec][MuonRec]==MuonSample1){
+	  if(Sample[MuonRec]==MuonSample1){
 	    nEvents[6]+=weight;
 	    nEventsInter[6][FSIInt]+=weight;
-	    double leq=IronDistance[irec][MuonRec]+(PlasticDistance[irec][MuonRec]/IronCarbonRatio);
+	    double leq=IronDistance[MuonRec]+(PlasticDistance[MuonRec]/IronCarbonRatio);
 	    hRecMom_CC1pi_restr[FSIInt]->Fill(leq,weight);
-	    hRecAngle_CC1pi_restr[FSIInt]->Fill(TrackAngle[irec][MuonRec],weight);
+	    hRecAngle_CC1pi_restr[FSIInt]->Fill(TrackAngle[MuonRec],weight);
 	  }
 	}
       }
       else if(MuonLike>=3){//Side band CCNpi
-	hRecMom_CCNpi[FSIInt]->Fill(IronDistance[irec][MuonRec]+(PlasticDistance[irec][MuonRec]/IronCarbonRatio),weight);
-	hRecAngle_CCNpi[FSIInt]->Fill(TrackAngle[irec][MuonRec],weight);
+	hRecMom_CCNpi[FSIInt]->Fill(IronDistance[MuonRec]+(PlasticDistance[MuonRec]/IronCarbonRatio),weight);
+	hRecAngle_CCNpi[FSIInt]->Fill(TrackAngle[MuonRec],weight);
       }	     
     }
   }
@@ -2526,6 +2530,7 @@ int main(int argc, char ** argv){
  
  
    TChain * chain = new TChain("wtree");
+   TChain * chainMVA = new TChain("wtreeMVA");
    if(Data){
      for(int i=StartRun;i<=EndRun;i++){
      //for(int i=14510;i<=14510;i++){
@@ -2547,7 +2552,7 @@ int main(int argc, char ** argv){
      //cout<<"Please enter the amount of data you'd like to mimic (I will adjust MC stat.) in unit of 1e21 POT:"<<endl;
      //cin>>DataEquivalent;
      ScalingMC=DataEquivalent/NMCfiles;//one MC file is equivalent to 1e21 POT
-       
+     cout<<NMCfiles<<endl;
      for(int i=0;i<NMCfiles;i++){
        //sprintf(fName,i);
        //sprintf(fName,"%s",InNameEvent);
@@ -2559,7 +2564,7 @@ int main(int argc, char ** argv){
        //sprintf(fName,"/home/bquilain/CC0pi_XS/XS/root_input/XSFormat_Run1_%d_Plan_RandomPE.root",i);
 
        //       fName=Form(InNameEvent,i);
-       sprintf(fName,"${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s_Run1_%d_PlanDev.root",(isPM?"PM":"WM"),i);
+       sprintf(fName,"${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s_Run1_%d_Plan.root",(isPM?"PM":"WM"),i);
        cout<<fName<<endl;
        chain->Add(fName);
 #ifdef MVATRAINING

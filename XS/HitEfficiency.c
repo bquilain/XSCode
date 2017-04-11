@@ -117,7 +117,7 @@ int main(int argc, char **argv){
       
       tree=(TTree*) _file0->Get("tree");
       double Nhits;
-      IngridHitSummary * Hit = new IngridHitSummary;
+      IngridHitSummary * Hit = new IngridHitSummary(); 
       int nevt=(int) tree->GetEntries();
       IngridEventSummary* evt = new IngridEventSummary();
       TBranch * Br=tree->GetBranch("fDefaultReco.");

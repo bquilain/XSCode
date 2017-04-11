@@ -35,9 +35,9 @@ using namespace std;
 #include <TSystem.h>
 #include <THStack.h>
 #include <TSpline.h>
-int LimitTracks=20;
+//int LimitTracks=20;
 int LimitRecs=5;
-int NDials=175;
+//int NDials=175;
 #include "TApplication.h"
 #include "INGRIDEVENTSUMMARY.h"
 #include "IngridHitSummary.h"
@@ -79,7 +79,7 @@ int GetMax(vector <int> V){
   else if(V[0]<V[1] && V[1]<V[2])Max=2;
   return Max;
 }
-
+/* already defined in Reconstruction.cc
 double DegRad(double angle){
   return angle*TMath::Pi()/180.;
 }
@@ -87,6 +87,7 @@ double DegRad(double angle){
 double RadDeg(double angle){
   return angle*180./TMath::Pi();
 }
+*/
 
 //TSPLINE CONVERSION TO A TF1
 Double_t fPDF_Ing(Double_t *pe, Double_t *par){

@@ -30,6 +30,8 @@ source $ND280GEANT/cmt/setup.sh
 #source $ND280ROOT/cmt/setup.sh  commented out to keep ROOTSYS at root5.34 while using MC (see GNUmakefile)
 source $ND280CLHEP/cmt/setup.sh
 
+export TMVASYS=/home/mlicciardi/T2K/work/basesoft/TMVA-v4.2.0
+
 #Set MY Env
 #export G4WORKDIR=$INSTALLREPOSITORY/MC/ingmc_IngridRevReWeightFinal
 export G4WORKDIR=$INSTALLREPOSITORY/MC

@@ -15,12 +15,12 @@ LIB = $(INSTALLREPOSITORY)/libs/libsPM/lib_5.34
 #lib
 
 LIBS 		= $(ROOTGLIBS) $(TMVALIBS)\
-          -lm $(LIB)/INGRIDEVENTSUMMARY.so $(LIB)/IngridHitSummary.so \
-          $(LIB)/IngridSimHitSummary.so $(LIB)/IngridSimVertexSummary.so \
-          $(LIB)/IngridSimParticleSummary.so $(LIB)/BeamInfoSummary.so \
-          $(LIB)/IngridBasicReconSummary.so $(LIB)/Ingrid1stReducSummary.so \
-          $(LIB)/IngridTrackSummary.so $(LIB)/NeutInfoSummary.so \
-          $(LIB)/PMReconSummary.so $(LIB)/PMAnaSummary.so \
+#          -lm $(LIB)/INGRIDEVENTSUMMARY.so $(LIB)/IngridHitSummary.so \
+#          $(LIB)/IngridSimHitSummary.so $(LIB)/IngridSimVertexSummary.so \
+#          $(LIB)/IngridSimParticleSummary.so $(LIB)/BeamInfoSummary.so \
+#          $(LIB)/IngridBasicReconSummary.so $(LIB)/Ingrid1stReducSummary.so \
+#          $(LIB)/IngridTrackSummary.so $(LIB)/NeutInfoSummary.so \
+#          $(LIB)/PMReconSummary.so $(LIB)/PMAnaSummary.so \
 
 INC = inc
 SRC= src
