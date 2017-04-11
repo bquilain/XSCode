@@ -45,6 +45,8 @@ class Hit3D{
   int used;
   bool InTrk;
   int trackid;
+  double dist_plastic;
+  double dist_iron;
   vector <int> RecTrk;
 
   void clear(){
@@ -65,6 +67,8 @@ class Hit3D{
     InTrk=false;
     trackid=0;
     RecTrk.clear();
+    dist_plastic=0;
+    dist_iron=0;
   }
 
   friend bool operator < (const Hit3D left, const Hit3D right)

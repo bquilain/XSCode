@@ -6,9 +6,21 @@ ROOTLIBS     	:= $(shell root-config --libs)
 ROOTGLIBS    	:= $(shell root-config --glibs)
 CXXFLAGS	+= $(ROOTCFLAGS)
 
-#LIB = $(INSTALLREPOSITORY)/libs/libsPM/lib_5.34
+TMVACFLAGS       = -I$(TMVASYS)/
+CXXFLAGS        += $(TMVACFLAGS)
+TMVALIBS         = -L$(TMVASYS)/lib $(TMVASYS)/lib/libTMVA.1.so $(shell root-config --libs) -lMLP -lTreePlayer -lMinuit
 
-LIBS 		= $(ROOTGLIBS) \
+#LIB = $(INSTALLREPOSITORY)/CC0pi_XS/MC/ingmc_IngridRevReWeightFinal/lib_New
+LIB = $(INSTALLREPOSITORY)/libs/libsPM/lib_5.34
+#lib
+
+LIBS 		= $(ROOTGLIBS) $(TMVALIBS)\
+          -lm $(LIB)/INGRIDEVENTSUMMARY.so $(LIB)/IngridHitSummary.so \
+          $(LIB)/IngridSimHitSummary.so $(LIB)/IngridSimVertexSummary.so \
+          $(LIB)/IngridSimParticleSummary.so $(LIB)/BeamInfoSummary.so \
+          $(LIB)/IngridBasicReconSummary.so $(LIB)/Ingrid1stReducSummary.so \
+          $(LIB)/IngridTrackSummary.so $(LIB)/NeutInfoSummary.so \
+          $(LIB)/PMReconSummary.so $(LIB)/PMAnaSummary.so \
 
 INC = inc
 SRC= src
@@ -18,6 +30,7 @@ CXXFLAGS += -I$(SRC) -I$(INC)
 TARGET=XSFileGenerator FinalMCOutputMaker CC0piPlots CC0piSelection CC0piSelection_Likelihood Draw_CompareCalibrationsPM DrawXSPlots DrawXSPlots_Toys GeneratePEAngleDistributions SandSelection_Plan SequentialSand
 
 all: $(TARGET)
+
 
 GeneratePEAngleDistributions: GeneratePEAngleDistributions.o
 Draw_CompareCalibrationsPM: Draw_CompareCalibrationsPM.o

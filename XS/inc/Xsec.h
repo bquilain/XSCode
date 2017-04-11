@@ -12,15 +12,11 @@ using namespace std;
 
 class Xsec{
  public:
-  Xsec(bool=true);
-  ~Xsec();
   
   void Initialize();
-  void SetDetector(bool);
-  bool GetDetector();
 
   int DetermineFSI(int IsSand,int IsAnti,int IsNuE,int IsBkgH,int IsBkgV,IngridEventSummary * evt);
-  void DetermineNuType(bool& IsSand,bool& IsAnti,bool& IsNuE,bool& IsBkgH,bool& IsBkgV,int nutype, int intmode);
+  void DetermineNuType(int IsSand,int IsAnti,int IsNuE,int IsBkgH,int IsBkgV,int nutype, int intmode);
     
   void LoadMuCLDistributions();
   
@@ -42,13 +38,10 @@ class Xsec{
   void ApplyUnfolding(double vPosteriorEvents[NBinsTrueMom][NBinsTrueAngle], double vUnfolding[NBinsTrueMom][NBinsTrueAngle][NBinsRecMom][NBinsRecAngle], double DataReconstructedEvents[NBinsRecMom][NBinsRecAngle], double MCReconstructedBkgEvents[NBinsRecMom][NBinsRecAngle]);
 
   void SetPrior(double vPriorNormalised[NBinsTrueMom][NBinsTrueAngle], double vPrior[NBinsTrueMom][NBinsTrueAngle],
-		double vInitialPriorMC[NBinsTrueMom][NBinsTrueAngle], double vInitialPrior[NBinsTrueMom][NBinsTrueAngle],double vPosterior[NBinsTrueMom][NBinsTrueAngle], bool PriorMC, double IterationStep);
+double vInitialPriorMC[NBinsTrueMom][NBinsTrueAngle], double vInitialPrior[NBinsTrueMom][NBinsTrueAngle],double vPosterior[NBinsTrueMom][NBinsTrueAngle], bool PriorMC, double IterationStep);
 
   void GenerateStatisticalFluctuations(double DataReconstructedEvents[NBinsRecMom][NBinsRecAngle]);
 
   void GenerateMCFluctuations(double MCReconstructedEvents_TrueSignal[NBinsTrueMom][NBinsTrueAngle][NBinsRecMom][NBinsRecAngle],double RelativeSigma[NBinsTrueMom][NBinsTrueAngle][NBinsRecMom][NBinsRecAngle]);
-
- private:
-  bool _isPM;
 };
 #endif
