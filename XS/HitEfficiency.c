@@ -79,7 +79,7 @@ int main(int argc, char **argv){
   }
 
   xs->Xsec::Initialize();
-  
+
 
   TH1D * hEffX_Ing = new TH1D("hEffX_Ing","XZ distribution",NBinsRecAngle,BinningRecAngle);
   TH1D * hEffY_Ing = new TH1D("hEffY_Ing","YZ distribution",NBinsRecAngle,BinningRecAngle);

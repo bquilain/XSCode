@@ -56,9 +56,27 @@ using namespace std;
 INGRID_Dimension * IngD = new INGRID_Dimension();
 Reconstruction * Reco = new Reconstruction();
 //#define DEBUG
+
+Xsec::Xsec(bool PM){
+  _isPM=PM;
+  Reco->SetDetector(PM);
+}
+Xsec::~Xsec(){}
+
+void Xsec::SetDetector(bool PM){
+  _isPM=PM;
+  Reco->SetDetector(PM);
+}
+bool Xsec::GetDetector(){
+  return _isPM;
+}
+
 void Xsec::Initialize(){
 
-  for(int i=0;i<=NBinsEnergyFlux;i++){
+  InitializeGlobal();
+ //ML 2017-01-25
+  // commented out and done in setup.h
+  /*for(int i=0;i<=NBinsEnergyFlux;i++){
     if(i==0) BinningEnergyFlux[i]=0;
     else if(i>=1 && i<36) BinningEnergyFlux[i]=0.5+(i-1)*0.1;
     else if(i>=36 && i<42) BinningEnergyFlux[i]=4+(i-36)*1;
@@ -91,7 +109,7 @@ void Xsec::Initialize(){
 
     for(int i=0;i<NBinsRecAngle+1;i++){
       BinningRecAngle[i]=3*i;
-    }
+      }*/ //ML 2017-01-25
     //BinningRecAngle[0]=0;
     //BinningRecAngle[1]=180;
 
@@ -124,7 +142,10 @@ void Xsec::Initialize(){
   }
 */
     ////////////////////////////INITIALIZE ERROR NOW////////////////////////////////////
-    for(int n=StartError;n<=EndError;n++){
+    // is done in setup.h to avoid #include Xsec.cc in some macros (e.g. XSFileGenerator)
+  //ML 2017-01-25
+
+    /*    for(int n=StartError;n<=EndError;n++){
       NE[n]=1;
       Start[n]=1;
       Step[n]=1;
@@ -232,7 +253,7 @@ void Xsec::Initialize(){
       }
       End[n]=Start[n]+(NE[n]+1)*Step[n];
     }
-    
+*/    
 //0. No Error, nominal case
 //1. TO DO
 //2. Dark noise, variations
@@ -255,20 +276,19 @@ void Xsec::Initialize(){
 }
 
 
-void Xsec::DetermineNuType(int IsSand,int IsAnti,int IsNuE,int IsBkgH,int IsBkgV,int nutype, int intmode){
+void Xsec::DetermineNuType(bool&IsSand,bool&IsAnti,bool&IsNuE,bool&IsBkgH,bool&IsBkgV,int nutype, int intmode){
   IsSand=0;
   IsAnti=0;
   IsNuE=0;
   IsBkgH=0;
   IsBkgV=0;
-  
-  if(intmode==16){
+  if((_isPM && intmode==16) || (!_isPM && intmode==17)){
     //if(nutype==1) return 0;
     if(nutype==2) IsAnti=1;
     else if(nutype==3) IsNuE=1;
   }
-  else if(intmode<7) IsBkgH=1;
-  else if(intmode<14) IsBkgV=1;
+  else if(intmode>=0 && intmode<7) IsBkgH=1;
+  else if(intmode>=7 && intmode<14) IsBkgV=1;
   else IsSand=1;
 }
 
@@ -288,20 +308,6 @@ int Xsec::DetermineFSI(int IsSand,int IsAnti,int IsNuE,int IsBkgH,int IsBkgV,Ing
     else if(TMath::Abs(SimPart->pdg)==13) FSIMuons++;
     else if(TMath::Abs(SimPart->pdg)!=2112 && TMath::Abs(SimPart->pdg)!=22) FSIOther++;
   }
-  /*
-  if(FSIMuons==1){
-    if(FSINeutralPions==0){
-      if(FSIPions==0) FSIInt=0+FSIProtons;
-      if(FSIPions==1) FSIInt=10+FSIProtons;
-      else FSIInt=20+FSIProtons;
-    }
-    else FSIInt=30+FSIProtons;
-  }
-  else{
-    if(FSINeutralPions==0) FSIInt=50+FSIProtons;
-    else FSIInt=60+FSIProtons;
-  }
-  */
 
   if(FSIMuons==1){
     if(FSIOther==0){

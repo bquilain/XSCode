@@ -45,6 +45,7 @@ using namespace std;
 #include "IngridConstants.h"
 #include "setup.h"
 #include "Reconstruction.cc"
+
 Reconstruction *Rec=new Reconstruction();
 #include "Corrections.cc"
 Corrections *Cor=new Corrections();
@@ -66,6 +67,9 @@ double RadDeg(double angle){
 */
 
 int main(int argc, char **argv){
+
+  InitializeGlobal();
+
   cout<<"hello"<<endl;
   char type;
   //cout<<"Data or MC?(d/m)"<<endl;
@@ -76,8 +80,8 @@ int main(int argc, char **argv){
   int NFiles=30;
   int IFiles=0;
   int IRuns=14510;
- int FRuns=14510;
- char Name[256];
+  int FRuns=14510;
+  char Name[256];
 
   while ((c = getopt(argc, argv, "mdi:f:r:t:")) != -1) {
     switch(c){

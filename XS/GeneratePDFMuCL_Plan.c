@@ -183,6 +183,8 @@ Double_t Cumulative_PMSci(Double_t *pe, Double_t *par){
 
 int main(int argc, char **argv)
 {
+  InitializeGlobal();
+
   bool Disp=false;
   int NFiles=100;
   int IFiles=1;

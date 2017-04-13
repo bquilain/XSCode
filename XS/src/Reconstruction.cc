@@ -1,5 +1,3 @@
-
-
 #ifndef Reconstruction_cc
 #define Reconstruction_cc
 /************CLibs********/
@@ -51,10 +49,8 @@ using namespace std;
 #include "Hit.h"
 #include "Reconstruction.h"
 #include "setup.h"
-#include "Lolirecon.hxx" // extends functions of PMrecon so suitable for PM&WM
-//#define DEBUG
+#include "Lolirecon.hxx"  // extends functions of PMrecon so suitable for PM&WM
 //#define DEBUG2
-
 //
 INGRID_Dimension * IngDimRec = new INGRID_Dimension();
 
@@ -66,8 +62,22 @@ double RadDeg(double angle){
   return angle*180./TMath::Pi();
 }
 
+Reconstruction::Reconstruction (bool PM){
+  _isPM=PM;
+  Initialize_INGRID_Dimension();
+}
+Reconstruction::~Reconstruction(){}
+
+void Reconstruction::SetDetector(bool PM){
+  _isPM=PM;
+}
+bool Reconstruction::GetDetector(){
+  return _isPM;
+}
+
+
 vector <Hit3D> Reconstruction::ApplyPEError(vector <Hit3D> Vec, double angle){
-    int BinAngle= (int) (angle/3);
+  int BinAngle= (int) (angle/3);
   char FileName[32]; char HistName[32];
   sprintf(FileName,"Input/Landau/Landau[%d].root",BinAngle);
   sprintf(HistName,"Landau[%d]",BinAngle);
@@ -94,19 +104,20 @@ vector <Hit3D> Reconstruction::ApplyPEError(vector <Hit3D> Vec, double angle){
 int Reconstruction::SelectTrackSample(bool pm_stop, bool Geom, bool has_ingrid, bool ingrid_stop, int ing_last_pln){
   int TrackSample;
 
+
   if(has_ingrid){
     if(ingrid_stop){
-      if(ing_last_pln>=3) TrackSample=3;
-      else TrackSample=2;
+      if(ing_last_pln>=3) TrackSample=3; // stopping
+      else TrackSample=2; // early stopping
     }
     else{
-      if(ing_last_pln>=9) TrackSample=5;
-      else TrackSample=4;
+      if(ing_last_pln>=9) TrackSample=5; // through going
+      else TrackSample=4; // side escaping
     }
   }
   else{
-    if(pm_stop) TrackSample=0;
-    else TrackSample=1;
+    if(pm_stop) TrackSample=0; // pm stopping
+    else TrackSample=1; // pm side escaping
   }
 
   if(TrackSample>=NSamples){
@@ -119,7 +130,7 @@ int Reconstruction::SelectTrackSample(bool pm_stop, bool Geom, bool has_ingrid, 
   cout<<"Track sample="<<TrackSample<<", pm stop="<<pm_stop<<", ingrid track="<<has_ingrid<<", ing stop="<<ingrid_stop<<", last ing pln="<<ing_last_pln<<endl;
   cout<<"**************************************************"<<endl;
 #endif
-  
+
   return TrackSample;
 }
 /***********************************************************/
@@ -297,8 +308,7 @@ vector <Hit3D> Reconstruction::CountSharedHits(vector <Hit3D> Vec, vector< vecto
   }
   return HitV;
   
-}
-*/
+  }*/
 
 vector <HitTemp> Reconstruction::EraseDoubleHitsPM(PMAnaSummary * recon, int itrk, vector <HitTemp> HitV){
   HitTemp Coord;
@@ -332,6 +342,7 @@ vector <HitTemp> Reconstruction::EraseDoubleHitsPM(PMAnaSummary * recon, int itr
       if(HitV[ihit2]==Coord) {
         ndouble++;
         HitV.pop_back();
+	//	cout<<"hit erased"<<endl;
       }
     }
   }  
@@ -371,8 +382,8 @@ vector <HitTemp> Reconstruction::EraseDoubleHitsAllTracks(IngridBasicReconSummar
   //cout<<"HitV Size="<<HitV.size()<<endl;
   return HitV;
   // for(int ihit=0;ihit<HitV.size();ihit++){
-}
-*/
+  }*/
+
 
 vector <HitTemp> Reconstruction::EraseDoubleHitsAllTracksPM(PMAnaSummary * recon, vector <HitTemp> HitV){
   //cout<<"hello"<<endl;
@@ -470,8 +481,8 @@ vector <HitTemp> Reconstruction::EraseDoubleHitsAllTracksPM(PMAnaSummary * recon
 	      break;
 	    }
 	    }
-	}
-	else hit3d.truepe=-1;
+	    }*/
+/*	else hit3d.truepe=-1;
 
 	hit3d2.mod=hit2->mod;	
 	//if(hit2->mod==16) hit3d2.z=hit2->z;
@@ -501,8 +512,8 @@ vector <HitTemp> Reconstruction::EraseDoubleHitsAllTracksPM(PMAnaSummary * recon
 	      hit3d2.pdg=SimPart->pdg;
 	      break;
 	    }
-	    }
-	}
+	    }*/
+/*	}
 
 	//if(hit->view==0) {
           hit3d.x=hit->xy;
@@ -519,8 +530,8 @@ vector <HitTemp> Reconstruction::EraseDoubleHitsAllTracksPM(PMAnaSummary * recon
           hit3d2.x=hit->xy;
           hit3d2.y=hit2->xy;
           hit3d.ch=hit->ch;
-	  }
-	HitPln[hit3d.pln][hit3d.view][hit3d.ch]++;
+	  }*/ /*
+	HitPln[hit3d.pln][hit3d.view][hit3d.ch]++; 
 	HitPln[hit3d2.pln][hit3d2.view][hit3d2.ch]++;
 	Vec.push_back(hit3d);
 	Vec.push_back(hit3d2);
@@ -543,8 +554,8 @@ vector <HitTemp> Reconstruction::EraseDoubleHitsAllTracksPM(PMAnaSummary * recon
     }
   sort(Vec.begin(),Vec.end());
   return Vec;
-}
-*/
+}*/
+
 
 vector <Hit3D> Reconstruction::Hit2DMatchingPM( IngridEventSummary* evt, PMAnaSummary * recon,vector <HitTemp> HitV,vector <Hit3D> Vec, bool MC){
   
@@ -554,15 +565,18 @@ vector <Hit3D> Reconstruction::Hit2DMatchingPM( IngridEventSummary* evt, PMAnaSu
   Hit3D hit3d,hit3d2;
   IngridSimParticleSummary * SimPart2;
 
-  double HitPln[NPlnPM+3][NView+1][NChPM+1];
-  for(int ipln=0;ipln<NPlnPM;ipln++){
+
+  int _NPln=(_isPM? NPlnPM+3:NPlnWM);
+  int _NCh=(_isPM? NChPM+1:NChWM);
+
+  double HitPln[_NPln][NView+1][_NCh];
+  for(int ipln=0;ipln<_NPln;ipln++){
     for(int iview=0;iview<NView;iview++){
-      for(int ich=0;ich<NChPM;ich++){
+      for(int ich=0;ich<_NCh;ich++){
         HitPln[ipln][iview][ich]=0;
       }
     }
   }
-
   
   for(int ihit=0;ihit<HitV.size();ihit++){
     double thetax=(recon->thetax)[HitV[ihit].trk]; double thetay=(recon->thetay)[HitV[ihit].trk];
@@ -576,22 +590,31 @@ vector <Hit3D> Reconstruction::Hit2DMatchingPM( IngridEventSummary* evt, PMAnaSu
     if(hit->cyc==-2) continue;//throw away the ?? hits
     hit3d.clear();
 
-    hit3d.z=zposi(hit->mod,hit->view,hit->pln)/10.;
+    if(hit->mod==15){
+      double x,y;
+      IngDimRec->get_pos_loli(hit->mod,hit->view,hit->pln,hit->ch,&x,&y,&hit3d.z)/10.;//in cm
+      hit3d.z += 40.95;
+    }
+    else hit3d.z=zposi(hit->mod,hit->view,hit->pln)/10.; //cm;  defined in Lolirecon
+    // zposi==0 is the upstream surface of PM
 
 #ifdef DEBUG2
     cout<<"**************************************************"<<endl;
     cout<<"Test of Reconstruction::Hit2DMatching"<<endl;
     cout<<"Gradient x="<<gradx<<", intcpt="<<intcptx/10.<<", thetax="<<thetax<<endl;
     cout<<"Gradient y="<<grady<<", intcpt="<<intcpty/10.<<", thetay="<<thetay<<endl;
-    cout<<"Hit mod="<<hit->mod<<", Hit pln="<<hit->pln<<", z position="<<zposi(hit->mod,hit->view,hit->pln)/10.<<", hit view="<<hit->view<<endl;
+    cout<<"Hit pln="<<hit->pln<<", z position="<<zposi(hit->mod,hit->view,hit->pln)/10.<<", hit view="<<hit->view<<endl;
   cout<<"**************************************************"<<endl;
 #endif
 
     
     if(MC) hit3d.pe=hit->pe;
     else{
-      if((hit->pe + hit->lope)/2.<39) hit3d.pe=hit->pe;
-      else hit3d.pe=hit->lope;
+      if(_isPM){
+	if((hit->pe + hit->lope)/2.<39) hit3d.pe=hit->pe;
+	else hit3d.pe=hit->lope;
+      }
+      else hit3d.pe=hit->pecorr;
     }
     hit3d.view=hit->view;
     hit3d.pln=hit->pln;
@@ -609,14 +632,20 @@ vector <Hit3D> Reconstruction::Hit2DMatchingPM( IngridEventSummary* evt, PMAnaSu
     }
     else hit3d.truepe=-1;
     
+
+    double maxLength=(_isPM?120.:110.); // missing coordinate should not exceed that
+    double minLength=(_isPM? 0. : 10.); //  and should be above that
     if(hit->view==0){
       hit3d.x=hit->xy;
-      hit3d.y=grady*hit3d.z+intcpty/10.;
+      if(!_isPM && hit->mod==15) hit3d.x+=60.;
+      hit3d.y=fmax(minLength,fmin(grady*hit3d.z+intcpty/10.,maxLength));
     }
     else{
       hit3d.y=hit->xy;
-      hit3d.x=gradx*hit3d.z+intcptx/10.;
+      if(!_isPM && hit->mod==15) hit3d.y+=60.;
+      hit3d.x=fmax(minLength,fmin(gradx*hit3d.z+intcptx/10.,maxLength));
     }
+    // for the transverse coordinates, center of WM is aligned with center of PM and INGRID3
 
     hit3d.ch=hit->ch;
     HitPln[hit3d.pln][hit3d.view][hit3d.ch]++;
@@ -636,10 +665,13 @@ vector <Hit3D> Reconstruction::Hit2DMatchingAllTracksPM(PMAnaSummary * recon, bo
   Hit3D hit3d,hit3d2;
   vector <HitTemp> HitV;
 
-  double HitPln[NPlnPM+3][NView+1][NChPM+1];
-  for(int ipln=0;ipln<NPlnPM;ipln++){
+  int _NPln=(_isPM? NPlnPM+3:NPlnWM);
+  int _NCh=(_isPM? NChPM+1:NChWM);
+
+  double HitPln[_NPln][NView+1][_NCh];
+  for(int ipln=0;ipln<_NPln;ipln++){
     for(int iview=0;iview<NView;iview++){
-      for(int ich=0;ich<NChPM;ich++){
+      for(int ich=0;ich<_NCh;ich++){
         HitPln[ipln][iview][ich]=0;
       }
     }
@@ -649,6 +681,7 @@ vector <Hit3D> Reconstruction::Hit2DMatchingAllTracksPM(PMAnaSummary * recon, bo
   HitTemp Coord;
   int ndouble;
 
+  // *** Warning: for WM, hits.pln is 0->7 and not 0->23 ***
   for(int itrk=0;itrk<recon->Ntrack;itrk++){
     for(int ihit=0;ihit<recon->NhitTs(itrk);ihit++){
       Hit=recon->GetIngridHitTrk(ihit,itrk);
@@ -657,6 +690,7 @@ vector <Hit3D> Reconstruction::Hit2DMatchingAllTracksPM(PMAnaSummary * recon, bo
       Coord.pln=Hit->pln;
       Coord.trk=itrk;
       Coord.hit=ihit;
+      Coord.mod=Hit->mod;// ML 20170126
       HitV.push_back(Coord);
 
       for(int ihit2=0;ihit2<HitV.size()-1;ihit2++){
@@ -667,7 +701,7 @@ vector <Hit3D> Reconstruction::Hit2DMatchingAllTracksPM(PMAnaSummary * recon, bo
       }
     }
   }
-
+  
 
 
   VecAll.clear();                                     
@@ -684,12 +718,20 @@ vector <Hit3D> Reconstruction::Hit2DMatchingAllTracksPM(PMAnaSummary * recon, bo
     if(hit->cyc==-2) continue;//throw away the ?? hits
     hit3d.clear();
 
-    hit3d.z=zposi(hit->mod,hit->view,hit->pln)/10.;
-    
+    if(hit->mod==15){
+      double x,y;
+      IngDimRec->get_pos_loli(hit->mod,hit->view,hit->pln,hit->ch,&x,&y,&hit3d.z)/10.;//in cm
+      hit3d.z += 40.95; // to have the center of WM at same z than center of PM
+    }
+    else hit3d.z=zposi(hit->mod,hit->view,hit->pln)/10.; //cm;  defined in Lolirecon
+        
     if(MC) hit3d.pe=hit->pe;
     else{
-      if((hit->pe + hit->lope)/2.<39) hit3d.pe=hit->pe;
-      else hit3d.pe=hit->lope;
+      if(_isPM){
+	if((hit->pe + hit->lope)/2.<39) hit3d.pe=hit->pe;
+	else hit3d.pe=hit->lope;
+      }
+      else hit3d.pe=hit->pecorr;
     }
     hit3d.view=hit->view;
     hit3d.pln=hit->pln;
@@ -706,13 +748,18 @@ vector <Hit3D> Reconstruction::Hit2DMatchingAllTracksPM(PMAnaSummary * recon, bo
       hit3d.trackid=(hit->GetIngridSimHit(0))->trackid;
     }
     else hit3d.truepe=-1;
+
+    double maxLength=(_isPM?120.:110.); // missing coordinate should not exceed that
+    double minLength=(_isPM? 0. : 10.); //  and should be above that
     if(hit->view==0){
       hit3d.x=hit->xy;
-      hit3d.y=grady*hit3d.z+intcpty/10;
+      if(!_isPM && hit->mod==15) hit3d.x+=60.;
+      hit3d.y=fmax(minLength,fmin(grady*hit3d.z+intcpty/10.,maxLength));
     }
     else{
       hit3d.y=hit->xy;
-      hit3d.x=gradx*hit3d.z+intcptx/10;
+      if(!_isPM && hit->mod==15) hit3d.y+=60.;
+      hit3d.x=fmax(minLength,fmin(gradx*hit3d.z+intcptx/10,maxLength));
     }
 
     hit3d.ch=hit->ch;
@@ -808,6 +855,7 @@ vector <double> Reconstruction::GetTrackAngle(vector <Hit3D> Vec){
 
 
 vector <double> Reconstruction::GetTrackAnglePM(vector <Hit3D> Vec, double AngleX, double AngleY, int TrackSample){
+  // ML 2017-01-31 not corrected 
   vector <double> Out;
   Out.clear();
 
@@ -990,7 +1038,7 @@ vector <double> Reconstruction::GetKinematic(double ang1, double thetax1, double
   Kinematic.push_back(AngleInTracks);
   
   //Construct the coplanarity angle.
-  //a. neutrino beam direction
+  //a. neutrino beam direction -- already a Beam[3] variable in setup.h !!
   double * neutrinobeam = new double[3];
   neutrinobeam[0]=0;
   neutrinobeam[1]=-TMath::Sin(3.8*TMath::Pi()/180.);
@@ -1006,6 +1054,7 @@ vector <double> Reconstruction::GetKinematic(double ang1, double thetax1, double
 
   //c. Determine the angle before these two projected vectors.
   double CoplanarityAngle=TMath::ACos(firsttrackproj[0]*secondtrackproj[0]+firsttrackproj[1]*secondtrackproj[1]+firsttrackproj[2]*secondtrackproj[2]);
+  double CoplanarityAngle2=TMath::ASin(firsttrackproj[0]*Track2[0]+firsttrackproj[1]*Track2[1]+firsttrackproj[2]*Track2[2]);
 
 #ifdef DEBUG2
   cout<<"**************************************************"<<endl;
@@ -1014,8 +1063,10 @@ vector <double> Reconstruction::GetKinematic(double ang1, double thetax1, double
   cout<<"Test track 1, original vector=("<<Track1[0]<<","<<Track1[1]<<","<<Track1[2]<<") and projected=("<<firsttrackproj[0]<<","<<firsttrackproj[1]<<","<<firsttrackproj[2]<<")"<<endl;
   cout<<"Test track 2, original vector=("<<Track2[0]<<","<<Track2[1]<<","<<Track2[2]<<") and projected=("<<secondtrackproj[0]<<","<<secondtrackproj[1]<<","<<secondtrackproj[2]<<")"<<endl;
   cout<<"Coplanarity Angle="<<CoplanarityAngle*180/TMath::Pi()<<endl;
+  cout<<"Coplanarity Angle="<<CoplanarityAngle2*180/TMath::Pi()<<endl;
   cout<<"**************************************************"<<endl;
 #endif
+
   /*
   //const double X[]={Beam[0],Track1[0],Track2[0],Beam[1],Track1[1],Track2[1],Beam[2],Track1[2],Track2[2]};
   //TMatrixD M(3,3);
@@ -1037,7 +1088,7 @@ vector <double> Reconstruction::GetKinematic(double ang1, double thetax1, double
   //cout<<"Norm Track1="<<NormTrack1<<" , Norm Track2="<<NormTrack2<<endl;
   //cout<<"Norm Beam="<<NormBeam<<" , Norm ProdVec="<<NormProdVec<<endl;
   //cout<<"ProdScal="<<ProdScal<<endl;*/
-  Kinematic.push_back(CoplanarityAngle);
+  Kinematic.push_back(CoplanarityAngle2);
 
   delete Track1;
   delete Track2;
@@ -1113,8 +1164,8 @@ double Reconstruction::GetBeamAngle(double ang1, double thetax1, double thetay1)
   hit3d2.clear();
   hitall.clear();
   return Vec2;
-}
-*/
+  }*/
+
 
 vector <Hit3D> Reconstruction::SeveralHitsPlanePM(PMAnaSummary * recon,vector <HitTemp> HitV,vector <Hit3D> Vec){
   vector <Hit3D> Vec2;
@@ -1252,8 +1303,8 @@ vector <Hit3D> Reconstruction::SeveralHitsPlanePM(PMAnaSummary * recon,vector <H
   /*  for(int ihit=0;ihit<VecAll.size();ihit++){
     VecAll[ihit].pe/=HitPln[VecAll[ihit].pln][VecAll[ihit].view][VecAll[ihit].ch];
   }
-  
-  sort(VecAll.begin(),VecAll.end());
+  */
+/*  sort(VecAll.begin(),VecAll.end());
   hit->Clear();
   hit2->Clear();
   return VecAll;
@@ -1269,10 +1320,14 @@ vector <Hit3D> Reconstruction::Hit2DMatchingClusterPM(IngridEventSummary* evt, P
   Hit3D hit3d,hit3d2;
   double TCluster= recon->clstime;
 
-  double HitPln[NPlnPM+3][NView+1][NChPM+1];
-  for(int ipln=0;ipln<NPlnPM;ipln++){
+
+  int _NPln=(_isPM? NPlnPM+3:NPlnWM);
+  int _NCh=(_isPM? NChPM+1:NChWM);
+
+  double HitPln[_NPln][NView+1][_NCh];
+  for(int ipln=0;ipln<_NPln;ipln++){
     for(int iview=0;iview<NView;iview++){
-      for(int ich=0;ich<NChPM;ich++){
+      for(int ich=0;ich<_NCh;ich++){
         HitPln[ipln][iview][ich]=0;
       }
     }
@@ -1290,61 +1345,91 @@ vector <Hit3D> Reconstruction::Hit2DMatchingClusterPM(IngridEventSummary* evt, P
       if(hit->view==hit2->view) continue;
       if((TMath::Abs(hit->time-TCluster)>50)) continue;
       if(hit->mod!=hit2->mod) continue;
-      if(hit->pln!=hit2->pln) continue;
-	   //cout<<"2nd Hit params, view="<<hit2->view<<" , xy="<<hit2->xy<<" ,z="<<hit2->z<<endl;                                                                 
-	 hit3d.clear();
-	 hit3d2.clear();
-	 //if(hit->mod==3 && hit2->pln==1) cout<<"View0, channel="<<hit->ch<<", view1 channel="<<hit2->ch<<endl;
+      if(_isPM && hit->pln!=hit2->pln) continue;
 
-	 if(hit2->mod==16) hit3d.z=hit->z;
-	 else hit3d.z=hit->z+107.45;
+      if(!_isPM){
+	int pln,gridch,grid, pln2,gridch2,grid2;
+	IngDimRec->get_plnch_fromrecon_loli(15,hit->view,hit->pln,hit->ch,0,&pln,&gridch,&grid);
+	IngDimRec->get_plnch_fromrecon_loli(15,hit2->view,hit2->pln,hit2->ch,0,&pln2,&gridch2,&grid2);
+	if(pln!=pln2 || grid!=grid2) continue;
+	// I will match grid with grid, pln with pln
+      }
+      //cout<<"2nd Hit params, view="<<hit2->view<<" , xy="<<hit2->xy<<" ,z="<<hit2->z<<endl;                                                                 
+      hit3d.clear();
+      hit3d2.clear();
+      //if(hit->mod==3 && hit2->pln==1) cout<<"View0, channel="<<hit->ch<<", view1 channel="<<hit2->ch<<endl;
 
-	 if((hit->pe + hit->lope)/2.<39) hit3d.pe=hit->pe;
-	 else hit3d.pe=hit->lope;     
-	 hit3d.view=hit->view;
-	 hit3d.pln=hit->pln;
-	 hit3d.mod=hit->mod;	 
-	 hit3d.time=hit->time;
-	 hit3d.ch=hit->ch;
+      if(_isPM && hit2->mod==16) hit3d.z=hit->z;
+      else if(!_isPM && hit2->mod==15) hit3d.z=hit->z + 40.95;
+      else hit3d.z=hit->z+107.45;
 
-	 if(hit2->mod==16) hit3d2.z=hit2->z;
-	 else hit3d2.z=hit2->z+107.45;
-	 if((hit2->pe + hit2->lope)/2.<39) hit3d2.pe=hit2->pe;
-	 else hit3d2.pe=hit2->lope;
-	 hit3d2.pln=hit2->pln;
-	 hit3d2.view=hit2->view;
-	 hit3d2.time=hit2->time;
-	 hit3d2.mod=hit2->mod;
-	 hit3d2.ch=hit2->ch;
-	 //used[ihit2]==true;                                                                                                                                    
-	 if(hit->mod==16){
-	   if(hit->ch<=7) hit->xy=5*hit->ch;
-	   else if(hit->ch<=23) hit->xy=5*8+2.5*(hit->ch-8);
-	   else hit->xy=5*8+2.5*16+5*(hit->ch-24);
-	 }
+      if(_isPM){
+	if((hit->pe + hit->lope)/2.<39) hit3d.pe=hit->pe;
+	else hit3d.pe=hit->lope;     
+      }
+      else hit3d.pe=hit->pecorr;
 
-	 if(hit2->mod==16){
-	   if(hit2->ch<=7) hit2->xy=5*hit2->ch;
-	   else if(hit2->ch<=23) hit2->xy=5*8+2.5*(hit2->ch-8);
-	   else hit2->xy=5*8+2.5*16+5*(hit2->ch-24);
-	 }
+      hit3d.view=hit->view;
+      hit3d.pln=hit->pln;
+      hit3d.mod=hit->mod;	 
+      hit3d.time=hit->time;
+      hit3d.ch=hit->ch;
 
-	 if(hit->view==0) {
-	   hit3d.x=hit->xy;
-	   hit3d.y=hit2->xy;
-	   hit3d2.x=hit->xy;
-	   hit3d2.y=hit2->xy;
-	 }
-	 else{
-	   hit3d.x=hit2->xy;
-	   hit3d.y=hit->xy;
-	   hit3d2.x=hit->xy;
-	   hit3d2.y=hit2->xy;
-	 }
-	 HitPln[hit3d.pln][hit3d.view][hit3d.ch]++;
-	 HitPln[hit3d2.pln][hit3d2.view][hit3d2.ch]++;
-	 VecAll.push_back(hit3d);
-	 VecAll.push_back(hit3d2);
+      if(_isPM && hit2->mod==16) hit3d2.z=hit2->z;
+      else if(!_isPM && hit2->mod==15) hit3d2.z=hit2->z + 40.95;
+      else hit3d2.z=hit2->z+107.45;
+
+      if(_isPM){
+	if((hit2->pe + hit2->lope)/2.<39) hit3d2.pe=hit2->pe;
+	else hit3d2.pe=hit2->lope;
+      }
+      else hit3d2.pe=hit2->pecorr;
+
+      hit3d2.pln=hit2->pln;
+      hit3d2.view=hit2->view;
+      hit3d2.time=hit2->time;
+      hit3d2.mod=hit2->mod;
+      hit3d2.ch=hit2->ch;
+      //used[ihit2]==true;                                                                                                                                    
+      // following is already the case. And dangerous: it will modify the content of the variable xy inside the tree	
+      /*	 if(hit->mod==16){
+	if(hit->ch<=7) hit->xy=5*hit->ch;
+	else if(hit->ch<=23) hit->xy=5*8+2.5*(hit->ch-8);
+	else hit->xy=5*8+2.5*16+5*(hit->ch-24);
+	
+	if(hit2->ch<=7) hit2->xy=5*hit2->ch;
+	else if(hit2->ch<=23) hit2->xy=5*8+2.5*(hit2->ch-8);
+	else hit2->xy=5*8+2.5*16+5*(hit2->ch-24);
+	}*/
+
+      if(hit->view==0) {
+	hit3d.x=hit->xy;
+	hit3d.y=hit2->xy;
+	hit3d2.x=hit->xy;
+	hit3d2.y=hit2->xy;
+      }
+      else{
+	hit3d.x=hit2->xy;
+	hit3d.y=hit->xy;
+	hit3d2.x=hit->xy;
+	hit3d2.y=hit2->xy;
+      }
+      // correction for WM (align centers)
+      if(!_isPM){
+	if(hit3d.mod==15){
+	  hit3d.x+=60.;
+	  hit3d.y+=60.;
+	}
+	if(hit3d2.mod==15){
+	  hit3d2.x+=60.;
+	  hit3d2.y+=60.;
+	}
+      }
+
+      HitPln[hit3d.pln][hit3d.view][hit3d.ch]++;
+      HitPln[hit3d2.pln][hit3d2.view][hit3d2.ch]++;
+      VecAll.push_back(hit3d);
+      VecAll.push_back(hit3d2);
     }
   }
   /*  for(int ihit=0;ihit<VecAll.size();ihit++){
@@ -1568,9 +1653,9 @@ vector <int> Reconstruction::TrackComposition(vector <Hit3D> Vec, double VertexX
   /*cout<<"Vector HitV:"<<endl;
    for(int ihit=0;ihit<HitV.size();ihit++){
    //cout<<HitV[ihit].x<<"  "<<HitV[ihit].y<<"  "<<HitV[ihit].z<<endl;
-    }
+    }*/
 
-  VecAll.clear();                                     
+/*  VecAll.clear();                                     
   for(int ihit=0;ihit<HitV.size();ihit++){
     hit=(IngridHitSummary*) recon->GetIngridHitTrk(HitV[ihit].hit,HitV[ihit].trk);
     if(hit->view==1) continue;
@@ -1592,9 +1677,9 @@ vector <int> Reconstruction::TrackComposition(vector <Hit3D> Vec, double VertexX
 	if(hit2->mod==16) hit3d.z=hit->z;
 	else hit3d.z=hit->z+107.45;
 	cout<<"v2="<<hit3d.z<<", plane="<<hit3d.pln<<", channel="<<hit3d.ch<<endl;
-	
+	*/
 	//if(hit->mod==16 && (hit->ch>7 && hit->ch<24)) cout<<"hit pe="<<hit->pe<<", hit lope="<<hit->lope<<endl;
-	bool MC=false;
+	/*bool MC=false;
 	if(MC) hit3d.pe=hit->pe;
         else{
           if((hit->pe + hit->lope)/2.<39) hit3d.pe=hit->pe;
@@ -1620,8 +1705,8 @@ vector <int> Reconstruction::TrackComposition(vector <Hit3D> Vec, double VertexX
 	      hit3d.pdg=SimPart->pdg;
 	      break;
 	    }
-	    }
-	}
+	    }*/
+/*	}
 	else hit3d.truepe=-1;
 
 	hit3d2.mod=hit2->mod;	
@@ -1650,11 +1735,11 @@ vector <int> Reconstruction::TrackComposition(vector <Hit3D> Vec, double VertexX
 	      hit3d2.pdg=SimPart->pdg;
 	      break;
 	    }
-	    }
-	}
+	    }*/
+//	}
 
 	//if(hit->view==0) {
-	if(hit->mod==16){
+/*	if(hit->mod==16){
 	  if(hit->ch<=7) hit->xy=5*hit->ch;
 	  else if(hit->ch<=23) hit->xy=5*8+2.5*(hit->ch-8);
 	  else hit->xy=5*8+2.5*16+5*(hit->ch-24);
@@ -1680,8 +1765,8 @@ vector <int> Reconstruction::TrackComposition(vector <Hit3D> Vec, double VertexX
           hit3d2.x=hit->xy;
           hit3d2.y=hit2->xy;
           hit3d.ch=hit->ch;
-	  }
-                                                              
+	  }*/
+/*                                                            
       HitPln[hit3d.pln][hit3d.view][hit3d.ch]++;
       HitPln[hit3d2.pln][hit3d2.view][hit3d2.ch]++;
       VecAll.push_back(hit3d);
@@ -1695,13 +1780,14 @@ vector <int> Reconstruction::TrackComposition(vector <Hit3D> Vec, double VertexX
     //cout<<"Hit/Pln="<<HitPln[VecAll[ihit].pln][VecAll[ihit].view]<<endl;
     VecAll[ihit].pe/=HitPln[VecAll[ihit].pln][VecAll[ihit].view][VecAll[ihit].ch];
   }
-  
-   //cout<<"Vec All:"<<endl;
+  */
+  /* //cout<<"Vec All:"<<endl;
   for(int ihit=0;ihit<VecAll.size();ihit++){
    //cout<<VecAll[ihit].x<<"  "<<VecAll[ihit].y<<"  "<<VecAll[ihit].z<<"  "<<VecAll[ihit].pe<<endl;
     }
    return VecAll;
 }*/
+
 
 vector <Hit3D> Reconstruction::IsInTrk(vector <Hit3D> VecCluster, vector <Hit3D> VecAllTracks){
   for(int ihit=0;ihit<VecCluster.size();ihit++){
@@ -1946,9 +2032,17 @@ bool Reconstruction::HasGeomTrack(int mod, int startplnx, int startchx, double t
 
   //cout<<endl;
   //cout<<"Mod="<<mod<<" , startchx="<<startchx<<" , startplnZ="<<startplnx<<endl;
-  bool doneX=IngDimRec->INGRID_Dimension::get_posXY(mod,0,startplnx,0,posXxy,posXz);
-  bool doneY=IngDimRec->INGRID_Dimension::get_posXY(mod,1,startplny,0,posYxy,posYz);
-
+  if(mod==16){
+    bool doneX=IngDimRec->INGRID_Dimension::get_posXY(mod,0,startplnx,0,posXxy,posXz);
+    bool doneY=IngDimRec->INGRID_Dimension::get_posXY(mod,1,startplny,0,posYxy,posYz);
+  }
+  else if(mod==15){
+    IngDimRec->get_posi_lolirecon(mod,0,startplnx,0,0,posXxy, posXz);
+    IngDimRec->get_posi_lolirecon(mod,0,startplnx,0,0,posYxy, posYz);
+    // now posXz and posYz are between -23.3 and 23.3 -> shift of +41cm to have same coord than PM
+    * posXz+=40.95;
+    * posYz+=40.95;
+  }
   //cout<<"Starting Point: PosX="<<startchx<<" , PosY="<<startchy<<" , PosZ="<<*posXz<<endl;
   //cout<<"Track Angle X="<<thetax*180/TMath::Pi()<<" , Angle Y="<<thetay*180/TMath::Pi()<<endl;
   Mod[3][0]=-0.000863*100;
@@ -1959,6 +2053,11 @@ bool Reconstruction::HasGeomTrack(int mod, int startplnx, int startchx, double t
   Mod[10][1]=-17.37957*100;//to check
   Mod[10][2]=273.35956*100;
 
+  //ML I consider WM center is at same position than PM center
+  Mod[15][0]=0.001*100;
+  Mod[15][1]=-17.563*100;
+  Mod[15][2]=276.168*100;
+
   Mod[16][0]=0.001*100;
   Mod[16][1]=-17.563*100;
   Mod[16][2]=276.168*100;
@@ -1968,7 +2067,7 @@ bool Reconstruction::HasGeomTrack(int mod, int startplnx, int startchx, double t
   //Center[16][2]=39.1;
 
   /*conversion towards PM coordinates*/
-  
+  // ML: WM coordinates are the same  
   Mod[3][0]-=Mod[16][0];
   Mod[3][1]-=Mod[16][1];
   Mod[3][2]-=Mod[16][2];
@@ -1982,7 +2081,7 @@ bool Reconstruction::HasGeomTrack(int mod, int startplnx, int startchx, double t
       Mod[imod][1]=Mod[3][1];
       Mod[imod][2]=Mod[3][2];
     }
-    else{
+    else if(imod<14){
       Mod[imod][0]=Mod[10][0];
       Mod[imod][1]=Mod[10][1]+(imod-10)*150;
       Mod[imod][2]=Mod[10][2];
@@ -2167,7 +2266,6 @@ vector <double> Reconstruction::IngridTrack(int mod, int startplnx, int startchx
 }
 
 vector <double> Reconstruction::TrackPenetration(int Mod, int pln_iniX, double ch_iniX, double thetax,int pln_iniY, double ch_iniY, double thetay, int pln_finX, double ch_finX, int pln_finY, double ch_finY, double dx_Ing){
-
   //1plane in PM: careful if the channel is SciBar or Ingrid. 1plane = 2channels to cross. Look if the channel is a scibar or an Ingrid one?
   //for normal track: enter zini and zfinal? No plane ini and plane final:
   //dist=(plane final - plane ini + 1)*dxofchanneltype
@@ -2205,7 +2303,7 @@ vector <double> Reconstruction::TrackPenetration(int Mod, int pln_iniX, double c
       }
     }
     DistCarbon+=dx_Ing;//ok now the question: IngDim is in which coordinate system? the Module one!
-    if(ipln<=9) DistIron+=dx_Iron;
+    if(ipln<=9) DistIron+=dx_Iron;// ML: not corrected by the angle !! 
     
   }
   //cout<<"X is over"<<endl;
@@ -2232,10 +2330,7 @@ vector <double> Reconstruction::TrackPenetration(int Mod, int pln_iniX, double c
 }
 
 
-
-vector <double> Reconstruction::TrackPenetrationPM(int pln_iniX, double ch_iniX, double thetax,int pln_iniY, double ch_iniY, double thetay, int pln_finX, double ch_finX, int pln_finY, double ch_finY, int IngMod, int pln_ini_Ing, int pln_fin_Ing, double angle, int tracksample, vector <Hit3D> * Vec){
-
-  
+vector <double> Reconstruction::TrackPenetrationPM(int pln_iniX, double ch_iniX, double thetax,int pln_iniY, double ch_iniY, double thetay, int pln_finX, double ch_finX, int pln_finY, double ch_finY, int IngMod, int pln_ini_Ing, int pln_fin_Ing, double dx_Ing, int TrackSample,vector <Hit3D> & Vec){
   //1plane in PM: careful if the channel is SciBar or Ingrid. 1plane = 2channels to cross. Look if the channel is a scibar or an Ingrid one?
   //for normal track: enter zini and zfinal? No plane ini and plane final:
   //dist=(plane final - plane ini + 1)*dxofchanneltype
@@ -2246,111 +2341,160 @@ vector <double> Reconstruction::TrackPenetrationPM(int pln_iniX, double ch_iniX,
   ch_finX/=10;
   ch_iniY/=10;
   ch_finY/=10;
-  double dx_Ing=ScintiThick/TMath::Cos(DegRad(angle));
+  // dx_Ing is given as an input: its value is 1/cos(angle)
   double dx_Sci=dx_Ing*1.3;
   double dx_Iron=dx_Ing*IronThick;  
 
-
   double *x_ini=new double();
   double *z_iniX=new double();
-  bool done1=IngDimRec->INGRID_Dimension::get_posXY(16,0,pln_iniX,ch_iniX,x_ini,z_iniX);
   double *y_ini=new double();
   double *z_iniY=new double();
-  bool done2=IngDimRec->INGRID_Dimension::get_posXY(16,1,pln_iniY,ch_iniY,y_ini,z_iniY);
-  //cout<<"In penetration fonction"<<endl;
+
+    //cout<<"In penetration fonction"<<endl;
   double expx,expy,expzX,expzY;
   int xch,ych;
   double DistCarbon=0;
   vector <double> Dist;
-  
-  for(int ipln=std::min(pln_iniX,pln_iniY);ipln<=std::max(pln_finX,pln_finY);ipln++){
-   
-    for(int iv=0;iv<2;iv++){
-      if(iv==0){
-	expzX=(ipln-pln_iniX)*PlnThick_PM+*z_iniX;
-	expx=ch_iniX+((thetax>0)?1:-1)*expzX*TMath::Tan(thetax);//not forgot before to convert thetax in deg->rad
-	for(int numch=0;numch<48;numch++){
-	  double diffxy=expx-numch*ScintiWidth;
-	  if(-0.5*ScintiWidth<=diffxy&&diffxy<0.5*ScintiWidth){
-	    xch=numch;
+  ////cout<<"Pln Ini="<<pln_iniX<<", Pln final="<<pln_finX<<endl;
+  if(_isPM){
+    // ML: when calling the fcn, use ch=0. the transverse coord is given by ch_iniX/Y.
+    bool done1=IngDimRec->INGRID_Dimension::get_posXY(16,0,pln_iniX,0,x_ini,z_iniX);
+    bool done2=IngDimRec->INGRID_Dimension::get_posXY(16,1,pln_iniY,0,y_ini,z_iniY);
+
+    for(int ipln=std::min(pln_iniX,pln_iniY);ipln<=std::max(pln_finX,pln_finY);ipln++){
+	  
+      for(int iv=0;iv<2;iv++){
+	if(iv==0){
+	  expzX=(ipln-pln_iniX)*PlnThick_PM+*z_iniX;
+	  expx=ch_iniX+((thetax>0)?1:-1)*expzX*TMath::Tan(thetax);//not forgot before to convert thetax in deg->rad
+	  if(expx>120) expx=120;
+	  if(expx<0) expx=0;
+	  for(int numch=0;numch<24;numch++){
+	    double diffxy=expx-numch*ScintiWidth;
+	    if(-0.5*ScintiWidth<=diffxy&&diffxy<0.5*ScintiWidth){
+	      xch=numch;
+	    }
+	  }
+	  if(xch<8||xch>15) DistCarbon+=dx_Ing;//ok now the question: IngDim is in which coordinate system? the Module one!
+	  else DistCarbon+=dx_Sci;
+      
+	  for(int ihit=0;ihit<Vec.size();ihit++){
+	    if(Vec[ihit].mod == 16 && Vec[ihit].pln == ipln && Vec[ihit].view == 0){
+	      Vec[ihit].dist_plastic=DistCarbon;
+	      Vec[ihit].dist_iron=0;
+	    }
 	  }
 	}
-	if(xch<8||xch>23) DistCarbon+=dx_Ing;//ok now the question: IngDim is in which coordinate system? the Module one!
-	else DistCarbon+=dx_Sci;
-      
-	for(int ihit=0;ihit<(*Vec).size();ihit++){
-	  if(((*Vec)[ihit].mod == 16) && ((*Vec)[ihit].pln == ipln) && ((*Vec)[ihit].view == 0)){
-	    (*Vec)[ihit].dist_plastic=DistCarbon;
-	    (*Vec)[ihit].dist_iron=0;
+	else{
+	  expzY=(ipln-pln_iniY)*PlnThick_PM+*z_iniY;
+	  expy=ch_iniY+((thetay>0)?1:-1)*expzY*TMath::Tan(thetay);//not forgot before to convert thetax in deg->rad
+	  if(expy>120) expy=120;
+	  if(expy<0) expy=0;
+	  for(int numch=0;numch<24;numch++){
+	    double diffxy=expx-numch*ScintiWidth;
+	    if(-0.5*ScintiWidth<=diffxy&&diffxy<0.5*ScintiWidth){
+	      ych=numch;
+	    }
 	  }
+	  if(xch<8||xch>15) DistCarbon+=dx_Ing;//ok now the question: IngDim is in which coordinate system? the Module one!
+	  else DistCarbon+=dx_Sci;
+	  for(int ihit=0;ihit<Vec.size();ihit++){
+	    if(Vec[ihit].mod == 16 && Vec[ihit].pln == ipln && Vec[ihit].view == 1){
+	      Vec[ihit].dist_plastic=DistCarbon;
+	      Vec[ihit].dist_iron=0;
+	    }
+	  }
+	}
+      }//iv
+    }//ipln
+  }//PM
+  else{ // WM
+    // I consider that water and carbon have same density
+    // DistCarbon is then only the distance in the detector
+    // 40.95 is to have center of WM at same z than center of PM
+    if(dx_Ing<3){ // corresponds to 70°
+      IngDimRec->get_posi_lolirecon(15,0,pln_iniX,0,0,x_ini,z_iniX);
+      IngDimRec->get_posi_lolirecon(15,1,pln_iniY,0,0,y_ini,z_iniY);
+      double z_ini=fmin(*z_iniX,*z_iniY)+40.95;
+      
+      double z_finX,z_finY,z_fin,xy;
+      IngDimRec->get_posi_lolirecon(15,0,pln_finX,0,0,&xy,&z_finX);
+      IngDimRec->get_posi_lolirecon(15,1,pln_finY,0,0,&xy,&z_finY);
+      z_fin=fmax(z_finX,z_finY)+40.95;
+      
+      if(TrackSample>=3) z_fin=40.95-loli_watersurface_z; // force the track to reach the end of the WM.
+      DistCarbon=(z_fin-z_ini)*dx_Ing;
+      
+      for(int ihit=0;ihit<Vec.size();ihit++){
+	if(Vec[ihit].mod==15){
+	  Vec[ihit].dist_plastic=(Vec[ihit].z - z_ini)*dx_Ing;
+	  //	  cout<<Vec[ihit].z-40.95<<" "<<*z_iniX<<" "<<*z_iniY<<" "<<Vec[ihit].x<<" "<<Vec[ihit].y<<endl;// in WM-centered frame
+	  Vec[ihit].dist_iron=0;
 	}
       }
-      else{
-	expzY=(ipln-pln_iniY)*PlnThick_PM+*z_iniY;
-	expy=ch_iniY+((thetay>0)?1:-1)*expzY*TMath::Tan(thetay);//not forgot before to convert thetax in deg->rad
-	for(int numch=0;numch<48;numch++){
-	  double diffxy=expx-numch*ScintiWidth;
-	  if(-0.5*ScintiWidth<=diffxy&&diffxy<0.5*ScintiWidth){
-	    ych=numch;
-	  }
-	}
-	if(xch<8||xch>23) DistCarbon+=dx_Ing;//ok now the question: IngDim is in which coordinate system? the Module one!
-	else DistCarbon+=dx_Sci;
-	for(int ihit=0;ihit<(*Vec).size();ihit++){
-	  if(((*Vec)[ihit].mod == 16) && ((*Vec)[ihit].pln == ipln) && ((*Vec)[ihit].view == 1)){
-	    (*Vec)[ihit].dist_plastic=DistCarbon;
-	    (*Vec)[ihit].dist_iron=0;
-	  }
+    }
+    else { // ie very high angle
+      // i will use d2 = x2 + y2 + z2
+      int n=Vec.size();
+      double z_ini=Vec[0].z;
+      double z_fin=Vec[n-1].z;
+      double x_ini=Vec[0].x;
+      double x_fin=Vec[n-1].x;
+      double y_ini=Vec[0].y;
+      double y_fin=Vec[n-1].y;
+      DistCarbon=sqrt(pow(z_ini-z_fin,2.)+pow(x_ini-x_fin,2.)+pow(y_ini-y_fin,2.));
+
+      for(int ihit=0;ihit<Vec.size();ihit++){
+	if(Vec[ihit].mod==15){
+	  Vec[ihit].dist_plastic=DistCarbon=sqrt(pow(z_ini-Vec[ihit].z,2.)+pow(x_ini-Vec[ihit].x,2.)+pow(y_ini-Vec[ihit].y,2.));;
+	  //cout<<Vec[ihit].z-40.95<<" "<<*z_iniX<<" "<<*z_iniY<<" "<<Vec[ihit].x<<" "<<Vec[ihit].y<<endl;// in WM-centered frame
+	  Vec[ihit].dist_iron=0;
 	}
       }
     }
   }
-  
+
   //cout<<"Y is over"<<endl;
   //cout<<"DistCarbon before Ingrid="<<DistCarbon<<endl;
   double DistIron=0;
-  if(tracksample>=2){
-    if(pln_fin_Ing>=9) DistIron=IronThick*(pln_fin_Ing-pln_ini_Ing-1)*dx_Ing/TMath::Cos(DegRad(angle));
-    else DistIron=IronThick*(pln_fin_Ing-pln_ini_Ing)/TMath::Cos(DegRad(angle));
-    
-    for(int ihit=0;ihit<(*Vec).size();ihit++){
-      if(((*Vec)[ihit].mod == IngMod)){
-	(*Vec)[ihit].dist_plastic=DistCarbon + dx_Ing*2*((*Vec)[ihit].pln-pln_ini_Ing+1);//dx_Ing*2 because we assume it crosses both the x and y scintillator layer.
+  if(TrackSample>=2){//ML 20170413
+    if(IngMod==3) pln_ini_Ing=0; // force ingrid_startpln to be 0 (correct some hit inefficiency)
+
+    if(pln_fin_Ing<=9) DistIron=dx_Iron*(pln_fin_Ing-pln_ini_Ing); // *** 9 is also included ***
+    else DistIron=dx_Iron*(pln_fin_Ing-pln_ini_Ing-1);
+
+    for(int ihit=0;ihit<Vec.size();ihit++){
+      if(Vec[ihit].mod == IngMod){//*** what about hits in another module (e.g. mod 2,4)?***
+	Vec[ihit].dist_plastic=DistCarbon + dx_Ing*2*(Vec[ihit].pln-pln_ini_Ing+1);//dx_Ing*2 because we assume it crosses both the x and y scintillator layer.
 	double HitDistIron=0;
-	if((*Vec)[ihit].pln >=9) HitDistIron=IronThick*((*Vec)[ihit].pln-pln_ini_Ing-1)*dx_Ing/TMath::Cos(DegRad(angle));
-	else HitDistIron=IronThick*((*Vec)[ihit].pln-pln_ini_Ing)/TMath::Cos(DegRad(angle));
-	(*Vec)[ihit].dist_iron=HitDistIron;
+	if(Vec[ihit].pln >9) HitDistIron=(Vec[ihit].pln-pln_ini_Ing-1)*dx_Iron;
+	else HitDistIron=dx_Iron*(Vec[ihit].pln-pln_ini_Ing);
+	Vec[ihit].dist_iron=HitDistIron;
       }
     }
-  
-    DistCarbon+=dx_Ing*2*(pln_fin_Ing-pln_ini_Ing);
+
+    DistCarbon+=2*dx_Ing*(pln_fin_Ing-pln_ini_Ing+1); // *** here I need a +1 ***
   }
-   /*
-  if(!PMStop){
-    DistCarbon+=dx_Ing*(pln_fin_Ing-pln_ini_Ing+1);
-    if(pln_fin_Ing<=9) DistIron=dx_Iron*(pln_fin_Ing-pln_ini_Ing);
-    else DistIron=dx_Iron*9;
-    }*/
   //if(DistIron!=DistIron)//cout<<"************************************************************************/"<<endl<<"dx="<<dx_Ing<<" , Plane ="<<pln_fin_Ing<<endl;
   
   Dist.push_back(DistCarbon);
   Dist.push_back(DistIron);
   //cout<<"Distance in Carbon="<<DistCarbon<<endl;
   //cout<<"Distance in Iron="<<DistIron<<endl;
-  double EqSciLength=DistIron + DistCarbon/IronCarbonRatio;//equivalent length of scintillators crossed by the particle
+  double EqSciLength=DistIron+DistCarbon/IronCarbonRatio;//equivalent length of scintillators crossed by the particle
   Dist.push_back(EqSciLength);
 
 #ifdef DEBUG
   cout<<"**************************************************************************************"<<endl;
   cout<<"Test of the distance in plastic and iron filling in Reconstruction::TrackPenetrationPM"<<endl;
-  cout<<"Track sample determined by Select sample="<<tracksample<<endl;
-  cout<<"Check inputs of the function first: XZ view, startpln="<<pln_iniX<<", startch="<<ch_iniX<<", angle="<<thetax<<", YZ view, startpln="<<pln_iniY<<", startch="<<ch_iniY<<", angle="<<thetay<<", initial plane ingrid="<<pln_ini_Ing<<", final plane ingrid="<<pln_fin_Ing<<", 3D angle="<<angle<<endl;
+  cout<<"Track sample determined by Select sample="<<TrackSample<<endl;
+  cout<<"Check inputs of the function first: XZ view, startpln="<<pln_iniX<<", startch="<<ch_iniX<<", angle="<<thetax<<", YZ view, startpln="<<pln_iniY<<", startch="<<ch_iniY<<", angle="<<thetay<<", initial plane ingrid="<<pln_ini_Ing<<", final plane ingrid="<<pln_fin_Ing<<", 3D angle="<<acos(dx_Ing)<<endl;
     
-  for(int ihit=0;ihit<(*Vec).size();ihit++){
-    cout<<"Mod="<<(*Vec)[ihit].mod<<", pln="<<(*Vec)[ihit].pln<<", channel="<<(*Vec)[ihit].ch<<", view="<<(*Vec)[ihit].view<<", distance plastic="<<(*Vec)[ihit].dist_plastic<<", iron="<<(*Vec)[ihit].dist_iron<<endl;
+  for(int ihit=0;ihit<Vec.size();ihit++){
+    cout<<"Mod="<<Vec[ihit].mod<<", pln="<<Vec[ihit].pln<<", z="<<Vec[ihit].z<<", channel="<<Vec[ihit].ch<<", view="<<Vec[ihit].view<<", distance plastic="<<Vec[ihit].dist_plastic<<", iron="<<Vec[ihit].dist_iron<<endl;
   }
   cout<<"Total carbon length="<<DistCarbon<<", total iron length="<<DistIron<<", equivalent length="<<EqSciLength<<endl;
-    cout<<"**************************************************************************************"<<endl;
+  cout<<"**************************************************************************************"<<endl;
 #endif
     
   return Dist;
@@ -2586,13 +2730,13 @@ vector <double> Reconstruction::GetTrueMuonInformation(IngridEventSummary * evt)
       double thetaY=TMath::ATan((SimPart2->fpos[1]-SimPart2->ipos[1])/(SimPart2->fpos[2]-SimPart2->ipos[2]));
       TrueAngleMuon=TMath::ACos(1/(pow(TMath::Tan(thetaX),2)+pow(TMath::Tan(thetaY),2)+1))*180/TMath::Pi();
       TrueMomentumMuon=MuonMom;
-      MuonAngle=TMath::ACos(1/(pow(TMath::Tan(thetaX),2)+pow(TMath::Tan(thetaY),2)+1))*180/TMath::Pi();
+      MuonAngle=TMath::ACos(1/TMath::Sqrt(pow(TMath::Tan(thetaX),2)+pow(TMath::Tan(thetaY+3.8*TMath::Pi()/180.),2)+1))*180/TMath::Pi();
       //double Scalar=(SimPart2->fpos[2]-SimPart2->ipos[2])*1;
       double Scalar=(SimPart2->fpos[0]-SimPart2->ipos[0])*Beam[0]+(SimPart2->fpos[1]-SimPart2->ipos[1])*Beam[1]+(SimPart2->fpos[2]-SimPart2->ipos[2])*Beam[2];
   // double Scalar=(Fpos[0]-Ipos[0])*Beam[0])+(Fpos[1]-Ipos[1])*Beam[1])+(Fpos[2]-Ipos[2])*Beam[2];
       double Norm=TMath::Sqrt((SimPart2->fpos[0]-SimPart2->ipos[0])*(SimPart2->fpos[0]-SimPart2->ipos[0])+(SimPart2->fpos[1]-SimPart2->ipos[1])*(SimPart2->fpos[1]-SimPart2->ipos[1])+(SimPart2->fpos[2]-SimPart2->ipos[2])*(SimPart2->fpos[2]-SimPart2->ipos[2]));
       TrueAngleMuon=TMath::ACos(Scalar/Norm)*180/TMath::Pi();
-      //cout<<MuonAngle<<", Angle Test="<<AngleTest<<endl;
+      //cout<<TrueAngleMuon<<", Angle Test="<<MuonAngle<<endl;
     }
   }
   MuonProp.push_back(TrueMomentumMuon);
@@ -2601,11 +2745,50 @@ vector <double> Reconstruction::GetTrueMuonInformation(IngridEventSummary * evt)
   
   return MuonProp;
 }
+
+// added ML - valid only for post-FSI CC1pi (FSIInt=3)
+vector <double> Reconstruction::GetTruePionInformation(IngridEventSummary * evt){
+  vector <double> PionProp;
+  PionProp.clear();
+  IngridSimParticleSummary * SimPart2;
+  double PionMom;
+  double TrueAnglePion;
+  double TrueMomentumPion;
+  double PionAngle;
+
+  for(int is=0;is<evt->NIngridSimParticles();is++){
+    SimPart2=(IngridSimParticleSummary*) evt->GetSimParticle(is);   
+    if(abs(SimPart2->pdg)==211){
+      PionMom=TMath::Sqrt(SimPart2->momentum[0]*SimPart2->momentum[0]+SimPart2->momentum[1]*SimPart2->momentum[1]+SimPart2->momentum[2]*SimPart2->momentum[2]);
+      double thetaX=TMath::ATan((SimPart2->fpos[0]-SimPart2->ipos[0])/(SimPart2->fpos[2]-SimPart2->ipos[2]));
+      double thetaY=TMath::ATan((SimPart2->fpos[1]-SimPart2->ipos[1])/(SimPart2->fpos[2]-SimPart2->ipos[2]));
+      TrueAnglePion=TMath::ACos(1/(pow(TMath::Tan(thetaX),2)+pow(TMath::Tan(thetaY),2)+1))*180/TMath::Pi();
+      TrueMomentumPion=PionMom;
+
+      //ML a priori, pour être angle wrt beam, il suffit de shifter thetaY de 3.8°
+      PionAngle=TMath::ACos(1/TMath::Sqrt(pow(TMath::Tan(thetaX),2)+pow(TMath::Tan(thetaY+3.8*TMath::Pi()/180),2)+1))*180/TMath::Pi();
+      PionAngle=TMath::ATan(sqrt(pow(TMath::Tan(thetaX),2)+pow(TMath::Tan(thetaY+3.8*TMath::Pi()/180),2)))*180/TMath::Pi();
+      double Scalar=(SimPart2->fpos[0]-SimPart2->ipos[0])*Beam[0]+(SimPart2->fpos[1]-SimPart2->ipos[1])*Beam[1]+(SimPart2->fpos[2]-SimPart2->ipos[2])*Beam[2];
+      double Norm=TMath::Sqrt((SimPart2->fpos[0]-SimPart2->ipos[0])*(SimPart2->fpos[0]-SimPart2->ipos[0])+(SimPart2->fpos[1]-SimPart2->ipos[1])*(SimPart2->fpos[1]-SimPart2->ipos[1])+(SimPart2->fpos[2]-SimPart2->ipos[2])*(SimPart2->fpos[2]-SimPart2->ipos[2]));
+      TrueAnglePion=TMath::ACos(Scalar/Norm)*180/TMath::Pi();
+      // ML: both calculations agree, but TrueAnglePion is in (0,180°) which is better than PionAngle in (0,90°)
+      //      cout<<PionAngle<<", direct calculation="<<TrueAnglePion<<endl;
+    }
+  }
+  PionProp.push_back(TrueMomentumPion);
+  PionProp.push_back(TrueAnglePion);
+  //delete SimPart2;
+  
+  return PionProp;
+}
  
 bool Reconstruction::IsFV(int mod, double posx, double posy, double posz){
   bool IsFV=false;
   //if((mod==16) && (fabs(posx)<=50) && (fabs(posy)<=50) && posz>-152 && (posz<-87.5)) IsFV=true;
-  if((mod==16) && (fabs(posx)<=50) && (fabs(posy)<=50) && (posz>=-156.4) && (posz<-85)) return true;
+  if((_isPM && mod==16) && (fabs(posx)<=50) && (fabs(posy)<=50) && (posz>=-156.4) && (posz<-85)) IsFV=true;
+  else if((!_isPM && mod==17) && (fabs(posx)<=40) && (fabs(posy)<=40) && (posz>=-139.65) && (posz<-102.9)) IsFV=true; 
+  // ML: computation of z-fiducial limits done in Notebook1, p55
+
   return IsFV;
 }
 
@@ -2617,6 +2800,9 @@ int Reconstruction::GetTrackParticle(IngridEventSummary *evt, PMAnaSummary * rec
   vector <int> SimList;
   SimList.clear();
   IngridSimParticleSummary * SimPart2;
+
+  double LengthCut=(_isPM? 8.6:11.7);
+  // 11.7 = 5.7*2 + 0.3 ie what is required to have 3 hits in WM
   
   for(int is=0;is<evt->NIngridSimParticles();is++){
     SimPart2=(IngridSimParticleSummary*) evt->GetSimParticle(is);
@@ -2697,7 +2883,7 @@ int Reconstruction::GetTrackParticle(IngridEventSummary *evt, PMAnaSummary * rec
       cout<<"Is selected: Particle="<<SimPart2->pdg<<"       :";
       cout<<"here is the rec thetax, thetay="<<(recon->thetay)[itrk]<<", "<<(recon->thetax)[itrk]<<", Angle 3D="<<(recon->angle)[itrk]<<", And here are the angles="<<thetaX<<", "<<thetaY<<", 3D="<<TMath::ACos(Scalar/Norm)*180/TMath::Pi()<<endl;
       cout<<"rec trk length="<<TrkLength<<", Simpart length="<<SimPart2->length<<endl;
-#endif
+#endif DEBUG
       
       
       PartNum=is;
@@ -2766,12 +2952,14 @@ bool Reconstruction::IsINGRID(int mod,int pln,int ch){
 }
 
 vector <double> Reconstruction::GetMatchingPMINGRID(vector <Hit3D> Vec){
+  int DetectorMod=(_isPM? 16:15);
+
   int nx=0;int ny=0;
   int nx_Ing=0;int ny_Ing=0;
   int ix=0;int iy=0;
   int ix_Ing=0;int iy_Ing=0;
   for(int ihit=0;ihit<Vec.size();ihit++){
-    if(Vec[ihit].mod==16){
+    if(Vec[ihit].mod==DetectorMod){
       if(Vec[ihit].view==0) nx++;
       else ny++;
     }
@@ -2803,7 +2991,7 @@ vector <double> Reconstruction::GetMatchingPMINGRID(vector <Hit3D> Vec){
   //cout<<"new call"<<endl;
   for(int ihit=0;ihit<Vec.size();ihit++){
     //cout<<"Module="<<Vec[ihit].mod<<", x="<<Vec[ihit].x<<", y="<<Vec[ihit].y<<", z="<<Vec[ihit].z<<endl;
-    if(Vec[ihit].mod==16){
+    if(Vec[ihit].mod==16 && _isPM){
       if(Vec[ihit].view==0){
 	PosZX[ix]=Vec[ihit].z;
 	PosX[ix]=Vec[ihit].x;
@@ -2832,32 +3020,54 @@ vector <double> Reconstruction::GetMatchingPMINGRID(vector <Hit3D> Vec){
 	iy++;
       }
     }
+
+    if(Vec[ihit].mod==15 && !_isPM){
+      // the fitter doesn't converge if errors on z are too large. Force them to 0.5 if grid  
+    if(Vec[ihit].view==0){
+	PosZX[ix]=Vec[ihit].z;
+	PosX[ix]=Vec[ihit].x;
+	//	cout<<"view 0: x="<<PosX[ix]<<" z="<<PosZX[ix]<<endl;
+	if(Vec[ihit].pln%3==0){ //pln
+	  ErrX[ix]=0.5;
+	  ErrZX[ix]=0.3;
+	}
+	else { // grid
+	  ErrX[ix]=0.3;
+	  ErrZX[ix]=0.5;
+	}
+	ix++;
+      }
+
+      else{
+	PosZY[iy]=Vec[ihit].z;
+	PosY[iy]=Vec[ihit].y;
+	//cout<<"view 1: y="<<PosY[iy]<<" z="<<PosZY[iy]<<endl;
+	if(Vec[ihit].pln%3==1){ //pln
+	  ErrY[iy]=2.5;
+	  ErrZY[iy]=0.3;
+	}
+	else { // grid
+	  ErrY[iy]=0.3;
+	  ErrZY[iy]=0.5;
+	}
+	iy++;
+      }
+    }
+
     else{
      if(Vec[ihit].view==0){
 	PosZX_Ing[ix_Ing]=Vec[ihit].z;
 	PosX_Ing[ix_Ing]=Vec[ihit].x;
-	if(Vec[ihit].ch<=7||Vec[ihit].ch>=24){
-	  ErrX_Ing[ix_Ing]=2.5;
-	  ErrZX_Ing[ix_Ing]=1.3;
-	}
-	else{
-	  ErrX_Ing[ix_Ing]=5.;
-	  ErrZX_Ing[ix_Ing]=1.;
-	}
+	ErrX_Ing[ix_Ing]=5.;
+	ErrZX_Ing[ix_Ing]=1.;
 	ix_Ing++;
       }
 
       else{
 	PosZY_Ing[iy_Ing]=Vec[ihit].z;
 	PosY_Ing[iy_Ing]=Vec[ihit].y;
-	if(Vec[ihit].ch<=7||Vec[ihit].ch>=24){
-	  ErrY_Ing[iy_Ing]=2.5;
-	  ErrZY_Ing[iy_Ing]=1.3;
-	}
-	else{
-	  ErrY_Ing[iy_Ing]=5.;
-	  ErrZY_Ing[iy_Ing]=1.;
-	}
+	ErrY_Ing[iy_Ing]=5.;
+	ErrZY_Ing[iy_Ing]=1.;
 	iy_Ing++;
       }
     }
@@ -2875,7 +3085,7 @@ vector <double> Reconstruction::GetMatchingPMINGRID(vector <Hit3D> Vec){
   TF1 * fy = new TF1("fy","[0]+x*[1]",0,260);
   HistPosX->Fit("fx","Q");
   HistPosY->Fit("fy","Q");
-
+  //  cout<<"fitted in WM"<<DetectorMod<<endl;
 
   double SlopeX=fx->GetParameter(1);
   double AngleX=TMath::ATan(SlopeX)*180/TMath::Pi();
@@ -2883,8 +3093,9 @@ vector <double> Reconstruction::GetMatchingPMINGRID(vector <Hit3D> Vec){
   double AngleY=TMath::ATan(SlopeY)*180/TMath::Pi();
   //double bX=fx->GetParameter(0);
   //double bY=fy->GetParameter(0);
-  double HalfX=fx->Eval(94);
-  double HalfY=fy->Eval(94);
+  double halfDistance=(_isPM?94:88);
+  double HalfX=fx->Eval(halfDistance);
+  double HalfY=fy->Eval(halfDistance);
   double ReducedChiSquareX=fx->GetChisquare()/fx->GetNDF();
   double ReducedChiSquareY=fy->GetChisquare()/fy->GetNDF();
 
@@ -2899,7 +3110,8 @@ vector <double> Reconstruction::GetMatchingPMINGRID(vector <Hit3D> Vec){
   double HalfY_Ing=HalfY;//=fy_Ing->Eval(94)=0;
   double ReducedChiSquareX_Ing=ReducedChiSquareX;//=fx_Ing->GetChisquare()/fx_Ing->GetNDF()=0;
   double ReducedChiSquareY_Ing=ReducedChiSquareY;//=fy_Ing->GetChisquare()/fy_Ing->GetNDF()=0;
-  if(nx_Ing!=0 && ny_Ing!=0){
+
+  if(nx_Ing>2 && ny_Ing>2){//ML it is a test of fIngPMJoint(), irrelevant for fIngHitPMJoint()
     HistPosX_Ing->Fit("fx_Ing","Q");
     HistPosY_Ing->Fit("fy_Ing","Q");
     SlopeX_Ing=fx_Ing->GetParameter(1);
@@ -2908,17 +3120,19 @@ vector <double> Reconstruction::GetMatchingPMINGRID(vector <Hit3D> Vec){
     AngleY_Ing=TMath::ATan(SlopeY_Ing)*180/TMath::Pi();
     // bX_Ing=fx_Ing->GetParameter(0);
     // bY_Ing=fy_Ing->GetParameter(0);
-    HalfX_Ing=fx_Ing->Eval(94);
-    HalfY_Ing=fy_Ing->Eval(94);
+    HalfX_Ing=fx_Ing->Eval(halfDistance);
+    HalfY_Ing=fy_Ing->Eval(halfDistance);
     ReducedChiSquareX_Ing=fx_Ing->GetChisquare()/fx_Ing->GetNDF();
     ReducedChiSquareY_Ing=fy_Ing->GetChisquare()/fy_Ing->GetNDF();
-  }
-#ifdef DEBUG2
+  }  
+#ifdef DEBUG
+  cout<<"in INGRID: nx="<<nx_Ing<<" and ny="<<ny_Ing<<endl;
   cout<<"Angle X, PM="<<AngleX<<", INGRID="<<AngleX_Ing<<endl;
   cout<<"Angle Y, PM="<<AngleY<<", INGRID="<<AngleY_Ing<<endl;
   cout<<"Half X, PM="<<HalfX<<", INGRID="<<HalfX_Ing<<endl;
   cout<<"Half Y, PM="<<HalfY<<", INGRID="<<HalfY_Ing<<endl;
 #endif
+
   MatchingPMINGRID.push_back(AngleX);
   MatchingPMINGRID.push_back(AngleY);
   MatchingPMINGRID.push_back(HalfX);
@@ -2942,7 +3156,7 @@ double Reconstruction::GetINGRIDTrackWidth(vector <Hit3D> Vec){
   int StartYPln=11;
 
   for(int ihit=0;ihit<Vec.size();ihit++){
-    if(Vec[ihit].mod!=16){
+    if((_isPM && Vec[ihit].mod!=16) || (!_isPM && Vec[ihit].mod!=15)){
       HitPln_All[Vec[ihit].view][Vec[ihit].pln]=true;
       if(Vec[ihit].ch>HitMax_All[Vec[ihit].view][Vec[ihit].pln]) HitMax_All[Vec[ihit].view][Vec[ihit].pln]=Vec[ihit].ch;
       if(Vec[ihit].ch<HitMin_All[Vec[ihit].view][Vec[ihit].pln]) HitMin_All[Vec[ihit].view][Vec[ihit].pln]=Vec[ihit].ch;
@@ -2973,13 +3187,14 @@ double Reconstruction::GetINGRIDTrackWidth(vector <Hit3D> Vec){
 
 vector <double> Reconstruction::GetLastINGRIDChannel(vector <Hit3D> Vec, double TrackSample){
   vector <double> LastChan; LastChan.clear();
-  if(TrackSample>=2){
+  if(TrackSample>2){ // ML correction / was >=2
+    int DetectorMod=(_isPM? 16:15);
     int MaxPlnX=-1;
     int MaxPlnY=-1;
     int _LastChannelINGRIDX=11.5;
     int _LastChannelINGRIDY=11.5;
     for(int ihit=0;ihit<Vec.size();ihit++){
-      if(Vec[ihit].mod!=16 && Vec[ihit].view==0 && Vec[ihit].pln>=MaxPlnX){
+      if(Vec[ihit].mod!=DetectorMod && Vec[ihit].view==0 && Vec[ihit].pln>=MaxPlnX){
 	if(Vec[ihit].pln>MaxPlnX) _LastChannelINGRIDX=Vec[ihit].ch;
 	else{
 	  if(TMath::Abs(Vec[ihit].ch-11.5)>TMath::Abs(_LastChannelINGRIDX-11.5)) _LastChannelINGRIDX=Vec[ihit].ch;
@@ -2987,7 +3202,7 @@ vector <double> Reconstruction::GetLastINGRIDChannel(vector <Hit3D> Vec, double 
 	MaxPlnX=Vec[ihit].pln;
 	
       }
-      else if(Vec[ihit].mod!=16 && Vec[ihit].view==1 && Vec[ihit].pln>=MaxPlnY){
+      else if(Vec[ihit].mod!=DetectorMod && Vec[ihit].view==1 && Vec[ihit].pln>=MaxPlnY){
 	if(Vec[ihit].pln>MaxPlnY) _LastChannelINGRIDY=Vec[ihit].ch;
 	else{
 	  if(TMath::Abs(Vec[ihit].ch-11.5)>TMath::Abs(_LastChannelINGRIDY-11.5)) _LastChannelINGRIDY=Vec[ihit].ch;

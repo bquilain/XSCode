@@ -89,6 +89,8 @@ double RadDeg(double angle){
 
 int main(int argc, char **argv)
 {
+  InitializeGlobal();
+
   bool Disp=false;
   int NFiles=100;
   int IFiles=1;

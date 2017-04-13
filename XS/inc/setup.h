@@ -37,6 +37,7 @@ using namespace std;
 /**********INGRID Libs*************/
 #include "TApplication.h"
 #include "IngridConstants.h"
+#include "INGRID_Dimension.cc"
 /*#include "INGRIDEVENTSUMMARY.h"
 #include "IngridHitSummary.h"
 #include "IngridSimHitSummary.h"
@@ -148,6 +149,8 @@ double BinningRecAngle[NBinsRecAngle+1];
 //17: Xsec
 
 void InitializeGlobal(bool PM=true){
+
+  Initialize_INGRID_Dimension();
 
   for(int i=0;i<=NBinsEnergyFlux;i++){
     if(i==0) BinningEnergyFlux[i]=0;

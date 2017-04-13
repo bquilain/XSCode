@@ -57,10 +57,10 @@ using namespace std;
 //My libs
 #include "setup.h"
 //#include "Reconstruction.cc"
-#define DEBUG
-#define DEBUG2
+//#define DEBUG
+//#define DEBUG2
 //#define DEBUG3
-#define MVATRAINING
+//#define MVATRAINING
 //#define MVAREADING
 //#define TEMPORARY
 //#define DEBUGMVA
@@ -2564,7 +2564,7 @@ int main(int argc, char ** argv){
        //sprintf(fName,"/home/bquilain/CC0pi_XS/XS/root_input/XSFormat_Run1_%d_Plan_RandomPE.root",i);
 
        //       fName=Form(InNameEvent,i);
-       sprintf(fName,"${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s_Run1_%d_Plan.root",(isPM?"PM":"WM"),i);
+       sprintf(fName,"${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s_Run1_%d_PlanDev.root",(isPM?"PM":"WM"),i);
        cout<<fName<<endl;
        chain->Add(fName);
 #ifdef MVATRAINING
