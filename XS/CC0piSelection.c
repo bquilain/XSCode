@@ -60,7 +60,7 @@ using namespace std;
 //#define DEBUG
 //#define DEBUG2
 //#define DEBUG3
-//#define MVATRAINING
+#define MVATRAINING
 //#define MVAREADING
 //#define TEMPORARY
 //#define DEBUGMVA
@@ -503,158 +503,6 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
     factory->Delete();  
 
 
-
-    //Third BDT training
-    cout<<"Start the training of the third BDT: 0pi is wished (pi0 or pi+), only pions -> pions vs pions (and other particles)"<<endl;
-    TFile * MVAoutputPion = new TFile("src/MVAparticlePion_1000trees.root","RECREATE");//Output file Name
-    factory = new TMVA::Factory("TMVAClassificationPion", MVAoutputPion,"V:Color:DrawProgressBar:Transformations=I;D;P;G,D:AnalysisType=Classification");
-
-    //Add the relevant variables
-    factory->AddVariable("Sample","Sample of the track", "", 'I' );
-    for(int ihit=0;ihit<LimitHits;ihit++){  
-#ifdef INTERPOLATION
-      factory->AddVariable(Form("EnergyDepositionSpline_hit%d",ihit),Form("Energy deposition of hit %d",ihit), "", 'F' );
-#else
-      factory->AddVariable(Form("EnergyDeposition_hit%d",ihit),Form("Energy deposition of hit %d",ihit), "", 'F' );
-#endif
-      factory->AddVariable(Form("TransverseWidthNonIsolated_hit%d",ihit),Form("Transverse track width of position %d",ihit), "", 'F' );
-    }
-
-    //Add spectator variables
-    factory->AddSpectator("FSIInt","interaction ID after FSI",'I');
-    factory->AddSpectator("Spill","spill number",'I');
-    factory->AddSpectator("GoodSpill","good spill flag",'I');
-    factory->AddSpectator("NewEvent","flag if it is a new simulated/data event",'I');
-    factory->AddSpectator("nIngBasRec","number of reconstructed vertexes for the event",'I');
-    factory->AddSpectator("InteractionType","interaction ID at the vertex",'I');
-    factory->AddSpectator("Enu","E_{#nu} true",'F');
-    factory->AddSpectator("TrueMomentumMuon","p_{#mu] true",'F');
-    factory->AddSpectator("TrueAngleMuon","#theta_{#mu] true",'F');
-    factory->AddSpectator("IsFV","flag for true vertex in FV",'I');
-    factory->AddSpectator("IsSand","flag for sand #mu",'I');
-    factory->AddSpectator("IsAnti","flag for #overline{#nu}_{#mu}",'I');
-    factory->AddSpectator("IsBkgH","flag for bkg from INGRID Horiz.",'I');
-    factory->AddSpectator("IsBkgV","flag for bkg from INGRID Vert.",'I');
-    factory->AddSpectator("IsNuE","flag for #nu_{e}",'I');
-    factory->AddSpectator("SelectionFV","flag for reconstructed in FV",'I');
-    factory->AddSpectator("SelectionOV","flag for reconstructed out of FV",'I');
-    factory->AddSpectator("IsDetected","flag for reconstructed vertex",'I');
-    factory->AddSpectator("POT","number of corresponding POTs",'I');
-    
-    factory->AddSpectator("TrackAngle","angle of the tracke w.r.t z axis",'F');
-    factory->AddSpectator("TypeOfTrack","pdf of track",'F');
-    factory->AddSpectator("CLMuon_Likelihood","#mu_{CL} of track",'F');
-    factory->AddSpectator("TotalCharge","Total dE/dx of track",'F');
-    factory->AddSpectator(Form("EquivalentIronDistance := (IronDistance+(PlasticDistance/(%3.3f)))",IronCarbonRatio),"distance in iron of track",'F');
-    factory->AddSpectator("Momentum","true momentum of track",'F');
-    factory->AddSpectator("IsReconstructed","reconstruction status of track",'I');
-    
-    //Case 1: Classification
-    //Define the signal and background trees.
-    TCut signalPion = "TypeOfTrack == 211 || TypeOfTrack == -211";
-    factory->SetInputTrees(wtreeMVA,signalPion && preselection,(!(signalPion)) && preselection);
-
-    //Add weights to the tree
-    factory->SetSignalWeightExpression("weight");
-    factory->SetBackgroundWeightExpression("weight");
-
-    factory->BookMethod( TMVA::Types::kBDT,"BDT","!H:V:NTrees=1000:MinNodeSize=2.5%:MaxDepth=3:BoostType=AdaBoost:AdaBoostBeta=0.5:UseBaggedBoost:BaggedSampleFraction=0.5:SeparationType=GiniIndex:nCuts=20");
-    
-    //
-    // Train MVAs using the set of training events
-    factory->TrainAllMethods();
-    
-    // ---- Evaluate all MVAs using the set of test events
-    factory->TestAllMethods();
-    
-    // ----- Evaluate and compare performance of all configured MVAs
-    factory->EvaluateAllMethods();
-    
-    
-    //Keep in mind here that I only use 1/2 of trees for training and 1/2 for testing (default). This option can be changed!
-    
-    cout<<"End of third BDT training"<<endl;
-
-    MVAoutputPion->Close();
-    factory->Delete();  
-
-    
-    /*    //Third BDT training
-    cout<<"Start the training of the third BDT: A pion MVA for Matt-kun"<<endl;
-    TFile * MVAoutputPion = new TFile("src/MVAparticlePion_1000trees.root","RECREATE");//Output file Name
-    factory = new TMVA::Factory("TMVAClassificationPion", MVAoutputPion,"V:Color:DrawProgressBar:Transformations=I;D;P;G,D:AnalysisType=Classification");
-
-    //Add the relevant variables
-    factory->AddVariable("Sample","Sample of the track", "", 'I' );
-    for(int ihit=0;ihit<LimitHits;ihit++){  
-#ifdef INTERPOLATION
-      factory->AddVariable(Form("EnergyDepositionSpline_hit%d",ihit),Form("Energy deposition of hit %d",ihit), "", 'F' );
-#else
-      factory->AddVariable(Form("EnergyDeposition_hit%d",ihit),Form("Energy deposition of hit %d",ihit), "", 'F' );
-#endif
-      factory->AddVariable(Form("TransverseWidthNonIsolated_hit%d",ihit),Form("Transverse track width of position %d",ihit), "", 'F' );
-    }
-
-    //Add spectator variables
-    factory->AddSpectator("FSIInt","interaction ID after FSI",'I');
-    factory->AddSpectator("Spill","spill number",'I');
-    factory->AddSpectator("GoodSpill","good spill flag",'I');
-    factory->AddSpectator("NewEvent","flag if it is a new simulated/data event",'I');
-    factory->AddSpectator("nIngBasRec","number of reconstructed vertexes for the event",'I');
-    factory->AddSpectator("InteractionType","interaction ID at the vertex",'I');
-    factory->AddSpectator("Enu","E_{#nu} true",'F');
-    factory->AddSpectator("TrueMomentumMuon","p_{#mu] true",'F');
-    factory->AddSpectator("TrueAngleMuon","#theta_{#mu] true",'F');
-    factory->AddSpectator("IsFV","flag for true vertex in FV",'I');
-    factory->AddSpectator("IsSand","flag for sand #mu",'I');
-    factory->AddSpectator("IsAnti","flag for #overline{#nu}_{#mu}",'I');
-    factory->AddSpectator("IsBkgH","flag for bkg from INGRID Horiz.",'I');
-    factory->AddSpectator("IsBkgV","flag for bkg from INGRID Vert.",'I');
-    factory->AddSpectator("IsNuE","flag for #nu_{e}",'I');
-    factory->AddSpectator("SelectionFV","flag for reconstructed in FV",'I');
-    factory->AddSpectator("SelectionOV","flag for reconstructed out of FV",'I');
-    factory->AddSpectator("IsDetected","flag for reconstructed vertex",'I');
-    factory->AddSpectator("POT","number of corresponding POTs",'I');
-    
-    factory->AddSpectator("TrackAngle","angle of the tracke w.r.t z axis",'F');
-    factory->AddSpectator("TypeOfTrack","pdf of track",'F');
-    factory->AddSpectator("CLMuon_Likelihood","#mu_{CL} of track",'F');
-    factory->AddSpectator("TotalCharge","Total dE/dx of track",'F');
-    factory->AddSpectator(Form("EquivalentIronDistance := (IronDistance+(PlasticDistance/(%3.3f)))",IronCarbonRatio),"distance in iron of track",'F');
-    factory->AddSpectator("Momentum","true momentum of track",'F');
-    factory->AddSpectator("IsReconstructed","reconstruction status of track",'I');
-    
-    //Case 1: Classification
-    //Define the signal and background trees.
-    TCut signalPion = "TypeOfTrack == 221 || TypeOfTrack == -221";
-    factory->SetInputTrees(wtreeMVA,signalPion && preselection,(!(signalPion)) && preselection);
-
-    //Add weights to the tree
-    factory->SetSignalWeightExpression("weight");
-    factory->SetBackgroundWeightExpression("weight");
-
-    factory->BookMethod( TMVA::Types::kBDT,"BDT","!H:V:NTrees=1000:MinNodeSize=2.5%:MaxDepth=3:BoostType=AdaBoost:AdaBoostBeta=0.5:UseBaggedBoost:BaggedSampleFraction=0.5:SeparationType=GiniIndex:nCuts=20");
-    
-    //
-    // Train MVAs using the set of training events
-    factory->TrainAllMethods();
-    
-    // ---- Evaluate all MVAs using the set of test events
-    factory->TestAllMethods();
-    
-    // ----- Evaluate and compare performance of all configured MVAs
-    factory->EvaluateAllMethods();
-    
-    
-    //Keep in mind here that I only use 1/2 of trees for training and 1/2 for testing (default). This option can be changed!
-    
-    cout<<"End of third BDT training"<<endl;
-
-    MVAoutputPion->Close();
-*/
-    //delete MVAoutput;
-    //delete factory;
-    //return 0;
   //#################################################################################
 #endif
 
@@ -779,53 +627,6 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
 
     cout<<"Start reading the Third BDT"<<endl;
     TMVA::Reader tmvareader3;
-    
-    //Add the relevant variables
-    tmvareader3.AddVariable("Sample",&SampleTrackMVA);
-    for(int ihit=0;ihit<LimitHits;ihit++){   
-#ifdef INTERPOLATION
-     tmvareader3.AddVariable(Form("EnergyDepositionSpline_hit%d",ihit),&(EnergyDepositionMVA[ihit]));
-#else
-      tmvareader3.AddVariable(Form("EnergyDeposition_hit%d",ihit),&(EnergyDepositionMVA[ihit]));
-#endif
-      tmvareader3.AddVariable(Form("TransverseWidthNonIsolated_hit%d",ihit),&(TransverseWidthMVA[ihit]));      
-    }
-    
-    //Define spectator
-    tmvareader3.AddSpectator("FSIInt",&FSIIntMVA);
-    tmvareader3.AddSpectator("Spill",&SpillMVA);
-    tmvareader3.AddSpectator("GoodSpill",&GoodSpillMVA);
-    tmvareader3.AddSpectator("NewEvent",&NewEventMVA);
-    tmvareader3.AddSpectator("nIngBasRec",&nIngBasRecMVA);
-    tmvareader3.AddSpectator("InteractionType",&InteractionTypeMVA);
-    tmvareader3.AddSpectator("Enu",&EnuMVA);
-    tmvareader3.AddSpectator("TrueMomentumMuon",&TrueMomentumMuonMVA);
-    tmvareader3.AddSpectator("TrueAngleMuon",&TrueAngleMuonMVA);
-    tmvareader3.AddSpectator("IsFV",&IsFVMVA);
-    tmvareader3.AddSpectator("IsSand",&IsSandMVA);
-    tmvareader3.AddSpectator("IsAnti",&IsAntiMVA);
-    tmvareader3.AddSpectator("IsBkgH",&IsBkgHMVA);
-    tmvareader3.AddSpectator("IsBkgV",&IsBkgVMVA);
-    tmvareader3.AddSpectator("IsNuE",&IsNuEMVA);
-    tmvareader3.AddSpectator("SelectionFV",&SelectionFVMVA);
-    tmvareader3.AddSpectator("SelectionOV",&SelectionOVMVA);
-    tmvareader3.AddSpectator("IsDetected",&IsDetectedMVA);
-    tmvareader3.AddSpectator("POT",&POTMVA);
-    
-    tmvareader3.AddSpectator("TrackAngle",&TrackAngleTrackMVA);
-    tmvareader3.AddSpectator("TypeOfTrack",&TypeOfTrackMVA);
-    tmvareader3.AddSpectator("CLMuon_Likelihood",&CLMuon_LikelihoodTrackMVA);
-    tmvareader3.AddSpectator("TotalCharge",&TotalChargeTrackMVA);
-    tmvareader3.AddSpectator(Form("(IronDistance+(PlasticDistance/(%3.3f)))",IronCarbonRatio),&EquivalentIronDistanceTrackMVA);
-    tmvareader3.AddSpectator("Momentum",&MomentumTrackMVA);
-    tmvareader3.AddSpectator("IsReconstructed",&IsReconstructedTrackMVA);
-
-  
-    cout<<"End of assigning variables for the read BDT"<<endl;
-    
-    //tmvareader3->BookMVA(TMVA::Types::kBDT,"weights/TMVAClassification_BDT.weights.xml");
-    tmvareader3.BookMVA("BDT method","weights/TMVAClassificationPion_BDT.weights.xml");
-    cout<<"End of initial reading the third BDT"<<endl;
 
 #endif
   //Data will be sent from the wtree -> tmvareader! So we should prepare variables like "EquivalentIronDistance"
@@ -1569,7 +1370,6 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
 
 	  MVAdiscriminant[itrk] = tmvareader.EvaluateMVA("BDT method");
 	  MVAdiscriminant2[itrk] = tmvareader2.EvaluateMVA("BDT method");
-	  MVAdiscriminant3[itrk] = tmvareader3.EvaluateMVA("BDT method");
 	  
 	  if(TypeOfTrack[itrk]==13) MuonTrueMVA=itrk;
 	  if(MVAdiscriminant[itrk]>=MVAdiscriminant[MuonRecMVA]) MuonRecMVA=itrk;
@@ -2564,7 +2364,7 @@ int main(int argc, char ** argv){
        //sprintf(fName,"/home/bquilain/CC0pi_XS/XS/root_input/XSFormat_Run1_%d_Plan_RandomPE.root",i);
 
        //       fName=Form(InNameEvent,i);
-       sprintf(fName,"${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s_Run1_%d_PlanDev.root",(isPM?"PM":"WM"),i);
+       sprintf(fName,"${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s_Run1_%d_Plan.root",(isPM?"PM":"WM"),i);
        cout<<fName<<endl;
        chain->Add(fName);
 #ifdef MVATRAINING

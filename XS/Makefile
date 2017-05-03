@@ -15,19 +15,19 @@ LIB = $(INSTALLREPOSITORY)/libs/libsPM/lib_5.34
 #lib
 
 LIBS 		= $(ROOTGLIBS) $(TMVALIBS)\
-#          -lm $(LIB)/INGRIDEVENTSUMMARY.so $(LIB)/IngridHitSummary.so \
-#          $(LIB)/IngridSimHitSummary.so $(LIB)/IngridSimVertexSummary.so \
-#          $(LIB)/IngridSimParticleSummary.so $(LIB)/BeamInfoSummary.so \
-#          $(LIB)/IngridBasicReconSummary.so $(LIB)/Ingrid1stReducSummary.so \
-#          $(LIB)/IngridTrackSummary.so $(LIB)/NeutInfoSummary.so \
-#          $(LIB)/PMReconSummary.so $(LIB)/PMAnaSummary.so \
+          -lm $(LIB)/INGRIDEVENTSUMMARY.so $(LIB)/IngridHitSummary.so \
+          $(LIB)/IngridSimHitSummary.so $(LIB)/IngridSimVertexSummary.so \
+          $(LIB)/IngridSimParticleSummary.so $(LIB)/BeamInfoSummary.so \
+          $(LIB)/IngridBasicReconSummary.so $(LIB)/Ingrid1stReducSummary.so \
+          $(LIB)/IngridTrackSummary.so $(LIB)/NeutInfoSummary.so \
+          $(LIB)/PMReconSummary.so $(LIB)/PMAnaSummary.so \
 
 INC = inc
 SRC= src
 
-CXXFLAGS += -I$(SRC) -I$(INC) 
+CXXFLAGS += -I$(LIB) -I$(SRC) -I$(INC)
 
-TARGET=XSFileGenerator FinalMCOutputMaker CC0piPlots CC0piSelection CC0piSelection_Likelihood Draw_CompareCalibrationsPM DrawXSPlots DrawXSPlots_Toys GeneratePEAngleDistributions SandSelection_Plan SequentialSand
+TARGET=XSFileGenerator FinalMCOutputMaker CC0piPlots CC0piSelection CC0piSelection_Likelihood Draw_CompareCalibrationsPM DrawXSPlots DrawXSPlots_Toys GeneratePEAngleDistributions SandSelection_Plan SequentialSand XS_CC0pi_Plan
 
 all: $(TARGET)
 
@@ -43,6 +43,7 @@ CC0piPlots: CC0piPlots.o
 XSFileGenerator: XSFileGenerator.o
 FinalMCOutputMaker: FinalMCOutputMaker.o
 SequentialSand: SequentialSand.o
+XS_CC0pi_Plan: XS_CC0pi_Plan.o
 
 %: %.o
 	@echo "Now make $@"
