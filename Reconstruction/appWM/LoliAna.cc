@@ -23,7 +23,6 @@ using namespace std;
 #include <TEventList.h>
 #include <TBranch.h>
 #include <TH1.h>
-
 #include <TGraph.h>
 #include <TGaxis.h>
 #include <TMarker.h>
@@ -109,6 +108,8 @@ int main(int argc,char *argv[]){
   Int_t Nini = 0;
   bool disp = false; 
   bool cosmic = false;
+  bool useINGRID_PID=false;
+
   // to evaluate systematics
   int VertexingPlane  =pln_th;//planes
   double VertexingChannel =ch_th;//mm
@@ -122,7 +123,7 @@ int main(int argc,char *argv[]){
 
   bool requireIngridTrack=true; //ML 2016/11/24 for new option -N
 
-  while ((c = getopt(argc, argv, "r:s:f:cado:i:e:v:N")) != -1) {
+  while ((c = getopt(argc, argv, "r:s:f:cado:i:e:v:NI")) != -1) {
     switch(c){
     case 'r':
       run_number=atoi(optarg);
@@ -164,6 +165,9 @@ int main(int argc,char *argv[]){
       break;
     case 'N':
       requireIngridTrack=false;
+      break;
+    case 'I':
+      useINGRID_PID=true;
       break;
     }
   }
@@ -243,11 +247,14 @@ int main(int argc,char *argv[]){
   TrackIng                     ingtrack;
 
   Hits                        hits;
-
-  LoadMuCL("$(INSTALLREPOSITORY)/Reconstruction/inc/sandmuon_WM_distributions_54k_cut4pe5.root",false);
+ 
+  LoadMuCL("$(INSTALLREPOSITORY)/Reconstruction/inc/sandmuon_WM_distributions_47k_cut4.5pe_normalAngleSlices.root",false);
+  LoadMuCL_I("$(INSTALLREPOSITORY)/Reconstruction/inc/sandmuon_distributions_mc_cut4.5_MIP31.5_wINGRID.root");
   int biasedMuCL=0;
 
   Initialize_INGRID_Dimension();
+
+  //  nevt=Nini+1;
 
   for(int ievt=Nini; ievt<nevt; ievt++){
 
@@ -300,7 +307,7 @@ int main(int argc,char *argv[]){
 	      hits.view  = inghitsum->view;
 	      hits.pln   = inghitsum->pln;
 	      hits.ch    = inghitsum->ch;
-	      hits.pe    = inghitsum->pecorr+inghitsum->pe_cross; //2017-01-17 to read calib info and 2017/03/21 to read crosstalk
+	      hits.pe    = inghitsum->pe+inghitsum->pe_cross; //2017-01-17 to read calib info and 2017/03/21 to read crosstalk
 	      hits.lope  = inghitsum->lope;
 	      hits.isohit= inghitsum->isohit;
 
@@ -361,8 +368,13 @@ int main(int argc,char *argv[]){
 	    hits.view  = inghitsum->view;
 	    hits.pln   = inghitsum->pln;
 	    hits.ch    = inghitsum->ch;
-	    hits.pe    = inghitsum->pe;
+	    // since I did not rerun calibration with the new switching point I use pe instead of pecorr. 
+	    hits.pe    = inghitsum->pe+inghitsum->pe_cross;
 	    hits.lope  = inghitsum->lope;
+	    // now I compute the switch
+	    if(evt->NIngridSimVertexes()==0) //ie data
+	      hits.pe=(0.5*(hits.pe+hits.lope)<43? hits.pe:hits.lope);
+
 	    hits.isohit= inghitsum->isohit;
 
 	    hits.recon_id=i;
@@ -399,7 +411,7 @@ int main(int argc,char *argv[]){
       if(!fPMAna(15,TrackMatching,VertexingPlane,VertexingChannel,AngleCut,TransverseCut,nINGRIDPlanes,requireIngridTrack))continue;
      
       // isoHitCut is the minimal number of isolated it I require
-      int isoHitCut=3;
+      int isoHitCut=2;
       //      cout<<"\nMatching done!"<<endl;
       for(int i=0;i<pmtrack.size();i++){
 	//cout<<"reco="<<i<<" nb of tracks="<<pmtrack[i].trk.size()<<endl;	
@@ -435,7 +447,7 @@ int main(int argc,char *argv[]){
 	vact[6] += veract(xpln,ypln,xch,ych,3,80 ,1);
 	vact[7] += veract(xpln,ypln,xch,ych,6,160,1);
 
-	pmanasum -> Ntrack = pmtrack[i].Ntrack;
+	pmanasum -> Ntrack = min(pmtrack[i].Ntrack,INGRIDRECON_MAXTRACKS);
 	pmanasum -> Ningtrack = pmtrack[i].Ningtrack;
 	pmanasum -> vetowtracking = pmtrack[i].vetowtracking;
 	pmanasum -> edgewtracking = pmtrack[i].edgewtracking;
@@ -491,7 +503,7 @@ int main(int argc,char *argv[]){
 	pmanasum->nhits=0;
 	for(int itrk=0;itrk<INGRIDRECON_MAXTRACKS;itrk++) pmanasum->nhitTs[itrk]=0;
 
-	for(int t=0;t<pmtrack[i].trk.size();t++){
+	for(int t=0;t<min((int)pmtrack[i].trk.size(),INGRIDRECON_MAXTRACKS);t++){
 
 	  pmanasum -> x           .push_back(pmtrack[i].trk[t].x);
 	  pmanasum -> y           .push_back(pmtrack[i].trk[t].y);
@@ -527,7 +539,7 @@ int main(int argc,char *argv[]){
 	  pmanasum -> pdg         .push_back(pmtrack[i].trk[t].pdg);
 	  pmanasum -> trkpe       .push_back(pmtrack[i].trk[t].trkpe);
 
-	  if(!calcMuCL(pmtrack[i].trk[t])) {
+	  if(!calcMuCL(pmtrack[i].trk[t],isoHitCut,useINGRID_PID))  {
 	    biasedMuCL++;
 	    pmanasum->mucl .push_back( -1);
 	  }

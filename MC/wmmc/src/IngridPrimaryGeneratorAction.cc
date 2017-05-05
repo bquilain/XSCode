@@ -476,7 +476,7 @@ void IngridPrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
 
       if(CC==0)continue;
       if(Nsuccess_sand==0) continue;
-      std::cout << "Nsuccess= " << Nsuccess_sand << std::endl;
+      //      std::cout << "Nsuccess= " << Nsuccess_sand << std::endl;
       //      runaction->hLoopNum->Fill(TMath::Log10(Nsuccess_sand));
     }
 

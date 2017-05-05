@@ -2,6 +2,8 @@ In this folder we find the libraries for the WM software.
 
 LAST UPDATE : Matthieu L. 2016/10/10
 
+This version has been put to the semi-offline machine before T2K run8.
+It corresponds (it should) to ingrid git commit 8ae03c
 
 ********  FOLDER INFO  ********
 

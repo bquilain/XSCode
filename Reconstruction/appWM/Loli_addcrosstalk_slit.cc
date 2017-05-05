@@ -93,8 +93,8 @@ int main(int argc,char *argv[]){
   bool disp = false; 
   bool cosmic = false;
   Int_t seed =0;
-  double crossrate_submod0  =0.02;
-  double crossrate_submod123=0.008;
+  double crossrate_submod0  =0.0154; // from TN 7.3.3
+  double crossrate_submod123=0.0067; // from TN 7.3.3
   while ((c = getopt(argc, argv, "r:s:f:cado:i:t:y:z:")) != -1) {
     switch(c){
     case 'r':
