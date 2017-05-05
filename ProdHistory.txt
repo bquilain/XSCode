@@ -8,7 +8,7 @@ Requests for next prod:
 
 - add a variable bool IsGrid for the WM to know if the true vertex is
 scinti or water
-       
+  -> I have added a bool IsSciBkg for that.
 
 - redefine FSIInt
   -> FSIInt=12 is added (scintillator bkg)
@@ -24,4 +24,6 @@ and QGSP_BIC 3.3 in WM)
 - MVA-based PID
   -> available and ready for PM
 
-to be continued...
+Ready for Production 1 : May 2017
+
+-------------------------------------------------

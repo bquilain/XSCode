@@ -64,7 +64,7 @@ int NCh=24;
 int NChPM=32;
 int NChWM=40;
 double IronCarbonRatio=7.87/1.03;
-double DNRateWM=2.4;
+double DNRateWM=2.3;
 double MeV2PE=46.0;
 double MeV2PEPM=38.6;
 double Beam[3]={0,-TMath::Sin(3.8*TMath::Pi()/180.),TMath::Cos(3.8*TMath::Pi()/180.)};
@@ -81,6 +81,7 @@ const int EndSubRun=0;//300
 const int StartRunList=14;//Which list will be read (14=>14000.txt). Necessary to use only run processed
 const int EndRunList=15;//Which list will be read (14=>14000.txt). Necessary to use only run processed
 double NMCfiles=500; // up to now only 1000 are available with NEUT 5.3.6
+
 double DataPOT=0.58;//In units of 10^21 POT
 const int StartError=0;
 const int EndError=0;//17;//34;//34;//41 for 2012 ;//17
@@ -118,7 +119,7 @@ const int NBinsTrueEnergy=6;
 const int NBinsRecEnergy=6;
 double BinningTrueEnergy[NBinsTrueEnergy+1];
 double BinningRecEnergy[NBinsRecEnergy+1];
-const int NFSIs=12;//cc0pi+0p,cc0pi+1p,cc0pi+morep,cc1pi,cc1pi0,ccother,nc,+all bkg
+const int NFSIs=13;//cc0pi+0p,cc0pi+1p,cc0pi+morep,cc1pi,cc1pi0,ccother,nc,+all bkg
 const int NBinsTrueMom=5;
 const int NBinsTrueAngle=5;
 const int NBinsRecMom=17;
@@ -150,7 +151,7 @@ double BinningRecAngle[NBinsRecAngle+1];
 
 void InitializeGlobal(bool PM=true){
 
-  Initialize_INGRID_Dimension();
+  if(!PM)  Initialize_INGRID_Dimension();
 
   for(int i=0;i<=NBinsEnergyFlux;i++){
     if(i==0) BinningEnergyFlux[i]=0;

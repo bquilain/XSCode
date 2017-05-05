@@ -19,8 +19,8 @@ class Xsec{
   void SetDetector(bool);
   bool GetDetector();
 
-  int DetermineFSI(int IsSand,int IsAnti,int IsNuE,int IsBkgH,int IsBkgV,IngridEventSummary * evt);
-  void DetermineNuType(bool& IsSand,bool& IsAnti,bool& IsNuE,bool& IsBkgH,bool& IsBkgV,int nutype, int intmode);
+  int DetermineFSI(int IsSand,int IsAnti,int IsNuE,int IsBkgH,int IsBkgV, int IsSciBkg,IngridEventSummary * evt);
+  void DetermineNuType(bool& IsSand,bool& IsAnti,bool& IsNuE,bool& IsBkgH,bool& IsBkgV, bool & IsSciBkg,int nutype, int intmode, double* pos);
     
   void LoadMuCLDistributions();
   

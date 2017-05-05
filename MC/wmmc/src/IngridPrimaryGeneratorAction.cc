@@ -26,7 +26,7 @@
 #define OFFSETPM 120. 	// Gap between horizotal modules and proton modules (cm)
 //#define OFFSETLOLI 120.95 	// Gap between horizotal modules and proton modules (cm)
 //#define OFFSETLOLI 144.95 	//120.95 + 24.0 Gap between horizotal modules and proton modules (cm)
-#define OFFSETLOLI 143.3 	//120. + 23.3 Gap between horizotal modules and proton modules (cm)
+#define OFFSETLOLI 145  	//120. + 50/2  Gap between horizotal module center and water tank front (cm)
 #define OFFSETLOLIBG 150.3 	//120. + 30.3 Gap between horizotal modules and proton modules (cm)
 
 // IRON 120x120x6.5 -------------------------
@@ -405,8 +405,8 @@ void IngridPrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
 
 
     if(fdid==2 && module_mode==WAGASCI){
-      //       pos[2]=46.6*(G4UniformRand());     // 0 < 46.6*rand < 46.6
-      pos[2]=48.0*(G4UniformRand());     // 0 < 48.0*rand < 48.0
+      // ML 2017/05/05 the depth of the water tank is 50cm
+      pos[2]=50.0*(G4UniformRand());  
     }
 
     if(fdid==3 && module_mode==WAGASCIBG){

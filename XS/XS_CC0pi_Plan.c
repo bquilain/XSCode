@@ -248,6 +248,7 @@ bool IsAnti=false;
 bool IsNuE=false;
 bool IsBkgH=false;
 bool IsBkgV=false;
+bool IsSciBkg=false;
 float POT;
 float Enu;
 float TrueAngleMuon;
@@ -561,7 +562,8 @@ int main(int argc, char **argv)
   wtree              -> Branch   ("IsAnti",&IsAnti,"IsAnti/O");
   wtree              -> Branch   ("IsNuE",&IsNuE,"IsNuE/O");
   wtree              -> Branch   ("IsBkgH",&IsBkgH,"IsBkgH/O");
-  wtree              -> Branch   ("IsBkgV",&IsBkgV,"IsBkgV/O"); 
+  wtree              -> Branch   ("IsBkgV",&IsBkgV,"IsBkgV/O");
+  wtree              -> Branch   ("IsSciBkg",&IsSciBkg,"IsSciBkg/O"); 
   wtree              -> Branch   ("POT",&POT,"POT/F");
   wtree              -> Branch   ("GoodSpill",&GoodSpill,"GoodSpill/I");
   wtree              -> Branch   ("Spill",&Spill,"Spill/I");
@@ -628,6 +630,7 @@ int main(int argc, char **argv)
   wtreeMVA              -> Branch   ("IsNuE",&IsNuE,"IsNuE/O");
   wtreeMVA              -> Branch   ("IsBkgH",&IsBkgH,"IsBkgH/O");
   wtreeMVA              -> Branch   ("IsBkgV",&IsBkgV,"IsBkgV/O"); 
+  wtreeMVA              -> Branch   ("IsSciBkg",&IsSciBkg,"IsSciBkg/O"); 
   wtreeMVA              -> Branch   ("POT",&POT,"POT/F");
   wtreeMVA              -> Branch   ("GoodSpill",&GoodSpill,"GoodSpill/I");
   wtreeMVA              -> Branch   ("Spill",&Spill,"Spill/I");
@@ -779,8 +782,10 @@ int main(int argc, char **argv)
 	 TrueMomentumMuon=MuonTrue[0];
 	 IsFV=Rec->Reconstruction::IsFV(mod,TrueVertexPosition[0],TrueVertexPosition[1],TrueVertexPosition[2]);
 
-	 XS->Xsec::DetermineNuType(IsSand,IsAnti,IsNuE,IsBkgH,IsBkgV,simver->nutype,simver->mod);
-	 FSIInt=XS->Xsec::DetermineFSI(IsSand,IsAnti,IsNuE,IsBkgH,IsBkgV,evt);
+	 XS->Xsec::DetermineNuType(IsSand,IsAnti,IsNuE,IsBkgH,IsBkgV,IsSciBkg,simver->nutype,simver->mod,TrueVertexPosition);
+	 FSIInt=XS->Xsec::DetermineFSI(IsSand,IsAnti,IsNuE,IsBkgH,IsBkgV,IsSciBkg,evt);
+
+	 // cout<<IsSciBkg<<" "<<TrueVertexPosition[0]<<" "<<TrueVertexPosition[1]<<" "<<TrueVertexPosition[2]+120<<endl;
 
 	 if(FSIInt==3){
 	   vector<double> PionTrue = Rec->Reconstruction::GetTruePionInformation(evt);
@@ -792,7 +797,7 @@ int main(int argc, char **argv)
 	 if(IsBkgH || IsBkgV) weight=norm*totcrsne*pow(10.,-38.)*6.02*pow(10.,23.)*7.87*58.5;
 	 else if(IsSand) weight=norm*totcrsne*pow(10.,-38.)*6.02*pow(10.,23.)*(2.2*470);
 	 else  if(PM) weight=norm*totcrsne*pow(10.,-38.)*6.02*pow(10.,23.)*46.2;
-	 else weight=norm*totcrsne*pow(10.,-38.)*6.02*pow(10.,23.)*46.6;//for WM
+	 else weight=norm*totcrsne*pow(10.,-38.)*6.02*pow(10.,23.)*50.;//for WM - ML 2017/05/05 the water tank is 50cm deep
       }
       else weight = Cor->GetMCCorrections(1,mod);
 
