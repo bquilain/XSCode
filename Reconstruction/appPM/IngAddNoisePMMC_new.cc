@@ -25,8 +25,8 @@ using namespace std;
 #include "IngridHitSummary.h"
 #include "IngridSimHitSummary.h"
 //##### INGRID Software ########
-#include "INGRID_Dimension.cxx"
 #include "INGRID_BadCh_mapping.cxx"
+#include "INGRID_Dimension.cxx"
 INGRID_BadCh_mapping* IngBadChMap;
 
 bool Is_Bad_Channel(IngridHitSummary* thit);
