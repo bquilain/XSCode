@@ -104,7 +104,6 @@ vector <Hit3D> Reconstruction::ApplyPEError(vector <Hit3D> Vec, double angle){
 int Reconstruction::SelectTrackSample(bool pm_stop, bool Geom, bool has_ingrid, bool ingrid_stop, int ing_last_pln){
   int TrackSample;
 
-
   if(has_ingrid){
     if(ingrid_stop){
       if(ing_last_pln>=3) TrackSample=3; // stopping

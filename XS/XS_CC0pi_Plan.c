@@ -242,7 +242,6 @@ int Num_Int=-1;
 int nTracks=-1;
 float weight=1;
 bool IsFV=false;
-bool IsDetected=false;
 bool IsSand=false;
 bool IsAnti=false;
 bool IsNuE=false;
@@ -371,7 +370,6 @@ void ResetInputVariables(){
   TrueAnglePion=-1;
   TrueMomentumPion=-1;
   IsFV=false;
-  IsDetected=false;
   FSIInt=-1;
   Num_Int=-1;
   nTracks=-1;
@@ -825,7 +823,7 @@ int main(int argc, char **argv)
       //cout<<NIngBasRec<<endl;
       NIngBasRec= evt->NPMAnas();
       
-      if(NIngBasRec==0){
+      if(NIngBasRec==0){//Case of no reconstruction!
 	wtree->Fill();
 	ResetInputVariables();
       }
@@ -880,10 +878,9 @@ int main(int argc, char **argv)
 	  bool Geom=false;
 
 	  vector <RecTrack> VRecTrack;
-	  VRecTrack.clear();	
-
-	  IsDetected=true;
+	  VRecTrack.clear();
 	  VIsDetected=true;
+	  //cout<<"In IngBasRec, num of bas rec="<<irec<<", Is Detected="<<VIsDetected<<endl;
 	////////////////////////////////////////////////////////////////////////////////////////////	
 
 
@@ -1646,7 +1643,7 @@ int main(int argc, char **argv)
 #endif
 	
 	}//Tracks
-	
+	//xcout<<"Is Detected="<<VIsDetected<<endl;
 	wtree->Fill();
 	ResetInputVariables();	
 	
@@ -1658,8 +1655,7 @@ int main(int argc, char **argv)
     cout<<"writing"<<endl;
     cout<<"Low CL="<<LowCL<<", High="<<HighCL<<endl;
     cout<<"Nb Low CL="<<nLowCL<<", Nb High="<<nHighCL<<endl;
-    wfile->cd();
-    wtree->Fill();    
+
 #ifdef DEBUG
     /*
     f_PMIng_Plan->SetNpx(300);
