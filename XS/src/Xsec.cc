@@ -73,7 +73,7 @@ bool Xsec::GetDetector(){
 
 void Xsec::Initialize(){
 
-  InitializeGlobal();
+  InitializeGlobal(_isPM);
  //ML 2017-01-25
   // commented out and done in setup.h
   /*for(int i=0;i<=NBinsEnergyFlux;i++){
@@ -276,16 +276,75 @@ void Xsec::Initialize(){
 }
 
 
-void Xsec::DetermineNuType(bool&IsSand,bool&IsAnti,bool&IsNuE,bool&IsBkgH,bool&IsBkgV,int nutype, int intmode){
+void Xsec::DetermineNuType(bool&IsSand,bool&IsAnti,bool&IsNuE,bool&IsBkgH,bool&IsBkgV,bool &IsSciBkg,int nutype, int intmode,double* VertexPosition){
   IsSand=0;
   IsAnti=0;
   IsNuE=0;
   IsBkgH=0;
   IsBkgV=0;
+  IsSciBkg=0;
   if((_isPM && intmode==16) || (!_isPM && intmode==17)){
     //if(nutype==1) return 0;
     if(nutype==2) IsAnti=1;
     else if(nutype==3) IsNuE=1;
+    else if(nutype==1){
+      // let's determine if the vertex is in scintillator bars
+
+      double x=VertexPosition[0];//cm
+      double y=VertexPosition[1];//cm
+      double z=VertexPosition[2]+120;//cm
+
+      double xch,ych,zch;
+      bool foundXY=false, foundZ=false;
+
+      for(int ipln=0;ipln<PLNMAX;ipln++){
+        
+	foundZ=false;
+	int grid;
+ 
+	for(int iview=0;iview<VIEWMAX;iview++){
+	  IngD->get_pos_loli(15,iview,ipln,0,&xch,&ych,&zch); // scinti planes
+	  if(fabs(z-zch)<loli_scinti_thick/2) {foundZ=true;grid=0;}
+
+	  IngD->get_pos_loli(15,iview,ipln,40,&xch,&ych,&zch); // grid 1
+	  if(fabs(z-zch)<loli_scinti_width/2) {foundZ=true;grid=1;}
+
+	  IngD->get_pos_loli(15,iview,ipln,60,&xch,&ych,&zch); // grid 2
+	  if(fabs(z-zch)<loli_scinti_width/2) {foundZ=true;grid=2;}
+	}
+
+	if(foundZ){
+	  if(grid==0){ // plane
+	    bool foundX=false,foundY=false;
+	    for (int ich=0;ich<40;ich++){
+	      IngD->get_pos_loli(15,0,ipln,ich,&xch,&ych,&zch);
+	      if(fabs(y-ych)<loli_scinti_width/2 && fabs(z-zch)<loli_scinti_thick/2) {foundY=true;}
+	      
+	      IngD->get_pos_loli(15,1,ipln,ich,&xch,&ych,&zch);
+	      if(fabs(x-xch)<loli_scinti_width/2 && fabs(z-zch)<loli_scinti_thick/2) {foundX=true;}	
+	    }
+	    if(foundX || foundY) IsSciBkg=true; // both can't be simultaneously satisfied
+	  }
+	  else {
+	    bool foundX=false,foundY=false;
+	    for (int ich=0;ich<40;ich++){
+	      IngD->get_pos_loli(15,0,ipln,ich,&xch,&ych,&zch);
+	      if(fabs(y-ych)<loli_scinti_thick/2 && fabs(z-zch)<loli_scinti_width/2) {foundY=true;}
+	    }
+	    for (int ich=0;ich<CHMAX;ich++){
+	      IngD->get_pos_loli(15,1,ipln,ich,&xch,&ych,&zch);
+	      if(fabs(x-xch)<loli_scinti_thick/2 && fabs(z-zch)<loli_scinti_width/2) {foundX=true;}
+	    }
+	    if(foundX || foundY) IsSciBkg=true; 
+	  }
+	
+	  break;
+	}
+      }
+      
+      if (fabs(x)>50 || fabs(y)>50) IsSciBkg=false;
+
+    }
   }
   else if(intmode>=0 && intmode<7) IsBkgH=1;
   else if(intmode>=7 && intmode<14) IsBkgV=1;
@@ -293,7 +352,7 @@ void Xsec::DetermineNuType(bool&IsSand,bool&IsAnti,bool&IsNuE,bool&IsBkgH,bool&I
 }
 
 
-int Xsec::DetermineFSI(int IsSand,int IsAnti,int IsNuE,int IsBkgH,int IsBkgV,IngridEventSummary * evt){
+int Xsec::DetermineFSI(int IsSand,int IsAnti,int IsNuE,int IsBkgH,int IsBkgV,int IsSciBkg,IngridEventSummary * evt){
   int FSIMuons=0;int FSIPions=0;int FSIProtons=0;int FSIOther=0;int FSINeutralPions=0;
   int FSIInt;
   IngridSimParticleSummary * SimPart;
@@ -332,7 +391,8 @@ int Xsec::DetermineFSI(int IsSand,int IsAnti,int IsNuE,int IsBkgH,int IsBkgV,Ing
   else if(IsBkgV) FSIInt=9;
   else if(IsAnti) FSIInt=10;
   else if(IsNuE) FSIInt=11;
-  
+  else if(IsSciBkg) FSIInt=12;
+
   return FSIInt;
 }
 

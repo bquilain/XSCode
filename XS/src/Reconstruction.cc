@@ -2785,8 +2785,11 @@ bool Reconstruction::IsFV(int mod, double posx, double posy, double posz){
   bool IsFV=false;
   //if((mod==16) && (fabs(posx)<=50) && (fabs(posy)<=50) && posz>-152 && (posz<-87.5)) IsFV=true;
   if((_isPM && mod==16) && (fabs(posx)<=50) && (fabs(posy)<=50) && (posz>=-156.4) && (posz<-85)) IsFV=true;
-  else if((!_isPM && mod==17) && (fabs(posx)<=40) && (fabs(posy)<=40) && (posz>=-139.65) && (posz<-102.9)) IsFV=true; 
+  else if((!_isPM && mod==17) && (fabs(posx)<=40) && (fabs(posy)<=40) && (posz>=-139.55) && (posz<-101.3)) IsFV=true; 
   // ML: computation of z-fiducial limits done in Notebook1, p55
+  // ML 2017/05/05 computation redone with the measured position of scintis
+
+  //  *** should be redefined as soon as we change the FV def in the Syst studies ***
 
   return IsFV;
 }

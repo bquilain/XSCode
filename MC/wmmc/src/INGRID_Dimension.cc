@@ -23,7 +23,7 @@ void Initialize_INGRID_Dimension(){
   for(int i=0;i<t->GetEntries();i++){
     t -> GetEntry(i);
     if(ch==0){
-        xy0 = (xy1+xy3)/2./10. + 1.;//offset
+        xy0 = (xy1+xy3)/2./10. ;//offset -- ML 2017/05/05 i remove the +1.
     }
     if(ch<40){
       position_xy[view][pln][ch] = (xy1+xy3)/2./10.; //mm->cm

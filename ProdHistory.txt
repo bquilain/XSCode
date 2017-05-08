@@ -3,13 +3,27 @@ Production 0: early February 2017
 ------------------------------------------------
 
 Requests for next prod:
-- correct the peaks in the d-mu distribution
+- correct the peaks in the d-mu distribution 
+  -> they are due to proton misidentified as a muon
+
 - add a variable bool IsGrid for the WM to know if the true vertex is
 scinti or water
+  -> I have added a bool IsSciBkg for that.
+
 - redefine FSIInt
+  -> FSIInt=12 is added (scintillator bkg)
+  -> Redefinition of CCother to isolate CC1pi0
+
 - use the same physics list in both MC (in prod 0: QGSP_BERT 3.3 in PM
 and QGSP_BIC 3.3 in WM)
-- check OOFV weights
-- MVA-based PID
+  -> QGSP_BERT 3.3 for the WM as well
 
-to be continued...
+- check OOFV weights
+  -> a sand muon loop has been added to have more stats
+
+- MVA-based PID
+  -> available and ready for PM
+
+Ready for Production 1 : May 2017
+
+-------------------------------------------------

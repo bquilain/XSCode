@@ -2480,8 +2480,8 @@ void reCalcIsohit(PMTrack& pmtrk, int isoHitCut){
 
 };
 
-TH1D* plan_cumul,*grid_cumul;
-int Nbins_plan,Nbins_grid;
+TH1D* plan_cumul,*grid_cumul, *slice_cumul[3], *INGRID_cumul;
+int Nbins_plan,Nbins_grid,Nbins_slice,Nbins_INGRID;
 
 void LoadMuCL(char* Name, bool useGrid){
   TFile* myfile=new TFile(Name,"open");
@@ -2489,13 +2489,30 @@ void LoadMuCL(char* Name, bool useGrid){
   grid_cumul=(TH1D*) myfile->Get((useGrid?"dEdzGrid_cumul":"dEdzPlan_cumul"));
   plan_cumul->SetDirectory(0);
   grid_cumul->SetDirectory(0);
+  for(int i=0;i<3;i++){
+    slice_cumul[i]=(TH1D*) myfile->Get(Form("dEdz_slice%d_cumul",i));
+    slice_cumul[i]->SetDirectory(0);
+  }
   myfile->Close();
 
   Nbins_plan=plan_cumul->GetNbinsX();
   Nbins_grid=grid_cumul->GetNbinsX();
+  Nbins_slice=slice_cumul[0]->GetNbinsX();
 
-  if( plan_cumul->GetDirectory()==0 && grid_cumul->GetDirectory()==0)
+  if(slice_cumul[0]->GetDirectory()==0 && slice_cumul[1]->GetDirectory()==0 && slice_cumul[2]->GetDirectory()==0)
     cout<<"MuCL distributions loaded!"<<endl;
+};
+
+void LoadMuCL_I(char* Name){
+  TFile* myfile=new TFile(Name,"open");
+  INGRID_cumul=(TH1D*) myfile->Get("dEdzINGRID_cumul");
+  INGRID_cumul->SetDirectory(0);
+  myfile->Close();
+
+  Nbins_INGRID=plan_cumul->GetNbinsX();
+
+  if(INGRID_cumul->GetDirectory()==0 )
+    cout<<"MuCL-INGRID distributions loaded!"<<endl;
 };
 
 
@@ -2505,8 +2522,13 @@ double dzNew(double angle, double theta, bool grid){
   return l/cos(angle)/(1+fabs(tan(theta))/tanThetaLim);
 };
 
+double dzNew_INGRID(double angle, double theta){
+  double l=1.;//cm
+  double tanThetaLim=5./1.; // transverse length / longitudinal length
+  return l/cos(angle)/(1+fabs(tan(theta))/tanThetaLim);
+};
 
-bool calcMuCL(Trk& trk){
+bool calcMuCL(Trk& trk, int isoHitCut, bool useINGRIDhits){
 
   // peWMPln is for later use if I put all hits of a given plane together to compute mucl
   // but it will cause trouble for vertical tracks !!
@@ -2519,24 +2541,42 @@ bool calcMuCL(Trk& trk){
   for(int ihit=0;ihit<trk.hit.size();ihit++){
     if(!trk.hit[ihit].isohit) continue;
     if(trk.hit[ihit].pe<4.5) continue;
-    if(trk.hit[ihit].mod!=15) continue; // INGRID PID not implemented yet
 
     double cl;
     double angle2D=fabs((trk.hit[ihit].view==0? trk.thetax: trk.thetay));
     double angle3D=trk.angle;
     bool grid=(trk.hit[ihit].view==0? (trk.hit[ihit].pln%3!=0) : (trk.hit[ihit].pln%3!=1));
-    double dZ;
+    double dZ,normalAngle;
+
+    if(trk.hit[ihit].mod==15){
+      if(grid){
+	normalAngle=180/pi*acos(tan(pi/180*angle2D)*cos(pi/180*angle3D));
+	dZ=dzNew(pi/180*angle3D,pi/180*angle2D,true);
+	//dZ=fmin(25.,3/sin(pi*angle/180));
+	//cl=grid_cumul->GetBinContent(min(grid_cumul->GetXaxis()->FindBin(trk.hit[ihit].pe/dZ),Nbins_grid));
+      }
+      else{
+	normalAngle=angle3D;
+	dZ=dzNew(pi/180*angle3D,pi/180*angle2D,false);
+	//dZ=fmin(25.,3/cos(pi*angle/180));
+	//cl=plan_cumul->GetBinContent(min(plan_cumul->GetXaxis()->FindBin(trk.hit[ihit].pe/dZ),Nbins_plan));      
+      }
+    }
+    else {
+      dZ=dzNew_INGRID(pi/180*angle3D,pi/180*angle2D);
+      normalAngle=angle3D;
+    }
     
-    if(grid){
-      dZ=dzNew(pi/180*angle3D,pi/180*angle2D,true);
-      //dZ=fmin(25.,3/sin(pi*angle/180));
-      cl=grid_cumul->GetBinContent(min(grid_cumul->GetXaxis()->FindBin(trk.hit[ihit].pe/dZ),Nbins_grid));
-    }
-    else{
-      dZ=dzNew(pi/180*angle3D,pi/180*angle2D,false);
-      //dZ=fmin(25.,3/cos(pi*angle/180));
-      cl=plan_cumul->GetBinContent(min(plan_cumul->GetXaxis()->FindBin(trk.hit[ihit].pe/dZ),Nbins_plan));      
-    }
+    int normalAngleSlice;
+    if(normalAngle<=70) normalAngleSlice=0;
+    else if(normalAngle<=80) normalAngleSlice=1;
+    else normalAngleSlice=2;
+
+    if(trk.hit[ihit].mod==15)
+      cl=slice_cumul[normalAngleSlice]->GetBinContent(min(slice_cumul[normalAngleSlice]->GetXaxis()->FindBin(trk.hit[ihit].pe/dZ*3),Nbins_slice));      
+    else if(useINGRIDhits)
+      cl=INGRID_cumul->GetBinContent(min(INGRID_cumul->GetXaxis()->FindBin(trk.hit[ihit].pe/dZ),Nbins_INGRID));      
+
     Nhits++;  
     CL*=cl;  
     //    if(CL>1) cout<<"**CL>1 "<<CL<<" "<<cl<<" pe/dz="<<trk.hit[ihit].pe/dZ<<" "<<dZ<<" grid? "<<grid<<endl;
@@ -2553,11 +2593,11 @@ bool calcMuCL(Trk& trk){
   muCL*=CL;
   
   //if(Nhits<3) cout<<"**** less than 3 hits for mucl ****, mucl="<<muCL<<endl;
-  //if(muCL<0 || muCL>1) cout<<"*** bad value for muCL : "<<muCL<<" "<<CL<<" "<<Nhits<<" ***"<<endl;
+  //if(muCL<0 || muCL>1) cout<<"*** bad value for muCLA : "<<muCL<<" "<<CL<<" "<<Nhits<<" ***"<<endl;
 
 
   trk.mucl=muCL;
-  return (Nhits>=3);
+  return (Nhits>=isoHitCut);
     
 }
 

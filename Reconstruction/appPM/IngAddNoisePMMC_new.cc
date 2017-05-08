@@ -31,7 +31,6 @@ INGRID_BadCh_mapping* IngBadChMap;
 
 bool Is_Bad_Channel(IngridHitSummary* thit);
 
-
 INGRID_Dimension* fINGRID_Dimension;
 
 FileStat_t fs;

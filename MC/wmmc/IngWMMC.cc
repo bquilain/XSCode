@@ -126,8 +126,8 @@ int main(int argc, char** argv)
   // particles and physics processes
   //runManager-> SetUserInitialization(new ND280mPhysicsList);
   //runManager-> SetUserInitialization(new QGSP);
-  //runManager-> SetUserInitialization(new QGSP_BERT);
-  runManager-> SetUserInitialization(new QGSP_BIC);
+  runManager-> SetUserInitialization(new QGSP_BERT); // ML 2017/05/02
+  //runManager-> SetUserInitialization(new QGSP_BIC);
   G4cout << "PhysicsList Init OK" << G4endl;
 
 	IngridRunAction * rac = new IngridRunAction(output);
