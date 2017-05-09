@@ -2,6 +2,9 @@
 //For no, we have a bug correction in this code, that set CL=1e-30 if this is 0. But try to avoid this if possible -> Check the CUmulative distributions
 //For now, isreconstructed is not systematically applied
 //For now, I removed the track witdth and matching parameters!
+//CAREFUL: I REMOVED THE FIRST MC FILE!
+
+// TO FOLLOW THE IMPORTANT STEPS OF THE CODE: SEARCH FOR THE KEYWORD "KEY" IN THE COMMENTS
 
 #include<iostream>
 #include<sstream>
@@ -60,8 +63,8 @@ using namespace std;
 //#define DEBUG
 //#define DEBUG2
 //#define DEBUG3
-#define MVATRAINING
-//#define MVAREADING
+//#define MVATRAINING
+#define MVAREADING
 //#define TEMPORARY
 //#define DEBUGMVA
 
@@ -191,8 +194,37 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
   NeutrinoFlux->SetDirectory(0);//Detach the histogram from the TFile (one can close the file)
   f->Close();
 
+  //TO DO
+  const int nCuts=7;
+  const string myCuts[nCuts]={"Generated","Reconstruted + one INGRID track","FCFV","CC1pi Selection","2 or 3 tracks","MuTrk is INGRID stop/through","MuTrk is INGRID stop"};
+  double nEventsInter[nCuts][NFSIs]={{0}};
+  double nEvents[nCuts]={0};
+  TH1D* CutEfficiency=new TH1D("Efficiency","Efficiency",nCuts,0,nCuts);
+  TH1D* CutPurity=new TH1D("Purity","Purity",nCuts,0,nCuts);
+  for(int i=0;i<nCuts;i++){
+    CutEfficiency->GetXaxis()->SetBinLabel(i+1,myCuts[i].c_str());
+    CutPurity->GetXaxis()->SetBinLabel(i+1,myCuts[i].c_str());
+  }
+  CutEfficiency->SetMarkerColor(kBlue);
+  CutPurity->SetMarkerColor(kRed);
+  CutEfficiency->SetLineColor(kBlue);
+  CutPurity->SetLineColor(kRed);
+  CutEfficiency->SetMarkerStyle(2);
+  CutPurity->SetMarkerStyle(2);
+  //END TO DO
+
+
   
-  ///////////////////////////////NOW, TAKE CARE OF THE SELECTION
+  //##################################################################
+  //##################################################################
+  // 0. PREPARE THE TREE FOR READING, B. QUILAIN 2017/05/08
+  //##################################################################
+  //##################################################################
+
+  
+  //##################################################################
+  // 0.0 PREPARE THE INPUT TREE FROM XS_CC0PI_PLAN
+
   int FSIInt;//Final state true information
   int Num_Int;//Interaction number
   int nTracks;//number of tracks reconstructed per vertex
@@ -309,10 +341,154 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
  
     }      
   }
+  // 0.0. END
+  //##################################################################
+
+
+  
+  //##################################################################
+  // 0.1 PREPARE THE INPUT TREE IF WE USE MVA PID (BDT CURRENTLY)
+
+#ifdef MVAREADING
+    cout<<"Start reading the BDT"<<endl;
+    //I do not use a pointer because of memory leak in TMVA package for now, B. Quilain
+    TMVA::Reader tmvareader;
+    
+    //Add the relevant variables
+    float SampleTrackMVA;
+    float EnergyDepositionMVA[LimitHits];
+    float TransverseWidthMVA[LimitHits];
+    //float EnergyDepositionSplineMVA[LimitHits];
+    tmvareader.AddVariable("Sample",&SampleTrackMVA);
+    for(int ihit=0;ihit<LimitHits;ihit++){
+#ifdef INTERPOLATION
+      tmvareader.AddVariable(Form("EnergyDepositionSpline_hit%d",ihit),&(EnergyDepositionMVA[ihit]));
+#else
+      tmvareader.AddVariable(Form("EnergyDeposition_hit%d",ihit),&(EnergyDepositionMVA[ihit]));
+#endif
+      tmvareader.AddVariable(Form("TransverseWidthNonIsolated_hit%d",ihit),&(TransverseWidthMVA[ihit]));      
+    }
+    
+    //Define spectator
+    float TrackAngleTrackMVA, TypeOfTrackMVA, CLMuon_LikelihoodTrackMVA, TotalChargeTrackMVA, EquivalentIronDistanceTrackMVA, MomentumTrackMVA, IsReconstructedTrackMVA;
+    float FSIIntMVA, SpillMVA, GoodSpillMVA, NewEventMVA, nIngBasRecMVA, InteractionTypeMVA, EnuMVA, TrueMomentumMuonMVA, TrueAngleMuonMVA, IsFVMVA, IsSandMVA, IsAntiMVA, IsBkgHMVA, IsBkgVMVA, IsNuEMVA, SelectionFVMVA, SelectionOVMVA, IsDetectedMVA, POTMVA;
+   
+    tmvareader.AddSpectator("FSIInt",&FSIIntMVA);
+    tmvareader.AddSpectator("Spill",&SpillMVA);
+    tmvareader.AddSpectator("GoodSpill",&GoodSpillMVA);
+    tmvareader.AddSpectator("NewEvent",&NewEventMVA);
+    tmvareader.AddSpectator("nIngBasRec",&nIngBasRecMVA);
+    tmvareader.AddSpectator("InteractionType",&InteractionTypeMVA);
+    tmvareader.AddSpectator("Enu",&EnuMVA);
+    tmvareader.AddSpectator("TrueMomentumMuon",&TrueMomentumMuonMVA);
+    tmvareader.AddSpectator("TrueAngleMuon",&TrueAngleMuonMVA);
+    tmvareader.AddSpectator("IsFV",&IsFVMVA);
+    tmvareader.AddSpectator("IsSand",&IsSandMVA);
+    tmvareader.AddSpectator("IsAnti",&IsAntiMVA);
+    tmvareader.AddSpectator("IsBkgH",&IsBkgHMVA);
+    tmvareader.AddSpectator("IsBkgV",&IsBkgVMVA);
+    tmvareader.AddSpectator("IsNuE",&IsNuEMVA);
+    tmvareader.AddSpectator("SelectionFV",&SelectionFVMVA);
+    tmvareader.AddSpectator("SelectionOV",&SelectionOVMVA);
+    tmvareader.AddSpectator("IsDetected",&IsDetectedMVA);
+    tmvareader.AddSpectator("POT",&POTMVA);
+    
+    tmvareader.AddSpectator("TrackAngle",&TrackAngleTrackMVA);
+    tmvareader.AddSpectator("TypeOfTrack",&TypeOfTrackMVA);
+    tmvareader.AddSpectator("CLMuon_Likelihood",&CLMuon_LikelihoodTrackMVA);
+    tmvareader.AddSpectator("TotalCharge",&TotalChargeTrackMVA);
+    tmvareader.AddSpectator(Form("(IronDistance+(PlasticDistance/(%3.3f)))",IronCarbonRatio),&EquivalentIronDistanceTrackMVA);
+    tmvareader.AddSpectator("Momentum",&MomentumTrackMVA);
+    tmvareader.AddSpectator("IsReconstructed",&IsReconstructedTrackMVA);
+
+  
+    cout<<"End of assigning variables for the read BDT"<<endl;
+    
+    //tmvareader->BookMVA(TMVA::Types::kBDT,"weights/TMVAClassification_BDT.weights.xml");
+    tmvareader.BookMVA("BDT method","weights/TMVAClassificationMuon_BDT.weights.xml");
+    cout<<"End of initial reading the BDT"<<endl;
+
+
+    cout<<"Start reading the Second BDT"<<endl;
+    //I do not use a pointer because of memory leak in TMVA package for now
+    TMVA::Reader tmvareader2;
+    
+    //Add the relevant variables
+    tmvareader2.AddVariable("Sample",&SampleTrackMVA);
+    for(int ihit=0;ihit<LimitHits;ihit++){   
+#ifdef INTERPOLATION
+     tmvareader2.AddVariable(Form("EnergyDepositionSpline_hit%d",ihit),&(EnergyDepositionMVA[ihit]));
+#else
+      tmvareader2.AddVariable(Form("EnergyDeposition_hit%d",ihit),&(EnergyDepositionMVA[ihit]));
+#endif
+      tmvareader2.AddVariable(Form("TransverseWidthNonIsolated_hit%d",ihit),&(TransverseWidthMVA[ihit]));      
+    }
+    
+    //Define spectator
+    tmvareader2.AddSpectator("FSIInt",&FSIIntMVA);
+    tmvareader2.AddSpectator("Spill",&SpillMVA);
+    tmvareader2.AddSpectator("GoodSpill",&GoodSpillMVA);
+    tmvareader2.AddSpectator("NewEvent",&NewEventMVA);
+    tmvareader2.AddSpectator("nIngBasRec",&nIngBasRecMVA);
+    tmvareader2.AddSpectator("InteractionType",&InteractionTypeMVA);
+    tmvareader2.AddSpectator("Enu",&EnuMVA);
+    tmvareader2.AddSpectator("TrueMomentumMuon",&TrueMomentumMuonMVA);
+    tmvareader2.AddSpectator("TrueAngleMuon",&TrueAngleMuonMVA);
+    tmvareader2.AddSpectator("IsFV",&IsFVMVA);
+    tmvareader2.AddSpectator("IsSand",&IsSandMVA);
+    tmvareader2.AddSpectator("IsAnti",&IsAntiMVA);
+    tmvareader2.AddSpectator("IsBkgH",&IsBkgHMVA);
+    tmvareader2.AddSpectator("IsBkgV",&IsBkgVMVA);
+    tmvareader2.AddSpectator("IsNuE",&IsNuEMVA);
+    tmvareader2.AddSpectator("SelectionFV",&SelectionFVMVA);
+    tmvareader2.AddSpectator("SelectionOV",&SelectionOVMVA);
+    tmvareader2.AddSpectator("IsDetected",&IsDetectedMVA);
+    tmvareader2.AddSpectator("POT",&POTMVA);
+    
+    tmvareader2.AddSpectator("TrackAngle",&TrackAngleTrackMVA);
+    tmvareader2.AddSpectator("TypeOfTrack",&TypeOfTrackMVA);
+    tmvareader2.AddSpectator("CLMuon_Likelihood",&CLMuon_LikelihoodTrackMVA);
+    tmvareader2.AddSpectator("TotalCharge",&TotalChargeTrackMVA);
+    tmvareader2.AddSpectator(Form("(IronDistance+(PlasticDistance/(%3.3f)))",IronCarbonRatio),&EquivalentIronDistanceTrackMVA);
+    tmvareader2.AddSpectator("Momentum",&MomentumTrackMVA);
+    tmvareader2.AddSpectator("IsReconstructed",&IsReconstructedTrackMVA);
+
+  
+    cout<<"End of assigning variables for the read BDT"<<endl;
+    
+    //tmvareader2->BookMVA(TMVA::Types::kBDT,"weights/TMVAClassification_BDT.weights.xml");
+    tmvareader2.BookMVA("BDT method","weights/TMVAClassificationPion_BDT.weights.xml");
+    cout<<"End of initial reading the second BDT"<<endl;
+
+    cout<<"Start reading the Third BDT"<<endl;
+    TMVA::Reader tmvareader3;
+
+#endif
+  //Data will be sent from the wtree -> tmvareader! So we should prepare variables like "EquivalentIronDistance"
+  //How to send data from the wtree -> tmvareader
+  //double MVA = tmvareader->EvaluateMVA( "BDT",0);
+  // 0.1. END
+  //##################################################################
+
+    
+  // 0. END
+  //##################################################################
+  //##################################################################
 
 
 
 
+
+
+
+
+     
+  //##################################################################
+  //##################################################################
+  // 1. TRAINING OF THE MVA, B. QUILAIN 2017/05/08
+  //   -> THIS TRAINING SHOULD BE DONE WITH PARTICLE GUN INPUT
+  //##################################################################
+  //##################################################################
 
 #ifdef MVATRAINING
   //##############################TRAINING CASE######################################
@@ -323,8 +499,6 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
   
   //Create the factory/prepare the forest
   TFile * MVAoutputMuon = new TFile("src/MVAparticleMuon_1000trees.root","RECREATE");//Output file Name
-  //TMVA::Factory * factory = new TMVA::Factory( "TMVAClassification", MVAoutput,"V:Color:DrawProgressBar:Transformations=I;D;P;G,D:AnalysisType=Classification");//VERBOSE
-  //TMVA::Factory *factory = new TMVA::Factory( "TMVAMulticlass", MVAoutput,"!V:Silent:Color:DrawProgressBar:Transformations=I;D;P;G,D:AnalysisType=multiclass" );
   factory = new TMVA::Factory("TMVAClassificationMuon", MVAoutputMuon,"!V:Silent:Color:DrawProgressBar:Transformations=I;D;P;G,D:AnalysisType=Classification");
 
   //Add the relevant variables
@@ -337,21 +511,8 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
 #endif
     factory->AddVariable(Form("TransverseWidthNonIsolated_hit%d",ihit),Form("Transverse track width of position %d",ihit), "", 'F' );
   } 
-    //factory->AddVariable("CLMuon_Plan_track0", "#mu_{CL} track 0", "", 'F' );
-  //factory->AddVariable("CLMuon_Plan_track1", "#mu_{CL} track 1", "", 'F' );
-  //factory->AddVariable("CLMuon_Plan_track2", "#mu_{CL} track 2", "", 'F' );
-  
-  //factory->AddVariable(Form("MeandEdx_track0 := TotalCharge_track0 / ( IronDistance_track0+(PlasticDistance_track0/(%3.3f)) )",IronCarbonRatio), "mean dE/dx track 0", "", 'F' );
-  //factory->AddVariable(Form("MeandEdx_track1 := TotalCharge_track1 / ( IronDistance_track1+(PlasticDistance_track1/(%3.3f)) )",IronCarbonRatio), "mean dE/dx track 1", "", 'F' );
-  //factory->AddVariable(Form("MeandEdx_track2 := TotalCharge_track2 / ( IronDistance_track2+(PlasticDistance_track2/(%3.3f)) )",IronCarbonRatio), "mean dE/dx track 2", "", 'F' );
-
-  //factory->AddVariable("OpeningAngle", "opening angle", "", 'F' );
-  //factory->AddVariable("CoplanarityAngle", "coplanarity angle", "", 'F' );
-  //factory->AddVariable("nTracks", "number of tracks", "", 'I' );
-
 
   //Add spectator variables
- 
   factory->AddSpectator("FSIInt","interaction ID after FSI",'I');
   factory->AddSpectator("Spill","spill number",'I');
   factory->AddSpectator("GoodSpill","good spill flag",'I');
@@ -385,28 +546,14 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
   //Case 1: Classification
   //Define the signal and background trees.
   TCut signalMuon = "TypeOfTrack == 13 || TypeOfTrack == -13";
-  //TCut signal = "FSIInt<3 && FSIInt>=0";
   factory->SetInputTrees(wtreeMVA,signalMuon && preselection,(!signalMuon) && preselection);
 
-  //////////////////NOT USED///////////////////////////////
- //TCut preselection = "(IsFV) && (SelectionFV) && (IsDetected)";//Only MC in FV is used for training
-  //TCut * bugprevention = ""
-  //CLMuon_Plan[itrk]!=CLMuon_Plan[itrk] || CLMuon_Plan[itrk]==-1
-  
-  //TCut * preselectionCC0pi="";
-  //TCut * preselectionCC0pi_1track="nTracks==1";
-  //TCut * preCC0pi = "nTracks<=2 && "
-  /////////////////////////////////////////////////////////
-  
   //Add weights to the tree
   factory->SetSignalWeightExpression("weight");
   factory->SetBackgroundWeightExpression("weight");
 
   //Book the trees <=> prepare the forest
   //Define the method to use for MVA:
-
-  //factory->BookMethod( TMVA::Types::kBDT, "BDTG", "!H:!V:NTrees=1000:MinNodeSize=2.5%:BoostType=Grad:Shrinkage=0.10:UseBaggedBoost:BaggedSampleFraction=0.5:nCuts=20:MaxDepth=2" );
-  //factory->BookMethod( TMVA::Types::kBDT, "BDTG", "!H:!V:NTrees=10000:BoostType=Grad:Shrinkage=0.10:UseBaggedBoost:BaggedSampleFraction=0.50:nCuts=20:MaxDepth=2");
   factory->BookMethod( TMVA::Types::kBDT,"BDT","!H:!V:NTrees=1000:MinNodeSize=2.5%:MaxDepth=3:BoostType=AdaBoost:AdaBoostBeta=0.5:UseBaggedBoost:BaggedSampleFraction=0.5:SeparationType=GiniIndex:nCuts=20");
   
   //
@@ -421,21 +568,19 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
   
   
   //Keep in mind here that I only use 1/2 of trees for training and 1/2 for testing (default). This option can be changed!
+  cout<<"End of BDT training"<<endl;
+  
+  MVAoutputMuon->Close();
+  factory->Delete();
 
-    cout<<"End of BDT training"<<endl;
+  //Second BDT training
+  cout<<"Start the training of the second BDT: 0pi is wished (pi0 or pi+), only protons -> protons vs pions (and other particles)"<<endl;
+  TFile * MVAoutputProton = new TFile("src/MVAparticleProton_1000trees.root","RECREATE");//Output file Name
+  factory = new TMVA::Factory("TMVAClassificationProton", MVAoutputProton,"!V:Silent:Color:DrawProgressBar:Transformations=I;D;P;G,D:AnalysisType=Classification");
 
-    MVAoutputMuon->Close();
-    factory->Delete();
-
-
-    //Second BDT training
-    cout<<"Start the training of the second BDT: 0pi is wished (pi0 or pi+), only protons -> protons vs pions (and other particles)"<<endl;
-    TFile * MVAoutputProton = new TFile("src/MVAparticleProton_1000trees.root","RECREATE");//Output file Name
-    factory = new TMVA::Factory("TMVAClassificationProton", MVAoutputProton,"V:Color:DrawProgressBar:Transformations=I;D;P;G,D:AnalysisType=Classification");
-
-    //Add the relevant variables
-    factory->AddVariable("Sample","Sample of the track", "", 'I' );
-    for(int ihit=0;ihit<LimitHits;ihit++){  
+  //Add the relevant variables
+  factory->AddVariable("Sample","Sample of the track", "", 'I' );
+  for(int ihit=0;ihit<LimitHits;ihit++){  
 #ifdef INTERPOLATION
       factory->AddVariable(Form("EnergyDepositionSpline_hit%d",ihit),Form("Energy deposition of hit %d",ihit), "", 'F' );
 #else
@@ -501,142 +646,17 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
 
     MVAoutputProton->Close();
     factory->Delete();  
-
-
   //#################################################################################
 #endif
 
-  
-  //##############################DATA SELECTION WITH MVA######################################
-#ifdef MVAREADING
-    
-    
-    cout<<"Start reading the BDT"<<endl;
-    //TMVA::Reader * tmvareader = new TMVA::Reader( "Color:V" );
-    //TMVA::Reader * tmvareader = new TMVA::Reader( "!Color:!Silent" );
-    //I do not use a pointer because of memory leak in TMVA package for now
-    TMVA::Reader tmvareader;
-    
-    //Add the relevant variables
-    float SampleTrackMVA;
-    float EnergyDepositionMVA[LimitHits];
-    float TransverseWidthMVA[LimitHits];
-    //float EnergyDepositionSplineMVA[LimitHits];
-    tmvareader.AddVariable("Sample",&SampleTrackMVA);
-    for(int ihit=0;ihit<LimitHits;ihit++){
-#ifdef INTERPOLATION
-      tmvareader.AddVariable(Form("EnergyDepositionSpline_hit%d",ihit),&(EnergyDepositionMVA[ihit]));
-#else
-      tmvareader.AddVariable(Form("EnergyDeposition_hit%d",ihit),&(EnergyDepositionMVA[ihit]));
-#endif
-      tmvareader.AddVariable(Form("TransverseWidthNonIsolated_hit%d",ihit),&(TransverseWidthMVA[ihit]));      
-    }
-    
-    //Define spectator
-    float TrackAngleTrackMVA, TypeOfTrackMVA, CLMuon_LikelihoodTrackMVA, TotalChargeTrackMVA, EquivalentIronDistanceTrackMVA, MomentumTrackMVA, IsReconstructedTrackMVA;
-    float FSIIntMVA, SpillMVA, GoodSpillMVA, NewEventMVA, nIngBasRecMVA, InteractionTypeMVA, EnuMVA, TrueMomentumMuonMVA, TrueAngleMuonMVA, IsFVMVA, IsSandMVA, IsAntiMVA, IsBkgHMVA, IsBkgVMVA, IsNuEMVA, SelectionFVMVA, SelectionOVMVA, IsDetectedMVA, POTMVA;
-   
-    tmvareader.AddSpectator("FSIInt",&FSIIntMVA);
-    tmvareader.AddSpectator("Spill",&SpillMVA);
-    tmvareader.AddSpectator("GoodSpill",&GoodSpillMVA);
-    tmvareader.AddSpectator("NewEvent",&NewEventMVA);
-    tmvareader.AddSpectator("nIngBasRec",&nIngBasRecMVA);
-    tmvareader.AddSpectator("InteractionType",&InteractionTypeMVA);
-    tmvareader.AddSpectator("Enu",&EnuMVA);
-    tmvareader.AddSpectator("TrueMomentumMuon",&TrueMomentumMuonMVA);
-    tmvareader.AddSpectator("TrueAngleMuon",&TrueAngleMuonMVA);
-    tmvareader.AddSpectator("IsFV",&IsFVMVA);
-    tmvareader.AddSpectator("IsSand",&IsSandMVA);
-    tmvareader.AddSpectator("IsAnti",&IsAntiMVA);
-    tmvareader.AddSpectator("IsBkgH",&IsBkgHMVA);
-    tmvareader.AddSpectator("IsBkgV",&IsBkgVMVA);
-    tmvareader.AddSpectator("IsNuE",&IsNuEMVA);
-    tmvareader.AddSpectator("SelectionFV",&SelectionFVMVA);
-    tmvareader.AddSpectator("SelectionOV",&SelectionOVMVA);
-    tmvareader.AddSpectator("IsDetected",&IsDetectedMVA);
-    tmvareader.AddSpectator("POT",&POTMVA);
-    
-    tmvareader.AddSpectator("TrackAngle",&TrackAngleTrackMVA);
-    tmvareader.AddSpectator("TypeOfTrack",&TypeOfTrackMVA);
-    tmvareader.AddSpectator("CLMuon_Likelihood",&CLMuon_LikelihoodTrackMVA);
-    tmvareader.AddSpectator("TotalCharge",&TotalChargeTrackMVA);
-    tmvareader.AddSpectator(Form("(IronDistance+(PlasticDistance/(%3.3f)))",IronCarbonRatio),&EquivalentIronDistanceTrackMVA);
-    tmvareader.AddSpectator("Momentum",&MomentumTrackMVA);
-    tmvareader.AddSpectator("IsReconstructed",&IsReconstructedTrackMVA);
-
-  
-    cout<<"End of assigning variables for the read BDT"<<endl;
-    
-    //tmvareader->BookMVA(TMVA::Types::kBDT,"weights/TMVAClassification_BDT.weights.xml");
-    tmvareader.BookMVA("BDT method","weights/TMVAClassificationMuon_BDT.weights.xml");
-    cout<<"End of initial reading the BDT"<<endl;
+    // 1. END
+    //##################################################################
+    //##################################################################
 
 
-    cout<<"Start reading the Second BDT"<<endl;
-    //TMVA::Reader * tmvareader = new TMVA::Reader( "Color:V" );
-    //TMVA::Reader * tmvareader = new TMVA::Reader( "!Color:!Silent" );
-    //I do not use a pointer because of memory leak in TMVA package for now
-    TMVA::Reader tmvareader2;
-    
-    //Add the relevant variables
-    tmvareader2.AddVariable("Sample",&SampleTrackMVA);
-    for(int ihit=0;ihit<LimitHits;ihit++){   
-#ifdef INTERPOLATION
-     tmvareader2.AddVariable(Form("EnergyDepositionSpline_hit%d",ihit),&(EnergyDepositionMVA[ihit]));
-#else
-      tmvareader2.AddVariable(Form("EnergyDeposition_hit%d",ihit),&(EnergyDepositionMVA[ihit]));
-#endif
-      tmvareader2.AddVariable(Form("TransverseWidthNonIsolated_hit%d",ihit),&(TransverseWidthMVA[ihit]));      
-    }
-    
-    //Define spectator
-    tmvareader2.AddSpectator("FSIInt",&FSIIntMVA);
-    tmvareader2.AddSpectator("Spill",&SpillMVA);
-    tmvareader2.AddSpectator("GoodSpill",&GoodSpillMVA);
-    tmvareader2.AddSpectator("NewEvent",&NewEventMVA);
-    tmvareader2.AddSpectator("nIngBasRec",&nIngBasRecMVA);
-    tmvareader2.AddSpectator("InteractionType",&InteractionTypeMVA);
-    tmvareader2.AddSpectator("Enu",&EnuMVA);
-    tmvareader2.AddSpectator("TrueMomentumMuon",&TrueMomentumMuonMVA);
-    tmvareader2.AddSpectator("TrueAngleMuon",&TrueAngleMuonMVA);
-    tmvareader2.AddSpectator("IsFV",&IsFVMVA);
-    tmvareader2.AddSpectator("IsSand",&IsSandMVA);
-    tmvareader2.AddSpectator("IsAnti",&IsAntiMVA);
-    tmvareader2.AddSpectator("IsBkgH",&IsBkgHMVA);
-    tmvareader2.AddSpectator("IsBkgV",&IsBkgVMVA);
-    tmvareader2.AddSpectator("IsNuE",&IsNuEMVA);
-    tmvareader2.AddSpectator("SelectionFV",&SelectionFVMVA);
-    tmvareader2.AddSpectator("SelectionOV",&SelectionOVMVA);
-    tmvareader2.AddSpectator("IsDetected",&IsDetectedMVA);
-    tmvareader2.AddSpectator("POT",&POTMVA);
-    
-    tmvareader2.AddSpectator("TrackAngle",&TrackAngleTrackMVA);
-    tmvareader2.AddSpectator("TypeOfTrack",&TypeOfTrackMVA);
-    tmvareader2.AddSpectator("CLMuon_Likelihood",&CLMuon_LikelihoodTrackMVA);
-    tmvareader2.AddSpectator("TotalCharge",&TotalChargeTrackMVA);
-    tmvareader2.AddSpectator(Form("(IronDistance+(PlasticDistance/(%3.3f)))",IronCarbonRatio),&EquivalentIronDistanceTrackMVA);
-    tmvareader2.AddSpectator("Momentum",&MomentumTrackMVA);
-    tmvareader2.AddSpectator("IsReconstructed",&IsReconstructedTrackMVA);
 
-  
-    cout<<"End of assigning variables for the read BDT"<<endl;
-    
-    //tmvareader2->BookMVA(TMVA::Types::kBDT,"weights/TMVAClassification_BDT.weights.xml");
-    tmvareader2.BookMVA("BDT method","weights/TMVAClassificationPion_BDT.weights.xml");
-    cout<<"End of initial reading the second BDT"<<endl;
-
-    cout<<"Start reading the Third BDT"<<endl;
-    TMVA::Reader tmvareader3;
-
-#endif
-  //Data will be sent from the wtree -> tmvareader! So we should prepare variables like "EquivalentIronDistance"
-  //How to send data from the wtree -> tmvareader
-  //double MVA = tmvareader->EvaluateMVA( "BDT",0);
-  
-
-  
-
-  /*
+    //TO DO
+    /*
   TH1D * FluxDistribution = new TH1D("FluxDistribution","",NBinsEnergyFlux,BinningEnergyFlux);
   for(int i=0;i<NBinsEnergyFlux;i++){
     if(Systematics_Flux) FluxDistribution->SetBinContent(i+1,hNormNuMu_Binned->GetBinContent(i+1)+hNormNuMu_Binned->GetBinContent(i+1)*FluxVector[i]);
@@ -646,12 +666,31 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
 #ifdef DEBUG2
   cout<<"Right after MVA declaration"<<endl;
 #endif
-  
-  int Counter=0;
-  int Counter2=0;
-  int Counter3=0;
-  double POTCount=0;
+  //END TO DO
 
+
+
+
+
+
+
+  
+  
+  //##################################################################
+  //##################################################################
+  // 2. PREPARE THE HISTOGRAMS BEFORE EVENT LOOPS, B. QUILAIN 2017/05/08
+  //##################################################################
+  //##################################################################
+
+
+  
+  // KEY
+  //##################################################################
+  // 2.0. VARIABLES BEING PASSED TO UNFOLDING (OR OTHER METHODS) THROUGH
+  // ROOT AND TXT FILE -> THEY ARE COMPULSORY!
+
+  //Difference between variables and variables_full: the first can have a track sample selection (example: INGRID stop) while the second has no track sample selection
+  double POTCount=0;//Number of POT (for data)
   double DataSelected[NBinsRecMom][NBinsRecAngle];
   double MCSelected[NBinsTrueMom][NBinsTrueAngle][NBinsRecMom][NBinsRecAngle];
   double BkgSelected[NBinsRecMom][NBinsRecAngle];
@@ -664,31 +703,41 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
   double TotalCC1piEvent[NBinsTrueMom][NBinsTrueAngle]={{0}};
   double TotalCC1pi=0;
 
-  const int nCuts=7;
-  const string myCuts[nCuts]={"Generated","Reconstruted + one INGRID track","FCFV","CC1pi Selection","2 or 3 tracks","MuTrk is INGRID stop/through","MuTrk is INGRID stop"};
-  double nEventsInter[nCuts][NFSIs]={{0}};
-  double nEvents[nCuts]={0};
-  TH1D* CutEfficiency=new TH1D("Efficiency","Efficiency",nCuts,0,nCuts);
-  TH1D* CutPurity=new TH1D("Purity","Purity",nCuts,0,nCuts);
-  for(int i=0;i<nCuts;i++){
-    CutEfficiency->GetXaxis()->SetBinLabel(i+1,myCuts[i].c_str());
-    CutPurity->GetXaxis()->SetBinLabel(i+1,myCuts[i].c_str());
-  }
-  CutEfficiency->SetMarkerColor(kBlue);
-  CutPurity->SetMarkerColor(kRed);
-  CutEfficiency->SetLineColor(kBlue);
-  CutPurity->SetLineColor(kRed);
-  CutEfficiency->SetMarkerStyle(2);
-  CutPurity->SetMarkerStyle(2);
+  InitialiseTable(DataSelected,MCSelected,BkgSelected,Efficiency,TotalCC0piEvent,TotalCC0piEvent);//Set the variables to 0
+  InitialiseTable(DataSelected_full,MCSelected_full,BkgSelected_full,Efficiency_full,TotalCC0piEvent,TotalCC0piEvent);//Set the variables to 0
 
-  InitialiseTable(DataSelected,MCSelected,BkgSelected,Efficiency,TotalCC0piEvent,TotalCC0piEvent);
-  InitialiseTable(DataSelected_full,MCSelected_full,BkgSelected_full,Efficiency_full,TotalCC0piEvent,TotalCC0piEvent);
+  TH2D * MCTrueEvents = new TH2D("MCTrueEvents","Number of true simulated CC0pi (if selection==1) or CC1pi (if selection==2) in the FV",NBinsTrueMom,BinningTrueMom,NBinsTrueAngle,BinningTrueAngle);
+  // 2.0. END
+  //##################################################################
 
-  TH2D * MCTrueEvents = new TH2D("MCTrueEvents","",NBinsTrueMom,BinningTrueMom,NBinsTrueAngle,BinningTrueAngle);
   
-  TH1D * hMuCL[NFSIs];
-  TH1D * hMuCL_Lowest[NFSIs];
-  TH2D * hMuCL_2tracks[NFSIs];
+
+  
+  // KEY
+  //##################################################################
+  // 2.1. NOT MANDATORY: ALL HISTOGRAMS TO DRAW PLOTS FOR CUT TUNING,
+  // DRAWING PLOTS ETC...
+
+  
+  // 2.1.0. TUNING THE CUTS ON PID:
+  TH1D * hMuCL[NFSIs];// 1 track sample without any selection on the track type
+  TH2D * hMuCL_2tracks[NFSIs];// 2 track sample without any selection on the track type
+  TH1D * hMuCL_Lowest[NFSIs];// lowest mucl of the 2 track sample, but only for the CC0pi reconstructed sample
+
+  TH1D * hMVAMuondiscriminant_1track[NFSIs];
+  TH1D * hMVAProtondiscriminant_2tracks[NFSIs];
+  TH2D * hMVAMuonVSProtondiscriminant_2tracks[NFSIs];
+  TH2D * hMVAMuondiscriminantVSMuonMomentum_1track[NFSIs];
+
+  TH1D * TrueParticleType_1track[NFSIs];
+  TH2D * TrueParticleType_2tracks[NFSIs];
+    
+  TH1D * hMuCL_TrueMuon;
+  TH1D * hMuCL_TruePion;
+  TH1D * hMuCL_TrueProton;
+  TH1D * hMuCL_TrueOthers;
+  // 2.1.0. END
+  
   TH1D * hNTracks[NFSIs];
   TH1D * hRecMom[NFSIs];
   TH1D * hRecAngle[NFSIs];
@@ -714,19 +763,7 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
   TH1D * hOpeningAngle[NFSIs];
   TH1D * hCoplanarityAngle[NFSIs];
 
-  TH1D * hMVAMuondiscriminant_1track[NFSIs];
-  TH1D * hMVAProtondiscriminant_2tracks[NFSIs];
-  TH2D * hMVAMuonVSProtondiscriminant_2tracks[NFSIs];
-  TH2D * hMVAMuondiscriminantVSMuonMomentum_1track[NFSIs];
-
-  TH1D * TrueParticleType_1track[NFSIs];
-  TH2D * TrueParticleType_2tracks[NFSIs];
-    
-  TH1D * hMuCL_TrueMuon;
-  TH1D * hMuCL_TruePion;
-  TH1D * hMuCL_TrueProton;
-  TH1D * hMuCL_TrueOthers;
-
+  
   //Energy Deposition
   TH3D * EnergyDepositionLength_Muon[NSamples];
   TH2D * hEnergyDepositionLength_Muon[NSamples];
@@ -936,9 +973,6 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
       TransverseWidthNonIsolatedLength_Proton[is]->Sumw2();
 
     }
-
-    PE_Lowest_CC0pi = new TH2D("PE_Lowest_CC0pi","",500,0.,1.,200,0,1000);
-    PE_Lowest_Other = new TH2D("PE_Lowest_Other","",500,0.,1.,200,0,1000);
     
     MCEfficiency = new TH2D("MCEfficiency","",NBinsTrueMom,0,NBinsTrueMom,NBinsTrueAngle,0,NBinsTrueAngle);
     MCEfficiency_Energy = new TH1D("MCEfficiency_Energy","",100,0,10);
@@ -1163,21 +1197,58 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
     }
 
   }   
+  // 2.1. END
+  //##################################################################
 
-  cout<<"Test bonjour"<<endl;
+  // 2. END
+  //##################################################################
+  //##################################################################
+
+
+
+
+
+
+
+
+
   
-  double NEvents=0;double NEventsLost=0;double NEventsLostDetected=0;
+  double NEvents=0;double NEventsFV=0;double NEventsLost=0;double NEventsLostDetected=0;
   int BinTrueMom=0;
   int BinTrueAngle=0;
   //cout<<"going to read events"<<endl;
+
+
+
+
+
+
+
+  
+  //##################################################################
+  //##################################################################
+  // START EVENT LOOP
+  //##################################################################
+  //##################################################################
+
   for(int ievt=0;ievt<nevt;ievt++){
     POTCount+=POT;
 
+    //##################################################################
+    //##################################################################
+    // CASE OF A NEW SIMULATED EVENT, A NEW SIMVERTEX.
+    //##################################################################
+    //##################################################################
+
+    wtree->GetEntry(ievt);
+
     if(NewEvent){
 
-      if(ievt%100000==0)cout<<"Number of events lost due to detection (%)="<<100.*NEventsLostDetected/NEvents<<", due to detection & muon not found="<<100.*NEventsLost/NEvents<<endl;
-      if(ievt==(nevt-1)) cout<<"Final POT="<<POTCount<<endl;
-
+      if(ievt%50000==0){
+	cout<<"Event "<<ievt<<"/"<<nevt<<" processed"<<endl;
+	cout<<"Percent of events in the true FV (%)="<<100.*NEventsFV/NEvents<<", Number of events lost due to detection (%)="<<100.*NEventsLostDetected/NEvents<<", due to detection & muon not found="<<100.*NEventsLost/NEvents<<endl;
+	if(ievt==(nevt-1)) cout<<"Final POT="<<POTCount<<endl;
+      }
       if(Systematics_Flux){
 	for(int i=0;i<NBinsEnergyFlux;i++){
 	  if(Enu<BinningEnergyFlux[i+1]) {
@@ -1193,30 +1264,18 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
       }
       //cout<<ReWeight[5]<<endl;
     }
-#ifdef DEBUG3
-    cout<<"Just before getting the event #"<<ievt<<endl;
-#endif
+    //##################################################################
+    //##################################################################
 
-    wtree->GetEntry(ievt);
 
-#ifdef DEBUG3
-    cout<<"Just after getting the event #"<<ievt<<endl;
-#endif
+
     
-    //Select your CL
-    for(int itrk=0;itrk<LimitTracks;itrk++){
-      ChosenCL[itrk]=(_isPM? (TMath::Log(CLMuon_Plan[itrk])) : CLMuon_KS[itrk]);
-      
-      // ML tmp
-      /*
-	if(_isPM) {
-	ChosenCL[itrk]=CLMuon_Likelihood[itrk];
-	ProtonCut=0.3;
-	MuonCut=0.4;
-	}
-      */
-    }
-    //
+    //##################################################################
+    //##################################################################
+    // PREPARE THE REWEIGHTING FACTOR FOR DIFFERENT CASES
+    //##################################################################
+    //##################################################################
+    
     if(IsData){FSIInt=0;Num_Int=0;}
     else {
       //********************
@@ -1245,17 +1304,53 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
       if(ievt%10000==0)cout<<"weight="<<weight<<", and after reweight="<<weight*ReWeight[dial]<<endl;
       weight=weight*ReWeight[dial];
     }
-    //cout<<ReWeight[5]<<endl;
+    //##################################################################
+    //##################################################################
+
+
+
+    
+
+    //##################################################################
+    //##################################################################
+    // SELECT THE PID: Bayesian likelihood or Boosted Decision Tree
+    //##################################################################
+    //##################################################################
+
+    //Select your CL
+    for(int itrk=0;itrk<LimitTracks;itrk++){
+      ChosenCL[itrk]=(_isPM? (TMath::Log(CLMuon_Plan[itrk])) : CLMuon_KS[itrk]);
+      
+      // ML tmp
+      /*
+	if(_isPM) {
+	ChosenCL[itrk]=CLMuon_Likelihood[itrk];
+	ProtonCut=0.3;
+	MuonCut=0.4;
+	}
+      */
+    }
+    //##################################################################
+    //##################################################################
 
     
     bool IsNuMu=((!IsSand) && (!IsAnti) && (!IsNuE) && (!IsBkgH) && (!IsBkgV));
     if(IsData && (!GoodSpill || !Spill)) continue;
+
     if((/*IsFV &&*/ !IsData) || IsData){ 
       // why that condition here ?? too easy to remove all external background this way
 
 #ifdef DEBUG3
       cout<<"Entering within the FV, nbasrec="<<nIngBasRec<<endl;
 #endif
+
+      //##################################################################
+      // If New Event (=new simulated vertex or new DAQ time window)
+      // Determine the bin corresponding to the true neutrino energy, and
+      // true momentum angle and momentum.
+
+      // Fill also MC events
+      
       if(NewEvent){
 	BinTrueMom=0;
 	BinTrueAngle=0;
@@ -1277,18 +1372,20 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
 	    
 	    if(FSIInt<3 && Selection==1){
 	      TotalCC0piEvent[BinTrueMom][BinTrueAngle]+=weight;
-	      MCTrueEvents->Fill(BinTrueMom+1,BinTrueAngle+1,weight);
 	      if(Plots) TotalCC0piEvent_Energy->Fill(Enu,weight);
+	      MCTrueEvents->Fill(BinTrueMom+1,BinTrueAngle+1,weight);
 	    }
 	    else if(FSIInt==3 && Selection==2){
 	      TotalCC1pi+=weight;
 	      TotalCC1piEvent[BinTrueMom][BinTrueAngle]+=weight;
 	      if(Plots) TotalCC1piEvent_Energy->Fill(Enu,weight);
+	      MCTrueEvents->Fill(BinTrueMom+1,BinTrueAngle+1,weight);
 	    }
 	  }
 	}
-      }
-    
+      }//End of NewEvent
+
+      
       bool MuonFound=false;
       int MuonTrue;int MuonRec=0;
       int PionTrue; int PionRec=0;
@@ -1305,13 +1402,10 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
       double LargestMVAdiscriminant_2tracks=-999;
       double LargestMVAdiscriminant2_2tracks=-999;
       
-      //if(IsData) FSIInt=0;
-      //if(Num_Int==1) FSIInt=1;
-      //else if(Num_Int==2) FSIInt=2;
-      //else if(Num_Int>2 && Num_Int<20) FSIInt=3;
-      //else if(Num_Int<30) FSIInt=4;
-      //else if(Num_Int>=30) FSIInt=5;
+
+      //First cuts!
       NEvents+=weight;
+      if(IsFV) NEventsFV += weight;
       if(!IsDetected) {NEventsLostDetected+=weight; continue;}
       nEvents[1]+=weight;
       nEventsInter[1][FSIInt]+=weight;
@@ -1372,7 +1466,7 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
 	  MVAdiscriminant2[itrk] = tmvareader2.EvaluateMVA("BDT method");
 	  
 	  if(TypeOfTrack[itrk]==13) MuonTrueMVA=itrk;
-	  if(MVAdiscriminant[itrk]>=MVAdiscriminant[MuonRecMVA]) MuonRecMVA=itrk;
+	  if(MVAdiscriminant[itrk]>=MVAdiscriminant[MuonRec]) MuonRec=itrk;
 	  MuonFound=true;
 	  
 	  if(nTracks==1){
@@ -1386,10 +1480,10 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
 
 	  //cout<<"MVA muon="<<MVAdiscriminant<<", proton="<<MVAdiscriminant2<<", ntracks="<<nTracks<<", clmuon first track="<<ChosenCL[0]<<endl;
 	  /*
-	    hMVAdiscriminant[FSIInt]->Fill(MVAdiscriminant,weight);
-	    if(nTracks==1) hMVAdiscriminant_1track[FSIInt]->Fill(MVAdiscriminant,weight);
-	    else if(nTracks==2) hMVAdiscriminant_2tracks[FSIInt]->Fill(MVAdiscriminant,weight);
-	    else if(nTracks==3) hMVAdiscriminant_3tracks[FSIInt]->Fill(MVAdiscriminant,weight);
+	  hMVAdiscriminant[FSIInt]->Fill(MVAdiscriminant,weight);
+	  if(nTracks==1) hMVAdiscriminant_1track[FSIInt]->Fill(MVAdiscriminant,weight);
+	  else if(nTracks==2) hMVAdiscriminant_2tracks[FSIInt]->Fill(MVAdiscriminant,weight);
+	  else if(nTracks==3) hMVAdiscriminant_3tracks[FSIInt]->Fill(MVAdiscriminant,weight);
 	  */
 #else
 	  
@@ -1539,30 +1633,41 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
       
       ///////////////////THE ACTUAL SELECTION///////////////////////////////////////
       if(MuonTrue==MuonRec) MuonID->Fill(TrueMomentumMuon,TrueAngleMuon,weight);
-      if(MuonTrueMVA==MuonRecMVA) MuonIDMVA->Fill(TrueMomentumMuon,TrueAngleMuon,weight);
+      if(MuonTrueMVA==MuonRec) MuonIDMVA->Fill(TrueMomentumMuon,TrueAngleMuon,weight);
       MuonIDTotal->Fill(TrueMomentumMuon,TrueAngleMuon,weight);
       
       // for CC1pi MuonSample2 is set to 5
       if(Selection==1 && (Sample[MuonRec]!=MuonSample1)&&(Sample[MuonRec]!=MuonSample2)) continue; // ML done later for CC1pi
       
       int nRecTracks=nTracks-nBadRecTracks;
-      
+
+    
       if(Plots){
-	if(nRecTracks==1) hMuCL[FSIInt]->Fill(ChosenCL[MuonRec],weight);
-	if(nRecTracks==2) hMuCL_2tracks[FSIInt]->Fill(ChosenCL[MuonRec],ChosenCL[LowestMuCL],weight);
-	if(nRecTracks==2 && MuonLike==1 && Undetermined==0){
-	  hMuCL_Lowest[FSIInt]->Fill(ChosenCL[LowestMuCL],weight);
-	  if(ChosenCL[LowestMuCL]<-1){
-	    if(FSIInt<3) PE_Lowest_CC0pi->Fill(ProportionHighPE[LowestMuCL],MeanHighPE[LowestMuCL],weight);
-	    else PE_Lowest_Other->Fill(ProportionHighPE[LowestMuCL],MeanHighPE[LowestMuCL],weight);		    
+	
+	if(nRecTracks==1){
+	  hMuCL[FSIInt]->Fill(ChosenCL[MuonRec],weight);
+	  int SimplifiedPDG=DetermineSimplifiedPDG(TypeOfTrack[0]);
+	  TrueParticleType_1track[FSIInt]->Fill(SimplifiedPDG);
+	}
+	if(nRecTracks==2){
+	  hMuCL_2tracks[FSIInt]->Fill(ChosenCL[MuonRec],ChosenCL[LowestMuCL],weight);
+	  int SimplifiedPDG[2]={DetermineSimplifiedPDG(TypeOfTrack[0]),DetermineSimplifiedPDG(TypeOfTrack[1])};
+	  TrueParticleType_2tracks[FSIInt]->Fill(SimplifiedPDG[0],SimplifiedPDG[1]);
+	  if(MuonLike==1 && Undetermined==0){
+	    hMuCL_Lowest[FSIInt]->Fill(ChosenCL[LowestMuCL],weight);
+	    if(ChosenCL[LowestMuCL]<-1){
+	      if(FSIInt<3) PE_Lowest_CC0pi->Fill(ProportionHighPE[LowestMuCL],MeanHighPE[LowestMuCL],weight);
+	      else PE_Lowest_Other->Fill(ProportionHighPE[LowestMuCL],MeanHighPE[LowestMuCL],weight);		    
+	    }
 	  }
 	}
       }
+      
       hNTracks[FSIInt]->Fill(nRecTracks,weight);
-      hRecMom[FSIInt]->Fill(IronDistance[MuonRec]+(PlasticDistance[MuonRec]/IronCarbonRatio),weight);
+      hRecMom[FSIInt]->Fill(EquivalentIronDistance,weight);
       hRecAngle[FSIInt]->Fill(TrackAngle[MuonRec],weight);
-      //if(FSIInt<3) cout<<"CC0pi true, "<<MuonLike<<", "<<Undetermined<<", "<<ProtonLike<<endl;
-      //else cout<<MuonLike<<", "<<Undetermined<<", "<<ProtonLike<<endl;
+
+
       if(MuonLike==1 && Undetermined==0/*&& nRecTracks<=2*/){//CC0pi
 	//cout<<"Interaction value="<<FSIInt<<", Ion distance="<<IronDistance[MuonRec]+(PlasticDistance[MuonRec]/IronCarbonRatio)<<endl;
 
@@ -1595,10 +1700,10 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
 	      MCSelected[BinTrueMom][BinTrueAngle][BinRecMom][BinRecAngle]+=weight;
 	      Efficiency[BinTrueMom][BinTrueAngle]+=weight;
 #ifdef DEBUG
-	      if((IronDistance[MuonRec]+(PlasticDistance[MuonRec]/IronCarbonRatio))<40 && TrueMomentumMuon>1){
+	      if(EquivalentIronDistance<40 && TrueMomentumMuon>1){
 		cout<<"evt number="<<ievt<<", number of tracks="<<nRecTracks<<endl;
 		for(int itrk=0;itrk<nRecTracks;itrk++){
-		  cout<<"CL="<<ChosenCL[itrk]<<", distance="<<IronDistance[itrk]+(PlasticDistance[itrk]/IronCarbonRatio)<<", sample="<<Sample[itrk]<<endl;
+		  cout<<"CL="<<ChosenCL[itrk]<<", distance="<<EquivalentIronDistance<<", sample="<<Sample[itrk]<<endl;
 		}
 	      }
 #endif
@@ -1617,9 +1722,9 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
 	      
 	if(nRecTracks>3) continue;
 	if(Sample[MuonRec]>2){//only ingrid tracks
-	  hRecMom_CC1pi_full[FSIInt]->Fill(IronDistance[MuonRec]+(PlasticDistance[MuonRec]/IronCarbonRatio),weight);
+	  hRecMom_CC1pi_full[FSIInt]->Fill(EquivalentIronDistance,weight);
 	  hRecAngle_CC1pi_full[FSIInt]->Fill(TrackAngle[MuonRec],weight);
-	  if(Sample[MuonRec]==3) MuCL_vs_IronDist->Fill(IronDistance[MuonRec]+(PlasticDistance[MuonRec]/IronCarbonRatio),ChosenCL[MuonRec],weight);
+	  if(Sample[MuonRec]==3) MuCL_vs_IronDist->Fill(EquivalentIronDistance,ChosenCL[MuonRec],weight);
 	}
 	      
 	if(Selection==2){
@@ -1641,7 +1746,7 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
 	  if((Sample[MuonRec]!=MuonSample1)&&(Sample[MuonRec]!=MuonSample2)) continue;
 	  nEvents[5]+=weight;
 	  nEventsInter[5][FSIInt]+=weight;
-	  hRecMom_CC1pi[FSIInt]->Fill(IronDistance[MuonRec]+(PlasticDistance[MuonRec]/IronCarbonRatio),weight);
+	  hRecMom_CC1pi[FSIInt]->Fill(EquivalentIronDistance,weight);
 	  hRecAngle_CC1pi[FSIInt]->Fill(TrackAngle[MuonRec],weight);
 				
 	  DataSelected[BinRecMom][BinRecAngle]+=weight;
@@ -1658,14 +1763,14 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
 	  if(Sample[MuonRec]==MuonSample1){
 	    nEvents[6]+=weight;
 	    nEventsInter[6][FSIInt]+=weight;
-	    double leq=IronDistance[MuonRec]+(PlasticDistance[MuonRec]/IronCarbonRatio);
+	    double leq=EquivalentIronDistance;
 	    hRecMom_CC1pi_restr[FSIInt]->Fill(leq,weight);
 	    hRecAngle_CC1pi_restr[FSIInt]->Fill(TrackAngle[MuonRec],weight);
 	  }
 	}
       }
       else if(MuonLike>=3){//Side band CCNpi
-	hRecMom_CCNpi[FSIInt]->Fill(IronDistance[MuonRec]+(PlasticDistance[MuonRec]/IronCarbonRatio),weight);
+	hRecMom_CCNpi[FSIInt]->Fill(EquivalentIronDistance,weight);
 	hRecAngle_CCNpi[FSIInt]->Fill(TrackAngle[MuonRec],weight);
       }	     
     }
@@ -1707,6 +1812,7 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
   cout<<"OVERALL PURITY="<<TotalTrueSelected/TotalSelected*100.<<"%"<<endl;
   cout<<"OVERALL SELECTED EVENTS="<<TotalSelected<<endl;
   cout<<"TOTAL GENERATED CC"<<(Selection==2)<<"PI IN FV="<<TotalTrue0<<endl;
+
   if(Selection==2){
     for(int i=0;i<nCuts;i++){
       cout<<myCuts[i]<<": \tselected="<<nEvents[i]<<" \tpurity="<<100.*nEventsInter[i][3]/nEvents[i]<<" \tefficiency="<<nEventsInter[i][3]/TotalTrue0*100<<endl;
@@ -1930,6 +2036,8 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
       MuonIDMVA->Divide(MuonIDTotal);
       MuonIDMVA->Write();
       
+      TDirectory * PIDCutTuning = gDirectory->mkdir("PIDCutTuning");
+      PIDCutTuning->cd();
       for(int fsi=0;fsi<NFSIs;fsi++){
 	hMuCL[fsi]->Write();
 	hMuCL_Lowest[fsi]->Write();
@@ -1954,6 +2062,10 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
       PE_Lowest_Other->Write();
       MuonRec_TruePDG->Write();
       MuonRec_TruePDG_switch->Write();
+      gDirectory->cd();
+      
+      TDirectory * MVAInputVariables = gDirectory->mkdir("MVAInputVariables");
+      MVAInputVariables->cd();
 
       for(int is=0;is<NSamples;is++){
 
@@ -2180,6 +2292,8 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
 	}
 	hTransverseWidthNonIsolatedLength_Proton_1D[is]->Write();
       }
+      gDirectory->cd();
+
       PE_Lowest_CC0pi->Write();
       PE_Lowest_Other->Write();
       
@@ -2353,26 +2467,25 @@ int main(int argc, char ** argv){
      //cin>>DataEquivalent;
      ScalingMC=DataEquivalent/NMCfiles;//one MC file is equivalent to 1e21 POT
      cout<<NMCfiles<<endl;
-     for(int i=0;i<NMCfiles;i++){
-       //sprintf(fName,i);
-       //sprintf(fName,"%s",InNameEvent);
-       //sprintf(fName,"root_input/CC0piTree%d.root",i);
-       //sprintf(fName,"/home/bquilain/CC0pi_XS/XS/root_input/XSFormat_Run1_%d_Plan_ReWeight.root",i);
-       //sprintf(fName,"/home/bquilain/CC0pi_XS/XS/root_input/XSFormat_Run1_%d_Plan.root",i);
-       //sprintf(fName,"/home/bquilain/CC0pi_XS/XS/root_input/XSFormat_Old_%d_Plan.root",i);
-       //sprintf(fName,"/home/bquilain/CC0pi_XS/XS/root_input/XSFormat_Run1_%d_Plan.root",i);
-       //sprintf(fName,"/home/bquilain/CC0pi_XS/XS/root_input/XSFormat_Run1_%d_Plan_RandomPE.root",i);
-
-       //       fName=Form(InNameEvent,i);
-       sprintf(fName,"${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s_Run1_%d_Plan.root",(isPM?"PM":"WM"),i);
+     for(int i=2;i<NMCfiles;i++){
+     	       //sprintf(fName,i);
+	        //sprintf(fName,"%s",InNameEvent);
+	        //sprintf(fName,"root_input/CC0piTree%d.root",i);
+	        //sprintf(fName,"/home/bquilain/CC0pi_XS/XS/root_input/XSFormat_Run1_%d_Plan_ReWeight.root",i);
+	        //sprintf(fName,"/home/bquilain/CC0pi_XS/XS/root_input/XSFormat_Run1_%d_Plan.root",i);
+	        //sprintf(fName,"/home/bquilain/CC0pi_XS/XS/root_input/XSFormat_Old_%d_Plan.root",i);
+	        //sprintf(fName,"/home/bquilain/CC0pi_XS/XS/root_input/XSFormat_Run1_%d_Plan.root",i);
+	        //sprintf(fName,"/home/bquilain/CC0pi_XS/XS/root_input/XSFormat_Run1_%d_Plan_RandomPE.root",i);
+       fName=Form(InNameEvent,i);
        cout<<fName<<endl;
        chain->Add(fName);
 #ifdef MVATRAINING
        cout<<"MVA training, add the tree:"<<fName<<endl;
        chainMVA->Add(fName);
 #endif
-    }
-  }
+     }
+   }
+   
    if(SelectedError_Source>=Systematics_Detector_Start && SelectedError_Source<=Systematics_Detector_End){
      Systematics_Detector=true;
      
