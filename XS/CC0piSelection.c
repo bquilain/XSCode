@@ -63,8 +63,8 @@ using namespace std;
 //#define DEBUG
 //#define DEBUG2
 //#define DEBUG3
-//#define MVATRAINING
-#define MVAREADING
+#define MVATRAINING
+//#define MVAREADING
 //#define TEMPORARY
 //#define DEBUGMVA
 
@@ -457,11 +457,8 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
     cout<<"End of assigning variables for the read BDT"<<endl;
     
     //tmvareader2->BookMVA(TMVA::Types::kBDT,"weights/TMVAClassification_BDT.weights.xml");
-    tmvareader2.BookMVA("BDT method","weights/TMVAClassificationPion_BDT.weights.xml");
+    tmvareader2.BookMVA("BDT method","weights/TMVAClassificationProton_BDT.weights.xml");
     cout<<"End of initial reading the second BDT"<<endl;
-
-    cout<<"Start reading the Third BDT"<<endl;
-    TMVA::Reader tmvareader3;
 
 #endif
   //Data will be sent from the wtree -> tmvareader! So we should prepare variables like "EquivalentIronDistance"
@@ -1667,16 +1664,6 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
       hRecMom[FSIInt]->Fill(EquivalentIronDistance,weight);
       hRecAngle[FSIInt]->Fill(TrackAngle[MuonRec],weight);
 
-
-      if(MuonLike==1 && Undetermined==0/*&& nRecTracks<=2*/){//CC0pi
-	//cout<<"Interaction value="<<FSIInt<<", Ion distance="<<IronDistance[MuonRec]+(PlasticDistance[MuonRec]/IronCarbonRatio)<<endl;
-
-	//TEMPORARY
-	if(nRecTracks==2) hSampleSecondTrack[FSIInt]->Fill(Sample[LowestMuCL]);
-	//
-		
-	if(Selection==1){
-
 #ifdef MVAREADING
 	  //MVA
 	  if(Plots){
@@ -1691,6 +1678,14 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
 	  }
 #endif
 
+      if(MuonLike==1 && Undetermined==0/*&& nRecTracks<=2*/){//CC0pi
+	//cout<<"Interaction value="<<FSIInt<<", Ion distance="<<IronDistance[MuonRec]+(PlasticDistance[MuonRec]/IronCarbonRatio)<<endl;
+
+	//TEMPORARY
+	if(nRecTracks==2) hSampleSecondTrack[FSIInt]->Fill(Sample[LowestMuCL]);
+	//
+		
+	if(Selection==1){
 
 	  DataSelected[BinRecMom][BinRecAngle]+=weight;
 	  //cout<<"Bin="<<BinRecMom<<","<<BinRecAngle<<", data="<<DataSelected[BinRecMom][BinRecAngle]<<endl;
