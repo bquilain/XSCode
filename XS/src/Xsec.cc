@@ -290,60 +290,61 @@ void Xsec::DetermineNuType(bool&IsSand,bool&IsAnti,bool&IsNuE,bool&IsBkgH,bool&I
     else if(nutype==1){
       // let's determine if the vertex is in scintillator bars
 
-      double x=VertexPosition[0];//cm
-      double y=VertexPosition[1];//cm
-      double z=VertexPosition[2]+120;//cm
-
-      double xch,ych,zch;
-      bool foundXY=false, foundZ=false;
-
-      for(int ipln=0;ipln<PLNMAX;ipln++){
-        
-	foundZ=false;
-	int grid;
- 
-	for(int iview=0;iview<VIEWMAX;iview++){
-	  IngD->get_pos_loli(15,iview,ipln,0,&xch,&ych,&zch); // scinti planes
-	  if(fabs(z-zch)<loli_scinti_thick/2) {foundZ=true;grid=0;}
-
-	  IngD->get_pos_loli(15,iview,ipln,40,&xch,&ych,&zch); // grid 1
-	  if(fabs(z-zch)<loli_scinti_width/2) {foundZ=true;grid=1;}
-
-	  IngD->get_pos_loli(15,iview,ipln,60,&xch,&ych,&zch); // grid 2
-	  if(fabs(z-zch)<loli_scinti_width/2) {foundZ=true;grid=2;}
-	}
-
-	if(foundZ){
-	  if(grid==0){ // plane
-	    bool foundX=false,foundY=false;
-	    for (int ich=0;ich<40;ich++){
-	      IngD->get_pos_loli(15,0,ipln,ich,&xch,&ych,&zch);
-	      if(fabs(y-ych)<loli_scinti_width/2 && fabs(z-zch)<loli_scinti_thick/2) {foundY=true;}
-	      
-	      IngD->get_pos_loli(15,1,ipln,ich,&xch,&ych,&zch);
-	      if(fabs(x-xch)<loli_scinti_width/2 && fabs(z-zch)<loli_scinti_thick/2) {foundX=true;}	
-	    }
-	    if(foundX || foundY) IsSciBkg=true; // both can't be simultaneously satisfied
-	  }
-	  else {
-	    bool foundX=false,foundY=false;
-	    for (int ich=0;ich<40;ich++){
-	      IngD->get_pos_loli(15,0,ipln,ich,&xch,&ych,&zch);
-	      if(fabs(y-ych)<loli_scinti_thick/2 && fabs(z-zch)<loli_scinti_width/2) {foundY=true;}
-	    }
-	    for (int ich=0;ich<CHMAX;ich++){
-	      IngD->get_pos_loli(15,1,ipln,ich,&xch,&ych,&zch);
-	      if(fabs(x-xch)<loli_scinti_thick/2 && fabs(z-zch)<loli_scinti_width/2) {foundX=true;}
-	    }
-	    if(foundX || foundY) IsSciBkg=true; 
-	  }
+      if(!_isPM && intmode==17){
+	double x=VertexPosition[0];//cm
+	double y=VertexPosition[1];//cm
+	double z=VertexPosition[2]+120;//cm
 	
-	  break;
+	double xch,ych,zch;
+	bool foundXY=false, foundZ=false;
+	
+	for(int ipln=0;ipln<PLNMAX;ipln++){
+	  
+	  foundZ=false;
+	  int grid;
+	  
+	  for(int iview=0;iview<VIEWMAX;iview++){
+	    IngD->get_pos_loli(15,iview,ipln,0,&xch,&ych,&zch); // scinti planes
+	    if(fabs(z-zch)<loli_scinti_thick/2) {foundZ=true;grid=0;}
+	    
+	    IngD->get_pos_loli(15,iview,ipln,40,&xch,&ych,&zch); // grid 1
+	    if(fabs(z-zch)<loli_scinti_width/2) {foundZ=true;grid=1;}
+	    
+	    IngD->get_pos_loli(15,iview,ipln,60,&xch,&ych,&zch); // grid 2
+	    if(fabs(z-zch)<loli_scinti_width/2) {foundZ=true;grid=2;}
+	  }
+	  
+	  if(foundZ){
+	    if(grid==0){ // plane
+	      bool foundX=false,foundY=false;
+	      for (int ich=0;ich<40;ich++){
+		IngD->get_pos_loli(15,0,ipln,ich,&xch,&ych,&zch);
+		if(fabs(y-ych)<loli_scinti_width/2 && fabs(z-zch)<loli_scinti_thick/2) {foundY=true;}
+		
+		IngD->get_pos_loli(15,1,ipln,ich,&xch,&ych,&zch);
+		if(fabs(x-xch)<loli_scinti_width/2 && fabs(z-zch)<loli_scinti_thick/2) {foundX=true;}	
+	      }
+	    if(foundX || foundY) IsSciBkg=true; // both can't be simultaneously satisfied
+	    }
+	    else {
+	      bool foundX=false,foundY=false;
+	      for (int ich=0;ich<40;ich++){
+		IngD->get_pos_loli(15,0,ipln,ich,&xch,&ych,&zch);
+		if(fabs(y-ych)<loli_scinti_thick/2 && fabs(z-zch)<loli_scinti_width/2) {foundY=true;}
+	      }
+	      for (int ich=0;ich<CHMAX;ich++){
+		IngD->get_pos_loli(15,1,ipln,ich,&xch,&ych,&zch);
+		if(fabs(x-xch)<loli_scinti_thick/2 && fabs(z-zch)<loli_scinti_width/2) {foundX=true;}
+	      }
+	      if(foundX || foundY) IsSciBkg=true; 
+	    }
+	    
+	    break;
+	  }
 	}
-      }
       
       if (fabs(x)>50 || fabs(y)>50) IsSciBkg=false;
-
+      }
     }
   }
   else if(intmode>=0 && intmode<7) IsBkgH=1;
