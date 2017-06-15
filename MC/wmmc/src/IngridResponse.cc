@@ -12,6 +12,7 @@ const G4double longlen = 130.;  //cm
 const G4double longlen_pm = 120.;  //cm
 const G4double shortlen = 112.;  //cm
 const G4double attleng = 241.7; //cm
+const G4double attleng_loli = 497. ; //cm
 const G4double sciattleng = 10.46; //cm added
 const G4double sciattleng_loli = 4.0; //cm added
 //const G4double SciBarFactor = 1.96;  //P.E. factor for SciBar scintillator
@@ -21,7 +22,6 @@ const G4double SciBarFactor = 1.77;  //P.E. factor for SciBar scintillator
 const G4double loliFactor = 3.;  //P.E. factor for WAGASCI scintillator
 //const G4double INGRIDFactor = 0.58;  //P.E. factor for INGRID scintillator 2014/12/16
 const G4double INGRIDFactor = 1.08;  //P.E. factor for INGRID scintillator 2014/12/16
-const G4double CBIRKS = 0.0208; // used in SciBooNE MC
 const G4double TransTimeInFiber = 1./28.;  //  1cm/2.8e10[cm/s] * 1e9 [ns]
 const G4double Pedestal = 0;//145;  // pedeltal of ADC counts
 const G4double Gain = 10;  // Gain ADC counts of high gain channel
@@ -70,8 +70,10 @@ const G4int topview = 1;
 const G4int sideview = 0;
 
 //
-IngridResponse::IngridResponse()
+IngridResponse::IngridResponse(G4double cbirks)
 {
+  CBIRKS=cbirks;
+
   //added 2016/7/29
   for(int imod=0;imod<17;imod++){
     for(int iview=0;iview<2;iview++){
@@ -108,6 +110,8 @@ IngridResponse::IngridResponse()
 
   fdim = new INGRID_Dimension();
 }
+
+
 
 //
 IngridResponse::~IngridResponse()
@@ -221,7 +225,7 @@ void IngridResponse::ApplyLightCollection(G4double* edep, G4int mod, G4int view,
 
     if( view==topview ){
 	if(grid==0){
- 		x = fabs(pos[0]/cm - (scposx-0.39) ); //0.39 is glue shift
+ 		x = fabs(pos[0]/cm - (scposx-0.39) ); //0.39 is glue shift wrt middle of scinti
 	}
 	else if(grid==1 || grid==2){
  		x = fabs(pos[2]/cm - (scposz+0.39) ); //0.39 is glue shift
@@ -271,7 +275,7 @@ void IngridResponse::ApplyFiberResponse(G4double* edep, G4double* time, G4int vi
     else if( view==sideview ) x = fabs(scilen_loli/2. + pos[0]/cm) + 20;//20 is fiber length between scinti and bundle
   } 
   // attenuation
-  *edep *= exp(-1.*x/attleng);
+  *edep *= exp(-1.*x/attleng_loli);
   
   // delay in fiber
   *time += TransTimeInFiber*x;

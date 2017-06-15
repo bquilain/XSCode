@@ -35,9 +35,10 @@
 
 //#define MOD3
 
-IngridDetectorConstruction::IngridDetectorConstruction(int MODE)
+IngridDetectorConstruction::IngridDetectorConstruction(int MODE, double cbirks)
 {
     mode = MODE;
+    CBIRKS=cbirks;
 }
 
 IngridDetectorConstruction::~IngridDetectorConstruction()
@@ -882,7 +883,7 @@ G4VPhysicalVolume* IngridDetectorConstruction::Construct()
   G4SDManager* SDman = G4SDManager::GetSDMpointer();
   
   G4String hlayerSDname = "Ingrid/hlayerSD";
-  ahlayerSD = new IngridHLayerSD( hlayerSDname );
+  ahlayerSD = new IngridHLayerSD( hlayerSDname , CBIRKS);
   SDman->AddNewDetector( ahlayerSD );
   hscint_intLV->SetSensitiveDetector ( ahlayerSD );
   hscint2_intLV->SetSensitiveDetector( ahlayerSD );//SciBar type added by kikawa
@@ -892,7 +893,7 @@ G4VPhysicalVolume* IngridDetectorConstruction::Construct()
   hwgridscint_intLV->SetSensitiveDetector( ahlayerSD ); //wagasci scinti h
  
   G4String vlayerSDname = "Ingrid/vlayerSD";
-  avlayerSD = new IngridVLayerSD( vlayerSDname );
+  avlayerSD = new IngridVLayerSD( vlayerSDname , CBIRKS);
   SDman->AddNewDetector( avlayerSD );
   vscint_intLV->SetSensitiveDetector ( avlayerSD );
   vscint2_intLV->SetSensitiveDetector( avlayerSD );//SciBar type added by kikawa
@@ -902,7 +903,7 @@ G4VPhysicalVolume* IngridDetectorConstruction::Construct()
   vwgridscint_intLV->SetSensitiveDetector( avlayerSD ); //wagasci scinti v
  
   G4String vetoSDname = "Ingrid/vetoSD";
-  avetoSD = new IngridVetoSD( vetoSDname );
+  avetoSD = new IngridVetoSD( vetoSDname , CBIRKS);
   SDman->AddNewDetector( avetoSD );
 
   SvetoLV->SetSensitiveDetector ( avetoSD );

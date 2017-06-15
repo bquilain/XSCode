@@ -117,15 +117,22 @@ int main(int argc, char **argv){
 	sprintf(Command02,"${INSTALLREPOSITORY}/XS/HitEfficiency -r 14510 -t 14510 -i 0 -f 300"); //Generate a file containing Data hit efficiency (${INSTALLREPOSITORY}/XS/files_MCDataComparison/MC_CalibrationPM.root )
       }
       else if(ErrorType==4){
-	sprintf(Command03,"${INSTALLREPOSITORY}/XS/CompareCalibrationsPM -m -i 1 -f 100"); //-> Generate a file containing each hit info for MC (XS/files_MCDataComparison/MC_CalibrationPM.root )
-	sprintf(Command04,"${INSTALLREPOSITORY}/XS/CompareCalibrationsPM -r 14510 -t 14570 -i 0 -f 300");//-> Generate a file containing each hit info for Data (XS/files_MCDataComparison/Data_CalibrationPM.root )
-	sprintf(Command05,"${INSTALLREPOSITORY}/XS/GeneratePEAngleDistributions -o ${INSTALLREPOSITORY}/XS/files/PEXAngle.root");//Read the data and MC files above and create the dependency of PE with angle.
+	if(PM){	
+	  sprintf(Command03,"${INSTALLREPOSITORY}/XS/CompareCalibrationsPM -m -i 1 -f 100"); //-> Generate a file containing each hit info for MC (XS/files_MCDataComparison/MC_CalibrationPM.root )
+	  sprintf(Command04,"${INSTALLREPOSITORY}/XS/CompareCalibrationsPM -r 14510 -t 14570 -i 0 -f 300");//-> Generate a file containing each hit info for Data (XS/files_MCDataComparison/Data_CalibrationPM.root )
+	  sprintf(Command05,"${INSTALLREPOSITORY}/XS/GeneratePEAngleDistributions");//Read the data and MC files above and create the dependency of PE with angle.
+	}
+	else{
+	  sprintf(Command03,"${INSTALLREPOSITORY}/XS/CompareCalibrationsPM_WM -mw -i 1 -f 100");
+	  sprintf(Command04,"${INSTALLREPOSITORY}/XS/CompareCalibrationsPM_WM -r 29652 -t 29652 -i 0 -f 300 -w"); //tmp, all data have not been processed yet
+	  sprintf(Command05,"${INSTALLREPOSITORY}/XS/GeneratePEAngleDistributions -w");
+	}
       }
       if(ErrorType==5){
 	sprintf(Command06,"#Don't forget to copy your MC two times and change the Birks Constant. The path and name of this MC can be changed in XSFileGenerator.c");
       }
 
-
+ 
    
       for(int n=0;n<NE[ErrorType];n++){
 
@@ -133,7 +140,7 @@ int main(int argc, char **argv){
 	if(MC){
        
 	  for(int i=0;i<NMCfiles;i++){
-	    //for(int i=1;i<=2000;i++){//TEMP
+	  //  for(int i=250;i<650;i++){//TEMP
 	    sprintf(Command1,"");
 	    sprintf(Command1_1,"");
 	    sprintf(Command1_2,"");
@@ -183,7 +190,7 @@ int main(int argc, char **argv){
 		//NuMu
 		if(i<1000) sprintf(InputFile,(PM?"${MCINPUTSTORAGE}/ingbg_5.3.6/13a_nd2_numu_ch_%d.nt":"${MCINPUTSTORAGE_WM}/ingbg_5.3.6/13a_nd2_numu_h2o_%d.nt"),i);
 		else {cout<<"*** only 1000 NEUT files available ***"<<endl; return 0;}
-		sprintf(Command1,"${INSTALLREPOSITORY}/MC/bin/Linux-g++/%s -o ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d.root -i %s -m %d -f 1",execMC,suffix,DetName,i,InputFile,MCDetID);
+		sprintf(Command1,"${INSTALLREPOSITORY}/MC/bin/Linux-g++/%s -o ${MCOUTPUTSTORAGE%s}/%sMC_Numu_Run1_%d.root -i %s -m %d -f 1",execMC,suffix,DetName,i,InputFile,MCDetID);
 		
 		//if(i<=500) sprintf(Command1,"${INSTALLREPOSITORY}/MC/bin/Linux-g++/%s -o ${MCOUTPUTSTORAGE}/PMMC_Numu_Run1_%d.root -i ${MCINPUTSTORAGE}/run1/11bfluka_nd2_numu_ch_%d.nt -m %d -f 1",execMC,i,i,MCDetID);
 		//else if(i<=1000) sprintf(Command1,"${INSTALLREPOSITORY}/MC/bin/Linux-g++/%s -o ${MCOUTPUTSTORAGE}/PMMC_Numu_Run1_%d.root -i ${MCINPUTSTORAGE}/run1add1/11bfluka_nd2_numu_ch_%d.nt -m %d -f 1",execMC,i,i-500,MCDetID);
@@ -259,7 +266,7 @@ int main(int argc, char **argv){
 
 	      //NEUT 5.3.2  -> now NEUT 5.3.6 (ML 2017/02/01)
 
-	      sprintf(Command6,"${INSTALLREPOSITORY}/XS/XS_CC0pi_Plan%s -i ${MCOUTPUTSTORAGE%s}/%sMC%s_Run1_%d_wNoise_ana.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s%s_Run1_%d_Plan.root -f 1 -m%s",suffix,suffix,DetName,ParticleGenerator,i,DetName,ParticleGenerator,i,(PM?"":"w"));
+	      sprintf(Command6,"${INSTALLREPOSITORY}/XS/XS_CC0pi_Plan%s -i ${MCOUTPUTSTORAGE%s}/%sMC%s%s_Run1_%d_wNoise_ana_pidI.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s%s%s_Run1_%d_Plan_pidI.root -f 1 -m%s",suffix,suffix,DetName,ParticleGenerator,Sand,i,DetName,ParticleGenerator,Sand,i,(PM?"":"w"));
 
 	      //NEUT 5.1.4.2
 	      //sprintf(Command6,"${INSTALLREPOSITORY}/XS/XS_CC0pi_Plan -i ${MCOUTPUTSTORAGE}/PM_MC_Beam%d_BirksCorrectedMIP40_ReWeight_SciBar188_wNoise_KSana_woXtalk.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_Old_%d_Plan.root -f 1 -m",i,i);
@@ -294,13 +301,16 @@ int main(int argc, char **argv){
 	      // -B (0,1,or 2) for (-1sigma, nominal, or +1sigma) [0.0185,0.0208,0.0231]
 	      int birksindex=2*n;
 	      sprintf(InputFile,(PM?"${MCINPUTSTORAGE}/ingbg_5.3.6/13a_nd2_numu_ch_%d.nt":"${MCINPUTSTORAGE_WM}/ingbg_5.3.6/13a_nd2_numu_h2o_%d.nt"),i);
-	      sprintf(Command1,"${INSTALLREPOSITORY}/MC/bin/Linux-g++/%s -o ${MCOUTPUTSTORAGE%s}/%sMC_Numu_Run1_%d.root -i %s -m %d -f 1 -B %d",execMC,suffix,DetName,i,InputFile,MCDetID,2*n);
-	      // *** -B option not implemented yet for WM
-	      // re-run FinalOutputMaker with background files (unmodified) ?
-	      sprintf(Command2,"${INSTALLREPOSITORY}/Reconstruction/app%s/IngAddNoisePMMC_new -f ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_Sytematics%d_%d.root -o ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_Systematics%d_%d.root %s",DetName,suffix,DetName,i,ErrorType,n,suffix,DetName,i,ErrorType,n,(PM?"":Form("-n %2.1f -w",DNRateWM)));  
-	      sprintf(Command3,"${INSTALLREPOSITORY}/Reconstruction/app%s/%s -r 14000 -s 0 -f ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_Systematics%d_%d.root -o ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_recon_Systematics%d_%d.root",DetName,execRecon,suffix,DetName,i,ErrorType,n,suffix,DetName,i,ErrorType,n);
-	      sprintf(Command4,"${INSTALLREPOSITORY}/Reconstruction/app%s/%s -r 14000 -s 0 -f ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_recon_Systematics%d_%d.root -o ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_ana_Systematics%d_%d.root",DetName,execAna,suffix,DetName,i,ErrorType,n,suffix,DetName,i,ErrorType,n);
-	      sprintf(Command5,"${INSTALLREPOSITORY}/XS/XS_CC0pi_Plan%s -i ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_ana_Systematics%d_%d.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s_Run1_%d_Systematics%d_%d_Plan.root -f 1 -m%s",suffix,suffix,DetName,i,ErrorType,n,DetName,i,ErrorType,n,(PM?"":"w"));
+	      sprintf(Command1,"${INSTALLREPOSITORY}/MC/bin/Linux-g++/%s -o ${MCOUTPUTSTORAGE%s}/%sMC_Numu_Run1_%d_Systematics%d_%d.root -i %s -m %d -f 1 -B %d",execMC,suffix,DetName,i,ErrorType,birksindex,InputFile,MCDetID,birksindex);
+
+	      // re-run FinalOutputMaker with background files (unmodified) 
+	      sprintf(Command1_6,"${INSTALLREPOSITORY}/XS/FinalMCOutputMaker -a ${MCOUTPUTSTORAGE%s}/%sMC_Numu_Run1_%d_Systematics%d_%d.root -b ${MCOUTPUTSTORAGE%s}/%sMC_Numubar_Run1_%d.root -c ${MCOUTPUTSTORAGE%s}/%sMC_Nue_Run1_%d.root -d ${MCOUTPUTSTORAGE%s}/%sMC_Wall_Run1_%d.root -e ${MCOUTPUTSTORAGE%s}/%sMC_INGRIDH_Run1_%d.root -f ${MCOUTPUTSTORAGE%s}/%sMC_INGRIDV_Run1_%d.root -o ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_Systematics%d_%d.root",suffix,DetName,i,ErrorType,birksindex,suffix,DetName,i,suffix,DetName,i,suffix,DetName,i,suffix,DetName,i,suffix,DetName,i,suffix,DetName,i,ErrorType,birksindex);
+	
+	      if(!PM) sprintf(Command2,"${INSTALLREPOSITORY}/Reconstruction/appWM/Loli_addcrosstalk_slit -f ${MCOUTPUTSTORAGE_WM}/WMMC%s_Run1_%d_Systematics%d_%d.root -o ${MCOUTPUTSTORAGE_WM}/WMMC%s_Run1_%d_wXtalk_Systematics%d_%d.root",Sand,i,ErrorType,birksindex,Sand,i,ErrorType,birksindex);     	  
+	      sprintf(Command3,"${INSTALLREPOSITORY}/Reconstruction/app%s/IngAddNoisePMMC_new -f ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d%s_Sytematics%d_%d.root -o ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_Systematics%d_%d.root %s",DetName,suffix,DetName,i,(PM?"":"_wXtalk"),ErrorType,birksindex,suffix,DetName,i,ErrorType,birksindex,(PM?"":Form("-n %2.1f -w",DNRateWM)));  
+	      sprintf(Command4,"${INSTALLREPOSITORY}/Reconstruction/app%s/%s -r 14000 -s 0 -f ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_Systematics%d_%d.root -o ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_recon_Systematics%d_%d.root",DetName,execRecon,suffix,DetName,i,ErrorType,birksindex,suffix,DetName,i,ErrorType,birksindex);
+	      sprintf(Command5,"${INSTALLREPOSITORY}/Reconstruction/app%s/%s -r 14000 -s 0 -f ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_recon_Systematics%d_%d.root -o ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_ana_Systematics%d_%d.root",DetName,execAna,suffix,DetName,i,ErrorType,birksindex,suffix,DetName,i,ErrorType,birksindex);
+	      sprintf(Command6,"${INSTALLREPOSITORY}/XS/XS_CC0pi_Plan%s -i ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_ana_Systematics%d_%d.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s_Run1_%d_Systematics%d_%d_Plan.root -f 1 -m%s",suffix,suffix,DetName,i,ErrorType,birksindex,DetName,i,ErrorType,birksindex,(PM?"":"w"));
 	    }
 	    else if(ErrorType==6){
 	      // done at the level of CC0piSelection.c
@@ -344,28 +354,28 @@ int main(int argc, char **argv){
 		if(sandOnly){
 
 		ScriptMC<<"#!/bin/bash +x"<<endl
-		  /*		<<Command1_3<<endl
-		  <<Command2<<endl
-		  <<Command3<<endl
-		  <<Command4<<endl*/
+		  //	<<Command1_3<<endl
+			<<Command2<<endl
+			<<Command3<<endl
+			<<Command4<<endl
 			<<Command5<<endl; 
 
 		}
 		else{
-		ScriptMC<<"#!/bin/bash +x"<<endl
-		  //		   <<Command1<<endl
-		  /* <<Command1_1<<endl
-		  <<Command1_2<<endl
-		  <<Command1_3<<endl
-		  <<Command1_4<<endl
-		  <<Command1_5<<endl
-		  <<Command1_6<<endl*/
-		  //	  <<Command2<<endl
-		  //<<Command3<<endl
-		  //<<Command4<<endl
-			<<Command5<<endl;
-		//	  <<Command6<<endl;
-		//		    <<Command7<<endl;
+		  ScriptMC<<"#!/bin/bash +x"<<endl
+		    /*			  <<Command1<<endl
+			  <<Command1_1<<endl
+			  <<Command1_2<<endl
+			  <<Command1_3<<endl
+			  <<Command1_4<<endl
+			  <<Command1_5<<endl*/
+		    //<<Command1_6<<endl
+		    //  <<Command2<<endl
+		    //  <<Command3<<endl
+			  <<Command4<<endl
+			  <<Command5<<endl
+			  <<Command6<<endl;
+		  //		  <<Command7<<endl;
 		}
 	      }
       
@@ -536,8 +546,8 @@ int main(int argc, char **argv){
   
   
   ///////////////////////////////////PREREQUISITE//////////////////////////////////////////
-  sprintf(Name1,"%s/MC/Jobs/Prerequisite.sh",cINSTALLREPOSITORY);
-  sprintf(Name2,"%s/MC/Jobs/condorPrerequisite.sh",cINSTALLREPOSITORY);
+    sprintf(Name1,"%s/MC/Jobs/Prerequisite%s.sh",cINSTALLREPOSITORY,DetName);
+  sprintf(Name2,"%s/MC/Jobs/condorPrerequisite%s.sh",cINSTALLREPOSITORY,DetName);
   //sprintf(Name1,"$(INSTALLREPOSITORY)/MC/Jobs/Prerequisite.sh");
   //sprintf(Name2,"$(INSTALLREPOSITORY)/MC/Jobs/condorPrerequisite.sh");
   cout<<Name1<<endl;
@@ -552,9 +562,9 @@ int main(int argc, char **argv){
     }
   
   
-  sprintf(Command10,"Executable = ${INSTALLREPOSITORY}/MC/Jobs/Prerequisite.sh");
-  sprintf(Command20,"Output = ${INSTALLREPOSITORY}/MC/Jobs/log_Prerequisite.txt");
-  sprintf(Command30,"Error = ${INSTALLREPOSITORY}/MC/Jobs/err_Prerequisite.txt");
+  sprintf(Command10,"Executable = ${INSTALLREPOSITORY}/MC/Jobs/Prerequisite%s.sh",DetName);
+  sprintf(Command20,"Output = ${INSTALLREPOSITORY}/MC/Jobs/log_Prerequisite%s.txt",DetName);
+  sprintf(Command30,"Error = ${INSTALLREPOSITORY}/MC/Jobs/err_Prerequisite%s.txt",DetName);
   ofstream CondorPre(Name2);
   if(CondorPre){
     CondorPre<<Command10<<endl
@@ -584,8 +594,8 @@ int main(int argc, char **argv){
       sprintf(Command005,"");
       sprintf(Command006,"");
 
-      sprintf(Name1,"%s/MC/Jobs/Postrequisite_Systematics%d_%d.sh",cINSTALLREPOSITORY,ErrorType,n);
-      sprintf(Name2,"%s/MC/Jobs/condorPostrequisite_Systematics%d_%d.sh",cINSTALLREPOSITORY,ErrorType,n);
+      sprintf(Name1,"%s/MC/Jobs/Postrequisite%s_Systematics%d_%d.sh",cINSTALLREPOSITORY,DetName,ErrorType,n);
+      sprintf(Name2,"%s/MC/Jobs/condorPostrequisite%s_Systematics%d_%d.sh",cINSTALLREPOSITORY,DetName,ErrorType,n);
       cout<<Name1<<endl;
       ofstream ScriptPost(Name1);
       if(ErrorType==0){
@@ -618,9 +628,9 @@ int main(int argc, char **argv){
 		    <<Command003<<endl
 		    <<Command004<<endl;
 	}
-      sprintf(Command10,"Executable = %s/MC/Jobs/Postrequisite_Systematics%d_%d.sh",cINSTALLREPOSITORY,ErrorType,n);
-      sprintf(Command20,"Output = %s/MC/Jobs/log_Postrequisite_Systematics%d_%d.txt",cINSTALLREPOSITORY,ErrorType,n);
-      sprintf(Command30,"Error = %s/MC/Jobs/err_Postrequisite_Systematics%d_%d.txt",cINSTALLREPOSITORY,ErrorType,n);
+      sprintf(Command10,"Executable = %s/MC/Jobs/Postrequisite%s_Systematics%d_%d.sh",cINSTALLREPOSITORY,DetName,ErrorType,n);
+      sprintf(Command20,"Output = %s/MC/Jobs/log_Postrequisite%s_Systematics%d_%d.txt",cINSTALLREPOSITORY,DetName,ErrorType,n);
+      sprintf(Command30,"Error = %s/MC/Jobs/err_Postrequisite%s_Systematics%d_%d.txt",cINSTALLREPOSITORY,DetName,ErrorType,n);
 
       ofstream CondorPost(Name2);
       if(CondorPost){

@@ -184,7 +184,7 @@ int main(int argc,char *argv[]){
     sprintf(Output, "%s/ingrid_%08d_%04d_recon.root", 
 	    cosmic_data, run_number, sub_run_number); 
   }
-
+  
   TFile*            wfile = new TFile(Output, "recreate");
   TTree*            wtree = new TTree("tree","tree");
   wtree -> SetMaxTreeSize(5000000000);
@@ -194,7 +194,7 @@ int main(int argc,char *argv[]){
   int NActivePlanes[17][23];int NTracks[17][23];
   wtree              -> Branch   ("NActivePlanes[17][23]",&NActivePlanes,"NActivePlanes[17][23]/I");
   wtree              -> Branch   ("NTracks[17][23]",&NTracks,"NTracks[17][23]/I");
-      				    
+      		        	    
   IngridHitSummary*    inghitsum;
   IngridSimVertexSummary*   simver;
   //IngridBasicReconSummary*    ingbasicrecon;
@@ -249,6 +249,8 @@ int main(int argc,char *argv[]){
 	}
 
 	if(allhit.size()<6)continue;
+
+	//cout<<mod<<" "<<allhit.size()<<endl;
 	fSortTime(allhit);
 	while(fFindTimeClster(allhit, hitcls, fcTime)){
 	  

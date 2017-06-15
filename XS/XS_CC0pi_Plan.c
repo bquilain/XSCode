@@ -52,7 +52,7 @@ using namespace std;
 #include "Xsec.cc"
 
 #define LIKELIHOODHERE
-#define MVA
+//#define MVA
 //#define ALLSTUDY
 //#define DEBUG_PID
 //#define DEBUG_PID_BDT
@@ -462,7 +462,8 @@ int main(int argc, char **argv)
   string InputFileName;string OutputFileName;
   
   int ErrorType;string ErrorValue;char cErrorValue[256];
-  
+
+  int nbad=0;//for checking  
    
   TFile * fPEAngle;
   TH1D * PEAngleData_PMIng;  
@@ -985,7 +986,7 @@ int main(int argc, char **argv)
 	    vector <double> Dist;//
     	    if(dx!=dx || dx==0) {cout<<"Problem in dx evaluation"<<endl;continue;}   
 	    Dist=Rec->Reconstruction::TrackPenetrationPM((recon->startxpln)[itrk],(recon->startxch)[itrk], DegRad((recon->thetax)[itrk]), (recon->startypln)[itrk],(recon->startych)[itrk], DegRad((recon->thetay)[itrk]),(recon->endxpln)[itrk],(recon->endxch)[itrk],(recon->endypln)[itrk],(recon->endych)[itrk],(recon->ing_startmod)[itrk],(recon->ing_startpln)[itrk], (recon->ing_endpln)[itrk], dx, TrackSample, Vec);
-	          
+	         
 	    //if((recon->ing_endpln)[itrk]>=9) Dist[1]=58.5/TMath::Cos(DegRad((recon->angle)[itrk]));
 	    //else Dist[1]=6.5*((recon->ing_endpln)[itrk]-(recon->ing_startpln)[itrk])/TMath::Cos(DegRad((recon->angle)[itrk]));
 	    //if((recon->ing_endpln)[itrk]<2 && recon->ing_trk[itrk]) cout<<"ONLY 2 PLANES"<<endl;
@@ -1128,259 +1129,262 @@ int main(int argc, char **argv)
 	    Vec=Cor->Corrections::GetDXCorrection(Vec,dx);
 	    sort(Vec.begin(),Vec.end());
 
-	    
-	    double CLPlan=1;
-	    double CLLikelihood_Muon=1;double CLLikelihood_NotMuon=1;
-	    
-	    int NCLHits=0;//Number of hits in the vertex plane or the plane just after
-	    for(int i=0;i<Vec.size();i++){
-
-	      if(Vec[i].used>1) continue;
-	      if(Vec[i].mod==16){
-		if(Vec[i].view==0){
-		  if((Vec[i].pln==(recon->startxpln)[itrk]) || (Vec[i].pln==((recon->startxpln)[itrk]+1)) ) continue;
-		  else if(Vec[i].pln<(recon->startxpln)[itrk]) cout<<"Problem, the vertex of the track is downstream its first hit..."<<endl;
-		}
-		else{
-		  if((Vec[i].pln==(recon->startypln)[itrk]) || (Vec[i].pln==((recon->startypln)[itrk]+1)) ) continue;
-		  else if(Vec[i].pln<(recon->startypln)[itrk]) cout<<"Problem, the vertex of the track is downstream its first hit..."<<endl;
-		}
-	      }
-	      NCLHits++;
-	    }
-	    //cout<<"startx="<<(recon->startxpln)[itrk]<<", starty="<<(recon->startypln)[itrk]<<", hits essentials to this track only="<<NCLHits<<endl;
-#ifdef DEBUG2
-	    cout<<"Number of hits="<<Vec.size()<<endl;
-#endif
-	    sort(Vec.begin(),Vec.end());
-	    double ControlTrkLength = TMath::Sqrt(pow(Vec.back().x-Vec.front().x,2)+pow(Vec.back().y-Vec.front().y,2)+pow(Vec.back().z-Vec.front().z,2));
-
-	    for(int i=0;i<Vec.size();i++){
+	    if(PM){ // TEMP -- Dist computation is unstable for WM -- 2017/05/19
+	      double CLPlan=1;
+	      double CLLikelihood_Muon=1;double CLLikelihood_NotMuon=1;
 	      
-	      if(NCLHits<=2){
+	      int NCLHits=0;//Number of hits in the vertex plane or the plane just after
+	      for(int i=0;i<Vec.size();i++){
+
+		if(Vec[i].used>1) continue;
 		if(Vec[i].mod==16){
-		  if(Vec[i].view==0){ if(Vec[i].pln==(recon->startxpln)[itrk]) continue;}
-		  else{ if(Vec[i].pln==(recon->startypln)[itrk]) continue;}
-		}
-	      }
-	      else{
-		if(Vec[i].mod==16){
-		  if(Vec[i].view==0){ if((Vec[i].pln==(recon->startxpln)[itrk]) || (Vec[i].pln==((recon->startxpln)[itrk]+1)) ) continue;}
-		  else{ if((Vec[i].pln==(recon->startypln)[itrk]) || (Vec[i].pln==((recon->startypln)[itrk]+1)) ) continue;}
-		}
-	      }
-	      
-	      double Distance = TMath::Sqrt(pow(Vec[i].x-Vec.front().x,2)+pow(Vec[i].y-Vec.front().y,2)+pow(Vec[i].z-Vec.front().z,2));
-	      
-#ifdef DEBUG2
-	      //if(DistanceBarycenter/Dist[2] > 1.) cout<<endl<<endl<<endl<<endl<<"CAREFUL: Track is too long, Track Length="<<Dist[2]<<endl<<endl<<endl;
-	      //cout<<"Module="<<Vec[i].mod<<", plane="<<Vec[i].pln<<", channel="<<Vec[i].ch<<", view="<<Vec[i].view<<", pe="<<Vec[i].pe<<", corr="<<Vec[i].pecorr<<", Distance="<<DistanceBarycenter/Dist[2]<<endl;
-#endif
-	      
-	      //All hits
-	      if(Vec[i].mod==16 && Reco->Reconstruction::IsINGRID(Vec[i].mod,Vec[i].pln,Vec[i].ch)) PlaneNonIsolated[1][Vec[i].pln][Vec[i].view]++;
-	      else if(Vec[i].mod==16 && !(Reco->Reconstruction::IsINGRID(Vec[i].mod,Vec[i].pln,Vec[i].ch))) PlaneNonIsolated[0][Vec[i].pln][Vec[i].view]++;
-	      else PlaneNonIsolated[2][Vec[i].pln][Vec[i].view]++;
-
-
-	      
-	      //Isolated hits
-	      if(NCLHits>2 && Vec[i].used>1) continue;
-
-	      if(Vec[i].mod==16 && Reco->Reconstruction::IsINGRID(Vec[i].mod,Vec[i].pln,Vec[i].ch)){
-		PECorrected=Vec[i].pecorr;
-		if(ErrorType==4) PECorrected=PECorrected+PECorrected*SystematicsPECorrected_PMIng;
-		PEPlane[1][Vec[i].pln][Vec[i].view]+=PECorrected;
-		Plane[1][Vec[i].pln][Vec[i].view]++;
-		DistanceBarycenter[1][Vec[i].pln][Vec[i].view]+=Vec[i].dist_plastic/IronCarbonRatio+Vec[i].dist_iron;
-	      }
-	      else if(Vec[i].mod==16 && !(Reco->Reconstruction::IsINGRID(Vec[i].mod,Vec[i].pln,Vec[i].ch))){
-		PECorrected=Vec[i].pecorr;
-		if(ErrorType==4) PECorrected=PECorrected+PECorrected*SystematicsPECorrected_PMSci;
-		PEPlane[0][Vec[i].pln][Vec[i].view]+=PECorrected;
-		Plane[0][Vec[i].pln][Vec[i].view]++;
-		DistanceBarycenter[0][Vec[i].pln][Vec[i].view]+=Vec[i].dist_plastic/IronCarbonRatio+Vec[i].dist_iron;
-	      }
-	      else{
-		PECorrected=Vec[i].pecorr;
-		if(ErrorType==4) PECorrected=PECorrected+PECorrected*SystematicsPECorrected_PMIng;
-		PEPlane[2][Vec[i].pln][Vec[i].view]+=PECorrected;
-		Plane[2][Vec[i].pln][Vec[i].view]++;
-		DistanceBarycenter[2][Vec[i].pln][Vec[i].view]+=Vec[i].dist_plastic/IronCarbonRatio+Vec[i].dist_iron;
-	      }
-
-	    }//End of loop over hits
-	    //cout<<"Now compare"<<endl;
-	    
-    	    
-	    double cl;
-	    double cllikelihood_muon;
-	    double cllikelihood_notmuon;
-	    int NHits=0;
-	    int HighPECount=0;double MaxPE=0;double AverageHighPE=0;
-	    for(int ipln=0;ipln<NPlnPM;ipln++){
-	      for(int iview=0;iview<2;iview++){
-		//if(NHits>2) break;
-		//cout<<"Pln="<<ipln<<", view="<<iview<<", PM is active="<<(PEPlane[0][ipln][iview]!=0 || PEPlane[1][ipln][iview]!=0)<<", INGRID active="<<(PEPlane[2][ipln][iview]!=0)<<endl;
-		
-		//All hits
-		if(PlaneNonIsolated[0][ipln][iview]!=0 || PlaneNonIsolated[1][ipln][iview]!=0){//case PM & active plane
-		  double Barycenter = (DistanceBarycenter[0][ipln][iview]+DistanceBarycenter[1][ipln][iview]) / (PlaneNonIsolated[0][ipln][iview]+PlaneNonIsolated[1][ipln][iview]);
-		  double RelativeBarycenter = Barycenter / Dist[2];
-		  double bindistancesize = (1. / (LimitHits-1));//number of separation between intervals = number of intervals -1, as usual...
-		  int bindistance = ((int) (RelativeBarycenter / bindistancesize));
-		  if(bindistance >= LimitHits) bindistance=LimitHits-1;
-		  NViewsPerPlaneEnergyDepositionNonIsolated[itrk][bindistance]++;
-		  TransverseWidthNonIsolated[itrk][bindistance]+=PlaneNonIsolated[0][ipln][iview]*2.5+PlaneNonIsolated[1][ipln][iview]*5.;
-		}
-		if(PlaneNonIsolated[2][ipln][iview]!=0){
-		  double Barycenter = (DistanceBarycenter[2][ipln][iview]) / (PlaneNonIsolated[2][ipln][iview]);
-		  double RelativeBarycenter = Barycenter / Dist[2];
-		  double bindistancesize = (1. / (LimitHits-1));//number of separation between intervals = number of intervals -1, as usual...
-		  int bindistance = ((int) (RelativeBarycenter / bindistancesize));
-		  if(bindistance >= LimitHits) bindistance=LimitHits-1;
-		  // cout<<itrk<<"/"<<LimitTracks<<" "<<bindistance<<"/"<<LimitHits<<" "<<Barycenter<<" "<<Dist[2]<<" "<<Dist[0]<<" "<<Dist[1]<<" "<<dx<<" "<<recon->angle[itrk]<<endl;
-		  NViewsPerPlaneEnergyDepositionNonIsolated[itrk][bindistance]++;
-		  TransverseWidthNonIsolated[itrk][bindistance]+=PlaneNonIsolated[2][ipln][iview]*5.;
-		}
-	      
-
-
-
-	      
-		//Isolated
-		if(Plane[0][ipln][iview]!=0 || Plane[1][ipln][iview]!=0){//case PM & active plane
-		  if(Plane[0][ipln][iview]>=Plane[1][ipln][iview]){
-		    //cout<<"PM, plane="<<ipln<<", view="<<iview<<", PE="<<PEPlane[0][ipln][iview]+PEPlane[1][ipln][iview]<<endl;
-		    cl = sCL_PMSci_Plan->Eval(PEPlane[0][ipln][iview]+PEPlane[1][ipln][iview]);
-		    hTest_PMSci->Fill(PEPlane[0][ipln][iview]+PEPlane[1][ipln][iview],weight);
-		    CLTest_PMSci->Fill(PEPlane[0][ipln][iview]+PEPlane[1][ipln][iview],cl,weight);
-		    CLPlan *=cl;
-		    
-		    cllikelihood_muon=CL_PMSci_Muon->Eval(PEPlane[0][ipln][iview]+PEPlane[1][ipln][iview]);
-		    cllikelihood_notmuon=CL_PMSci_NotMuon->Eval(PEPlane[0][ipln][iview]+PEPlane[1][ipln][iview]);
-		    CLLikelihood_Muon *= cllikelihood_muon;
-		    CLLikelihood_NotMuon *= cllikelihood_notmuon;
-		
-#ifdef DEBUG_PID
-		    cout<<"PM, plane="<<ipln<<", view="<<iview<<", PE="<<PEPlane[0][ipln][iview]+PEPlane[1][ipln][iview]<<", cl="<<cl<<", cllikelihoodmuon="<<cllikelihood_muon<<", not muon="<<cllikelihood_notmuon<<", number of hits SciBar="<<Plane[0][ipln][iview]<<", number of hits INGRID="<<Plane[1][ipln][iview]<<endl;
-#endif
+		  if(Vec[i].view==0){
+		    if((Vec[i].pln==(recon->startxpln)[itrk]) || (Vec[i].pln==((recon->startxpln)[itrk]+1)) ) continue;
+		    else if(Vec[i].pln<(recon->startxpln)[itrk]) cout<<"Problem, the vertex of the track is downstream its first hit..."<<endl;
 		  }
 		  else{
-		    //cout<<"PM, plane="<<ipln<<", view="<<iview<<", PE="<<PEPlane[0][ipln][iview]+PEPlane[1][ipln][iview]<<endl;
-		    hTest_PMIng->Fill(PEPlane[0][ipln][iview]+PEPlane[1][ipln][iview],weight);
-		    cl = sCL_PMIng_Plan->Eval(PEPlane[0][ipln][iview]+PEPlane[1][ipln][iview]);
-		    CLTest_PMIng->Fill(PEPlane[0][ipln][iview]+PEPlane[1][ipln][iview],cl,weight);
-		    CLPlan *=cl;
+		    if((Vec[i].pln==(recon->startypln)[itrk]) || (Vec[i].pln==((recon->startypln)[itrk]+1)) ) continue;
+		    else if(Vec[i].pln<(recon->startypln)[itrk]) cout<<"Problem, the vertex of the track is downstream its first hit..."<<endl;
+		  }
+		}
+		NCLHits++;
+	      }
+	      //cout<<"startx="<<(recon->startxpln)[itrk]<<", starty="<<(recon->startypln)[itrk]<<", hits essentials to this track only="<<NCLHits<<endl;
+#ifdef DEBUG2
+	      cout<<"Number of hits="<<Vec.size()<<endl;
+#endif
+	      sort(Vec.begin(),Vec.end());
+	      double ControlTrkLength = TMath::Sqrt(pow(Vec.back().x-Vec.front().x,2)+pow(Vec.back().y-Vec.front().y,2)+pow(Vec.back().z-Vec.front().z,2));
+
+	      for(int i=0;i<Vec.size();i++){
+	      
+		if(NCLHits<=2){
+		  if(Vec[i].mod==16){
+		    if(Vec[i].view==0){ if(Vec[i].pln==(recon->startxpln)[itrk]) continue;}
+		    else{ if(Vec[i].pln==(recon->startypln)[itrk]) continue;}
+		  }
+		}
+		else{
+		  if(Vec[i].mod==16){
+		    if(Vec[i].view==0){ if((Vec[i].pln==(recon->startxpln)[itrk]) || (Vec[i].pln==((recon->startxpln)[itrk]+1)) ) continue;}
+		    else{ if((Vec[i].pln==(recon->startypln)[itrk]) || (Vec[i].pln==((recon->startypln)[itrk]+1)) ) continue;}
+		  }
+		}
+	      
+		double Distance = TMath::Sqrt(pow(Vec[i].x-Vec.front().x,2)+pow(Vec[i].y-Vec.front().y,2)+pow(Vec[i].z-Vec.front().z,2));
+	      
+#ifdef DEBUG2
+		//if(DistanceBarycenter/Dist[2] > 1.) cout<<endl<<endl<<endl<<endl<<"CAREFUL: Track is too long, Track Length="<<Dist[2]<<endl<<endl<<endl;
+		//cout<<"Module="<<Vec[i].mod<<", plane="<<Vec[i].pln<<", channel="<<Vec[i].ch<<", view="<<Vec[i].view<<", pe="<<Vec[i].pe<<", corr="<<Vec[i].pecorr<<", Distance="<<DistanceBarycenter/Dist[2]<<endl;
+#endif
+	      
+		//All hits
+		if(Vec[i].mod==16 && Reco->Reconstruction::IsINGRID(Vec[i].mod,Vec[i].pln,Vec[i].ch)) PlaneNonIsolated[1][Vec[i].pln][Vec[i].view]++;
+		else if(Vec[i].mod==16 && !(Reco->Reconstruction::IsINGRID(Vec[i].mod,Vec[i].pln,Vec[i].ch))) PlaneNonIsolated[0][Vec[i].pln][Vec[i].view]++;
+		else PlaneNonIsolated[2][Vec[i].pln][Vec[i].view]++;
+
+
+	      
+		//Isolated hits
+		if(NCLHits>2 && Vec[i].used>1) continue;
+
+		if(Vec[i].mod==16 && Reco->Reconstruction::IsINGRID(Vec[i].mod,Vec[i].pln,Vec[i].ch)){
+		  PECorrected=Vec[i].pecorr;
+		  if(ErrorType==4) PECorrected=PECorrected+PECorrected*SystematicsPECorrected_PMIng;
+		  PEPlane[1][Vec[i].pln][Vec[i].view]+=PECorrected;
+		  Plane[1][Vec[i].pln][Vec[i].view]++;
+		  DistanceBarycenter[1][Vec[i].pln][Vec[i].view]+=Vec[i].dist_plastic/IronCarbonRatio+Vec[i].dist_iron;
+		}
+		else if(Vec[i].mod==16 && !(Reco->Reconstruction::IsINGRID(Vec[i].mod,Vec[i].pln,Vec[i].ch))){
+		  PECorrected=Vec[i].pecorr;
+		  if(ErrorType==4) PECorrected=PECorrected+PECorrected*SystematicsPECorrected_PMSci;
+		  PEPlane[0][Vec[i].pln][Vec[i].view]+=PECorrected;
+		  Plane[0][Vec[i].pln][Vec[i].view]++;
+		  DistanceBarycenter[0][Vec[i].pln][Vec[i].view]+=Vec[i].dist_plastic/IronCarbonRatio+Vec[i].dist_iron;
+		}
+		else{
+		  PECorrected=Vec[i].pecorr;
+		  if(ErrorType==4) PECorrected=PECorrected+PECorrected*SystematicsPECorrected_PMIng;
+		  PEPlane[2][Vec[i].pln][Vec[i].view]+=PECorrected;
+		  Plane[2][Vec[i].pln][Vec[i].view]++;
+		  DistanceBarycenter[2][Vec[i].pln][Vec[i].view]+=Vec[i].dist_plastic/IronCarbonRatio+Vec[i].dist_iron;
+		}
+
+	      }//End of loop over hits
+	      //cout<<"Now compare"<<endl;
+	    
+    	    
+	      double cl;
+	      double cllikelihood_muon;
+	      double cllikelihood_notmuon;
+	      int NHits=0;
+	      int HighPECount=0;double MaxPE=0;double AverageHighPE=0;
+	      for(int ipln=0;ipln<NPlnPM;ipln++){
+		for(int iview=0;iview<2;iview++){
+		  //if(NHits>2) break;
+		  //cout<<"Pln="<<ipln<<", view="<<iview<<", PM is active="<<(PEPlane[0][ipln][iview]!=0 || PEPlane[1][ipln][iview]!=0)<<", INGRID active="<<(PEPlane[2][ipln][iview]!=0)<<endl;
+		
+		  //All hits
+		  if(PlaneNonIsolated[0][ipln][iview]!=0 || PlaneNonIsolated[1][ipln][iview]!=0){//case PM & active plane
+		    double Barycenter = (DistanceBarycenter[0][ipln][iview]+DistanceBarycenter[1][ipln][iview]) / (PlaneNonIsolated[0][ipln][iview]+PlaneNonIsolated[1][ipln][iview]);
+		    double RelativeBarycenter = Barycenter / Dist[2];
+		    double bindistancesize = (1. / (LimitHits-1));//number of separation between intervals = number of intervals -1, as usual...
+		    int bindistance = ((int) (RelativeBarycenter / bindistancesize));
+		    if(bindistance >= LimitHits) bindistance=LimitHits-1;
+		    NViewsPerPlaneEnergyDepositionNonIsolated[itrk][bindistance]++;
+		    TransverseWidthNonIsolated[itrk][bindistance]+=PlaneNonIsolated[0][ipln][iview]*2.5+PlaneNonIsolated[1][ipln][iview]*5.;
+		  }
+		  if(PlaneNonIsolated[2][ipln][iview]!=0){
+		    double Barycenter = (DistanceBarycenter[2][ipln][iview]) / (PlaneNonIsolated[2][ipln][iview]);
+		    double RelativeBarycenter = Barycenter / Dist[2];
+		    double bindistancesize = (1. / (LimitHits-1));//number of separation between intervals = number of intervals -1, as usual...
+		    int bindistance = ((int) (RelativeBarycenter / bindistancesize));
+		    if(bindistance >= LimitHits) bindistance=LimitHits-1;
+		    //		    cout<<itrk<<"/"<<LimitTracks<<" "<<bindistance<<"/"<<LimitHits<<" "<<Barycenter<<" "<<Dist[2]<<" "<<Dist[0]<<" "<<Dist[1]<<" "<<dx<<" "<<recon->angle[itrk]<<" "<<TrackSample<<" "<<Vec.size()<<endl;
+		    for(int i=0;i<Vec.size();i++) cout<<Vec[i].pln<<" "<<Vec[i].ch<<" "<<Vec[i].view<<" "<<Vec[i].z<<endl; 
+		    NViewsPerPlaneEnergyDepositionNonIsolated[itrk][bindistance]++;
+		    TransverseWidthNonIsolated[itrk][bindistance]+=PlaneNonIsolated[2][ipln][iview]*5.; 
+		  }
+	      
+
+
+
+	      
+		  //Isolated
+		  if(Plane[0][ipln][iview]!=0 || Plane[1][ipln][iview]!=0){//case PM & active plane
+		    if(Plane[0][ipln][iview]>=Plane[1][ipln][iview]){
+		      //cout<<"PM, plane="<<ipln<<", view="<<iview<<", PE="<<PEPlane[0][ipln][iview]+PEPlane[1][ipln][iview]<<endl;
+		      cl = sCL_PMSci_Plan->Eval(PEPlane[0][ipln][iview]+PEPlane[1][ipln][iview]);
+		      hTest_PMSci->Fill(PEPlane[0][ipln][iview]+PEPlane[1][ipln][iview],weight);
+		      CLTest_PMSci->Fill(PEPlane[0][ipln][iview]+PEPlane[1][ipln][iview],cl,weight);
+		      CLPlan *=cl;
 		    
-		    cllikelihood_muon=CL_PMIng_Muon->Eval(PEPlane[0][ipln][iview]+PEPlane[1][ipln][iview]);
-		    cllikelihood_notmuon=CL_PMIng_NotMuon->Eval(PEPlane[0][ipln][iview]+PEPlane[1][ipln][iview]);
+		      cllikelihood_muon=CL_PMSci_Muon->Eval(PEPlane[0][ipln][iview]+PEPlane[1][ipln][iview]);
+		      cllikelihood_notmuon=CL_PMSci_NotMuon->Eval(PEPlane[0][ipln][iview]+PEPlane[1][ipln][iview]);
+		      CLLikelihood_Muon *= cllikelihood_muon;
+		      CLLikelihood_NotMuon *= cllikelihood_notmuon;
+		
+#ifdef DEBUG_PID
+		      cout<<"PM, plane="<<ipln<<", view="<<iview<<", PE="<<PEPlane[0][ipln][iview]+PEPlane[1][ipln][iview]<<", cl="<<cl<<", cllikelihoodmuon="<<cllikelihood_muon<<", not muon="<<cllikelihood_notmuon<<", number of hits SciBar="<<Plane[0][ipln][iview]<<", number of hits INGRID="<<Plane[1][ipln][iview]<<endl;
+#endif
+		    }
+		    else{
+		      //cout<<"PM, plane="<<ipln<<", view="<<iview<<", PE="<<PEPlane[0][ipln][iview]+PEPlane[1][ipln][iview]<<endl;
+		      hTest_PMIng->Fill(PEPlane[0][ipln][iview]+PEPlane[1][ipln][iview],weight);
+		      cl = sCL_PMIng_Plan->Eval(PEPlane[0][ipln][iview]+PEPlane[1][ipln][iview]);
+		      CLTest_PMIng->Fill(PEPlane[0][ipln][iview]+PEPlane[1][ipln][iview],cl,weight);
+		      CLPlan *=cl;
+		    
+		      cllikelihood_muon=CL_PMIng_Muon->Eval(PEPlane[0][ipln][iview]+PEPlane[1][ipln][iview]);
+		      cllikelihood_notmuon=CL_PMIng_NotMuon->Eval(PEPlane[0][ipln][iview]+PEPlane[1][ipln][iview]);
+		      CLLikelihood_Muon *= cllikelihood_muon;
+		      CLLikelihood_NotMuon *= cllikelihood_notmuon;
+#ifdef DEBUG_PID		    
+		      cout<<"PM, plane="<<ipln<<", view="<<iview<<", PE="<<PEPlane[0][ipln][iview]+PEPlane[1][ipln][iview]<<", cl="<<cl<<", cllikelihoodmuon="<<cllikelihood_muon<<", not muon="<<cllikelihood_notmuon<<", number of hits SciBar="<<Plane[0][ipln][iview]<<", number of hits INGRID="<<Plane[1][ipln][iview]<<endl;
+#endif
+		      //CLLikelihood_Muon *= CL_PMIng_Muon->Eval(PEPlane[0][ipln][iview]+PEPlane[1][ipln][iview]);
+		      //CLLikelihood_NotMuon *= CL_PMIng_NotMuon->Eval(PEPlane[0][ipln][iview]+PEPlane[1][ipln][iview]);
+		    }
+		    double Barycenter = (DistanceBarycenter[0][ipln][iview]+DistanceBarycenter[1][ipln][iview]) / (Plane[0][ipln][iview]+Plane[1][ipln][iview]);
+		    double RelativeBarycenter = Barycenter / Dist[2];
+		    double bindistancesize = (1. / (LimitHits-1));//number of separation between intervals = number of intervals -1, as usual...
+		    int bindistance = ((int) (RelativeBarycenter / bindistancesize));
+		    if(bindistance >= LimitHits) bindistance=LimitHits-1;
+
+#ifdef DEBUG_PID_BDT
+		    cout<<"PM, pln="<<ipln<<", view="<<iview<<", Distance="<<RelativeBarycenter<<", bindistance="<<bindistance<<", Energy deposition="<<PEPlane[0][ipln][iview]+PEPlane[1][ipln][iview]<<endl;
+#endif
+		    EnergyDeposition[itrk][bindistance]+=(PEPlane[0][ipln][iview]+PEPlane[1][ipln][iview]);
+		    NViewsPerPlaneEnergyDeposition[itrk][bindistance]++;
+		    TransverseWidth[itrk][bindistance]+=Plane[0][ipln][iview]*2.5+Plane[1][ipln][iview]*5.;
+		    
+		    position[itrk].push_back(RelativeBarycenter);
+		    eposition[itrk].push_back(positionerror);
+		    energydeposition[itrk].push_back(PEPlane[0][ipln][iview]+PEPlane[1][ipln][iview]);
+		    eenergydeposition[itrk].push_back(energyerror);
+		  
+		    NHits++;
+		    if(cl<0.1){
+		      HighPECount++;
+		      AverageHighPE+=PEPlane[0][ipln][iview]+PEPlane[1][ipln][iview];
+		      if(PEPlane[0][ipln][iview]+PEPlane[1][ipln][iview]>MaxPE) MaxPE=PEPlane[0][ipln][iview]+PEPlane[1][ipln][iview];
+		    }
+		  }
+		  if(Plane[2][ipln][iview]!=0){
+		    //cout<<"INGRID, plane="<<ipln<<", view="<<iview<<", PE="<<PEPlane[2][ipln][iview]<<endl;
+		
+		    hTest_Ing->Fill(PEPlane[2][ipln][iview],weight);
+		    cl = sCL_Ing_Plan->Eval(PEPlane[2][ipln][iview]);
+		    CLTest_Ing->Fill(PEPlane[2][ipln][iview],cl,weight);	
+			    
+		    CLPlan *=cl;
+		  
+		    cllikelihood_muon=CL_Ing_Muon->Eval(PEPlane[2][ipln][iview]);
+		    cllikelihood_notmuon=CL_Ing_NotMuon->Eval(PEPlane[2][ipln][iview]);
 		    CLLikelihood_Muon *= cllikelihood_muon;
 		    CLLikelihood_NotMuon *= cllikelihood_notmuon;
-#ifdef DEBUG_PID		    
-		    cout<<"PM, plane="<<ipln<<", view="<<iview<<", PE="<<PEPlane[0][ipln][iview]+PEPlane[1][ipln][iview]<<", cl="<<cl<<", cllikelihoodmuon="<<cllikelihood_muon<<", not muon="<<cllikelihood_notmuon<<", number of hits SciBar="<<Plane[0][ipln][iview]<<", number of hits INGRID="<<Plane[1][ipln][iview]<<endl;
-#endif
-		    //CLLikelihood_Muon *= CL_PMIng_Muon->Eval(PEPlane[0][ipln][iview]+PEPlane[1][ipln][iview]);
-		    //CLLikelihood_NotMuon *= CL_PMIng_NotMuon->Eval(PEPlane[0][ipln][iview]+PEPlane[1][ipln][iview]);
-		  }
-		  double Barycenter = (DistanceBarycenter[0][ipln][iview]+DistanceBarycenter[1][ipln][iview]) / (Plane[0][ipln][iview]+Plane[1][ipln][iview]);
-		  double RelativeBarycenter = Barycenter / Dist[2];
-		  double bindistancesize = (1. / (LimitHits-1));//number of separation between intervals = number of intervals -1, as usual...
-		  int bindistance = ((int) (RelativeBarycenter / bindistancesize));
-		  if(bindistance >= LimitHits) bindistance=LimitHits-1;
-
-#ifdef DEBUG_PID_BDT
-		  cout<<"PM, pln="<<ipln<<", view="<<iview<<", Distance="<<RelativeBarycenter<<", bindistance="<<bindistance<<", Energy deposition="<<PEPlane[0][ipln][iview]+PEPlane[1][ipln][iview]<<endl;
-#endif
-		  EnergyDeposition[itrk][bindistance]+=(PEPlane[0][ipln][iview]+PEPlane[1][ipln][iview]);
-		  NViewsPerPlaneEnergyDeposition[itrk][bindistance]++;
-		  TransverseWidth[itrk][bindistance]+=Plane[0][ipln][iview]*2.5+Plane[1][ipln][iview]*5.;
-		    
-		  position[itrk].push_back(RelativeBarycenter);
-		  eposition[itrk].push_back(positionerror);
-		  energydeposition[itrk].push_back(PEPlane[0][ipln][iview]+PEPlane[1][ipln][iview]);
-		  eenergydeposition[itrk].push_back(energyerror);
-		  
-		  NHits++;
-		  if(cl<0.1){
-		    HighPECount++;
-		    AverageHighPE+=PEPlane[0][ipln][iview]+PEPlane[1][ipln][iview];
-		    if(PEPlane[0][ipln][iview]+PEPlane[1][ipln][iview]>MaxPE) MaxPE=PEPlane[0][ipln][iview]+PEPlane[1][ipln][iview];
-		  }
-		}
-		if(Plane[2][ipln][iview]!=0){
-		  //cout<<"INGRID, plane="<<ipln<<", view="<<iview<<", PE="<<PEPlane[2][ipln][iview]<<endl;
-		
-		  hTest_Ing->Fill(PEPlane[2][ipln][iview],weight);
-		  cl = sCL_Ing_Plan->Eval(PEPlane[2][ipln][iview]);
-		  CLTest_Ing->Fill(PEPlane[2][ipln][iview],cl,weight);	
-			    
-		  CLPlan *=cl;
-		  
-		  cllikelihood_muon=CL_Ing_Muon->Eval(PEPlane[2][ipln][iview]);
-		  cllikelihood_notmuon=CL_Ing_NotMuon->Eval(PEPlane[2][ipln][iview]);
-		  CLLikelihood_Muon *= cllikelihood_muon;
-		  CLLikelihood_NotMuon *= cllikelihood_notmuon;
 #ifdef DEBUG_PID		  
-		  cout<<"INGRID, plane="<<ipln<<", view="<<iview<<", PE="<<PEPlane[2][ipln][iview]<<", cl="<<cl<<", cllikelihoodmuon="<<cllikelihood_muon<<", not muon="<<cllikelihood_notmuon<<", number of hits="<<Plane[2][ipln][iview]<<endl;
+		    cout<<"INGRID, plane="<<ipln<<", view="<<iview<<", PE="<<PEPlane[2][ipln][iview]<<", cl="<<cl<<", cllikelihoodmuon="<<cllikelihood_muon<<", not muon="<<cllikelihood_notmuon<<", number of hits="<<Plane[2][ipln][iview]<<endl;
 #endif
-		  //CLLikelihood_Muon *= CL_Ing_Muon->Eval(PEPlane[2][ipln][iview]);
-		  //CLLikelihood_NotMuon *= CL_Ing_NotMuon->Eval(PEPlane[2][ipln][iview]);
-		  NHits++;
-		  double Barycenter = (DistanceBarycenter[2][ipln][iview]) / (Plane[2][ipln][iview]);
-		  double RelativeBarycenter = Barycenter / Dist[2];
-		  double bindistancesize = (1. / (LimitHits-1));//number of separation between intervals = number of intervals -1, as usual...
-		  int bindistance = ((int) (RelativeBarycenter / bindistancesize));
-		  if(bindistance >= LimitHits) bindistance=LimitHits-1;
+		    //CLLikelihood_Muon *= CL_Ing_Muon->Eval(PEPlane[2][ipln][iview]);
+		    //CLLikelihood_NotMuon *= CL_Ing_NotMuon->Eval(PEPlane[2][ipln][iview]);
+		    NHits++;
+		    double Barycenter = (DistanceBarycenter[2][ipln][iview]) / (Plane[2][ipln][iview]);
+		    double RelativeBarycenter = Barycenter / Dist[2];
+		    double bindistancesize = (1. / (LimitHits-1));//number of separation between intervals = number of intervals -1, as usual...
+		    int bindistance = ((int) (RelativeBarycenter / bindistancesize));
+		    if(bindistance >= LimitHits) bindistance=LimitHits-1;
 
 #ifdef DEBUG_PID_BDT
-		  cout<<"INGRID, pln="<<ipln<<", view="<<iview<<", Distance="<<RelativeBarycenter<<", bindistance="<<bindistance<<", Energy deposition="<<PEPlane[2][ipln][iview]<<endl;
+		    cout<<"INGRID, pln="<<ipln<<", view="<<iview<<", Distance="<<RelativeBarycenter<<", bindistance="<<bindistance<<", Energy deposition="<<PEPlane[2][ipln][iview]<<endl;
 #endif
-		  EnergyDeposition[itrk][bindistance]+=PEPlane[2][ipln][iview];
-		  NViewsPerPlaneEnergyDeposition[itrk][bindistance]++;
-		  TransverseWidth[itrk][bindistance]+=Plane[2][ipln][iview]*5;
-		  position[itrk].push_back(RelativeBarycenter);
-		  eposition[itrk].push_back(positionerror);
-		  energydeposition[itrk].push_back(PEPlane[2][ipln][iview]);
-		  eenergydeposition[itrk].push_back(energyerror);
+		    EnergyDeposition[itrk][bindistance]+=PEPlane[2][ipln][iview];
+		    NViewsPerPlaneEnergyDeposition[itrk][bindistance]++;
+		    TransverseWidth[itrk][bindistance]+=Plane[2][ipln][iview]*5;
+		    position[itrk].push_back(RelativeBarycenter);
+		    eposition[itrk].push_back(positionerror);
+		    energydeposition[itrk].push_back(PEPlane[2][ipln][iview]);
+		    eenergydeposition[itrk].push_back(energyerror);
 		  
-		  if(cl<0.1){
-		    HighPECount++;
-		    AverageHighPE+=PEPlane[2][ipln][iview];
-		    if(PEPlane[2][ipln][iview]>MaxPE) MaxPE=PEPlane[2][ipln][iview];
+		    if(cl<0.1){
+		      HighPECount++;
+		      AverageHighPE+=PEPlane[2][ipln][iview];
+		      if(PEPlane[2][ipln][iview]>MaxPE) MaxPE=PEPlane[2][ipln][iview];
+		    }
 		  }
 		}
+		//cout<<CLLikelihood_Muon<<", "<<CLLikelihood_NotMuon<<endl;
 	      }
-	      //cout<<CLLikelihood_Muon<<", "<<CLLikelihood_NotMuon<<endl;
-	    }
 	
-	    double Sum=0;
-	    for(int i=0;i<NHits;i++){
-	      //for(int i=0;i<NHits[1];i++){
-	      Sum+=(pow(-TMath::Log(CLPlan),i)/TMath::Factorial(i));
-	    }
+	      double Sum=0;
+	      for(int i=0;i<NHits;i++){
+		//for(int i=0;i<NHits[1];i++){
+		Sum+=(pow(-TMath::Log(CLPlan),i)/TMath::Factorial(i));
+	      }
  
-	   //cout<<"LogCL="<<-TMath::Log(CLPlan2)<<", Sum="<<Sum<<", NHits="<<NHits<<endl;
-	    MuCL=CLPlan*Sum;
+	      //cout<<"LogCL="<<-TMath::Log(CLPlan2)<<", Sum="<<Sum<<", NHits="<<NHits<<endl;
+	      MuCL=CLPlan*Sum;
 #ifdef DEBUG_PID
-	    if(TrueMomentumMuon>1){
-	      cout<<isinf(TMath::Log(MuCL))<<endl;
-	      cout<<"Event number="<<ievt<<", Particle type="<<Particle<<", Distance="<<Dist[1]<<", MuCL="<<MuCL<<", MuCL Likelihood="<<CLLikelihood_Muon*PMuon/(CLLikelihood_Muon*PMuon+CLLikelihood_NotMuon*P_NotMuon)<<endl<<endl;
+	      if(TrueMomentumMuon>1){
+		cout<<isinf(TMath::Log(MuCL))<<endl;
+		cout<<"Event number="<<ievt<<", Particle type="<<Particle<<", Distance="<<Dist[1]<<", MuCL="<<MuCL<<", MuCL Likelihood="<<CLLikelihood_Muon*PMuon/(CLLikelihood_Muon*PMuon+CLLikelihood_NotMuon*P_NotMuon)<<endl<<endl;
 		//", Sum part="<<Sum<<", Product part="<<CLPlan<<", number of hits="<<NHits<<", number of entries in Vec="<<Vec.size()<<", number of hits registered="<<recon->NhitTs(itrk)<<endl;
-	    }
+	      }
 #endif
-	    ProportionHighPE[itrk]=((double) HighPECount/NHits);
-	    MeanHighPE[itrk]=AverageHighPE;
-	    if(HighPECount!=0) MeanHighPE[itrk]/=HighPECount;
-	    HighestPE[itrk]=MaxPE;
-	    //cout<<setprecision(3)<<"PMuon="<<PMuon<<", Like to be muon="<<CLLikelihood_Muon<<", not muon="<<CLLikelihood_NotMuon<<endl;
+	      ProportionHighPE[itrk]=((double) HighPECount/NHits);
+	      MeanHighPE[itrk]=AverageHighPE;
+	      if(HighPECount!=0) MeanHighPE[itrk]/=HighPECount;
+	      HighestPE[itrk]=MaxPE;
+	      //cout<<setprecision(3)<<"PMuon="<<PMuon<<", Like to be muon="<<CLLikelihood_Muon<<", not muon="<<CLLikelihood_NotMuon<<endl;
 	    
-	    CL_Likelihood=CLLikelihood_Muon*PMuon/(CLLikelihood_Muon*PMuon+CLLikelihood_NotMuon*P_NotMuon);
-	    //cout<<"Proportions of Max PE="<<ProportionHighPE[itrk]<<", Highest PE="<<HighestPE[itrk]<<", Mean High PE="<<MeanHighPE[itrk]<<endl;
-	    //cout<<"MuCL plan="<<MuCL<<", pdg="<<Particle<<endl<<", Likelihood Mucl="<<CL_Likelihood<<endl;
+	      CL_Likelihood=CLLikelihood_Muon*PMuon/(CLLikelihood_Muon*PMuon+CLLikelihood_NotMuon*P_NotMuon);
+	      //cout<<"Proportions of Max PE="<<ProportionHighPE[itrk]<<", Highest PE="<<HighestPE[itrk]<<", Mean High PE="<<MeanHighPE[itrk]<<endl;
+	      //cout<<"MuCL plan="<<MuCL<<", pdg="<<Particle<<endl<<", Likelihood Mucl="<<CL_Likelihood<<endl;
 
 	    
 #endif
+
+	    }//if PM
 
 	    double CL=1;//XS->Xsec::GetMuCL(CL_Ing,CL_PMIng,CL_PMSci,Vec, dx, TrackSample,SystematicPE, RandomIteration);
 	    double CL_Plan=MuCL;//XS->Xsec::GetMuCL_Plan(CL_Ing_Plan,CL_PMIng_Plan,CL_PMSci_Plan,Vec, dx, TrackSample,SystematicPE, RandomIteration);
@@ -1396,7 +1400,6 @@ int main(int argc, char **argv)
 	      EvtDisp(Vec);
 	      //}
 	    }
-
 
 	    
 	    vector <double> LastChan;
@@ -1423,6 +1426,10 @@ int main(int argc, char **argv)
 	      nHighCL++;
 	    }
 	    CLMuon_KS[itrk]=(recon->mucl)[itrk];
+#ifdef DEBUG_PID
+	    cout<<CLMuon_KS[itrk]<<endl;
+	    if(recon->mucl[itrk]!=recon->mucl[itrk]){ cout<<"*************"<<endl;nbad++;}
+#endif
 	    Momentum[itrk]=TrueParticleNRJ;
 	    PD[itrk]=Dist[0];
 	    if(TrackSample>=2) ID[itrk]=Dist[1];
@@ -1484,140 +1491,140 @@ int main(int argc, char **argv)
 	      else cout<<NViewsPerPlaneEnergyDeposition[itrk][ihit]<<" ]"<<endl;
 	    }
 #endif
-
-	    //new
-	    gEnergyDeposition[itrk] = new TGraphErrors(energydeposition[itrk].size()+1,&position[itrk][0],&energydeposition[itrk][0],&eposition[itrk][0],&eenergydeposition[itrk][0]);
-	    sEnergyDeposition[itrk] = new TSpline3(Form("sEnergyDeposition[%d]",itrk),gEnergyDeposition[itrk]);
-	    double graphMinPosition = 1.;
-	    double graphMaxPosition = 0.;
-	    for(int i=0;i<position[itrk].size();i++){
-	      if(position[itrk][i]<graphMinPosition) graphMinPosition=position[itrk][i];
-	      if(position[itrk][i]>graphMaxPosition) graphMaxPosition=position[itrk][i];
-	    }
-	    
-	    double RelativePosition=0.;
-	    RangeRelativeDistance=*max_element(position[itrk].begin(), position[itrk].end())-0;
-	      
-	    for(int ihit=0;ihit<LimitHits;ihit++){
-	      //For EnergyDeposition
-	      if(NViewsPerPlaneEnergyDeposition[itrk][ihit]!=0){
-		EnergyDeposition[itrk][ihit]/=NViewsPerPlaneEnergyDeposition[itrk][ihit];
-		TransverseWidth[itrk][ihit]/=NViewsPerPlaneEnergyDeposition[itrk][ihit];
+	    if(PM){
+	      //new
+	      gEnergyDeposition[itrk] = new TGraphErrors(energydeposition[itrk].size()+1,&position[itrk][0],&energydeposition[itrk][0],&eposition[itrk][0],&eenergydeposition[itrk][0]);
+	      sEnergyDeposition[itrk] = new TSpline3(Form("sEnergyDeposition[%d]",itrk),gEnergyDeposition[itrk]);
+	      double graphMinPosition = 1.;
+	      double graphMaxPosition = 0.;
+	      for(int i=0;i<position[itrk].size();i++){
+		if(position[itrk][i]<graphMinPosition) graphMinPosition=position[itrk][i];
+		if(position[itrk][i]>graphMaxPosition) graphMaxPosition=position[itrk][i];
 	      }
-	      if(NViewsPerPlaneEnergyDepositionNonIsolated[itrk][ihit]!=0) TransverseWidthNonIsolated[itrk][ihit]/=NViewsPerPlaneEnergyDepositionNonIsolated[itrk][ihit];
-	    }
+	    
+	      double RelativePosition=0.;
+	      RangeRelativeDistance=*max_element(position[itrk].begin(), position[itrk].end())-0;
+	      
+	      for(int ihit=0;ihit<LimitHits;ihit++){
+		//For EnergyDeposition
+		if(NViewsPerPlaneEnergyDeposition[itrk][ihit]!=0){
+		  EnergyDeposition[itrk][ihit]/=NViewsPerPlaneEnergyDeposition[itrk][ihit];
+		  TransverseWidth[itrk][ihit]/=NViewsPerPlaneEnergyDeposition[itrk][ihit];
+		}
+		if(NViewsPerPlaneEnergyDepositionNonIsolated[itrk][ihit]!=0) TransverseWidthNonIsolated[itrk][ihit]/=NViewsPerPlaneEnergyDepositionNonIsolated[itrk][ihit];
+	      }
 
-	    bool Problem=false;	    
-	    for(int ihit=0;ihit<LimitHits;ihit++){
-	      	    /*
-	      if(EnergyDeposition[itrk][ihit]==0){//Average over the previous and next filled bins
-		double PreviousBinEnergy=EnergyDeposition[itrk][ihit-1];
-		double NextBinEnergy=0;
-		for(int ihit2=ihit+1;ihit2<LimitHits;ihit2++){
+	      bool Problem=false;	    
+	      for(int ihit=0;ihit<LimitHits;ihit++){
+		/*
+		  if(EnergyDeposition[itrk][ihit]==0){//Average over the previous and next filled bins
+		  double PreviousBinEnergy=EnergyDeposition[itrk][ihit-1];
+		  double NextBinEnergy=0;
+		  for(int ihit2=ihit+1;ihit2<LimitHits;ihit2++){
 		  if(EnergyDeposition[itrk][ihit2]==0) continue;
 		  else{
-		    NextBinEnergy=EnergyDeposition[itrk][ihit2];
-		    break;
+		  NextBinEnergy=EnergyDeposition[itrk][ihit2];
+		  break;
 		  }
-		}
-		if(NextBinEnergy!=0 && PreviousBinEnergy!=0) EnergyDeposition[itrk][ihit]=(NextBinEnergy+PreviousBinEnergy)/2;
-		else if(NextBinEnergy!=0) EnergyDeposition[itrk][ihit]=NextBinEnergy;
-		else if(PreviousBinEnergy!=0) EnergyDeposition[itrk][ihit]=PreviousBinEnergy;
-		else cout<<"Problem in energy-distance bin filling"<<endl;
-	      }
+		  }
+		  if(NextBinEnergy!=0 && PreviousBinEnergy!=0) EnergyDeposition[itrk][ihit]=(NextBinEnergy+PreviousBinEnergy)/2;
+		  else if(NextBinEnergy!=0) EnergyDeposition[itrk][ihit]=NextBinEnergy;
+		  else if(PreviousBinEnergy!=0) EnergyDeposition[itrk][ihit]=PreviousBinEnergy;
+		  else cout<<"Problem in energy-distance bin filling"<<endl;
+		  }
 	    
-	    */
-	      //For EnergyDepositionSpline
-	      //cout<<"Limit of the graph range: ["<<graphMinPosition<<", "<<graphMaxPosition<<"]"<<endl;
-	      if(RelativePosition<=graphMaxPosition && RelativePosition>=graphMinPosition) EnergyDepositionSpline[itrk][ihit]=gEnergyDeposition[itrk]->Eval(RelativePosition);
-	      else if(RelativePosition>graphMaxPosition) EnergyDepositionSpline[itrk][ihit]=EnergyDepositionSpline[itrk][ihit-1];
-	      else{
-		double NextBinEnergy=0;
-		double RelativePosition2=0;
-		for(int ihit2=ihit+1;ihit2<LimitHits;ihit2++){
-		  RelativePosition2=((double) ihit2*(RangeRelativeDistance/(LimitHits-1)));
-		  //cout<<"RelativePosition ="<<RelativePosition2<<endl;
-		  if(RelativePosition2<=graphMaxPosition && RelativePosition2>=graphMinPosition){
-		    EnergyDepositionSpline[itrk][ihit]=gEnergyDeposition[itrk]->Eval(RelativePosition2);
-		    //cout<<"Final energy chosen = "<<EnergyDepositionSpline[itrk][ihit]<<endl;
-		    break;
+		*/
+		//For EnergyDepositionSpline
+		//cout<<"Limit of the graph range: ["<<graphMinPosition<<", "<<graphMaxPosition<<"]"<<endl;
+		if(RelativePosition<=graphMaxPosition && RelativePosition>=graphMinPosition) EnergyDepositionSpline[itrk][ihit]=gEnergyDeposition[itrk]->Eval(RelativePosition);
+		else if(RelativePosition>graphMaxPosition) EnergyDepositionSpline[itrk][ihit]=EnergyDepositionSpline[itrk][ihit-1];
+		else{
+		  double NextBinEnergy=0;
+		  double RelativePosition2=0;
+		  for(int ihit2=ihit+1;ihit2<LimitHits;ihit2++){
+		    RelativePosition2=((double) ihit2*(RangeRelativeDistance/(LimitHits-1)));
+		    //cout<<"RelativePosition ="<<RelativePosition2<<endl;
+		    if(RelativePosition2<=graphMaxPosition && RelativePosition2>=graphMinPosition){
+		      EnergyDepositionSpline[itrk][ihit]=gEnergyDeposition[itrk]->Eval(RelativePosition2);
+		      //cout<<"Final energy chosen = "<<EnergyDepositionSpline[itrk][ihit]<<endl;
+		      break;
+		    }
+		    else continue;
 		  }
-		  else continue;
 		}
+		if((EnergyDeposition[itrk][ihit]!=EnergyDeposition[itrk][ihit]) || TMath::Abs(EnergyDeposition[itrk][ihit])>1000){
+		  cout<<"Problem!"<<endl;
+		  Problem=true;
+		  //return 0;
+		}
+		if((EnergyDepositionSpline[itrk][ihit]!=EnergyDepositionSpline[itrk][ihit]) || TMath::Abs(EnergyDepositionSpline[itrk][ihit])>1000){
+		  cout<<"Problem spline!"<<endl;
+		  Problem=true;
+		  //return 0;
+		}
+		RelativePosition += ((double) (RangeRelativeDistance/(LimitHits-1)));
 	      }
-	      if((EnergyDeposition[itrk][ihit]!=EnergyDeposition[itrk][ihit]) || TMath::Abs(EnergyDeposition[itrk][ihit])>1000){
-		cout<<"Problem!"<<endl;
-		Problem=true;
-		//return 0;
-	      }
-	      if((EnergyDepositionSpline[itrk][ihit]!=EnergyDepositionSpline[itrk][ihit]) || TMath::Abs(EnergyDepositionSpline[itrk][ihit])>1000){
-		cout<<"Problem spline!"<<endl;
-		Problem=true;
-		//return 0;
-	      }
-	      RelativePosition += ((double) (RangeRelativeDistance/(LimitHits-1)));
-	    }
 
 
 	    
 #ifdef DEBUG_PID_BDT
-	    Problem=true;
+	      Problem=true;
 #endif
 
-	    if(Problem){
-	    cout<<"Range of the relative distance="<<RangeRelativeDistance<<", total distance="<<Dist[2]<<endl;
-	    cout<<"After correction: Type of particle="<<TypeOfTrack[itrk]<<", sample="<<Sample[itrk]<<", equivalent iron distance="<<ID[itrk]+(PD[itrk]/IronCarbonRatio)<<", distance in CH/Fe="<<PD[itrk]<<"/"<<ID[itrk]<<endl;
+	      if(Problem){
+		cout<<"Range of the relative distance="<<RangeRelativeDistance<<", total distance="<<Dist[2]<<endl;
+		cout<<"After correction: Type of particle="<<TypeOfTrack[itrk]<<", sample="<<Sample[itrk]<<", equivalent iron distance="<<ID[itrk]+(PD[itrk]/IronCarbonRatio)<<", distance in CH/Fe="<<PD[itrk]<<"/"<<ID[itrk]<<endl;
 		
-	    for(int ihit=0;ihit<LimitHits;ihit++){
-		if(ihit==0) cout<<setprecision(3)<<"dE/dx = [ ";
-		if(ihit<(LimitHits-1)) cout<<EnergyDeposition[itrk][ihit]<<", ";
-		else cout<<EnergyDeposition[itrk][ihit]<<" ]"<<endl;
-	    }
-	    cout<<"After linear: Type of particle="<<TypeOfTrack[itrk]<<", sample="<<Sample[itrk]<<", equivalent iron distance="<<ID[itrk]+(PD[itrk]/IronCarbonRatio)<<", distance in CH/Fe="<<PD[itrk]<<"/"<<ID[itrk]<<endl;
+		for(int ihit=0;ihit<LimitHits;ihit++){
+		  if(ihit==0) cout<<setprecision(3)<<"dE/dx = [ ";
+		  if(ihit<(LimitHits-1)) cout<<EnergyDeposition[itrk][ihit]<<", ";
+		  else cout<<EnergyDeposition[itrk][ihit]<<" ]"<<endl;
+		}
+		cout<<"After linear: Type of particle="<<TypeOfTrack[itrk]<<", sample="<<Sample[itrk]<<", equivalent iron distance="<<ID[itrk]+(PD[itrk]/IronCarbonRatio)<<", distance in CH/Fe="<<PD[itrk]<<"/"<<ID[itrk]<<endl;
 
-	    for(int ihit=0;ihit<LimitHits;ihit++){
-	      if(ihit==0) cout<<setprecision(3)<<"dE/dx = [ ";
-	      //if(ihit<LimitHits-1) cout<<position[itrk][ihit]<<", ";
-	      if(ihit<(LimitHits-1)) cout<<EnergyDepositionSpline[itrk][ihit]<<", ";
-	      else cout<<EnergyDepositionSpline[itrk][ihit]<<" ]"<<endl;
-	    }
-	    cout<<"Check position of spline test="<<endl;
-	    double pos=0.;
-	    for(int ihit=0;ihit<LimitHits;ihit++){
-	      if(ihit==0) cout<<setprecision(3)<<"Pos = [ ";
-	      //if(ihit<LimitHits-1) cout<<position[itrk][ihit]<<", ";
-	      if(ihit<(LimitHits-1)) cout<<pos<<", ";
-	      else cout<<pos<<" ]"<<endl;
-	      pos += (RangeRelativeDistance/(LimitHits-1));
-	    }
+		for(int ihit=0;ihit<LimitHits;ihit++){
+		  if(ihit==0) cout<<setprecision(3)<<"dE/dx = [ ";
+		  //if(ihit<LimitHits-1) cout<<position[itrk][ihit]<<", ";
+		  if(ihit<(LimitHits-1)) cout<<EnergyDepositionSpline[itrk][ihit]<<", ";
+		  else cout<<EnergyDepositionSpline[itrk][ihit]<<" ]"<<endl;
+		}
+		cout<<"Check position of spline test="<<endl;
+		double pos=0.;
+		for(int ihit=0;ihit<LimitHits;ihit++){
+		  if(ihit==0) cout<<setprecision(3)<<"Pos = [ ";
+		  //if(ihit<LimitHits-1) cout<<position[itrk][ihit]<<", ";
+		  if(ihit<(LimitHits-1)) cout<<pos<<", ";
+		  else cout<<pos<<" ]"<<endl;
+		  pos += (RangeRelativeDistance/(LimitHits-1));
+		}
 	    
-	    /*
-	    cout<<"After spline3: Type of particle="<<TypeOfTrack[itrk]<<", sample="<<Sample[itrk]<<", equivalent iron distance="<<ID[itrk]+(PD[itrk]/IronCarbonRatio)<<", distance in CH/Fe="<<PD[itrk]<<"/"<<ID[itrk]<<endl;
-	    pos=0.01;
-	    for(int ihit=0;ihit<LimitHits;ihit++){
-	      if(ihit==0) cout<<setprecision(3)<<"dE/dx = [ ";
-	      //if(ihit<LimitHits-1) cout<<position[itrk][ihit]<<", ";
-	      if(ihit<LimitHits-1) cout<<sEnergyDeposition[itrk]->Eval(pos)<<", ";
-	      else cout<<sEnergyDeposition[itrk]->Eval(ihit)<<" ]"<<endl;
-	      pos += (RangeRelativeDistance/(LimitHits-1));
-	      }*/
-	    cout<<"*****************************************************"<<endl;
-	    }
+		/*
+		  cout<<"After spline3: Type of particle="<<TypeOfTrack[itrk]<<", sample="<<Sample[itrk]<<", equivalent iron distance="<<ID[itrk]+(PD[itrk]/IronCarbonRatio)<<", distance in CH/Fe="<<PD[itrk]<<"/"<<ID[itrk]<<endl;
+		  pos=0.01;
+		  for(int ihit=0;ihit<LimitHits;ihit++){
+		  if(ihit==0) cout<<setprecision(3)<<"dE/dx = [ ";
+		  //if(ihit<LimitHits-1) cout<<position[itrk][ihit]<<", ";
+		  if(ihit<LimitHits-1) cout<<sEnergyDeposition[itrk]->Eval(pos)<<", ";
+		  else cout<<sEnergyDeposition[itrk]->Eval(ihit)<<" ]"<<endl;
+		  pos += (RangeRelativeDistance/(LimitHits-1));
+		  }*/
+		cout<<"*****************************************************"<<endl;
+	      }
 	    
 
 	    
 #ifdef DEBUG2
-	    cout<<"*****************************************************"<<endl;
-	    cout<<"Distance="<<ihit<<", Energy deposition="<<EnergyDeposition[itrk][ihit]<<endl;
-	    if(Sample[itrk]>=3){
-	      cout<<"New Track, having momentum="<<Momentum[itrk]<<endl;
-	      cout<<"pm stop="<<(recon->pm_stop)[itrk]<<", has ingrid track="<<(recon->ing_trk)[itrk]<<", is stopped in ingrid="<<(recon->ing_stop)[itrk]<<", ingrid plane starts="<<(recon->ing_startpln)[itrk]<<", ingrid plane stop="<<(recon->ing_endpln)[itrk]<<", "<<endl; 
-	      /*  for(int ihit=0;ihit<Vec.size();ihit++){
-		  cout<<"Hit, module="<<Vec[ihit].mod<<", plane="<<Vec[ihit].pln<<", view="<<Vec[ihit].view<<", channel="<<Vec[ihit].ch<<endl;
-		  }*/
-	    }
+	      cout<<"*****************************************************"<<endl;
+	      cout<<"Distance="<<ihit<<", Energy deposition="<<EnergyDeposition[itrk][ihit]<<endl;
+	      if(Sample[itrk]>=3){
+		cout<<"New Track, having momentum="<<Momentum[itrk]<<endl;
+		cout<<"pm stop="<<(recon->pm_stop)[itrk]<<", has ingrid track="<<(recon->ing_trk)[itrk]<<", is stopped in ingrid="<<(recon->ing_stop)[itrk]<<", ingrid plane starts="<<(recon->ing_startpln)[itrk]<<", ingrid plane stop="<<(recon->ing_endpln)[itrk]<<", "<<endl; 
+		/*  for(int ihit=0;ihit<Vec.size();ihit++){
+		    cout<<"Hit, module="<<Vec[ihit].mod<<", plane="<<Vec[ihit].pln<<", view="<<Vec[ihit].view<<", channel="<<Vec[ihit].ch<<endl;
+		    }*/
+	      }
 #endif	   
-
+	    } // isPM
 	    Vec.clear();
 	    Vec2.clear();
 	    VecAll.clear();
@@ -1660,6 +1667,7 @@ int main(int argc, char **argv)
     cout<<"writing"<<endl;
     cout<<"Low CL="<<LowCL<<", High="<<HighCL<<endl;
     cout<<"Nb Low CL="<<nLowCL<<", Nb High="<<nHighCL<<endl;
+    cout<<"Nb bad mucl="<<nbad<<endl;
 
 #ifdef DEBUG
     /*

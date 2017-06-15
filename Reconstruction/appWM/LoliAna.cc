@@ -4,7 +4,7 @@
 //#define USEBACKTRK
 //#define USEPARTRK
 //#define USESHORTTRK
-
+ 
 #include<iostream>
 #include<sstream>
 #include<fstream>
@@ -39,7 +39,6 @@ using namespace std;
 #include "INGRID_Dimension.hxx"
 #include "Lolirecon.hxx"
 #include "LoliAna.hxx" 
-
 
 #include "INGRIDEVENTSUMMARY.h"
 #include "IngridHitSummary.h"
@@ -108,7 +107,7 @@ int main(int argc,char *argv[]){
   Int_t Nini = 0;
   bool disp = false; 
   bool cosmic = false;
-  bool useINGRID_PID=false;
+  bool useINGRID_PID=true;
 
   // to evaluate systematics
   int VertexingPlane  =pln_th;//planes
@@ -167,7 +166,7 @@ int main(int argc,char *argv[]){
       requireIngridTrack=false;
       break;
     case 'I':
-      useINGRID_PID=true;
+      useINGRID_PID=false;
       break;
     }
   }
@@ -251,6 +250,8 @@ int main(int argc,char *argv[]){
   LoadMuCL("$(INSTALLREPOSITORY)/Reconstruction/inc/sandmuon_WM_distributions_47k_cut4.5pe_normalAngleSlices.root",false);
   LoadMuCL_I("$(INSTALLREPOSITORY)/Reconstruction/inc/sandmuon_distributions_mc_cut4.5_MIP31.5_wINGRID.root");
   int biasedMuCL=0;
+
+  cout<<(useINGRID_PID?"USE INGRID HITS FOR PID":"ONLY WM HITS FOR PID")<<endl;
 
   Initialize_INGRID_Dimension();
 
@@ -545,6 +546,8 @@ int main(int argc,char *argv[]){
 	  }
 	  else 
 	    pmanasum -> mucl        .push_back(pmtrack[i].trk[t].mucl);
+
+	  // if(pmtrack[i].trk[t].mucl!=pmtrack[i].trk[t].mucl) cout<<"******************"<<endl;
 
 
 	  //	  if(pmtrack[i].trk[t].pdg==13 && pmtrack[i].trk[t].ing_trk && pmtrack[i].trk[t].mucl<0.05) cout<<ievt<<" "<<i<<" "<<t<<" "<<pmtrack[i].trk[t].mucl<<endl;

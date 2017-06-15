@@ -3,11 +3,13 @@ export MCINPUTSTORAGE_WM=/export/scraid4/data2/taichiro/neut
 export MCINPUTSTORAGE=${MCINPUTSTORAGE_WM}
 export DATAINPUTSTORAGE=/export/scraid2/data/bquilain
 # need DATAINPUTSTORAGE_WM
-export MCOUTPUTSTORAGE=/export/scraid4/data2/mlicciardi/XSFiles/Prod0/PM
-export MCOUTPUTSTORAGE_WM=/export/scraid4/data2/mlicciardi/XSFiles/Prod0/WM
+export MCOUTPUTSTORAGE=/export/scraid4/data2/mlicciardi/XSFiles/Prod1/PM
+export MCOUTPUTSTORAGE_WM=/export/scraid4/data2/mlicciardi/XSFiles/Prod1/WM
 export MCOUTPUTSTORAGE_dev=/export/scraid4/data2/mlicciardi/XSFiles/dev/PM
 export MCOUTPUTSTORAGE_dev_WM=/export/scraid4/data2/mlicciardi/XSFiles/dev/WM
+#export MCOUTPUTSTORAGE_WM=$MCOUTPUTSTORAGE_dev_WM
 export DATAOUTPUTSTORAGE=/export/scraid2/data/bquilain
+export DATAOUTPUTSTORAGE_WM=/export/scraid4/data2/mlicciardi/WMData/00029000-00029999
 export INGRIDSOFTWARE=/home/bquilain/T2KSoftware2
 #export INGRIDSOFTWARE=/home/mlicciardi/T2K/work/basesoft
 

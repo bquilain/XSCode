@@ -16,7 +16,7 @@ class IngridVLayerSD : public G4VSensitiveDetector {
   IngridResponse *ingresp;
  
 public:
-  IngridVLayerSD(const G4String& name);
+  IngridVLayerSD(const G4String& name, G4double cbirks);
   virtual ~IngridVLayerSD();
 
   // virtual methods

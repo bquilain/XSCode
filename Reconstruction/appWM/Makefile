@@ -29,7 +29,7 @@ TARGET = IngTClster IngBasicRecon IngReconMuBasic IngGetOnlyBasic \
          IngAnaVertex PMGetOnlyBasic PMGetOnlyBasicMC \
          IngMergePM IngAddNoisePMMC_new IngAddCutMod3 \
 	 Lolirecon LoliAna Loli_addcrosstalk IngAddEasirochit \
-	 Loli_addcrosstalk_slit
+	 Loli_addcrosstalk_slit Lolireconfast
 
 all: $(TARGET)
 
@@ -47,6 +47,7 @@ PMGetOnlyBasicMC: PMGetOnlyBasicMC.o
 IngAddNoisePMMC_new: IngAddNoisePMMC_new.o
 IngAddCutMod3: IngAddCutMod3.o
 Lolirecon: Lolirecon.o
+Lolireconfast: Lolireconfast.o
 LoliAna: LoliAna.o
 Loli_addcrosstalk: Loli_addcrosstalk.o
 Loli_addcrosstalk_slit: Loli_addcrosstalk_slit.o

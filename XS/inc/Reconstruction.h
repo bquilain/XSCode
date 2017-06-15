@@ -41,6 +41,7 @@ class Reconstruction{
   vector <int> TrackComposition(vector <Hit3D> Vec, double Vx, double Vy, double Vz);
   vector <double> GetKinematic(double ang1, double thetax1, double thetay1,double ang2, double thetax2, double thetay2);
   double GetBeamAngle(double ang1, double thetax1, double thetay1);
+  double NormalAngle(double angle3D, double thetax,double thetay,bool view, bool grid);
   vector <Hit3D> CountSharedHits(vector <Hit3D> Vec, vector< vector<Hit3D> > VecDouble, int Trk);
   vector <Hit3D> IsInTrk(vector <Hit3D> VecCluster, vector<Hit3D> VecAllTracks);
   vector <double> TrackRelativeLength(double posx, double posy, double posz, double tx, double ty, double TrkLength);

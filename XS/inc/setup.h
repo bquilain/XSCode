@@ -80,7 +80,7 @@ const int StartSubRun=0;
 const int EndSubRun=0;//300
 const int StartRunList=14;//Which list will be read (14=>14000.txt). Necessary to use only run processed
 const int EndRunList=15;//Which list will be read (14=>14000.txt). Necessary to use only run processed
-double NMCfiles=500; // up to now only 1000 are available with NEUT 5.3.6
+double NMCfiles=300; // up to now only 1000 are available with NEUT 5.3.6
 
 double DataPOT=0.58;//In units of 10^21 POT
 const int StartError=0;
@@ -215,7 +215,11 @@ void InitializeGlobal(bool PM=true){
       else if(n==4){//4: absolute difference MC/data light yield with track angle
 	NE[n]=1;
       }
-      else if(n==5) NE[n]=2;//Birks constant variations
+      else if(n==5){
+	NE[n]=2;//Birks constant variations; 0 is BirksMinus, 1 is BirksPlus
+	Start[n]=0;
+	Step[n]=1;
+      }
       else if(n==6){//6: Beam related background (in fact, this mainly evaluate sand muons)
 	Nominal=0.6;
 	Err=TMath::Sqrt(Nominal*Nominal+0.2*0.2+0.2*0.2);

@@ -390,6 +390,7 @@ int main(int argc,char *argv[]){
   }//Event Loop
 
   //######## Write and Close ####################
+  wfile->cd();
   wtree  -> Write();
   wfile  -> Write();
   wfile  -> Close();

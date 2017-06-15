@@ -8,7 +8,7 @@
 
 class IngridResponse {
 public:
-  IngridResponse();
+  IngridResponse(G4double=0.0208);
   ~IngridResponse();
 
   void ApplyScintiResponse(G4double* edep, G4Track* aTrack);
@@ -30,6 +30,7 @@ private:
   void BirksSaturation(G4double* edeposit, G4Track* aTrack);
   void BirksSaturation2(G4double* edeposit, G4double * steplength, G4Track* aTrack);
 
+  G4double CBIRKS;
 };
 
 #endif

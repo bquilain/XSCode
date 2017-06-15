@@ -2572,8 +2572,10 @@ bool calcMuCL(Trk& trk, int isoHitCut, bool useINGRIDhits){
     else if(normalAngle<=80) normalAngleSlice=1;
     else normalAngleSlice=2;
 
-    if(trk.hit[ihit].mod==15)
-      cl=slice_cumul[normalAngleSlice]->GetBinContent(min(slice_cumul[normalAngleSlice]->GetXaxis()->FindBin(trk.hit[ihit].pe/dZ*3),Nbins_slice));      
+     if(trk.hit[ihit].mod==15){
+       //if(normalAngleSlice==2) continue; //ml 2017/05/20 test 
+       cl=slice_cumul[normalAngleSlice]->GetBinContent(min(slice_cumul[normalAngleSlice]->GetXaxis()->FindBin(trk.hit[ihit].pe/dZ*3),Nbins_slice));      
+    }
     else if(useINGRIDhits)
       cl=INGRID_cumul->GetBinContent(min(INGRID_cumul->GetXaxis()->FindBin(trk.hit[ihit].pe/dZ),Nbins_INGRID));      
 
@@ -2585,6 +2587,7 @@ bool calcMuCL(Trk& trk, int isoHitCut, bool useINGRIDhits){
 
   double muCL=0;
   double term=1;
+
   for(int i=0;i<Nhits;i++){
     if(i==0) term=1;
     else term=term*(-log(CL))/i;
@@ -2592,6 +2595,7 @@ bool calcMuCL(Trk& trk, int isoHitCut, bool useINGRIDhits){
   }
   muCL*=CL;
   
+  if(CL==0) muCL=0;
   //if(Nhits<3) cout<<"**** less than 3 hits for mucl ****, mucl="<<muCL<<endl;
   //if(muCL<0 || muCL>1) cout<<"*** bad value for muCLA : "<<muCL<<" "<<CL<<" "<<Nhits<<" ***"<<endl;
 

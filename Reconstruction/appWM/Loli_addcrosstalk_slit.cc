@@ -268,8 +268,11 @@ int main(int argc,char *argv[]){
             double posxy[3];
             fdim_temp->get_pos_loli(mod,view,pln_s,ch,&posxy[0],&posxy[1],&posxy[2]);//cm
 	    //	    cout<<ch<<" view_s="<<view_s<<" posxy_s="<<posxy_s[view_s]<<" posxy="<<posxy[view_s]<<endl;
-	    cout<<posxy_s[view_s]<<" "<<posxy[view_s]<<" "<<fabs(posxy_s[view_s]-posxy[view_s])<<endl;
-            if( fabs(posxy_s[view_s]-posxy[view_s]) <5. && pln_s<2){ pe_cross[view][pln_s][ch]+= r.Poisson(pe_s * crossrate_submod0);cout<<pe_cross[view][pln_s][ch]<<endl;}//poisson
+	    //cout<<posxy_s[view_s]<<" "<<posxy[view_s]<<" "<<fabs(posxy_s[view_s]-posxy[view_s])<<endl;
+            if( fabs(posxy_s[view_s]-posxy[view_s]) <5. && pln_s<2){ 
+	      pe_cross[view][pln_s][ch]+= r.Poisson(pe_s * crossrate_submod0);//poisson
+	      //cout<<pe_cross[view][pln_s][ch]<<endl;
+	    }
             if( fabs(posxy_s[view_s]-posxy[view_s]) <5. && pln_s>=2)pe_cross[view][pln_s][ch]+= r.Poisson(pe_s * crossrate_submod123);//poisson
           }
         }

@@ -319,7 +319,7 @@ int main(int argc,char *argv[]){
 	  track.intcpt = recon -> intcpt;
 	  track.veto = recon -> vetowtracking;
 	  track.edge = recon -> edgewtracking;
-	  track.stop = recon -> modfc;
+	  track.stop = recon -> modfc; 
 	  track.clstime = recon -> clstime;
 
 	  track.ing_trk = false;
