@@ -27,7 +27,7 @@ class Xsec{
   double GetMuCL(TF1 * CL_Ing,TF1 * CL_PMIng,TF1 * CL_PMSci,vector <Hit3D> Vec, double dx, int TrackSample, bool SystematicPE, int RandomPE);
   double GetMuCL_Plan(TF1 * CL_Ing,TF1 * CL_PMIng,TF1 * CL_PMSci,vector <Hit3D> Vec, double dx, int TrackSample, bool SystematicPE, int RandomPE);
   
-  void LoadInputFiles_UnfoldedData(char * InputName, double DataUnfoldedEvents[NBinsTrueMom][NBinsTrueAngle], double DataTrueEvents[NBinsTrueMom][NBinsTrueAngle]);
+  void LoadInputFiles_OnlyUnfoldedData(char * InputName, double DataUnfoldedEvents[NBinsTrueMom][NBinsTrueAngle], double DataTrueEvents[NBinsTrueMom][NBinsTrueAngle]);
     
   void LoadInputFiles_OnlySelectedData(char * fDataName,double DataReconstructedEvents[NBinsRecMom][NBinsRecAngle]);
     

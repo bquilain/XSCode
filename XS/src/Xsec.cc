@@ -521,15 +521,17 @@ double Xsec::GetMuCL_Plan(TF1 * CL_Ing, TF1 * CL_PMIng, TF1 * CL_PMSci, vector <
 }
 
 //Read the output file of CC0pi selection, but only the selected data
-void Xsec::LoadInputFiles_UnfoldedData(char * InputName, double DataUnfoldedEvents[NBinsTrueMom][NBinsTrueAngle], double DataTrueEvents[NBinsTrueMom][NBinsTrueAngle]){
+void Xsec::LoadInputFiles_OnlyUnfoldedData(char * InputName, double DataUnfoldedEvents[NBinsTrueMom][NBinsTrueAngle], double DataTrueEvents[NBinsTrueMom][NBinsTrueAngle]){
   
   TChain * wtree = new TChain("wtree");
   wtree->Add(InputName);
-
+  cout<<"opening file "<<InputName<<" for data input"<<endl;
+  
   int Iterations, Systematics, Statistics;
   double Events[NBinsTrueMom][NBinsTrueAngle];
   double EventsAll[NBinsTrueMom][NBinsTrueAngle][NBinsRecMom][NBinsRecAngle];
   double TrueEvents[NBinsTrueMom][NBinsTrueAngle];
+  double XSection[NBinsTrueMom][NBinsTrueAngle];
 
   TBranch* Br_Iterations = wtree->GetBranch("Iterations");
   Br_Iterations->SetAddress(&Iterations);
@@ -555,6 +557,10 @@ void Xsec::LoadInputFiles_UnfoldedData(char * InputName, double DataUnfoldedEven
   Br_TrueEvents->SetAddress(TrueEvents);
   wtree->SetBranchAddress("TrueEvents",TrueEvents);
 
+  TBranch* Br_XSection = wtree->GetBranch("XSection");
+  Br_XSection->SetAddress(XSection);
+  wtree->SetBranchAddress("XSection",XSection);
+    
   int nevt=wtree->GetEntries();
   
   for(int ievt=0;ievt<nevt;ievt++){
@@ -562,8 +568,10 @@ void Xsec::LoadInputFiles_UnfoldedData(char * InputName, double DataUnfoldedEven
     
     for(int c0=0;c0<NBinsTrueMom;c0++){
       for(int c1=0;c1<NBinsTrueAngle;c1++){
-	DataUnfoldedEvents[c0][c1]=Events[c0][c1];
-
+	//DataUnfoldedEvents[c0][c1]=Events[c0][c1];
+	DataUnfoldedEvents[c0][c1]=XSection[c0][c1];
+	//cout<<"Hello world, bin ("<<c0<<","<<c1<<")     XS="<<DataUnfoldedEvents[c0][c1]<<", Nev="<<Events[c0][c1]<<endl;
+	
 	double nEvts=0;
 	for(int e0=0;e0<NBinsRecMom-1;e0++){//loop over effect 0
 	  for(int e1=0;e1<NBinsRecAngle-1;e1++){//loop over effect 1

@@ -172,7 +172,7 @@ int main(int argc, char ** argv){
 
   //0. Load the input distributions
   XS->Xsec::LoadInputFiles(txtDataName,txtMCName,MCReconstructedEvents_TrueSignal,DataReconstructedEvents,MCReconstructedEvents,MCReconstructedBkgEvents,MCEfficiency,NumberOfNeutrino);
-    
+  
 #ifdef DEBUG
     cout<<"DEBUG, LOAD FILES/////////////////////////////////////////////////////////////////////////////////////////"<<endl;
     cout<<"DEBUGGING, check number of neutrino chosen (read in the -d file):"<<*NumberOfNeutrino<<endl;
@@ -379,7 +379,9 @@ int main(int argc, char ** argv){
 	double Flux=*NumberOfNeutrino;
 	double Efficiency=MCEfficiency[c0][c1];
 	double Correction=Flux*BinningWidth*Efficiency*NTarget;
-	XSection[c0][c1]=UnfoldedData[c0][c1]/Correction;
+	XSection[c0][c1]=UnfoldedData[c0][c1]/ ( Correction == 0 ? 1 : Correction );
+	//cout<<"("<<c0<<","<<c1<<")     Correction="<<Correction<<", XS="<<XSection[c0][c1]<<endl;
+	//XSection[c0][c1]=UnfoldedData[c0][c1]/Correction;
       }
     }
 

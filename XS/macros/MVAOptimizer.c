@@ -46,14 +46,14 @@ void MVAOptimizer(){
 
   //#################################################################################################
   //###############CHECK ALSO RIGHT TAIL CUT FOR PROTON. USE ANOTHER MVA, MVAProton##################
-  bool MVAPion=true;
+  bool MVAPion=false;
   bool MVAProton=true;
   //#################################################################################################
 
   
   const int NBinsMVA = 160; 
-  double LowerBoundMVA = -1 ;
-  double UpperBoundMVA = 1;
+  double LowerBoundMVA = -0.5 ;
+  double UpperBoundMVA = 0.5 ;
   const int NBinsCL = 100;
   double LowerBoundCL = 0;
   double UpperBoundCL = 1;
@@ -65,6 +65,7 @@ void MVAOptimizer(){
   //TFile * rfile = new TFile("../src/MVAparticle_multiclassMVAmuonpion_10000trees.root");
   //TFile * rfile = new TFile("../src/MVAparticle_MVAmuonpion_bdtg.root");
   TFile * rfile = new TFile("../src/MVAparticleMuon_1000trees.root");
+  //TFile * rfile = new TFile("../src/MVAparticleMuon_Forest1000trees_Input1000trees.root");
   //TFile * rfile = new TFile("../src/MVAparticleProton_1000trees.root");
   
   TTree * rtree = (TTree*) rfile->Get("TrainTree");
@@ -178,6 +179,9 @@ void MVAOptimizer(){
 
   TH1D * PurityMVA_TrueMuonVSPion = new TH1D("PurityMVA_TrueMuonVSPion","Right tail cut efficiency of muons vs pions using MVA discriminant: muon/pion separation power",NBinsMVA,LowerBoundMVA,UpperBoundMVA);
 
+  TH1D * EfficiencyMVA_TrueMuon_INGRIDStopping = new TH1D("EfficiencyMVA_TrueMuon_INGRIDStopping","Right tail cut efficiency of muons using MVA discriminant",NBinsMVA,LowerBoundMVA,UpperBoundMVA);
+  TH1D * PurityMVA_TrueMuon_INGRIDStopping = new TH1D("PurityMVA_TrueMuon_INGRIDStopping","Right tail cut efficiency of muons using MVA discriminant",NBinsMVA,LowerBoundMVA,UpperBoundMVA);
+
 
   double PurityMuonMVA[NBinsMVA];
   double EfficiencyMuonMVA[NBinsMVA];
@@ -196,6 +200,9 @@ void MVAOptimizer(){
   TH1D * PurityCL_TrueProton = new TH1D("PurityCL_TrueProton","Left tail cut efficiency of muons using CL discriminant",NBinsCL,LowerBoundCL,UpperBoundCL);
 
   TH1D * PurityCL_TrueMuonVSPion = new TH1D("PurityCL_TrueMuonVSPion","Right tail cut efficiency of muons vs pions using CL discriminant: muon/pion separation power",NBinsCL,LowerBoundCL,UpperBoundCL);
+
+  TH1D * EfficiencyCL_TrueMuon_INGRIDStopping = new TH1D("EfficiencyCL_TrueMuon_INGRIDStopping","Right tail cut efficiency of muons using CL discriminant",NBinsCL,LowerBoundCL,UpperBoundCL);
+  TH1D * PurityCL_TrueMuon_INGRIDStopping = new TH1D("PurityCL_TrueMuon_INGRIDStopping","Right tail cut efficiency of muons using CL discriminant",NBinsCL,LowerBoundCL,UpperBoundCL);
 
   THStack * StackCLdiscriminant = new THStack("StackCLdiscriminant","");
 
@@ -302,8 +309,28 @@ void MVAOptimizer(){
   //
   }
   //
-  
-  
+
+  //Only INGRID stopping sample
+  for(int ibinx=1;ibinx<=MVAdiscriminant_TrueMuon[3]->GetNbinsX();ibinx++){
+    double RightTailMuon=MVAdiscriminant_TrueMuon[3]->Integral(ibinx,MVAdiscriminant_TrueMuon[3]->GetNbinsX());
+    double RightTailPion=MVAdiscriminant_TruePion[3]->Integral(ibinx,MVAdiscriminant_TruePion[3]->GetNbinsX());
+    double RightTailProton=MVAdiscriminant_TrueProton[3]->Integral(ibinx,MVAdiscriminant_TrueProton[3]->GetNbinsX());
+    double RightTailOthers=MVAdiscriminant_TrueOthers[3]->Integral(ibinx,MVAdiscriminant_TrueOthers[3]->GetNbinsX());
+    
+    double TotalMuon=MVAdiscriminant_TrueMuon[3]->Integral();
+    double TotalPion=MVAdiscriminant_TruePion[3]->Integral();
+    double TotalProton=MVAdiscriminant_TrueProton[3]->Integral();
+    double TotalOthers=MVAdiscriminant_TrueOthers[3]->Integral();
+
+    double PurityMuon = RightTailMuon;
+    double EfficiencyMuon = RightTailMuon;
+    if(TotalMuon!=0) EfficiencyMuon /= TotalMuon;
+    if(RightTailMuon+RightTailPion+RightTailProton+RightTailOthers) PurityMuon/=(RightTailMuon+RightTailPion+RightTailProton+RightTailOthers);
+    EfficiencyMVA_TrueMuon_INGRIDStopping->SetBinContent(ibinx,EfficiencyMuon);
+    PurityMVA_TrueMuon_INGRIDStopping->SetBinContent(ibinx,PurityMuon);
+  }
+
+    //All samples together
   for(int ibinx=1;ibinx<=MVAdiscriminant_TrueMuon_AllSamples->GetNbinsX();ibinx++){
     double RightTailMuon=MVAdiscriminant_TrueMuon_AllSamples->Integral(ibinx,MVAdiscriminant_TrueMuon_AllSamples->GetNbinsX());
     double RightTailPion=MVAdiscriminant_TruePion_AllSamples->Integral(ibinx,MVAdiscriminant_TruePion_AllSamples->GetNbinsX());
@@ -321,7 +348,7 @@ void MVAOptimizer(){
     if(RightTailMuon+RightTailPion+RightTailProton+RightTailOthers) PurityMuon/=(RightTailMuon+RightTailPion+RightTailProton+RightTailOthers);
     EfficiencyMVA_TrueMuon->SetBinContent(ibinx,EfficiencyMuon);
     PurityMVA_TrueMuon->SetBinContent(ibinx,PurityMuon);
-
+    
     double LeftTailMuon=MVAdiscriminant_TrueMuon_AllSamples->Integral(1,ibinx);
     double LeftTailPion=MVAdiscriminant_TruePion_AllSamples->Integral(1,ibinx);
     double LeftTailProton=MVAdiscriminant_TrueProton_AllSamples->Integral(1,ibinx);
@@ -359,6 +386,15 @@ void MVAOptimizer(){
   lLeftTail->AddEntry(PurityMVA_TrueMuon,"Pur. #mu");
   lLeftTail->AddEntry(PurityMVA_TrueMuonVSPion,"Pur. #mu vs #pi+#mu");
   lLeftTail->Draw("same");
+
+  TCanvas * cEfficiencyMVA_TrueMuon_INGRIDStopping = new TCanvas("cEfficiencyMVA_TrueMuon_INGRIDStopping","Efficiency and purity of muons using MVA");
+  EfficiencyMVA_TrueMuon_INGRIDStopping->SetLineColor(kBlue);
+  PurityMVA_TrueMuon_INGRIDStopping->SetLineColor(kRed);
+  EfficiencyMVA_TrueMuon_INGRIDStopping->Draw();
+  EfficiencyMVA_TrueMuon_INGRIDStopping->GetXaxis()->SetTitle("#mu_{MVA}");
+  PurityMVA_TrueMuon_INGRIDStopping->Draw("same");
+  EfficiencyMVA_TrueMuon_INGRIDStopping->GetYaxis()->SetRangeUser(0.,1.);
+  lLeftTail->Draw("same");
   
   TCanvas * cEfficiencyMVA_TrueProton = new TCanvas("cEfficiencyMVA_TrueProton","Efficiency and purity of protons using MVA");
   EfficiencyMVA_TrueProton->SetLineColor(kBlue);
@@ -393,7 +429,28 @@ void MVAOptimizer(){
   StackCLdiscriminant->Draw();
   lParticles->Draw("same");
 
-  //
+  /*
+  //For stopping sample
+  for(int ibinx=1;ibinx<=CLdiscriminant_TrueMuon->GetNbinsX();ibinx++){
+    double RightTailMuon=CLdiscriminant_TrueMuon->Integral(ibinx,CLdiscriminant_TrueMuon->GetNbinsX());
+    double RightTailPion=CLdiscriminant_TruePion->Integral(ibinx,CLdiscriminant_TruePion->GetNbinsX());
+    double RightTailProton=CLdiscriminant_TrueProton->Integral(ibinx,CLdiscriminant_TrueProton->GetNbinsX());
+    double RightTailOthers=CLdiscriminant_TrueOthers->Integral(ibinx,CLdiscriminant_TrueOthers->GetNbinsX());
+
+    double TotalMuon=CLdiscriminant_TrueMuon->Integral();
+    double TotalPion=CLdiscriminant_TruePion->Integral();
+    double TotalProton=CLdiscriminant_TrueProton->Integral();
+    double TotalOthers=CLdiscriminant_TrueOthers->Integral();
+
+    double PurityMuon = RightTailMuon;
+    double EfficiencyMuon = RightTailMuon;
+    if(TotalMuon!=0) EfficiencyMuon /= TotalMuon;
+    if(RightTailMuon+RightTailPion+RightTailProton+RightTailOthers) PurityMuon/=(RightTailMuon+RightTailPion+RightTailProton+RightTailOthers);
+    EfficiencyCL_TrueMuon->SetBinContent(ibinx,EfficiencyMuon);
+    PurityCL_TrueMuon->SetBinContent(ibinx,PurityMuon);
+  }
+  */
+  //All samples together
   for(int ibinx=1;ibinx<=CLdiscriminant_TrueMuon->GetNbinsX();ibinx++){
     double RightTailMuon=CLdiscriminant_TrueMuon->Integral(ibinx,CLdiscriminant_TrueMuon->GetNbinsX());
     double RightTailPion=CLdiscriminant_TruePion->Integral(ibinx,CLdiscriminant_TruePion->GetNbinsX());
@@ -457,8 +514,9 @@ void MVAOptimizer(){
   
 
   if(MVAProton){
-  TFile * rfile_MVAProton = new TFile("../src/MVAparticleProton_1000trees.root");
-  
+    TFile * rfile_MVAProton = new TFile("../src/MVAparticleProton_1000trees.root");
+    //TFile * rfile_MVAProton = new TFile("../src/MVAparticleProton_Forest1000trees_Input500trees.root");
+
   TTree * rtree_MVAProton = (TTree*) rfile_MVAProton->Get("TrainTree");
 
   float  FSIInt;//Final state true information
@@ -709,7 +767,7 @@ void MVAOptimizer(){
     PurityProtonMVAProton[ibinx-1]=PurityProton;
     //cout<<"Efficiency="<<EfficiencyMuonMVAProton[ibinx-1]<<", purity="<<PurityMuonMVAProton[ibinx-1]<<endl;
   }
-
+  
   TCanvas * cEfficiencyMVAProton_TrueProton = new TCanvas("cEfficiencyMVAProton_TrueProton","Efficiency and purity of muons using MVAProton");
   EfficiencyMVAProton_TrueProton->SetLineColor(kBlue);
   PurityMVAProton_TrueProton->SetLineColor(kRed);
@@ -1110,23 +1168,25 @@ void MVAOptimizer(){
   /////////////////////////////////////////////////////////////////////////////////////////
   for(is=0;is<6;is++){
     cMVAstack[is]->SaveAs(Form("../plots/MVAOptimisation/MVADistributionParticles_stack_sample%d.png",is));
-    cMVAPionstack[is]->SaveAs(Form("../plots/MVAOptimisation/MVAPionDistributionParticles_stack_sample%d.png",is));
-    cMVAProtonstack[is]->SaveAs(Form("../plots/MVAOptimisation/MVAProtonDistributionParticles_stack_sample%d.png",is));
+    if(MVAPion) cMVAPionstack[is]->SaveAs(Form("../plots/MVAOptimisation/MVAPionDistributionParticles_stack_sample%d.png",is));
+    if(MVAProton) cMVAProtonstack[is]->SaveAs(Form("../plots/MVAOptimisation/MVAProtonDistributionParticles_stack_sample%d.png",is));
   }
   cMVAstack_AllSamples->SaveAs("../plots/MVAOptimisation/MVADistributionParticles_stack.png");
-  cMVAPionstack_AllSamples->SaveAs("../plots/MVAOptimisation/MVAPionDistributionParticles_stack.png");
-  cMVAProtonstack_AllSamples->SaveAs("../plots/MVAOptimisation/MVAProtonDistributionParticles_stack.png");
+  if(MVAPion) cMVAPionstack_AllSamples->SaveAs("../plots/MVAOptimisation/MVAPionDistributionParticles_stack.png");
+  if(MVAProton) cMVAProtonstack_AllSamples->SaveAs("../plots/MVAOptimisation/MVAProtonDistributionParticles_stack.png");
   cEfficiencyMVA_TrueMuon->SaveAs("../plots/MVAOptimisation/EfficiencyMVA_TrueMuon.png");
+  cEfficiencyMVA_TrueMuon_INGRIDStopping->SaveAs("../plots/MVAOptimisation/EfficiencyMVA_TrueMuon_INGRIDStopping.png");
   //cEfficiencyMVA_TruePion->SaveAs("../plots/MVAOptimisation/EfficiencyMVA_TruePion.png");
   cEfficiencyMVA_TrueProton->SaveAs("../plots/MVAOptimisation/EfficiencyMVA_TrueProton.png");
   cEfficiencyVSPurity_MVA->SaveAs("../plots/MVAOptimisation/EfficiencyVSPurity_MVA.png");
   cCLstack->SaveAs("../plots/MVAOptimisation/CLDistributionParticles_stack.png");
   cEfficiencyCL_TrueMuon->SaveAs("../plots/MVAOptimisation/EfficiencyCL_TrueMuon.png");
+  //cEfficiencyCL_TrueMuon_INGRIDStopping->SaveAs("../plots/MVAOptimisation/EfficiencyCL_TrueMuon_INGRIDStopping.png");
   //cEfficiencyCL_TruePion->SaveAs("../plots/MVAOptimisation/EfficiencyCL_TruePion.png");
   cEfficiencyCL_TrueProton->SaveAs("../plots/MVAOptimisation/EfficiencyCL_TrueProton.png");
   cEfficiencyVSPurity_CL->SaveAs("../plots/MVAOptimisation/EfficiencyVSPurity_CL.png");
   
-  cEfficiencyMVAProton_TrueProton->SaveAs("../plots/MVAOptimisation/EfficiencyMVAProton_TrueProton.png");
+  if(MVAProton) cEfficiencyMVAProton_TrueProton->SaveAs("../plots/MVAOptimisation/EfficiencyMVAProton_TrueProton.png");
   cEfficiencyVSPurity_MVACL->SaveAs("../plots/MVAOptimisation/EfficiencyVSPurity_MVACL.png");
 }
 
