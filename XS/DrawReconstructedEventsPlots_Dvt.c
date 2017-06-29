@@ -437,13 +437,13 @@ int main(int argc, char ** argv){
 #ifdef RECONSTRUCTED
       sprintf(txtMCName,"%s/XS/files/MCSelected_%s_Systematics%d_%d.txt",cINSTALLREPOSITORY,DetName,ErrorType,n);
       XS->Xsec::LoadInputFiles(txtMCName,txtMCName,MCReconstructedEvents_TrueSignal,MCReconstructedEvents,MCReconstructedEvents,MCReconstructedBkgEvents,Efficiency,NumberOfPOT);
-      if(MODE == 1){
+      //if(MODE == 1){
 	for(int e0=0;e0<NBinsMom;e0++){//loop over effect 0
 	  for(int e1=0;e1<NBinsAngle;e1++){//loop over effect 1
 	    MCReconstructedEvents[e0][e1] -= MCReconstructedBkgEvents[e0][e1];
 	  }
 	}
-      }
+	//}
       
       //XS->Xsec::LoadInputFiles_OnlySelectedData(txtMCName,MCReconstructedEvents);
 #else
@@ -522,6 +522,8 @@ int main(int argc, char ** argv){
 	  	  
 	  MCReconstructedEvents[e0][e1] = MCReconstructedEvents[e0][e1] - MCReconstructedBkgEvents[e0][e1];
 	  DataReconstructedEvents[e0][e1] = DataReconstructedEvents[e0][e1] - MCReconstructedBkgEvents[e0][e1];
+	  //MCReconstructedEvents[e0][e1] = MCReconstructedEvents[e0][e1] - NominalMCBkg->GetBinContent(e0+1,e1+1);
+	  //DataReconstructedEvents[e0][e1] = DataReconstructedEvents[e0][e1] - NominalMCBkg->GetBinContent(e0+1,e1+1);
 	  
 	  if( (MODE==1) && ErrorType>1 ){
 	    //MC = SIGNAL Nominal MC - BKG Varied MC. Note that SIGNAL Nominal MC = SELECTED Nominal MC + BKG Nominal MC.  
@@ -656,7 +658,6 @@ int main(int argc, char ** argv){
 	  else if(ErrorType>=Systematics_Xsec_Start && ErrorType<=Systematics_Xsec_End){
 	    double XsecVariation=ErrorValue-(ErrorType-Systematics_Xsec_Start)*NXsecVariations-CenterXsecVariations;//The variation of Xsec parameter, in #sigma. A number between 0 and 175 - the center of the current systematic source (nominal). For example, for Xsec error source #10, it starts from 7*(10-1)=63 and ends at 70. from 63 to 70, it contains the variariation of -3,-2,-1,0,1,2,3 sigma respectively. The center is then located at 66. For the example of a 2 sigma variation, the substraction will be therefore equal to: 68-66=2, which gives the number of sigmas!
 	    //if(XsecVariation==0) NominalSelectedMC_XSTemp->SetBinContent(e0+1,e1+1,MCReconstructedEvents[e0][e1]);
-
 	    double RelativeMC=MCReconstructedEvents[e0][e1];
 	    if(NominalSelectedMC_XSTemp->GetBinContent(e0+1,e1+1)!=0) RelativeMC/=NominalSelectedMC_XSTemp->GetBinContent(e0+1,e1+1);
 	    //if(NominalSelectedMC_XSTemp->GetBinContent(e0+1,e1+1)!=0) RelativeMC/=NominalSelectedMC_XSTemp->GetBinContent(e0+1,e1+1);

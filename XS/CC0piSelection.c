@@ -84,8 +84,9 @@ double MuonSample1=3;
 double MuonSample2=3;
 double MuonCut=0.9;
 double ProtonCut=0.9;
-double MuonMVACut=0.1;
+double MuonMVACut=0.06;
 double ProtonMVACut=0.1;
+//double ProtonMVACut=0.1;
 
 //Temp for 1D cut
 //#define MVA2DCut
@@ -1769,6 +1770,8 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
 	  }
 
 #ifdef MVAREADING
+	  //if(FSIInt==3) cout<<"FSI type="<<FSIInt<<", Number of mu-like / p-like / undet = "<<MuonLike<<" / "<<ProtonLike<<" / "<<Undetermined<<endl;
+
 	  //MVA
 	  if(Plots){
 	    if(nTracks==1){
@@ -1884,9 +1887,9 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
 	}
 
       }
-      else if(MuonLike==2 &&(/*_isPM?true:*/ Undetermined==0)){//Side band CC1pi - for WM I reject Undertermined tracks (mucl=-1)
+      else if((MuonLike==2 && Undetermined==0) || (MuonLike==1 && Undetermined==1)){//Side band CC1pi - for WM I reject Undertermined tracks (mucl=-1)
 	// for PM, no requirement on Undetermined==0 was done -> I make it now
-	      
+	
 	nEvents[3]+=weight;
 	nEventsInter[3][FSIInt]+=weight;
 	      

@@ -4,9 +4,13 @@
   gStyle->SetPadGridX(kTRUE);
   gStyle->SetPadGridY(kTRUE);
   gStyle->SetOptStat(kFALSE);
+
+  double ErrorBkg=0.25;
+  int NBinsTrueMom=4;
+  int NBinsTrueAngle=4;
   
   //TFile * fMC = new TFile("../files/MCSelected_PM_PG_Systematics0_0PM.root");
-  TFile * fMC = new TFile("../files/MCSelected_PM_Systematics0_0PM.root");
+  TFile * fMC = new TFile("../files/MCSelected_PM_Systematics0_0.root");
   //TFile * fMC = new TFile("../files/MCSelected_PM_Systematics0_0PM_StoppedOnly.root");
   
   //TFile * fMC = new TFile("../files/MCSelected_Systematics0_0_clmuonplan.root");
@@ -228,9 +232,11 @@
     
   TH1D * CC0pi_Purity_1track = (TH1D*) hMuCL_CC0pi->Clone("CC0pi_Purity_1track");
   TH1D * CC0pi_Efficiency_1track = (TH1D*) hMuCL_CC0pi->Clone("CC0pi_Efficiency_1track");
-
+  TH1D * CC0pi_SignalBkg_1track = (TH1D*) hMuCL_CC0pi->Clone("CC0pi_SignalBkg_1track");
+  
   TH2D * CC0pi_Purity_2tracks = (TH2D*) hMuCL_2tracks_CC0pi->Clone("CC0pi_Purity_2tracks");
   TH2D * CC0pi_Efficiency_2tracks = (TH2D*) hMuCL_2tracks_CC0pi->Clone("CC0pi_Efficiency_2tracks");
+  TH2D * CC0pi_SignalBkg_2tracks = (TH2D*) hMuCL_2tracks_CC0pi->Clone("CC0pi_SignalBkg_2tracks");
 
   double NBinsX=CC0pi_Efficiency_1track->GetNbinsX();
   double NBinsY=CC0pi_Efficiency_2tracks->GetNbinsY();
@@ -250,7 +256,11 @@
 
     CC0pi_Purity_1track->SetBinContent(ibinx,PurCC0pi_1track);
     CC0pi_Efficiency_1track->SetBinContent(ibinx,EffCC0pi_1track);
-
+    
+      double SqrtSB_1track = sqrt( pow(sqrt(NAll_1track/TMath::Max(NBinsTrueMom,NBinsTrueAngle)),2) + pow(ErrorBkg*(NAll_1track-NCC0pi_1track)/TMath::Max(NBinsTrueMom,NBinsTrueAngle),2));//sqrt( sqrt(signal+bkg)**2+bkg**2). It is divided by the number of bins along momentum or angle in order to have an optimization for an average bin, not for the whole distribution
+    if(NCC0pi_1track!=0) SqrtSB_1track/=(NCC0pi_1track/TMath::Max(NBinsTrueMom,NBinsTrueAngle));//sqrt(signal+bkg)*bkg / signal*signal
+      CC0pi_SignalBkg_1track->SetBinContent(ibinx,ibiny,SqrtSB_1track);
+    
     for(int ibiny=1;ibiny<=NBinsY;ibiny++){
       double NCC0pi_2tracks=hMuCL_2tracks_CC0pi->Integral(ibinx,NBinsX,1,ibiny);
       double NAll_2tracks=hMuCL_2tracks_All->Integral(ibinx,NBinsX,1,ibiny);    
@@ -263,8 +273,12 @@
       //cout<<EffCC0pi_2tracks<<", "<<PurCC0pi_2tracks<<endl;
       CC0pi_Purity_2tracks->SetBinContent(ibinx,ibiny,PurCC0pi_2tracks);
       CC0pi_Efficiency_2tracks->SetBinContent(ibinx,ibiny,EffCC0pi_2tracks);
-    }
-    }
+
+      double SqrtSB_2tracks = sqrt( pow(sqrt(NAll_2tracks/TMath::Max(NBinsTrueMom,NBinsTrueAngle)),2) + pow(ErrorBkg*(NAll_2tracks-NCC0pi_2tracks)/TMath::Max(NBinsTrueMom,NBinsTrueAngle),2));//sqrt( sqrt(signal+bkg)**2+bkg**2). It is divided by the number of bins along momentum or angle in order to have an optimization for an average bin, not for the whole distribution
+    if(NCC0pi_2tracks!=0) SqrtSB_2tracks/=(NCC0pi_2tracks/TMath::Max(NBinsTrueMom,NBinsTrueAngle));//sqrt(signal+bkg)*bkg / signal*signal
+      CC0pi_SignalBkg_2tracks->SetBinContent(ibinx,ibiny,SqrtSB_2tracks);
+      }
+  }
 
   TCanvas * cEff_1track = new TCanvas("cEff_1track","Tune mu-like cut: Efficiency/Purity of CC0pi with MuCL cut value");//Use the 1 track sample
   CC0pi_Efficiency_1track->SetLineColor(kRed);
@@ -272,6 +286,10 @@
   CC0pi_Purity_1track->SetLineColor(kBlue);
   CC0pi_Purity_1track->Draw("same");
   cEff_1track->SaveAs("../plots/MVAOptimisation/CC0pi_1track_EfficiencyPurity.eps");
+
+  TCanvas * cSignalBkg_1track = new TCanvas("cSignalBkg_1track","Tune mu-like cut: SignalBkg of CC0pi with MuCL cut value");//Use the 1 track sample
+  CC0pi_SignalBkg_1track->Draw("same");
+  cSignalBkg_1track->SaveAs("../plots/MVAOptimisation/CC0pi_1track_SignalBkg.eps");
   
   gStyle->SetPaintTextFormat("2.2g");//Ste the text format in the option draw("colztext")
   TCanvas * cEff_2tracks = new TCanvas("cEff_2tracks","Tune p-like cut: Efficiency of CC0pi with MuCL cut value");
@@ -289,12 +307,20 @@
   CC0pi_Purity_2tracks->GetXaxis()->SetRangeUser(0,1);
   CC0pi_Purity_2tracks->GetYaxis()->SetRangeUser(0,1);
   cPur_2tracks->SaveAs("../plots/MVAOptimisation/CC0pi_2tracks_Purity.eps");
+
+  TCanvas * cSignalBkg_2tracks = new TCanvas("cSignalBkg_2tracks","Tune p-like cut: SignalBkg of CC0pi with MuCL cut value");
+  CC0pi_SignalBkg_2tracks->Draw("colztext");
+  CC0pi_SignalBkg_2tracks->GetXaxis()->SetRangeUser(0,1);
+  CC0pi_SignalBkg_2tracks->GetYaxis()->SetRangeUser(0,1);
+  cSignalBkg_2tracks->SaveAs("../plots/MVAOptimisation/CC0pi_2tracks_SignalBkg.eps");
   
 #endif
   
 #define MVA  
 #ifdef MVA
-  int RebinValueMVA=2;
+  double MVAZoomInf=0;
+  double MVAZoomSup=0.2;
+  int RebinValueMVA=1;
 
   TH1D * hMVAMuondiscriminant_1track[NFSIs];
   TH2D * hMVAMuonVSProtondiscriminant_2tracks[NFSIs];
@@ -304,7 +330,6 @@
 
   TH1D * hMVAMuondiscriminant_1track_All = (TH1D*) hMVAMuondiscriminant_1track_CC0pi->Clone("hMVAdiscriminant_1track_All");
   TH2D * hMVAMuonVSProtondiscriminant_2tracks_All = (TH2D*) hMVAMuonVSProtondiscriminant_2tracks_CC0pi->Clone("hMVAMuonVSProtondiscriminant_2tracks_All");
-
 
   hMVAMuondiscriminant_1track_CC0pi->SetFillStyle(0);
   hMVAMuonVSProtondiscriminant_2tracks_CC0pi->SetFillStyle(0);
@@ -385,8 +410,10 @@
   
   TH1D * mvaCC0pi_Purity_1track = (TH1D*) hMVAMuondiscriminant_1track_CC0pi->Clone("mvaCC0pi_Purity_1track");
   TH1D * mvaCC0pi_Efficiency_1track = (TH1D*) hMVAMuondiscriminant_1track_CC0pi->Clone("mvaCC0pi_Efficiency_1track");
+  TH1D * mvaCC0pi_SignalBkg_1track = (TH1D*) hMVAMuondiscriminant_1track_CC0pi->Clone("mvaCC0pi_SignalBkg_1track");
   TH1D * mvaCC0pi_Purity_2tracks = (TH1D*) hMVAMuonVSProtondiscriminant_2tracks_CC0pi->Clone("mvaCC0pi_Purity_2tracks");
   TH1D * mvaCC0pi_Efficiency_2tracks = (TH1D*) hMVAMuonVSProtondiscriminant_2tracks_CC0pi->Clone("mvaCC0pi_Efficiency_2tracks");
+  TH1D * mvaCC0pi_SignalBkg_2tracks = (TH1D*) hMVAMuonVSProtondiscriminant_2tracks_CC0pi->Clone("mvaCC0pi_SignalBkg_2tracks");
 
   double mvaNBinsX=mvaCC0pi_Efficiency_1track->GetNbinsX();
   double mvaNBinsY=mvaCC0pi_Efficiency_1track->GetNbinsX();
@@ -404,6 +431,14 @@
       mvaCC0pi_Purity_1track->SetBinContent(ibinx,PurCC0pi_1track);
       mvaCC0pi_Efficiency_1track->SetBinContent(ibinx,EffCC0pi_1track);
 
+      double SqrtSB_1track = sqrt( pow(sqrt(NAll_1track/TMath::Max(NBinsTrueMom,NBinsTrueAngle)),2) + pow(ErrorBkg*(NAll_1track-NCC0pi_1track)/TMath::Max(NBinsTrueMom,NBinsTrueAngle),2));//sqrt( sqrt(signal+bkg)**2+bkg**2). It is divided by the number of bins along momentum or angle in order to have an optimization for an average bin, not for the whole distribution
+    if(NCC0pi_1track!=0) SqrtSB_1track/=(NCC0pi_1track/TMath::Max(NBinsTrueMom,NBinsTrueAngle));//sqrt(signal+bkg)*bkg / signal*signal
+      mvaCC0pi_SignalBkg_1track->SetBinContent(ibinx,ibiny,SqrtSB_1track);
+      
+      
+    //double SqrtSB_1track = TMath::Sqrt(NAll_1track)*(NAll_1track-NCC0pi_1track);//sqrt(signal+bkg)*bkg
+    //if(NCC0pi_1track!=0) SqrtSB_1track/=pow(NCC0pi_1track,2.);//sqrt(signal+bkg)*bkg / signal*signal
+     
       for(int ibiny=1;ibiny<=mvaNBinsY;ibiny++){
 	double NCC0pi_2tracks=hMVAMuonVSProtondiscriminant_2tracks_CC0pi->Integral(ibinx,mvaNBinsX,ibiny,mvaNBinsY);
 	double NAll_2tracks=hMVAMuonVSProtondiscriminant_2tracks_All->Integral(ibinx,mvaNBinsX,ibiny,mvaNBinsY);
@@ -415,6 +450,11 @@
 	if(NAll_2tracks!=0) PurCC0pi_2tracks/=NAll_2tracks;
 	mvaCC0pi_Purity_2tracks->SetBinContent(ibinx,ibiny,PurCC0pi_2tracks);
 	mvaCC0pi_Efficiency_2tracks->SetBinContent(ibinx,ibiny,EffCC0pi_2tracks);
+
+      double SqrtSB_2tracks = sqrt( pow(sqrt(NAll_2tracks/TMath::Max(NBinsTrueMom,NBinsTrueAngle)),2) + pow(ErrorBkg*(NAll_2tracks-NCC0pi_2tracks)/TMath::Max(NBinsTrueMom,NBinsTrueAngle),2));//sqrt( sqrt(signal+bkg)**2+bkg**2). It is divided by the number of bins along momentum or angle in order to have an optimization for an average bin, not for the whole distribution
+    if(NCC0pi_2tracks!=0) SqrtSB_2tracks/=(NCC0pi_2tracks/TMath::Max(NBinsTrueMom,NBinsTrueAngle));//sqrt(signal+bkg)*bkg / signal*signal
+      mvaCC0pi_SignalBkg_2tracks->SetBinContent(ibinx,ibiny,SqrtSB_2tracks);
+
       }
   }
 
@@ -423,7 +463,14 @@
   mvaCC0pi_Purity_1track->SetLineColor(kBlue);
   mvaCC0pi_Efficiency_1track->Draw();
   mvaCC0pi_Purity_1track->Draw("same");
+  mvaCC0pi_Efficiency_1track->GetXaxis()->SetRangeUser(MVAZoomInf,MVAZoomSup);
   cmvaEfficiency_1track->SaveAs("../plots/MVAOptimisation/MVA_CC0pi_1track_EfficiencyPurity.eps");
+
+    TCanvas * cmvaCC0piSignalBkg_1track = new TCanvas("cmvaCC0piSignalBkg_1track","1 track,SignalBkg of CC0pi with MVA discriminant cut value");//Use the 1 track sample
+  mvaCC0pi_SignalBkg_1track->SetLineColor(kBlack);
+  mvaCC0pi_SignalBkg_1track->Draw();
+  mvaCC0pi_SignalBkg_1track->GetXaxis()->SetRangeUser(MVAZoomInf,MVAZoomSup);
+  cmvaCC0piSignalBkg_1track->SaveAs("../plots/MVAOptimisation/MVA_CC0pi_1track_SignalBkgPurity.eps");
 
   
   ////////////////////////////////////////////
@@ -448,28 +495,34 @@
     mvaMuon_Efficiency_1track->SetBinContent(ibinx,EffMuon);
     mvaMuon_Purity_1track->SetBinContent(ibinx,PurMuon);
   }
-  
   TCanvas * cmvaMuonEfficiency_1track = new TCanvas("cmvaMuonEfficiency_1track","1 track,Efficiency/Purity of Muon with MVA discriminant cut value");//Use the 1 track sample
   mvaMuon_Efficiency_1track->SetLineColor(kRed);
   mvaMuon_Purity_1track->SetLineColor(kBlue);
   mvaMuon_Efficiency_1track->Draw();
   mvaMuon_Purity_1track->Draw("same");
   cmvaMuonEfficiency_1track->SaveAs("../plots/MVAOptimisation/MVA_Muon_1track_EfficiencyPurity.eps");
+
   //
   
   TCanvas * cmvaEfficiency_2tracks = new TCanvas("cmvaEfficiency_2tracks","2 tracks,Efficiency of CC0pi with MVA discriminant cut value");//Use the 2 tracks sample
   //mvaCC0pi_Efficiency_2tracks->SetLineColor(kRed);
   //mvaCC0pi_Purity_2tracks->SetLineColor(kBlue);
   mvaCC0pi_Efficiency_2tracks->Draw("COLZTEXT");
-  //mvaCC0pi_Efficiency_2tracks->GetXaxis()->SetRangeUser(-0.1,0.3);
-  //mvaCC0pi_Efficiency_2tracks->GetYaxis()->SetRangeUser(-0.1,0.3);
+  mvaCC0pi_Efficiency_2tracks->GetXaxis()->SetRangeUser(MVAZoomInf,MVAZoomSup);
+  mvaCC0pi_Efficiency_2tracks->GetYaxis()->SetRangeUser(MVAZoomInf,MVAZoomSup);
   cmvaEfficiency_2tracks->SaveAs("../plots/MVAOptimisation/MVA_CC0pi_2tracks_Efficiency.eps");
 
   TCanvas * cmvaPurity_2tracks = new TCanvas("cmvaPurity_2tracks","2 tracks,Purity of CC0pi with MVA discriminant cut value");//Use the 2 tracks sample
   mvaCC0pi_Purity_2tracks->Draw("COLZTEXT");
-  //mvaCC0pi_Purity_2tracks->GetXaxis()->SetRangeUser(-0.1,0.3);
-  //mvaCC0pi_Purity_2tracks->GetYaxis()->SetRangeUser(-0.1,0.3);
+  mvaCC0pi_Purity_2tracks->GetXaxis()->SetRangeUser(MVAZoomInf,MVAZoomSup);
+  mvaCC0pi_Purity_2tracks->GetYaxis()->SetRangeUser(MVAZoomInf,MVAZoomSup);
   cmvaPurity_2tracks->SaveAs("../plots/MVAOptimisation/MVA_CC0pi_2tracks_Purity.eps");
+
+  TCanvas * cmvaSignalBkg_2tracks = new TCanvas("cmvaSignalBkg_2tracks","2 tracks,SignalBkg of CC0pi with MVA discriminant cut value");//Use the 2 tracks sample
+  mvaCC0pi_SignalBkg_2tracks->Draw("COLZTEXT");
+  mvaCC0pi_SignalBkg_2tracks->GetXaxis()->SetRangeUser(MVAZoomInf,MVAZoomSup);
+  mvaCC0pi_SignalBkg_2tracks->GetYaxis()->SetRangeUser(MVAZoomInf,MVAZoomSup);
+  cmvaSignalBkg_2tracks->SaveAs("../plots/MVAOptimisation/MVA_CC0pi_2tracks_SignalBkg.eps");
 
   TCanvas * cmvaVSMuonMomentum_1track = new TCanvas("cmvaVSMuonMomentum_1track","1 track,MVA discriminant cut value with true muon momentum");//Use the 1 track sample
   cmvaVSMuonMomentum_1track->Divide(1,2);
@@ -485,6 +538,15 @@
   cmvaVSDistance_1track->cd(2);
   hMVAMuondiscriminantVSDistance_1track_All->Draw("COLZ");
   
+  TCanvas * cmvaVSDistance_1track_profile = new TCanvas("cmvaVSDistance_1track_profile","1 track,MVA discriminant cut value with true muon momentum");//Use the 1 track sample
+  TProfile * pMVAMuondiscriminantVSDistance_1track_CC0pi = (TProfile*) hMVAMuondiscriminantVSDistance_1track_CC0pi->ProfileX("pMVAMuondiscriminantVSDistance_1track_CC0pi",0,hMVAMuondiscriminantVSDistance_1track_CC0pi->GetNbinsY());
+  pMVAMuondiscriminantVSDistance_1track_CC0pi->SetLineColor(kRed);
+  pMVAMuondiscriminantVSDistance_1track_CC0pi->Draw();
+  TProfile * pMVAMuondiscriminantVSDistance_1track_All = (TProfile*) hMVAMuondiscriminantVSDistance_1track_All->ProfileX("pMVAMuondiscriminantVSDistance_1track_All",0,hMVAMuondiscriminantVSDistance_1track_All->GetNbinsY());
+  pMVAMuondiscriminantVSDistance_1track_All->SetLineColor(kBlue);
+  pMVAMuondiscriminantVSDistance_1track_All->Draw("same");
+  pMVAMuondiscriminantVSDistance_1track_CC0pi->GetYaxis()->SetRangeUser(-0.2,0.2);
+  cmvaVSDistance_1track_profile->SaveAs("../plots/MVAOptimisation/MVAVSDistance_CC0pi_1track_profile.eps");
 
 
   /////////
@@ -618,7 +680,7 @@
  TDirectory * PIDCutTuning = (TDirectory*) fMC->Get("PIDCutTuning");
  PIDCutTuning->cd();
 
-#define DEDXPLOTS
+ //#define DEDXPLOTS
 #ifdef DEDXPLOTS
 
  int NSamples=6;
