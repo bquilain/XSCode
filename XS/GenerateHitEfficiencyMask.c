@@ -47,16 +47,12 @@ int LimitRecs=10;
 #include "BeamInfoSummary.h"
 #include "IngridBasicReconSummary.h"
 #include "INGRID_Dimension.cc"
-INGRID_Dimension * IngDim = new INGRID_Dimension();
 #include "setup.h"
 #include "Hit.h"
 #include "PMdispRev.h"
 #include "Corrections.cc"
 #include "Reconstruction.cc"
 #include "Xsec.cc"
-Reconstruction * Rec = new Reconstruction();
-Corrections * Cor = new Corrections();
-Xsec * xs = new Xsec();
 
 //#define DEBUG
 //#define XSEC_ERROR
@@ -90,11 +86,13 @@ double RadDeg(double angle){
 int main(int argc, char **argv)
 {
 
-  xs->Xsec::Initialize();
+  char * cINSTALLREPOSITORY = getenv("INSTALLREPOSITORY");
+
+  bool PM=true;
   int c=-1;
   string InputFileName;string OutputFileName;
 
-  while ((c = getopt(argc, argv, "i:o:")) != -1) {
+  while ((c = getopt(argc, argv, "i:o:w")) != -1) {
     switch(c){
     case 'i':
       InputFileName=optarg;
@@ -102,20 +100,41 @@ int main(int argc, char **argv)
     case 'o':
       OutputFileName=optarg;
       break;
+    case 'w':
+      PM=false;
+      break;
     }
   }
-
   
+  Xsec * xs = new Xsec(PM);
+  xs->Xsec::Initialize();
+  Reconstruction * Rec = new Reconstruction(PM);
+  Corrections * Cor = new Corrections(PM);
+  INGRID_Dimension * IngDim = new INGRID_Dimension();
+  char DetName[2]; sprintf(DetName,(PM?"PM":"WM"));
+
   cout<<"Welcome"<<endl;
   int NIngBasRec;
 
-  TFile * DataHitEffiency = new TFile("/home/bquilain/CC0pi_XS/XS/files/DataHitEfficiency.root");
-  TH1D * DataEfficiency_PMIng = (TH1D*) DataHitEffiency->Get("Efficiency_PMIng");
-  TH1D * DataEfficiency_PMSci = (TH1D*) DataHitEffiency->Get("Efficiency_PMSci");
-  TFile * MCHitEffiency = new TFile("/home/bquilain/CC0pi_XS/XS/files/MCHitEfficiency.root");
-  TH1D * MCEfficiency_PMIng = (TH1D*) MCHitEffiency->Get("Efficiency_PMIng");
-  TH1D * MCEfficiency_PMSci = (TH1D*) MCHitEffiency->Get("Efficiency_PMSci");
-  
+  TFile * DataHitEffiency = new TFile(Form("%s/XS/files/DataHitEfficiency_%s.root",cINSTALLREPOSITORY,DetName));
+  TFile * MCHitEffiency = new TFile(Form("%s/XS/files/MCHitEfficiency_%s.root",cINSTALLREPOSITORY,DetName));
+
+  TH1D * DataEfficiency_PMIng,*DataEfficiency_PMSci,*DataEfficiency_WMPlan,*DataEfficiency_WMGrid;
+  TH1D * MCEfficiency_PMIng,*MCEfficiency_PMSci,*MCEfficiency_WMPlan,*MCEfficiency_WMGrid;
+
+  if(PM){
+    DataEfficiency_PMIng = (TH1D*) DataHitEffiency->Get("Efficiency_PMIng");
+    DataEfficiency_PMSci = (TH1D*) DataHitEffiency->Get("Efficiency_PMSci");
+    MCEfficiency_PMIng = (TH1D*) MCHitEffiency->Get("Efficiency_PMIng");
+    MCEfficiency_PMSci = (TH1D*) MCHitEffiency->Get("Efficiency_PMSci");
+  }
+  else {
+    DataEfficiency_WMPlan = (TH1D*) DataHitEffiency->Get("Efficiency_WMPlan");
+    DataEfficiency_WMGrid = (TH1D*) DataHitEffiency->Get("Efficiency_WMGrid");
+    MCEfficiency_WMPlan = (TH1D*) MCHitEffiency->Get("Efficiency_WMPlan");
+    MCEfficiency_WMGrid = (TH1D*) MCHitEffiency->Get("Efficiency_WMGrid");
+  }
+
   TRandom3 * Rand = new TRandom3();
   Rand->SetSeed(0);
   
@@ -138,27 +157,26 @@ int main(int argc, char **argv)
   cout<<"Total Number Of Events="<<nevt<<endl;
 
   IngridEventSummary* evt = new IngridEventSummary();
-  TBranch * Br=tree->GetBranch("fDefaultReco.");
-  Br->SetAddress(&evt);
   tree->SetBranchAddress("fDefaultReco.",&evt);
   
+  IngridSimVertexSummary * simver;
+  IngridHitSummary * Hit=new IngridHitSummary();
+  IngridHitSummary * Hit2;
+  IngridHitSummary * HitTrk;
+  IngridSimHitSummary * SimHit;
+  IngridSimHitSummary * SimHit2;
+  IngridSimParticleSummary * SimPart;
+  PMAnaSummary * recon;
+    
   for(int ievt=0;ievt<nevt;ievt++){//loop over INGRID event (ingridsimvertex if MC, integration cycle of 580ns if data)
     if((ievt%100)==0) cout<<"Processing "<<ievt<<endl;
     evt->Clear();
     evt2->Clear();
-    tree->GetEntry(ievt);//charge l'evt grace au link avec la branche
+    tree->GetEntry(ievt);
     if(evt->NIngridSimVertexes()>1) cout<<"********************************"<<endl;
-    IngridSimVertexSummary * simver = (IngridSimVertexSummary*)(evt->GetSimVertex(0));//il y a un numéro. On peut donc bien avoir plusieurs simvert/periode d'integ ;-)?
+    simver = (IngridSimVertexSummary*)(evt->GetSimVertex(0));//il y a un numéro. On peut donc bien avoir plusieurs simvert/periode d'integ ;-)?
     evt2->AddSimVertex(simver);
-    
-    IngridHitSummary * Hit=new IngridHitSummary();
-    IngridHitSummary * Hit2;
-    IngridHitSummary * HitTrk;
-    IngridSimHitSummary * SimHit;
-    IngridSimHitSummary * SimHit2;
-    IngridSimParticleSummary * SimPart;
-    PMAnaSummary * recon;
-    
+        
     evt2->run=evt->run;
     evt2->event=evt->run;
     evt2->runmode=evt->runmode;
@@ -206,6 +224,7 @@ int main(int argc, char **argv)
 	  Hit->pe=Hit2->pe;                 // number of photoelectrons, without correction
 	  Hit->lope=Hit2->lope;               // number of photoelectrons, without correction
 	  Hit->pecorr=Hit2->pecorr;             // number of photoelectrons, with correction
+	  // *** DONT FORGET TO COPY pe_cross FOR WM HITS ****
 	  Hit->tdc=Hit2->tdc;                // raw TDC value
 	  Hit->time=Hit2->time;               // hit time (ns).
 	  Hit->tnearhit=Hit2->tnearhit;           // minumum value of hit time difference (ns).
@@ -229,57 +248,77 @@ int main(int argc, char **argv)
 	    }
 	  }
 	  
-	  //evt2->AddIngridModHit(Hit,mod,cyc);
 	  
-	    bool TrackHit=false;
-	    
-	    for(int irec=0;irec<NIngBasRec;irec++){//Before adding the hit, one will test if this is in a track. If yes, do the test, if not add it.
-	      //recon->Clear();
-	      recon = (PMAnaSummary*) evt->GetPMAna(irec);
-	      if(recon->hitcyc!=cyc) continue;
-	      int nTracks=recon->Ntrack;
+	  bool TrackHit=false;
+	  //Before adding the hit, one will test if it is in a track. 
+	  //If yes, do the test, if not add it.
+
+	  for(int irec=0;irec<NIngBasRec;irec++){
+	    //recon->Clear();
+	    recon = (PMAnaSummary*) evt->GetPMAna(irec);
+	    if(recon->hitcyc!=cyc) continue;
+	    int nTracks=recon->Ntrack;
 	      
-	      for(int itrk=0;itrk<nTracks;itrk++){
-		//cout<<recon->Ntrack<<", hitcyc="<<recon->hitcyc<<", nhit="<<recon->NhitTs(itrk)<<endl;
-		for(int ihit=0;ihit<recon->NhitTs(itrk);ihit++){
-		  //HitTrk->Clear();
-		  if(TrackHit) continue;;
-		  HitTrk=recon->GetIngridHitTrk(ihit,itrk);
-		  //cout<<HitTrk->mod<<", "<<Hit2->mod<<endl;
-		  if(HitTrk->mod == Hit2->mod && HitTrk->tdc==Hit2->tdc && HitTrk->pln==Hit2->pln && HitTrk->ch==Hit2->ch && HitTrk->view==Hit2->view){
-		    TrackHit=true;
-		    int BinRecAngle;
-		    for(int i=0;i<=NBinsRecAngle;i++){
-		      if((recon->angle)[itrk]<BinningRecAngle[i+1]){BinRecAngle=i;break;}
-		    }
-		    if(!(Rec->Reconstruction::IsINGRID(Hit2->mod,Hit2->pln,Hit2->ch))){
-		      double Inef = TMath::Abs(DataEfficiency_PMSci->GetBinContent(BinRecAngle)-MCEfficiency_PMSci->GetBinContent(BinRecAngle));
-		      double IRand=Rand->Uniform();
-		      //cout<<"binning="<<BinRecAngle<<", Inef="<<Inef<<", Irand="<<IRand<<endl;
-		      if(IRand<Inef){cout<<"Hit removed"<<endl;continue;}
-		      else evt2->AddIngridModHit(Hit,mod,cyc);
-		      //cout<<Hit2->NSimHits()<<endl;
-		     }
-		    else{
-		      double Inef = TMath::Abs(DataEfficiency_PMIng->GetBinContent(BinRecAngle)-MCEfficiency_PMIng->GetBinContent(BinRecAngle));
-		      double IRand=Rand->Uniform();
-		      if(IRand<Inef){cout<<"hit removed"<<endl;continue;}
-		      else evt2->AddIngridModHit(Hit,mod,cyc);
-		      //cout<<Hit2->NSimHits()<<endl;
-		    }
-		    
+	    for(int itrk=0;itrk<nTracks;itrk++){
+	      //cout<<recon->Ntrack<<", hitcyc="<<recon->hitcyc<<", nhit="<<recon->NhitTs(itrk)<<endl;
+	      for(int ihit=0;ihit<recon->NhitTs(itrk);ihit++){
+		//HitTrk->Clear();
+		if(TrackHit) continue;
+		HitTrk=recon->GetIngridHitTrk(ihit,itrk);
+		//cout<<HitTrk->mod<<", "<<Hit2->mod<<endl;
+		if(HitTrk->mod == Hit2->mod && HitTrk->tdc==Hit2->tdc && HitTrk->pln==Hit2->pln && HitTrk->ch==Hit2->ch && HitTrk->view==Hit2->view){
+		  TrackHit=true;
+		  int BinRecAngle;
+		  for(int i=0;i<=NBinsRecAngle;i++){
+		    if((recon->angle)[itrk]<BinningRecAngle[i+1]){BinRecAngle=i;break;}
 		  }
-		}
-	      }
-	      
-	    }
-	    
+
+		  // ML 2017/07/03 I use alternative computation of the hit inefficiency
+		  // --- if d/m > 1 ie d > m, then nothing to mask in MC and Inef<0
+		  double d=0,m=0;
+		  if(PM){
+		    if(!(Rec->Reconstruction::IsINGRID(Hit2->mod,Hit2->pln,Hit2->ch))){
+		      d=DataEfficiency_PMSci->GetBinContent(BinRecAngle);
+		      m=MCEfficiency_PMSci->GetBinContent(BinRecAngle);
+		      //double Inef =TMath::Abs(DataEfficiency_PMSci->GetBinContent(BinRecAngle)-MCEfficiency_PMSci->GetBinContent(BinRecAngle));
+		    }
+		    else{
+		      d=DataEfficiency_PMIng->GetBinContent(BinRecAngle);
+		      m=MCEfficiency_PMIng->GetBinContent(BinRecAngle);
+		      //  double Inef = TMath::Abs(DataEfficiency_PMIng->GetBinContent(BinRecAngle)-MCEfficiency_PMIng->GetBinContent(BinRecAngle));
+		    }
+		  }
+		  else{
+		    bool IsGrid=(Hit->ch>=40);
+		    if(!IsGrid){
+		      d=DataEfficiency_WMPlan->GetBinContent(BinRecAngle);
+		      m=MCEfficiency_WMPlan->GetBinContent(BinRecAngle);
+		      //  double Inef = TMath::Abs(DataEfficiency_WMPlan->GetBinContent(BinRecAngle)-MCEfficiency_WMPlan->GetBinContent(BinRecAngle));
+		    }
+		    else{
+		      continue; // ML 2017/07/03 TMP - I DONT APPLY IT
+		      d=DataEfficiency_WMPlan->GetBinContent(BinRecAngle);
+		      m=MCEfficiency_WMPlan->GetBinContent(BinRecAngle);
+		      //double Inef = TMath::Abs(DataEfficiency_WMGrid->GetBinContent(BinRecAngle)-MCEfficiency_WMGrid->GetBinContent(BinRecAngle));
+		    }
+		  }//WM
+		  
+		  double Inef=1.-(d/m);
+		  double IRand=Rand->Uniform();
+		  if(IRand<Inef){cout<<"Hit removed"<<endl;continue;}
+		  else evt2->AddIngridModHit(Hit,mod,cyc);
+
+		}//same hit
+	      }//hit
+	    }//trk
+	  }//rec   
 	  if(TrackHit==false) evt2->AddIngridModHit(Hit,mod,cyc);
+
 	}
       }
     }
-      wtree->Fill();
-      delete Hit;
+    wtree->Fill();
+
   }
   wfile->cd();
   wtree->Write();

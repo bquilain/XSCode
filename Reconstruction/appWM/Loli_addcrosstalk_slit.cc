@@ -309,8 +309,8 @@ int main(int argc,char *argv[]){
 		hit->pe_cross = pe_cross[view][pln][ch];
 		double xy, z;
 		fdim_temp-> get_pos_loli_xy( mod, view, pln, ch, &xy, &z);
-		inghitsum -> xy    = xy;
-		inghitsum ->  z    =  z;
+		hit -> xy    = xy; // ML corrected 2017/06/26
+		hit ->  z    =  z; // ML corrected 2017/06/26
 
 		if(Is_Bad_Channel( hit ))continue;
 		evt->AddIngridModHit(hit, mod, cyc);

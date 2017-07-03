@@ -341,7 +341,7 @@ vector <HitTemp> Reconstruction::EraseDoubleHitsPM(PMAnaSummary * recon, int itr
       if(HitV[ihit2]==Coord) {
         ndouble++;
         HitV.pop_back();
-	//	cout<<"hit erased"<<endl;
+	//cout<<"hit erased"<<endl;
       }
     }
   }  
@@ -603,17 +603,23 @@ vector <Hit3D> Reconstruction::Hit2DMatchingPM( IngridEventSummary* evt, PMAnaSu
     cout<<"Gradient x="<<gradx<<", intcpt="<<intcptx/10.<<", thetax="<<thetax<<endl;
     cout<<"Gradient y="<<grady<<", intcpt="<<intcpty/10.<<", thetay="<<thetay<<endl;
     cout<<"Hit pln="<<hit->pln<<", z position="<<zposi(hit->mod,hit->view,hit->pln)/10.<<", hit view="<<hit->view<<endl;
-  cout<<"**************************************************"<<endl;
+    cout<<"**************************************************"<<endl;
 #endif
 
     
-    if(MC) hit3d.pe=hit->pe;
+    if(MC) hit3d.pe=hit->pe/*+hit->pe_cross*/;
+    // *** WARNING *** for the WM MC, the total pe is pe+pe_cross !!!
+    //  but if I add that it won't compute anymore with the PM libraries
     else{
       if(_isPM){
 	if((hit->pe + hit->lope)/2.<39) hit3d.pe=hit->pe;
 	else hit3d.pe=hit->lope;
       }
-      else hit3d.pe=hit->pecorr;
+      else{
+	if(hit->mod==15)hit3d.pe=hit->pecorr;
+	// *** WARNING *** for the WM data, INGRID hits are not calibrated !!!
+	else hit3d.pe=hit->pe; 
+      }
     }
     hit3d.view=hit->view;
     hit3d.pln=hit->pln;
@@ -725,12 +731,15 @@ vector <Hit3D> Reconstruction::Hit2DMatchingAllTracksPM(PMAnaSummary * recon, bo
     else hit3d.z=zposi(hit->mod,hit->view,hit->pln)/10.; //cm;  defined in Lolirecon
         
     if(MC) hit3d.pe=hit->pe;
+    // *** WARNING *** for the WM MC, the total pe is pe+pe_cross !!!
+    //  but if I add that it won't compute anymore with the PM libraries
     else{
       if(_isPM){
 	if((hit->pe + hit->lope)/2.<39) hit3d.pe=hit->pe;
 	else hit3d.pe=hit->lope;
       }
       else hit3d.pe=hit->pecorr;
+      // *** WARNING *** for the WM data, INGRID hits are not calibrated !!!
     }
     hit3d.view=hit->view;
     hit3d.pln=hit->pln;
@@ -2962,12 +2971,12 @@ bool Reconstruction::IsINGRID(int mod,int pln,int ch){
   return Ing;
 }
 
-double Reconstruction::NormalAngle(double angle3D, double thetax,double thetay,bool view, bool grid){
+double Reconstruction::NormalAngle(double angle3D, double thetax,double thetay,int view, bool grid){
   //input: degrees   output: degrees
   if(!grid) return angle3D;
   else{
     double theta2D=(view==0? thetax:thetay);
-    return RadDeg(acos( tan(DegRad(theta2D)) * cos(DegRad(angle3D)) ));
+    return RadDeg(acos( tan(fabs(DegRad(theta2D))) * cos(DegRad(angle3D)) ));
   }
 }
 

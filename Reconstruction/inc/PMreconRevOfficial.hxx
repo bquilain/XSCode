@@ -160,10 +160,10 @@ int zposi(int mod,int view,int pln){
   }
   else{
     if(view==0){
-      posiz=5+105*pln+1074.5;
+      posiz=5+105*pln+1074.5+10;// ML 2017/06/27 -  INGRID modules start with vertical bars
     }
     else{
-      posiz=5+105*pln+1074.5+10;
+      posiz=5+105*pln+1074.5;// ML 2017/06/27
     }
   }  
   return posiz;

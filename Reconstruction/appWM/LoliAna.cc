@@ -118,7 +118,9 @@ int main(int argc,char *argv[]){
   int nINGRIDPlanes=2; // number of planes fIngridHitPMJoint is looking at
   bool Error=false;
   int ErrorType=0;
-  float ErrorValue=0.;
+  char ErrorValue[256];
+  TFile * peVsAngle;
+  TH1D * PEAngleData, * PEAngleMC;
 
   bool requireIngridTrack=true; //ML 2016/11/24 for new option -N
 
@@ -160,7 +162,7 @@ int main(int argc,char *argv[]){
       ErrorType=atoi(optarg);
       break;
     case 'v':
-      ErrorValue=atof(optarg);
+      sprintf(ErrorValue,optarg);
       break;
     case 'N':
       requireIngridTrack=false;
@@ -171,11 +173,16 @@ int main(int argc,char *argv[]){
     }
   }
   if(Error){
-    if(ErrorType==11) VertexingPlane = (int) ErrorValue;
-    else if(ErrorType==12) VertexingChannel = (double) ErrorValue;
-    else if(ErrorType==13) TrackMatching = (int) ErrorValue;
-    else if(ErrorType==14) AngleCut = (double) ErrorValue;
-    else if(ErrorType==15) TransverseCut = (double) ErrorValue;
+    if(ErrorType==4) {
+      peVsAngle=new TFile(ErrorValue,"open"); 
+      PEAngleData=(TH1D*) peVsAngle->Get("PEAngleData_WM");
+      PEAngleMC=(TH1D*) peVsAngle->Get("PEAngleMC_WM");
+    }
+    else if(ErrorType==11) VertexingPlane = (int) atoi(ErrorValue);
+    else if(ErrorType==12) VertexingChannel = (double) atof(ErrorValue);
+    else if(ErrorType==13) TrackMatching = (int) atoi(ErrorValue);
+    else if(ErrorType==14) AngleCut = (double) atof(ErrorValue);
+    else if(ErrorType==15) TransverseCut = (double) atof(ErrorValue);
   }
 
   // ML 2016/11/24
@@ -540,7 +547,7 @@ int main(int argc,char *argv[]){
 	  pmanasum -> pdg         .push_back(pmtrack[i].trk[t].pdg);
 	  pmanasum -> trkpe       .push_back(pmtrack[i].trk[t].trkpe);
 
-	  if(!calcMuCL(pmtrack[i].trk[t],isoHitCut,useINGRID_PID))  {
+	  if(!calcMuCL(pmtrack[i].trk[t],isoHitCut,useINGRID_PID,Error,PEAngleData,PEAngleMC))  {
 	    biasedMuCL++;
 	    pmanasum->mucl .push_back( -1);
 	  }
@@ -853,6 +860,7 @@ void GetNonRecHits(IngridEventSummary* evt, int cyc){
   INGRID_Dimension *fdim_temp = new INGRID_Dimension();
   for(int ihit=0; ihit<ninghit; ihit++){
     inghitsum  = (IngridHitSummary*) (evt -> GetIngridModHit(ihit,15,cyc));
+    if(inghitsum->cyc==-2) continue; // this is killed hit  ML 2017/06/19
     if(Is_Bad_Channel( inghitsum ))continue;
     view = inghitsum->view;
     ch   = inghitsum->ch;
@@ -874,6 +882,7 @@ void GetNonRecHits(IngridEventSummary* evt, int cyc){
     ninghit = evt -> NIngridModHits(mod, cyc);
     for(int ihit=0; ihit<ninghit; ihit++){
       inghitsum  = (IngridHitSummary*) (evt -> GetIngridModHit(ihit,mod,cyc));
+      if(inghitsum->cyc==-2) continue; // this is killed hit ML 2017/06/19
       if(Is_Bad_Channel( inghitsum ))continue;
       view = inghitsum->view;
       ch   = inghitsum->ch;

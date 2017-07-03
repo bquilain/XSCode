@@ -51,6 +51,8 @@ Reconstruction *Rec=new Reconstruction();
 Corrections *Cor=new Corrections();
 
 
+//#define DEBUG
+
 int main(int argc, char **argv){
 
   char * cINSTALLREPOSITORY = getenv("INSTALLREPOSITORY");
@@ -176,7 +178,7 @@ int main(int argc, char **argv){
   for(int R=IRuns;R<=FRuns;R++){
     for(int f=IFiles;f<=NFiles;f++){
       // ---- choice of the input files -----
-      if(MC && PM && (f>=415 && f<=419)) continue;
+      //if(MC && PM && (f>=415 && f<=419)) continue; ML 2017/06/23
       
       if(MC) {
 	sprintf(FileMC,"%s/%sMC_Wall_Run1_%d_wNoise_ana.root",cMCOUT,DetName,f);
@@ -200,10 +202,12 @@ int main(int argc, char **argv){
       cout<<nevt<<endl;
       evt = new IngridEventSummary();
       tree->SetBranchAddress("fDefaultReco.",&evt);
+
+      int n0=0;
           
       // ---- loop over the events ----
       for(int ievt=0;ievt<nevt;ievt++){
-	if((ievt%100)==0) cout<<ievt<<endl;
+	if((ievt%1000)==0) cout<<ievt<<endl;
 	evt->Clear();
 	tree->GetEntry(ievt);
 
@@ -236,9 +240,11 @@ int main(int argc, char **argv){
 	for(int irec=0;irec<NPMAnas;irec++){
 	  pmana = (PMAnaSummary*) evt->GetPMAna(irec);
 	  Rec->Reconstruction::GetSelectionPM(&VSelectionFV,&VSelectionOV,pmana,MC);
-	 
 
-	  if(pmana->Ntrack!=1 || !VSelectionOV) continue; // ML 2017/06/13 - def of the sand muon sample
+	  bool sandMuon=pmana->Ntrack==1 && (min(pmana->startxpln[0],pmana->startypln[0])<(PM?1:2)) && (max(pmana->endxpln[0],pmana->endypln[0])>(PM?15:20));
+	  if(!sandMuon) continue;// new definition of sand muons
+	  //	  if(pmana->Ntrack!=1 || !VSelectionOV) continue; // ML 2017/06/13 - old def of the sand muon sample
+	  n0++;
 
 	  int cyc=pmana->hitcyc;
 	  int inihit=0;
@@ -264,10 +270,10 @@ int main(int argc, char **argv){
 	    TrackSample=Rec->Reconstruction::SelectTrackSample((pmana->pm_stop)[itrk],Geom,(pmana->ing_trk)[itrk],(pmana->ing_stop)[itrk],(pmana->ing_endpln)[itrk]);
 	    vector <HitTemp> HitV;
 	    vector <Hit3D> Vec;
-	    Vec.clear();
+	    Vec.clear(); 
 	    vector <double> PECorrectedFiberOnly;
 	    PECorrectedFiberOnly.clear();
-	      
+	       
 	    double SlopeX=TMath::Tan((pmana->thetax)[itrk]*TMath::Pi()/180);
 	    double SlopeY=TMath::Tan((pmana->thetay)[itrk]*TMath::Pi()/180);
 	    //dx=TMath::Sqrt(SlopeY*SlopeY+SlopeX*SlopeX+1);
@@ -286,11 +292,18 @@ int main(int argc, char **argv){
 	    for(int ihit=0;ihit<Vec.size();ihit++) PECorrectedFiberOnly.push_back(Vec[ihit].pecorr);
 	    Vec=Cor->Corrections::GetDXCorrection(Vec,dx); //only PM+INGRID here
 	    if(!PM) Cor->Corrections::GetDXCorrectionWM(Vec,DegRad(pmana->angle[itrk]),DegRad(pmana->thetax[itrk]),DegRad(pmana->thetay[itrk]));
-
+	    // output is pe/3mm
 
 	    // now fill the variables and write the tree
+#ifdef DEBUG
+	    cout<<ievt<<" "<<n0<<" "<<Vec.size()<<" "<<pmana->angle[itrk]<<" "<<pmana->thetax[itrk]<<" "<<pmana->thetay[itrk]<<endl;
+#endif
 	    for(int ihit=0;ihit<Vec.size();ihit++){
 	      Charge=Vec[ihit].pe;
+#ifdef DEBUG
+	      if(n0==12) cout<<ihit<<" "<<Vec[ihit].mod<<" "<<Vec[ihit].view<<" "<<Vec[ihit].pln<<" "<<Vec[ihit].ch<<" "<<Vec[ihit].pe;
+#endif
+	      if(Charge<4.5) continue; // ML 2017/06/20
 	      ChargeCorrected=PECorrectedFiberOnly[ihit];
 	      ChargeDXCorrected=Vec[ihit].pecorr;
 	      SlopeX=TMath::Tan((pmana->thetax)[itrk]*TMath::Pi()/180);
@@ -304,23 +317,21 @@ int main(int argc, char **argv){
 	      Y=Vec[ihit].y;
 	      AngleX=(pmana->thetax)[itrk];
 	      AngleY=(pmana->thetay)[itrk];
-
-	      bool VSelectionFV=false;
-	      bool VSelectionOV=false;
-
 	      
-	      // generalized here to `normal angle` (unchanged for scinti form planes)
+	      // generalized here to `normal angle` (unchanged for scinti from planes)
 	      bool grid=(Module==15 && Chan>=40);
 	      Angle=Rec->NormalAngle(pmana->angle[itrk],AngleX,AngleY,View,grid) ;
-
+#ifdef DEBUG 
+	      if(n0==12) cout<<" normal angle="<<Angle<<" dz="<<3*ChargeCorrected/ChargeDXCorrected<<","<<Cor->dzWM(DegRad(pmana->angle[itrk]),DegRad(View?AngleY:AngleX),grid)<<" pe="<<Charge<<endl;
+#endif
 	      Used=Vec[ihit].used;
 	      if(Vec[ihit].mod==16){//PM
-		if(Rec->Reconstruction::IsINGRID(Vec[ihit].mod,Vec[ihit].pln,Vec[ihit].ch)) Channel=1;
+ 		if(Rec->Reconstruction::IsINGRID(Vec[ihit].mod,Vec[ihit].pln,Vec[ihit].ch)) Channel=1;
 		else Channel=2;
 	      }
 	      else if(Vec[ihit].mod==15){//WM
 		if(!grid) Channel=1;
-		else Channel=2+View; // Channel 2 is GRidX and channel 3 is GridY
+		else Channel=2+View; // Channel 2 is GridX and channel 3 is GridY
 	      }
 	      else Channel=0;//INGRID
 	      if(PM && dx<0.5) cout<<"*******************************dx2="<<dx<<endl;
@@ -334,6 +345,7 @@ int main(int argc, char **argv){
 	}//PMAnas
       }//Events
       _file0->Close();
+      cout<<"Number of sand selected = "<<n0<<endl;
     }//Number of files
   }
 

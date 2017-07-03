@@ -42,7 +42,7 @@ int main(int argc, char **argv){
 
   bool sandOnly=false;
 
-  
+   
   while ((c = getopt(argc, argv, "mdspwgS")) != -1) {
     switch(c){
     case 'm':
@@ -284,17 +284,20 @@ int main(int argc, char **argv){
 	    }
 	    else if(ErrorType==3){//One should give in input the file name of the data/MC difference
 	      //The best thing would be just to generate everything w/ an option
-	      sprintf(Command3,"${INSTALLREPOSITORY}/XS/GenerateHitEfficiencyMask -i ${MCOUTPUTSTORAGE}/PMMC_Run1_%d_wNoise_ana.root -o ${MCOUTPUTSTORAGE}/PMMC_Run1_%d_wNoise_Systematics%d_%d.root",i,i,ErrorType,n);
-	      sprintf(Command4,"${INSTALLREPOSITORY}/Reconstruction/appPM/PMreconRevOfficial -r 14000 -s 0 -f ${MCOUTPUTSTORAGE}/PMMC_Run1_%d_wNoise_Systematics%d_%d.root -o ${MCOUTPUTSTORAGE}/PMMC_Run1_%d_wNoise_recon_Systematics%d_%d.root",i,ErrorType,n,i,ErrorType,n);
-	      sprintf(Command5,"${INSTALLREPOSITORY}/Reconstruction/appPM/PMAnaRevOfficial -r 14000 -s 0 -f ${MCOUTPUTSTORAGE}/PMMC_Run1_%d_wNoise_recon_Systematics%d_%d.root -o ${MCOUTPUTSTORAGE}/PMMC_Run1_%d_wNoise_ana_Systematics%d_%d.root",i,ErrorType,n,i,ErrorType,n);
-	      sprintf(Command6,"source ${INSTALLREPOSITORY}/source_T2KReweight.sh");
-	      sprintf(Command7,"${INSTALLREPOSITORY}/XS/XS_CC0pi_Plan -i ${MCOUTPUTSTORAGE}/PMMC_Run1_%d_wNoise_ana_Systematics%d_%d.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_Run1_%d_Systematics%d_%d_Plan.root -f 1 -m",i,ErrorType,n,i,ErrorType,n);    	
+	      sprintf(Command1,"${INSTALLREPOSITORY}/XS/GenerateHitEfficiencyMask%s -i ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_ana.root -o ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_Systematics%d_%d.root %s",suffix,suffix,DetName,i,suffix,DetName,i,ErrorType,n,(PM?"":"-w"));
+	      sprintf(Command2,"${INSTALLREPOSITORY}/Reconstruction/app%s/%s -f ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_Systematics%d_%d.root -o ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_recon_Systematics%d_%d.root",DetName,execRecon,suffix,DetName,i,ErrorType,n,suffix,DetName,i,ErrorType,n);
+	      sprintf(Command3,"${INSTALLREPOSITORY}/Reconstruction/app%s/%s -f ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_recon_Systematics%d_%d.root -o ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_ana_Systematics%d_%d.root",DetName,execAna,suffix,DetName,i,ErrorType,n,suffix,DetName,i,ErrorType,n);
+	      sprintf(Command4,"${INSTALLREPOSITORY}/XS/XS_CC0pi_Plan%s -i ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_ana_Systematics%d_%d.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s_Run1_%d_Systematics%d_%d_Plan.root -f 1 -m%s",suffix,suffix,DetName,i,ErrorType,n,DetName,i,ErrorType,n,(PM?"":"w"));
 	    }
 	    else if(ErrorType==4){//One should give in input the file name of the data/MC difference
-	      //The best thing would be just to generate everything w/ an option
-	      sprintf(Command1,"source ${INSTALLREPOSITORY}/source_T2KReweight.sh");
-	      sprintf(Command2,"${INSTALLREPOSITORY}/XS/XS_CC0pi_Plan -i ${MCOUTPUTSTORAGE}/PMMC_Run1_%d_wNoise_ana.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_Run1_%d_Systematics%d_%d_Plan.root -f 1 -m -e %d -v ${INSTALLREPOSITORY}/XS/files/PEXAngle.root",i,i,ErrorType,n,ErrorType);
-
+	      // for WM, input in LoliAna -- for PM, input inXS_CC0pi_Plan
+	      if(!PM){
+		sprintf(Command1,"${INSTALLREPOSITORY}/Reconstruction/app%s/%s -f ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_recon.root -o ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_ana_Systematics%d_%d.root -e %d -v ${INSTALLREPOSITORY}/XS/files/PEXAngle_WM.root",DetName,execAna,suffix,DetName,i,suffix,DetName,i,ErrorType,n,ErrorType);
+		sprintf(Command2,"${INSTALLREPOSITORY}/XS/XS_CC0pi_Plan%s -i ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_ana_Systematics%d_%d.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s_Run1_%d_Systematics%d_%d_Plan.root -f 1 -m%s",suffix,suffix,DetName,i,ErrorType,n,DetName,i,ErrorType,n,(PM?"":"w"));
+	      }
+	      else {
+		sprintf(Command2,"${INSTALLREPOSITORY}/XS/XS_CC0pi_Plan -i ${MCOUTPUTSTORAGE}/PMMC_Run1_%d_wNoise_ana.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_Run1_%d_Systematics%d_%d_Plan.root -f 1 -m -e %d -v ${INSTALLREPOSITORY}/XS/files/PEXAngle_PM.root",i,i,ErrorType,n,ErrorType);
+	      }	
 	    }
 	    else if(ErrorType==5){
 	      // the value of the Birks constant is an option
@@ -354,7 +357,7 @@ int main(int argc, char **argv){
 		if(sandOnly){
 
 		ScriptMC<<"#!/bin/bash +x"<<endl
-		  //	<<Command1_3<<endl
+		  	<<Command1_3<<endl
 			<<Command2<<endl
 			<<Command3<<endl
 			<<Command4<<endl

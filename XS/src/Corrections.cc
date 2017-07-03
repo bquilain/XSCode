@@ -97,7 +97,7 @@ void Corrections::GetDXCorrectionWM(vector <Hit3D> & Vec, double angle3D, double
     if(Vec[i].mod==15){//WM
       int view=Vec[i].view;
       bool grid=Vec[i].ch>=40;
-      Vec[i].pecorr=Vec[i].pecorr/(this->dzWM(angle3D,(view==0?thetax:thetay),grid));;
+      Vec[i].pecorr=Vec[i].pecorr/Corrections::dzWM(angle3D,(view==0?thetax:thetay),grid)*3; // output is pe/3mm
     }
   }
 }
@@ -115,7 +115,7 @@ vector <Hit3D> Corrections::GetDXCorrection(vector <Hit3D> Vec,double dx){
 	Vec[i].pecorr=(Vec[i].pecorr/(1.3*dx))/INGRIDSCIBAR;
       }
     }
-    else{//INGRID
+    else if(Vec[i].mod<14){//INGRID
       Vec[i].pecorr=Vec[i].pecorr/dx;
     }
   }

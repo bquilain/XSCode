@@ -103,15 +103,14 @@ bool INGRID_Dimension::get_pos(int mod, int pln, int ch, bool tpl, bool veto, do
 }
 
 bool INGRID_Dimension::get_posXY(int mod, int view, int pln, int ch, double *posxy, double *posz){
-
-
+  // modified ML 2017/06/27 to have position at the center of the bars for PM/INGRID
   if(mod!=16){
-    *posxy   = (ScintiWidth)*ch;
+    *posxy   = (ScintiWidth)*(ch+.5);//ML
     if( pln <= 10 ){
       if(view == 1) 
-	*posz    = ( PlnThick + IronThick ) * pln ;
+	*posz    = ( PlnThick + IronThick ) * pln + ScintiThick/2.;//ML
       else if(view == 0)
-	*posz    = ( PlnThick + IronThick ) * pln + ScintiThick;
+	*posz    = ( PlnThick + IronThick ) * pln + ScintiThick + ScintiThick/2.;//ML
       return true;
     }
     else if(pln >= 11){
@@ -120,16 +119,16 @@ bool INGRID_Dimension::get_posXY(int mod, int view, int pln, int ch, double *pos
   }
   else{
     if(pln==0){
-    *posxy   = (ScintiWidth)*ch;
-    if(view==0) *posz = 0;
-    else *posz=PlnDist_PM;
+      *posxy   = (ScintiWidth)*(ch+.5);//ML
+      if(view==0) *posz = ScintiThick/2.;//ML
+      else *posz=PlnDist_PM+ScintiThick/2.;//ML
     }
     else if( pln <= 17 ){
-      if(ch<8) *posxy = (ScintiWidth)*ch;
-      else if(ch<24)*posxy = (ScintiWidth)*8+(ScibarWidth)*(ch-8);
-      else *posxy = (ScintiWidth)*(ch-8);
-      if(view == 0) *posz = (PlnThick_PM)*(pln-1)+PlnThick_front_PM;
-      else *posz = (PlnThick_PM)*(pln-1)+PlnThick_front_PM+PlnDist_PM;
+      if(ch<8) *posxy = (ScintiWidth)*(ch+0.5);//ML
+      else if(ch<24)*posxy = (ScintiWidth)*8+(ScibarWidth)*(ch-8+.5);//ML
+      else *posxy = (ScintiWidth)*(ch-8+.5);//ML
+      if(view == 0) *posz = (PlnThick_PM)*(pln-1)+PlnThick_front_PM+ScintiThick/2.;//ML
+      else *posz = (PlnThick_PM)*(pln-1)+PlnThick_front_PM+PlnDist_PM+ScintiThick/2.;//ML
       return true;
     }
     else if(pln >= 18){

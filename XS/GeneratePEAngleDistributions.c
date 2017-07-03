@@ -42,22 +42,27 @@ int main(int argc, char **argv){
 
   int c=-1;
   char * OutputFileName = new char[256];
-  char * BasisName = new char[64];sprintf(BasisName,"PEXAngle");
+  char  suf[10];sprintf(suf,""); //for dev;  change here to have the other sand definition "_sand2" or "_sand1"
+  char * BasisName = new char[64];sprintf(BasisName,"PEXAngle%s",suf);
   bool PM=true;
+  bool dxOnly=false;
 
-  while ((c = getopt(argc, argv, "o:w")) != -1) {
+  while ((c = getopt(argc, argv, "o:wx")) != -1) {
     switch(c){
     case 'o':
       BasisName=optarg;
       break;
-    case 'w':
+     case 'w':
       PM=false;
       break;
-    }
+    case 'x':
+      dxOnly=true;
+      break;
+     }
   }
   
   char DetName[2];sprintf(DetName,(PM?"PM":"WM"));
-  sprintf(OutputFileName,"%s/XS/files/%s_%s.root",cINSTALLREPOSITORY,BasisName,DetName);
+  sprintf(OutputFileName,"%s/XS/files/%s_%s%s.root",cINSTALLREPOSITORY,BasisName,DetName,(dxOnly?"_dxonly":""));
   //xs->Initialize();
   InitializeGlobal(PM);
 
@@ -105,7 +110,7 @@ int main(int argc, char **argv){
   int Used=0;
   int MCSample=-1;
 
-  TFile * fMC = new TFile(Form("%s/XS/files/MC_Calibration%s.root",cINSTALLREPOSITORY,DetName));
+  TFile * fMC = new TFile(Form("%s/XS/files/MC_Calibration%s%s.root",cINSTALLREPOSITORY,DetName,suf));
   TTree * tMC=(TTree*) fMC->Get("wtree");
   int nevt_MC=(int) tMC->GetEntries();
   cout<<nevt_MC<<endl;
@@ -124,25 +129,27 @@ int main(int argc, char **argv){
     if(ievt%10000==0) cout<<ievt<<"/"<<nevt_MC<<endl;
     tMC->GetEntry(ievt);
 
+    double corr=(dxOnly?Charge/ChargeCorrected:1);// no fiber
+
     if(SelectionOV){
       if(Channel==0){
-	MC_OV_ChargeDXCorrected_Ing->Fill(Angle,ChargeDXCorrected,weight);
+	MC_OV_ChargeDXCorrected_Ing->Fill(Angle,ChargeDXCorrected*corr,weight);
       }
       else if(PM){
-	if(Channel==1) MC_OV_ChargeDXCorrected_PMIng->Fill(Angle,ChargeDXCorrected,weight);
-	else if(Channel==2)MC_OV_ChargeDXCorrected_PMSci->Fill(Angle,ChargeDXCorrected,weight);	
+	if(Channel==1) MC_OV_ChargeDXCorrected_PMIng->Fill(Angle,ChargeDXCorrected*corr,weight);
+	else if(Channel==2)MC_OV_ChargeDXCorrected_PMSci->Fill(Angle,ChargeDXCorrected*corr,weight);	
       }
       else {
-	if(Channel==1) MC_OV_ChargeDXCorrected_WMPlan->Fill(Angle,ChargeDXCorrected,weight);
-	else if(Channel==2)MC_OV_ChargeDXCorrected_WMGridX->Fill(Angle,ChargeDXCorrected,weight);  
-	else if(Channel==3)MC_OV_ChargeDXCorrected_WMGridY->Fill(Angle,ChargeDXCorrected,weight); 
+	if(Channel==1) MC_OV_ChargeDXCorrected_WMPlan->Fill(Angle,ChargeDXCorrected*corr,weight);
+	else if(Channel==2)MC_OV_ChargeDXCorrected_WMGridX->Fill(Angle,ChargeDXCorrected*corr,weight);  
+	else if(Channel==3)MC_OV_ChargeDXCorrected_WMGridY->Fill(Angle,ChargeDXCorrected*corr,weight); 
       }
       
     }
   }
   cout<<"end MC"<<endl;
   
-  TFile * fData = new TFile(Form("%s/XS/files/Data_Calibration%s.root",cINSTALLREPOSITORY,DetName));
+  TFile * fData = new TFile(Form("%s/XS/files/Data_Calibration%s%s.root",cINSTALLREPOSITORY,DetName,suf));
   TTree * tData=(TTree*) fData->Get("wtree");
   int nevt_Data=(int) tData->GetEntries();
   cout<<nevt_Data<<endl;
@@ -162,18 +169,20 @@ int main(int argc, char **argv){
     if(ievt%10000==0) cout<<ievt<<"/"<<nevt_Data<<endl;
     tData->GetEntry(ievt);
   
+    double corr=(dxOnly?Charge/ChargeCorrected:1);// no fiber
+
     if(SelectionOV){
       if(Channel==0){
-	Data_OV_ChargeDXCorrected_Ing->Fill(Angle,ChargeDXCorrected,weight);
+	Data_OV_ChargeDXCorrected_Ing->Fill(Angle,ChargeDXCorrected*corr,weight);
       }
       else if(PM){
-	if(Channel==1) Data_OV_ChargeDXCorrected_PMIng->Fill(Angle,ChargeDXCorrected,weight);
-	else if(Channel==2)Data_OV_ChargeDXCorrected_PMSci->Fill(Angle,ChargeDXCorrected,weight);	
+	if(Channel==1) Data_OV_ChargeDXCorrected_PMIng->Fill(Angle,ChargeDXCorrected*corr,weight);
+	else if(Channel==2)Data_OV_ChargeDXCorrected_PMSci->Fill(Angle,ChargeDXCorrected*corr,weight);	
       }
       else {
-	if(Channel==1) Data_OV_ChargeDXCorrected_WMPlan->Fill(Angle,ChargeDXCorrected,weight);
-	else if(Channel==2)Data_OV_ChargeDXCorrected_WMGridX->Fill(Angle,ChargeDXCorrected,weight);  
-	else if(Channel==3)Data_OV_ChargeDXCorrected_WMGridY->Fill(Angle,ChargeDXCorrected,weight); 
+	if(Channel==1) Data_OV_ChargeDXCorrected_WMPlan->Fill(Angle,ChargeDXCorrected*corr,weight);
+	else if(Channel==2)Data_OV_ChargeDXCorrected_WMGridX->Fill(Angle,ChargeDXCorrected*corr,weight);  
+	else if(Channel==3)Data_OV_ChargeDXCorrected_WMGridY->Fill(Angle,ChargeDXCorrected*corr,weight); 
       }
       
     }
@@ -191,13 +200,24 @@ int main(int argc, char **argv){
   }
 
   TProfile *PEAngleData_WMPlan,*PEAngleData_WMGridX,*PEAngleData_WMGridY,*PEAngleMC_WMPlan,*PEAngleMC_WMGridX,*PEAngleMC_WMGridY;
+  TProfile* PEAngleData_WM,*PEAngleMC_WM,*PEAngleData_WMGrid,*PEAngleMC_WMGrid;
   if(!PM){
-    PEAngleData_WMPlan = (TProfile*) Data_OV_ChargeDXCorrected_PMIng->ProfileX("PEAngleData_PMIng");
-    PEAngleData_WMGridX = (TProfile*) Data_OV_ChargeDXCorrected_PMIng->ProfileX("PEAngleData_PMIng");
-    PEAngleData_WMGridY = (TProfile*) Data_OV_ChargeDXCorrected_PMIng->ProfileX("PEAngleData_PMIng");
-    PEAngleMC_WMPlan = (TProfile*) MC_OV_ChargeDXCorrected_PMIng->ProfileX("PEAngleMC_PMIng");
-    PEAngleMC_WMGridX = (TProfile*) MC_OV_ChargeDXCorrected_PMIng->ProfileX("PEAngleMC_PMIng");
-    PEAngleMC_WMGridY = (TProfile*) MC_OV_ChargeDXCorrected_PMIng->ProfileX("PEAngleMC_PMIng");
+    PEAngleData_WMPlan = (TProfile*) Data_OV_ChargeDXCorrected_WMPlan->ProfileX("PEAngleData_WMPlan");
+    PEAngleData_WMGridX = (TProfile*) Data_OV_ChargeDXCorrected_WMGridX->ProfileX("PEAngleData_WMGridX");
+    PEAngleData_WMGridY = (TProfile*) Data_OV_ChargeDXCorrected_WMGridY->ProfileX("PEAngleData_WMGridY");
+    PEAngleMC_WMPlan = (TProfile*) MC_OV_ChargeDXCorrected_WMPlan->ProfileX("PEAngleMC_WMPlan");
+    PEAngleMC_WMGridX = (TProfile*) MC_OV_ChargeDXCorrected_WMGridX->ProfileX("PEAngleMC_WMGridX");
+    PEAngleMC_WMGridY = (TProfile*) MC_OV_ChargeDXCorrected_WMGridY->ProfileX("PEAngleMC_WMGridY");
+    MC_OV_ChargeDXCorrected_WMPlan->Add(MC_OV_ChargeDXCorrected_WMGridX);
+    MC_OV_ChargeDXCorrected_WMPlan->Add(MC_OV_ChargeDXCorrected_WMGridY);
+    PEAngleMC_WM = (TProfile*) MC_OV_ChargeDXCorrected_WMPlan->ProfileX("PEAngleMC_WM");
+    Data_OV_ChargeDXCorrected_WMPlan->Add(Data_OV_ChargeDXCorrected_WMGridX);
+    Data_OV_ChargeDXCorrected_WMPlan->Add(Data_OV_ChargeDXCorrected_WMGridY);
+    PEAngleData_WM = (TProfile*) Data_OV_ChargeDXCorrected_WMPlan->ProfileX("PEAngleData_WM");
+    MC_OV_ChargeDXCorrected_WMGridX->Add(MC_OV_ChargeDXCorrected_WMGridY);
+    Data_OV_ChargeDXCorrected_WMGridX->Add(Data_OV_ChargeDXCorrected_WMGridY);
+    PEAngleMC_WMGrid = (TProfile*) MC_OV_ChargeDXCorrected_WMGridX->ProfileX("PEAngleMC_WMGrid");
+    PEAngleData_WMGrid = (TProfile*) Data_OV_ChargeDXCorrected_WMGridX->ProfileX("PEAngleData_WMGrid");
   }
 
   TFile * wfile = new TFile(OutputFileName,"recreate");
@@ -220,6 +240,11 @@ int main(int argc, char **argv){
     PEAngleMC_WMPlan->Write();
     PEAngleMC_WMGridX->Write(); 
     PEAngleMC_WMGridY->Write();
+
+    PEAngleData_WM->Write();
+    PEAngleMC_WM->Write();
+    PEAngleData_WMGrid->Write();
+    PEAngleMC_WMGrid->Write();
   }
 
   wfile->Close();

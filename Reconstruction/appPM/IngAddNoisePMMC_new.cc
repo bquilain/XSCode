@@ -71,6 +71,7 @@ int main(int argc,char *argv[]){
 
   bool PM=!WM;
   cout<<"noise value = "<<NDUMMY_INI<<endl;
+  if(WM) Initialize_INGRID_Dimension();
 
   //#### Read file before adding noise ######
   //#########################################
@@ -242,6 +243,7 @@ int main(int argc,char *argv[]){
 					  &xy, &z);
 	  else  fINGRID_Dimension -> get_pos_loli_xy( mod, view, pln, ch,
 					  &xy, &z);
+
 	  inghitsum -> xy    = xy;
 	  inghitsum ->  z    =  z;
 	  inghitsum -> dummy = true;                   //### dummy flag

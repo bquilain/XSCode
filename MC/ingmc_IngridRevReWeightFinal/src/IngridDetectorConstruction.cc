@@ -510,18 +510,18 @@ G4VPhysicalVolume* IngridDetectorConstruction::Construct()
 	sprintf(name,"vlayer[%d][%d][%d]",k,i,j);
 	sprintf(name_Paint,"vlayer_Paint[%d][%d][%d]",k,i,j);
 
-      G4double x_scinti =  scibar_xy_start + 2*j*scibar_y; 
-      //new G4PVPlacement(0,G4ThreeVector(x_scinti,0.,z),vlayerLV,name,moduleLV[k],false,j+i*24+k*264); // in Module        
-      new G4PVPlacement(xrot,G4ThreeVector(x_scinti,0.,z),vscint_intLV,name,moduleLV[k],false,j+i*24+k*264); // in Module        
-      //new G4PVPlacement(xrot,G4ThreeVector(x_scinti,0.,z),vscintPaint_intLV,name_Paint,moduleLV[k],false,j+i*24+k*264);
+	G4double x_scinti =  scibar_xy_start + 2*j*scibar_y; 
+	//new G4PVPlacement(0,G4ThreeVector(x_scinti,0.,z),vlayerLV,name,moduleLV[k],false,j+i*24+k*264); // in Module        
+	new G4PVPlacement(xrot,G4ThreeVector(x_scinti,0.,z),vscint_intLV,name,moduleLV[k],false,j+i*24+k*264); // in Module        
+	//new G4PVPlacement(xrot,G4ThreeVector(x_scinti,0.,z),vscintPaint_intLV,name_Paint,moduleLV[k],false,j+i*24+k*264);
       
-      sprintf(name,"hlayer[%d][%d][%d]",k,i,j);
-      sprintf(name_Paint,"vlayer_Paint[%d][%d][%d]",k,i,j);
+	sprintf(name,"hlayer[%d][%d][%d]",k,i,j);
+	sprintf(name_Paint,"vlayer_Paint[%d][%d][%d]",k,i,j);
 
-      G4double y_scinti =  scibar_xy_start + 2*j*scibar_y;     
-      //new G4PVPlacement(0,G4ThreeVector(0.,y_scinti,z+2*scibar_z),hlayerLV,name,moduleLV[k],false,j+i*24+k*264); // in Module
-      new G4PVPlacement(yrot,G4ThreeVector(0.,y_scinti,z+2*scibar_z),hscint_intLV,name,moduleLV[k],false,j+i*24+k*264); // in Module
-      //new G4PVPlacement(yrot,G4ThreeVector(0.,y_scinti,z+2*scibar_z),hscintPaint_intLV,name_Paint,moduleLV[k],false,j+i*24+k*264); // in Module
+	G4double y_scinti =  scibar_xy_start + 2*j*scibar_y;     
+	//new G4PVPlacement(0,G4ThreeVector(0.,y_scinti,z+2*scibar_z),hlayerLV,name,moduleLV[k],false,j+i*24+k*264); // in Module
+	new G4PVPlacement(yrot,G4ThreeVector(0.,y_scinti,z+2*scibar_z),hscint_intLV,name,moduleLV[k],false,j+i*24+k*264); // in Module
+	//new G4PVPlacement(yrot,G4ThreeVector(0.,y_scinti,z+2*scibar_z),hscintPaint_intLV,name_Paint,moduleLV[k],false,j+i*24+k*264); // in Module
 
       }
     }
