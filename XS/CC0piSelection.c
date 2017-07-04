@@ -64,9 +64,15 @@ using namespace std;
 //#define DEBUG2
 //#define DEBUG3
 //#define MVATRAINING
+//#define MVAMUONTRAINING
+//#define MVAPROTONTRAINING
 //#define MVAREADING
+
 //#define TEMPORARY
 //#define DEBUGMVA
+
+//If wish to cut part of the track for the MVA. This is the starting bin of the relative track length where to use the MVA.
+int FirstHit=0;
 
 char Type[32];
 char Name[256];
@@ -79,23 +85,33 @@ double POTWM=.72;//e21
 double SandReweight=0.6;
 double MuonSample1=3;
 double MuonSample2=3;
-double MuonCut=-2.5;
-double ProtonCut=-3.5;
-//double MuonCut_WM=0.3;// to be tuned
-//double ProtonCut_WM=0.3;// to be tuned
+
+double MuonCut=0.9;
+double ProtonCut=0.9;
+//double MuonCut=-2.5;
+//double ProtonCut=-3.5;
+double MuonMVACut=0.06;
+double ProtonMVACut=0.1;
 
 // ML with updated WM PID
 double MuonCut_WM=-3;// to be tuned
 double ProtonCut_WM=-5;// to be tuned
 
+//Temp for 1D cut
+//#define MVA2DCut
+double MuonMVACut_slope=0.0048;
+double MuonMVACut_origin=-0.10;
+const double Limit2DCut=45;
 
+//
+const int NSimplifiedPDG=4;
 int DetermineSimplifiedPDG(int track_pdg){
   if(TMath::Abs(track_pdg)==13) return 0;
   else if(TMath::Abs(track_pdg)==211) return 1;
   else if(TMath::Abs(track_pdg)==2212) return 2;
   else return 3;
 }
-
+//
 
 void ProduceStack(TH1D * h[NFSIs], THStack * hStack){
 
@@ -121,6 +137,7 @@ void ProduceStack(TH1D * h[NFSIs], THStack * hStack){
 	if(fsi==9) h[9]->SetFillColor(kYellow+7);//Vertical Module Bkg
 	if(fsi==10) h[10]->SetFillColor(kMagenta);//AntiNuMu
 	if(fsi==11) h[11]->SetFillColor(kGreen);//NuE
+	if(fsi==12) h[12]->SetFillColor(kWhite);//NuE
 	}
     }
     h[fsi]->SetLineColor(1);
@@ -129,7 +146,7 @@ void ProduceStack(TH1D * h[NFSIs], THStack * hStack){
   }
   h[0]->SetTitle("CC0#pi (0p)");
   h[1]->SetTitle("CC0#pi (1p)");
-  h[2]->SetTitle("MEC");
+  h[2]->SetTitle("CC0#pi (>2p)");
   h[3]->SetTitle("CC1#pi^{#pm}");
   h[4]->SetTitle("CC1#pi^{0}");
   h[5]->SetTitle("CCother");
@@ -139,7 +156,8 @@ void ProduceStack(TH1D * h[NFSIs], THStack * hStack){
   h[9]->SetTitle("INGRID Bkg V");
   h[10]->SetTitle("anti-#nu_{#mu}");
   h[11]->SetTitle("#nu_{e}");
-  h[12]->SetTitle("CC1#pi^{#pm}");
+  h[12]->SetTitle("CC1#pi^{#pm} on CH");
+
 }
 
 
@@ -197,14 +215,20 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
   TH1D * NeutrinoFlux;
   TRandom3 * rand = new TRandom3();
   ///////////////////////////////LOAD THE NEUTRINO FLUX
-  TFile * f = new TFile("files/nd34_tuned_11bv3.1_250ka.root");
-  NeutrinoFlux = (TH1D*) f->Get("ing3_tune_numu");
+  //TFile * f = new TFile("files/nd34_tuned_11bv3.1_250ka.root");
+  //NeutrinoFlux = (TH1D*) f->Get("ing3_tune_numu");
+  TFile * f = new TFile("Flux/tune_ingbg.root");
+  NeutrinoFlux = (TH1D*) f->Get("nd2_tune_numu");
   NeutrinoFlux->SetDirectory(0);//Detach the histogram from the TFile (one can close the file)
   f->Close();
 
   //TO DO
   const int nCuts=7;
-  const string myCuts[nCuts]={"Generated","Reconstruted + one INGRID track","FCFV","CC1pi Selection","2 or 3 tracks","MuTrk is INGRID stop/through","MuTrk is INGRID stop"};
+  string myCuts[nCuts]={"Generated","Reconstruted + one INGRID track","FCFV","CC1pi Selection","2 or 3 tracks","MuTrk is INGRID stop/through","MuTrk is INGRID stop"};//For CC1pi
+  if(Selection==1){
+    myCuts[3]="CC0pi Selection";
+    myCuts[4]="1 or 2 tracks";
+  }
   double nEventsInter[nCuts][NFSIs]={{0}};
   double nEvents[nCuts]={0};
   TH1D* CutEfficiency=new TH1D("Efficiency","Efficiency",nCuts,0,nCuts);
@@ -366,9 +390,11 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
     float SampleTrackMVA;
     float EnergyDepositionMVA[LimitHits];
     float TransverseWidthMVA[LimitHits];
+    float  EquivalentIronDistanceTrackMVA;
     //float EnergyDepositionSplineMVA[LimitHits];
     tmvareader.AddVariable("Sample",&SampleTrackMVA);
-    for(int ihit=0;ihit<LimitHits;ihit++){
+    for(int ihit=FirstHit;ihit<LimitHits;ihit++){
+      
 #ifdef INTERPOLATION
       tmvareader.AddVariable(Form("EnergyDepositionSpline_hit%d",ihit),&(EnergyDepositionMVA[ihit]));
 #else
@@ -376,9 +402,11 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
 #endif
       tmvareader.AddVariable(Form("TransverseWidthNonIsolated_hit%d",ihit),&(TransverseWidthMVA[ihit]));      
     }
+    //tmvareader.AddVariable(Form("(IronDistance+(PlasticDistance/(%3.3f)))",IronCarbonRatio),&EquivalentIronDistanceTrackMVA);
+    tmvareader.AddSpectator(Form("(IronDistance+(PlasticDistance/(%3.3f)))",IronCarbonRatio),&EquivalentIronDistanceTrackMVA);
     
     //Define spectator
-    float TrackAngleTrackMVA, TypeOfTrackMVA, CLMuon_LikelihoodTrackMVA, TotalChargeTrackMVA, EquivalentIronDistanceTrackMVA, MomentumTrackMVA, IsReconstructedTrackMVA;
+    float TrackAngleTrackMVA, TypeOfTrackMVA, CLMuon_LikelihoodTrackMVA, TotalChargeTrackMVA, MomentumTrackMVA, IsReconstructedTrackMVA;
     float FSIIntMVA, SpillMVA, GoodSpillMVA, NewEventMVA, nIngBasRecMVA, InteractionTypeMVA, EnuMVA, TrueMomentumMuonMVA, TrueAngleMuonMVA, IsFVMVA, IsSandMVA, IsAntiMVA, IsBkgHMVA, IsBkgVMVA, IsNuEMVA, SelectionFVMVA, SelectionOVMVA, IsDetectedMVA, POTMVA;
    
     tmvareader.AddSpectator("FSIInt",&FSIIntMVA);
@@ -405,7 +433,6 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
     tmvareader.AddSpectator("TypeOfTrack",&TypeOfTrackMVA);
     tmvareader.AddSpectator("CLMuon_Likelihood",&CLMuon_LikelihoodTrackMVA);
     tmvareader.AddSpectator("TotalCharge",&TotalChargeTrackMVA);
-    tmvareader.AddSpectator(Form("(IronDistance+(PlasticDistance/(%3.3f)))",IronCarbonRatio),&EquivalentIronDistanceTrackMVA);
     tmvareader.AddSpectator("Momentum",&MomentumTrackMVA);
     tmvareader.AddSpectator("IsReconstructed",&IsReconstructedTrackMVA);
 
@@ -423,7 +450,7 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
     
     //Add the relevant variables
     tmvareader2.AddVariable("Sample",&SampleTrackMVA);
-    for(int ihit=0;ihit<LimitHits;ihit++){   
+    for(int ihit=FirstHit;ihit<LimitHits;ihit++){   
 #ifdef INTERPOLATION
      tmvareader2.AddVariable(Form("EnergyDepositionSpline_hit%d",ihit),&(EnergyDepositionMVA[ihit]));
 #else
@@ -496,26 +523,31 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
   //##################################################################
 
 #ifdef MVATRAINING
+    
   //##############################TRAINING CASE######################################
   cout<<"Starting to train a BDT"<<endl;
   TCut preselection = "(IsFV) && (SelectionFV) && (IsDetected) && (IsReconstructed)";//Only MC in FV is used for training
   TMVA::Factory * factory;
   
-  
+#ifdef MVAMUONTRAINING  
   //Create the factory/prepare the forest
   TFile * MVAoutputMuon = new TFile("src/MVAparticleMuon_1000trees.root","RECREATE");//Output file Name
   factory = new TMVA::Factory("TMVAClassificationMuon", MVAoutputMuon,"!V:Silent:Color:DrawProgressBar:Transformations=I;D;P;G,D:AnalysisType=Classification");
 
   //Add the relevant variables
   factory->AddVariable("Sample","Sample of the track", "", 'I' );
-  for(int ihit=0;ihit<LimitHits;ihit++){
+  for(int ihit=FirstHit;ihit<LimitHits;ihit++){
 #ifdef INTERPOLATION
     factory->AddVariable(Form("EnergyDepositionSpline_hit%d",ihit),Form("Energy depositon of hit %d",ihit), "", 'F' );
 #else
     factory->AddVariable(Form("EnergyDeposition_hit%d",ihit),Form("Energy depositon of hit %d",ihit), "", 'F' );
 #endif
-    factory->AddVariable(Form("TransverseWidthNonIsolated_hit%d",ihit),Form("Transverse track width of position %d",ihit), "", 'F' );
-  } 
+    factory->AddVariable(Form("TransverseWidthNonIsolated_hit%d",ihit),Form("Transverse track width of position %d",ihit), "", 'F' ); 
+  }
+  //factory->AddVariable(Form("EquivalentIronDistance := ( IronDistance + (PlasticDistance/(%3.3f)) )",IronCarbonRatio),'F');
+  factory->AddSpectator(Form("EquivalentIronDistance := (IronDistance+(PlasticDistance/(%3.3f)))",IronCarbonRatio),"distance in iron of track",'F');
+
+  //factory->AddVariable(Form("EquivalentIronDistance := IronDistance + PlasticDistance / 7.81"),'F');
 
   //Add spectator variables
   factory->AddSpectator("FSIInt","interaction ID after FSI",'I');
@@ -542,7 +574,6 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
   factory->AddSpectator("TypeOfTrack","pdf of track",'F');
   factory->AddSpectator("CLMuon_Likelihood","#mu_{CL} of track",'F');
   factory->AddSpectator("TotalCharge","Total dE/dx of track",'F');
-  factory->AddSpectator(Form("EquivalentIronDistance := (IronDistance+(PlasticDistance/(%3.3f)))",IronCarbonRatio),"distance in iron of track",'F');
   factory->AddSpectator("Momentum","true momentum of track",'F');
   factory->AddSpectator("IsReconstructed","reconstruction status of track",'I');
   
@@ -559,7 +590,7 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
 
   //Book the trees <=> prepare the forest
   //Define the method to use for MVA:
-  factory->BookMethod( TMVA::Types::kBDT,"BDT","!H:!V:NTrees=1000:MinNodeSize=2.5%:MaxDepth=3:BoostType=AdaBoost:AdaBoostBeta=0.5:UseBaggedBoost:BaggedSampleFraction=0.5:SeparationType=GiniIndex:nCuts=20");
+  factory->BookMethod( TMVA::Types::kBDT,"BDT","!H:!V:NTrees=500:MinNodeSize=2.5%:MaxDepth=3:BoostType=AdaBoost:AdaBoostBeta=0.5:UseBaggedBoost:BaggedSampleFraction=0.5:SeparationType=GiniIndex:nCuts=20");
   
   //
   // Train MVAs using the set of training events
@@ -577,7 +608,9 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
   
   MVAoutputMuon->Close();
   factory->Delete();
+#endif
 
+#ifdef MVAPROTONTRAINING  
   //Second BDT training
   cout<<"Start the training of the second BDT: 0pi is wished (pi0 or pi+), only protons -> protons vs pions (and other particles)"<<endl;
   TFile * MVAoutputProton = new TFile("src/MVAparticleProton_1000trees.root","RECREATE");//Output file Name
@@ -585,7 +618,7 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
 
   //Add the relevant variables
   factory->AddVariable("Sample","Sample of the track", "", 'I' );
-  for(int ihit=0;ihit<LimitHits;ihit++){  
+  for(int ihit=FirstHit;ihit<LimitHits;ihit++){  
 #ifdef INTERPOLATION
       factory->AddVariable(Form("EnergyDepositionSpline_hit%d",ihit),Form("Energy deposition of hit %d",ihit), "", 'F' );
 #else
@@ -632,7 +665,7 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
     factory->SetSignalWeightExpression("weight");
     factory->SetBackgroundWeightExpression("weight");
 
-    factory->BookMethod( TMVA::Types::kBDT,"BDT","!H:V:NTrees=1000:MinNodeSize=2.5%:MaxDepth=3:BoostType=AdaBoost:AdaBoostBeta=0.5:UseBaggedBoost:BaggedSampleFraction=0.5:SeparationType=GiniIndex:nCuts=20");
+    factory->BookMethod( TMVA::Types::kBDT,"BDT","!H:V:NTrees=500:MinNodeSize=2.5%:MaxDepth=3:BoostType=AdaBoost:AdaBoostBeta=0.5:UseBaggedBoost:BaggedSampleFraction=0.5:SeparationType=GiniIndex:nCuts=20");
     
     //
     // Train MVAs using the set of training events
@@ -650,7 +683,8 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
     cout<<"End of second BDT training"<<endl;
 
     MVAoutputProton->Close();
-    factory->Delete();  
+    factory->Delete();
+#endif
   //#################################################################################
 #endif
 
@@ -733,7 +767,11 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
   TH1D * hMVAProtondiscriminant_2tracks[NFSIs];
   TH2D * hMVAMuonVSProtondiscriminant_2tracks[NFSIs];
   TH2D * hMVAMuondiscriminantVSMuonMomentum_1track[NFSIs];
+  TH2D * hMVAMuondiscriminantVSPDG_1track[NFSIs];
 
+  TH2D * hMVAMuondiscriminantVSDistance_1track[NFSIs];
+  TH2D * hMVAProtondiscriminantVSDistance_2tracks_LowestMVA[NFSIs];
+  
   TH1D * TrueParticleType_1track[NFSIs];
   TH2D * TrueParticleType_2tracks[NFSIs];
     
@@ -741,6 +779,8 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
   TH1D * hMuCL_TruePion;
   TH1D * hMuCL_TrueProton;
   TH1D * hMuCL_TrueOthers;
+  TH2D * hMVAMuondiscriminantVSDistance_TrueParticle[NSimplifiedPDG];
+
   // 2.1.0. END
   
   TH1D * hNTracks[NFSIs];
@@ -749,10 +789,17 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
   TH1D * hRecAngle[NFSIs];
   TH1D * hFCFVTrueEvents[NFSIs];
 
+  TH1D * hNTracks_CC0pi[NFSIs];
   TH1D * hRecMom_CC0pi[NFSIs];
   TH1D * hRecAngle_CC0pi[NFSIs];
+
   TH1D * hRecMom_CC0pi_2tr[NFSIs];
   TH1D * hRecAngle_CC0pi_2tr[NFSIs];
+
+  TH1D * hRecMom_CC0pi_restr[NFSIs];
+  TH1D * hRecAngle_CC0pi_restr[NFSIs];
+  TH1D * hRecMom_CC0pi_full[NFSIs];
+  TH1D * hRecAngle_CC0pi_full[NFSIs];
 
   TH1D * hRecMom_CC1pi[NFSIs];
   TH1D * hRecAngle_CC1pi[NFSIs];
@@ -876,6 +923,7 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
   TH2D * MuonIDTotal = new TH2D("MuonIDTotal","",50,0.,2.,30,0.,90.);
     
   if(Plots){
+
     if(true){
       hMuCL_TrueMuon = new TH1D("hMuCL_TrueMuon","Muon confidence level for the sand muons",100,-50,0);//ML tmp 500bins->100bins
       hMuCL_TruePion = new TH1D("hMuCL_TruePion","Muon confidence level for the true muons",100,-50,0);//ML tmp 500bins->100bins
@@ -1055,6 +1103,13 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
       hRecAngle[i]->GetXaxis()->SetTitle("Angle (°)");
       hRecAngle[i]->GetYaxis()->SetTitle("Number of events");
 	
+      sprintf(Name,"hNTracks_CC0pi%d",i);
+      sprintf(Title,"Number of tracks for the %dth-fsi",i);
+      hNTracks_CC0pi[i] = new TH1D(Name,Title,5,0,5);
+      //hNTracks_CC0pi->Sumw2();
+      hNTracks_CC0pi[i]->GetXaxis()->SetTitle("Number of reconstructed tracks");
+      hNTracks_CC0pi[i]->GetYaxis()->SetTitle("Number of events");
+
       sprintf(Name,"hRecMom_CC0pi%d",i);
       sprintf(Title,"Distance in iron for the %dth-fsi",i);
       hRecMom_CC0pi[i] = new TH1D(Name,Title,20,0,100);
@@ -1083,6 +1138,34 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
       hRecAngle_CC0pi_2tr[i]->GetXaxis()->SetTitle("Angle_CC0pi (°)");
       hRecAngle_CC0pi_2tr[i]->GetYaxis()->SetTitle("Number of events");
 	
+      sprintf(Name,"hRecMom_CC0pi_restr%d",i);
+      sprintf(Title,"Distance in iron for the %dth-fsi",i);
+      hRecMom_CC0pi_restr[i] = new TH1D(Name,Title,14,0,100);
+      //hRecMom_CC0pi_restr->Sumw2();
+      hRecMom_CC0pi_restr[i]->GetXaxis()->SetTitle("Equivalent length in iron (cm)");
+      hRecMom_CC0pi_restr[i]->GetYaxis()->SetTitle("Number of events");
+	
+      sprintf(Name,"hRecAngle_CC0pi_restr%d",i);
+      sprintf(Title,"Reconstructed angle for the %dth-fsi",i);
+      hRecAngle_CC0pi_restr[i] = new TH1D(Name,Title,30,0,90);
+      //hRecAngle_CC0pi_restr->Sumw2();
+      hRecAngle_CC0pi_restr[i]->GetXaxis()->SetTitle("Angle_CC0pi (°)");
+      hRecAngle_CC0pi_restr[i]->GetYaxis()->SetTitle("Number of events");
+
+      sprintf(Name,"hRecMom_CC0pi_full%d",i);
+      sprintf(Title,"Distance in iron for the %dth-fsi",i);
+      hRecMom_CC0pi_full[i] = new TH1D(Name,Title,20,0,100);
+      //hRecMom_CC0pi_full->Sumw2();
+      hRecMom_CC0pi_full[i]->GetXaxis()->SetTitle("Equivalent length in iron (cm)");
+      hRecMom_CC0pi_full[i]->GetYaxis()->SetTitle("Number of events");
+	
+      sprintf(Name,"hRecAngle_CC0pi_full%d",i);
+      sprintf(Title,"Reconstructed angle for the %dth-fsi",i);
+      hRecAngle_CC0pi_full[i] = new TH1D(Name,Title,30,0,90);
+      //hRecAngle_CC0pi_full->Sumw2();
+      hRecAngle_CC0pi_full[i]->GetXaxis()->SetTitle("Angle_CC0pi (°)");
+      hRecAngle_CC0pi_full[i]->GetYaxis()->SetTitle("Number of events");
+      //
       sprintf(Name,"hRecMom_CC1pi%d",i);
       sprintf(Title,"Distance in iron for the %dth-fsi",i);
       hRecMom_CC1pi[i] = new TH1D(Name,Title,20,0,100);
@@ -1197,15 +1280,23 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
       sprintf(Name,"hMVAMuondiscriminant_1track%d",i);
       sprintf(Title,"MVAMuon discriminant of the 1 track sample for the %dth-fsi",i);
       //hMVAMuondiscriminant_1track[i] = new TH2D(Name,Title,6,0,6,40,0,2000);
-      hMVAMuondiscriminant_1track[i] = new TH1D(Name,Title,100,-0.4,0.4);
+      hMVAMuondiscriminant_1track[i] = new TH1D(Name,Title,100,-0.5,0.5);
       //hMVAMuondiscriminant_1track->Sumw2();
       hMVAMuondiscriminant_1track[i]->GetXaxis()->SetTitle("#mu_{MVA}");
       hMVAMuondiscriminant_1track[i]->GetYaxis()->SetTitle("Number of events");
 
+      sprintf(Name,"hMVAMuondiscriminantVSPDG_1track%d",i);
+      sprintf(Title,"MVAMuon discriminant of the 1 track sample for the %dth-fsi",i);
+      //hMVAMuondiscriminant_1track[i] = new TH2D(Name,Title,6,0,6,40,0,2000);
+      hMVAMuondiscriminantVSPDG_1track[i] = new TH2D(Name,Title,4,0,4,100,-0.5,0.5);
+      //hMVAMuondiscriminant_1track->Sumw2();
+      hMVAMuondiscriminantVSPDG_1track[i]->GetXaxis()->SetTitle("PDG");
+      hMVAMuondiscriminantVSPDG_1track[i]->GetYaxis()->SetTitle("#mu_{MVA}");
+
       sprintf(Name,"hMVAProtondiscriminant_2tracks%d",i);
       sprintf(Title,"MVAProton discriminant of the 2 track sample (only for the track having the highest MVAProton) for the %dth-fsi",i);
       //hMVAProtondiscriminant_2tracks[i] = new TH2D(Name,Title,6,0,6,40,0,2000);
-      hMVAProtondiscriminant_2tracks[i] = new TH1D(Name,Title,100,-0.4,0.4);
+      hMVAProtondiscriminant_2tracks[i] = new TH1D(Name,Title,100,-0.5,0.5);
       //hMVAProtondiscriminant_2tracks->Sumw2();
       hMVAProtondiscriminant_2tracks[i]->GetXaxis()->SetTitle("p_{MVA} of the track having maximal p_{MVA}");
       hMVAProtondiscriminant_2tracks[i]->GetYaxis()->SetTitle("Number of events");
@@ -1213,7 +1304,7 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
       sprintf(Name,"hMVAMuonVSProtondiscriminant_2tracks%d",i);
       sprintf(Title,"MVA discriminant for the 2 track sample: MVAMuon of most muon-like track vs MVAProton of most p-like track for the %dth-fsi",i);
       //hMVAMuonVSProtondiscriminant_2tracks[i] = new TH2D(Name,Title,6,0,6,40,0,2000);
-      hMVAMuonVSProtondiscriminant_2tracks[i] = new TH2D(Name,Title,100,-0.4,0.4,100,-0.4,0.4);
+      hMVAMuonVSProtondiscriminant_2tracks[i] = new TH2D(Name,Title,100,-0.5,0.5,100,-0.5,0.5);
       //hMVAMuonVSProtondiscriminant_2tracks->Sumw2();
       hMVAMuonVSProtondiscriminant_2tracks[i]->GetXaxis()->SetTitle("#mu_{MVA} of the track having maximal #mu_{MVA}");
       hMVAMuonVSProtondiscriminant_2tracks[i]->GetYaxis()->SetTitle("p_{MVA} of the track having maximal p_{MVA}");
@@ -1221,11 +1312,28 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
       sprintf(Name,"hMVAMuondiscriminantVSMuonMomentum_1track%d",i);
       sprintf(Title,"MVAMuon discriminantVSMuonMomentum of the 1 track sample for the %dth-fsi",i);
       //hMVAMuondiscriminantVSMuonMomentum_1track[i] = new TH2D(Name,Title,6,0,6,40,0,2000);
-      hMVAMuondiscriminantVSMuonMomentum_1track[i] = new TH2D(Name,Title,40,0,2,100,-0.4,0.4);
+      hMVAMuondiscriminantVSMuonMomentum_1track[i] = new TH2D(Name,Title,40,0,2,100,-0.5,0.5);
       //hMVAMuondiscriminantVSMuonMomentum_1track->Sumw2();
       hMVAMuondiscriminantVSMuonMomentum_1track[i]->GetXaxis()->SetTitle("True p_{#mu}");
       hMVAMuondiscriminantVSMuonMomentum_1track[i]->GetYaxis()->SetTitle("#mu_{MVA}");
 
+      sprintf(Name,"hMVAMuondiscriminantVSDistance_1track%d",i);
+      sprintf(Title,"MVAMuon discriminantVSDistance of the 1 track sample for the %dth-fsi",i);
+      //hMVAMuondiscriminantVSDistance_1track[i] = new TH2D(Name,Title,6,0,6,40,0,2000);
+      hMVAMuondiscriminantVSDistance_1track[i] = new TH2D(Name,Title,20,0,100,100,-0.5,0.5);
+      //hMVAMuondiscriminantVSDistance_1track->Sumw2();
+      hMVAMuondiscriminantVSDistance_1track[i]->GetXaxis()->SetTitle("d_{#mu}");
+      hMVAMuondiscriminantVSDistance_1track[i]->GetYaxis()->SetTitle("#mu_{MVA}");
+
+      sprintf(Name,"hMVAProtondiscriminantVSDistance_2tracks_LowestMVA%d",i);
+      sprintf(Title,"MVAProton discriminantVSDistance of the 1 track sample for the %dth-fsi",i);
+      //hMVAProtondiscriminantVSDistance_2tracks_LowestMVA[i] = new TH2D(Name,Title,6,0,6,40,0,2000);
+      hMVAProtondiscriminantVSDistance_2tracks_LowestMVA[i] = new TH2D(Name,Title,20,0,100,100,-0.5,0.5);
+      //hMVAProtondiscriminantVSDistance_2tracks_LowestMVA->Sumw2();
+      hMVAProtondiscriminantVSDistance_2tracks_LowestMVA[i]->GetXaxis()->SetTitle("Plastic distance p_{p}");
+      hMVAProtondiscriminantVSDistance_2tracks_LowestMVA[i]->GetYaxis()->SetTitle("p_{MVA}");
+
+  
       sprintf(Name,"TrueParticleType_1track%d",i);
       sprintf(Title,"Associated true particle to the 1 track sample for the %dth-fsi",i);
       TrueParticleType_1track[i] = new TH1D(Name,Title,4,0,4);
@@ -1240,9 +1348,19 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
       TrueParticleType_2tracks[i]->GetXaxis()->SetTitle("Simplified PDG of track 1");
       TrueParticleType_2tracks[i]->GetYaxis()->SetTitle("Simplified PDG of track 2");
 
-    }
+      
 
-  }   
+    }
+    for(int i=0;i<NSimplifiedPDG;i++){
+      sprintf(Name,"hMVAMuondiscriminantVSDistance_TrueParticle%d",i);
+      sprintf(Title,"Associated true particle to the 1 track sample for the %dth-particle",i);
+      hMVAMuondiscriminantVSDistance_TrueParticle[i] = new TH2D(Name,Title,20,0,100,100,-0.5,0.5);
+      //hMVAMuondiscriminantVSDistance_TrueParticle->Sumw2();
+      hMVAMuondiscriminantVSDistance_TrueParticle[i]->GetXaxis()->SetTitle("d_{#mu}");
+      hMVAMuondiscriminantVSDistance_TrueParticle[i]->GetYaxis()->SetTitle("#mu_{MVA}");
+    }
+  }
+  
   // 2.1. END
   //##################################################################
 
@@ -1288,27 +1406,10 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
 
     wtree->GetEntry(ievt);
 
-    if(NewEvent){
-
-      if(ievt%50000==0){
-	cout<<"Event "<<ievt<<"/"<<nevt<<" processed"<<endl;
-	cout<<"Percent of events in the true FV (%)="<<100.*NEventsFV/NEvents<<", Number of events lost due to detection (%)="<<100.*NEventsLostDetected/NEvents<<", due to detection & muon not found="<<100.*NEventsLost/NEvents<<endl;
-	if(ievt==(nevt-1)) cout<<"Final POT="<<POTCount<<endl;
-      }
-      if(Systematics_Flux){
-	for(int i=0;i<NBinsEnergyFlux;i++){
-	  if(Enu<BinningEnergyFlux[i+1]) {
-	    Errorweight=FluxVector[i];
-	    break;
-	  }
-	}
-	weight*=(1+Errorweight);
-      }
-      else if(Systematics_Xsec){
-	if(ievt%10000==0)cout<<"weight="<<weight<<", and after reweight="<<weight*ReWeight[dial]<<endl;
-	weight=weight*ReWeight[dial];
-      }
-      //cout<<ReWeight[5]<<endl;
+    if(ievt%50000==0){
+      cout<<"Event "<<ievt<<"/"<<nevt<<" processed"<<endl;
+      cout<<"Percent of events in the true FV (%)="<<100.*NEventsFV/NEvents<<", Number of events lost due to detection (%)="<<100.*NEventsLostDetected/NEvents<<", due to detection & muon not found="<<100.*NEventsLost/NEvents<<endl;
+      if(ievt==(nevt-1)) cout<<"Final POT="<<POTCount<<endl;
     }
     //##################################################################
     //##################################################################
@@ -1334,9 +1435,7 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
     }
     if(IsSand) weight*=(1+SandReweight);
 
-
     ////////////////DETERMINE THE REWEIGHTING OF THE EVENT IF SYSTEMATICS ERROR FLUX
-
     if(Systematics_Flux){
       for(int i=0;i<NBinsEnergyFlux;i++){
 	if(Enu<BinningEnergyFlux[i+1]) {
@@ -1344,12 +1443,14 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
 	  break;
 	}
       }
+      if(ievt%10000==0)cout<<"weight="<<weight<<", and after reweight="<<weight*(1+Errorweight)<<endl;
       weight*=(1+Errorweight);
     }
     else if(Systematics_Xsec){
       if(ievt%10000==0)cout<<"weight="<<weight<<", and after reweight="<<weight*ReWeight[dial]<<endl;
       weight=weight*ReWeight[dial];
     }
+
     //##################################################################
     //##################################################################
 
@@ -1364,21 +1465,22 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
     //##################################################################
 
     //Select your CL
-    bool BadCL[LimitTracks]={false};
-        for(int itrk=0;itrk<LimitTracks;itrk++){
-      //      cout<<itrk<<" "<<CLMuon_Plan[itrk]<<endl;
-	  if(_isPM){
-	    if(CLMuon_Plan[itrk]<=0) ChosenCL[itrk]=-51.;
-	    else ChosenCL[itrk]=TMath::Log(CLMuon_Plan[itrk]);
-	  }
-	  else {
-	    // some undetermined tracks have mucl==-1
-	    if(CLMuon_KS[itrk]==-1) BadCL[itrk]=true; //undetermined flag
 
-	    if(CLMuon_KS[itrk]<=0) {ChosenCL[itrk]=-51.;}
-	    else ChosenCL[itrk]=TMath::Log(CLMuon_KS[itrk]);
-	  }
-	  //ChosenCL[itrk]=(_isPM? (TMath::Log(CLMuon_Plan[itrk])) : (TMath::Log(CLMuon_KS[itrk])));
+    bool BadCL[LimitTracks]={false};
+    for(int itrk=0;itrk<LimitTracks;itrk++){
+      //      cout<<itrk<<" "<<CLMuon_Plan[itrk]<<endl;
+      if(_isPM){
+	if(CLMuon_Plan[itrk]<=0) ChosenCL[itrk]=-51.;
+	else ChosenCL[itrk]=TMath::Log(CLMuon_Plan[itrk]);
+      }
+      else {
+	// some undetermined tracks have mucl==-1
+	if(CLMuon_KS[itrk]==-1) BadCL[itrk]=true; //undetermined flag
+
+	if(CLMuon_KS[itrk]<=0) {ChosenCL[itrk]=-51.;}
+	else ChosenCL[itrk]=TMath::Log(CLMuon_KS[itrk]);
+      }
+      //ChosenCL[itrk]=(_isPM? (TMath::Log(CLMuon_Plan[itrk])) : (TMath::Log(CLMuon_KS[itrk])));
       
       // ML tmp
       /*
@@ -1425,14 +1527,14 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
 	}
 	//cout<<FSIInt<<", "<<Num_Int<<endl;
 
-
+      
 	if(!IsData){
-	  nEvents[0]+=weight;
-	  nEventsInter[0][FSIInt]+=weight;
 
-	  if(IsNuMu && IsFV){
-	    hFCFVTrueEvents[FSIInt]->Fill(Enu,weight);
+	  if(IsNuMu /*&& IsFV*/){
+	    if(IsFV) hFCFVTrueEvents[FSIInt]->Fill(Enu,weight);
 	    
+	    nEvents[0]+=weight;
+	    nEventsInter[0][FSIInt]+=weight;
 	    if(FSIInt<3 && Selection==1){
 	      TotalCC0piEvent[BinTrueMom][BinTrueAngle]+=weight;
 	      if(Plots) TotalCC0piEvent_Energy->Fill(Enu,weight);
@@ -1520,7 +1622,7 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
 	  //MVA	  	  
 	  
 	  SampleTrackMVA=(float) Sample[itrk];
-	  for(int ihit=0;ihit<LimitHits;ihit++){
+	  for(int ihit=FirstHit;ihit<LimitHits;ihit++){
 #ifdef INTERPOLATION
 	    EnergyDepositionMVA[ihit]=EnergyDepositionSpline[itrk][ihit];
 #else
@@ -1545,13 +1647,11 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
 	    if(MVAdiscriminant2[itrk]>LargestMVAdiscriminant2_2tracks) LargestMVAdiscriminant2_2tracks=MVAdiscriminant2[itrk];
 	  }
 
-	  //cout<<"MVA muon="<<MVAdiscriminant<<", proton="<<MVAdiscriminant2<<", ntracks="<<nTracks<<", clmuon first track="<<ChosenCL[0]<<endl;
-	  /*
-	  hMVAdiscriminant[FSIInt]->Fill(MVAdiscriminant,weight);
-	  if(nTracks==1) hMVAdiscriminant_1track[FSIInt]->Fill(MVAdiscriminant,weight);
-	  else if(nTracks==2) hMVAdiscriminant_2tracks[FSIInt]->Fill(MVAdiscriminant,weight);
-	  else if(nTracks==3) hMVAdiscriminant_3tracks[FSIInt]->Fill(MVAdiscriminant,weight);
-	  */
+	  if((Sample[itrk]==MuonSample1) || (Sample[itrk]==MuonSample2)){
+	    int SimplifiedPDG=DetermineSimplifiedPDG(TypeOfTrack[itrk]);
+	    double eqdist=IronDistance[itrk]+(PlasticDistance[itrk]/IronCarbonRatio);
+	    hMVAMuondiscriminantVSDistance_TrueParticle[SimplifiedPDG]->Fill(eqdist,MVAdiscriminant[itrk],weight);
+	  }
 #else
 	  
 	  if(ChosenCL[itrk]!=ChosenCL[itrk]){ Trash=true; cout<<"problem, event trashed"<<endl;continue;}
@@ -1561,6 +1661,7 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
 	  MuonFound=true;
 	  if(ChosenCL[itrk]<ChosenCL[LowestMuCL]) LowestMuCL=itrk;
 
+#endif
 	  if(Plots){
 	    if(SelectionFV && !IsData && !BadCL[itrk]){
 	      if(TMath::Abs(TypeOfTrack[itrk])==13) hMuCL_TrueMuon->Fill(ChosenCL[itrk],weight);
@@ -1571,14 +1672,6 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
 	    }
 	  }
 
-	
-	  //ChosenCL[itrk]=TMath::Log(CLMuon_Plan[itrk]);
-	  //cout<<"track number="<<itrk<<"/"<<nTracks<<", cl="<<ChosenCL[itrk]<<endl;
-	  //CLMuon_KS[itrk]=TMath::Log(CLMuon_KS[itrk]);
-	  //if(ChosenCL[itrk]<-50) ChosenCL[itrk]=-50;
-	  //cout<<TypeOfTrack[itrk]<<endl;
-	
-#endif
 	}
 
 	if(Plots){
@@ -1668,14 +1761,31 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
       }
       
       int MuonLike=0;int ProtonLike=0;int Undetermined=0;
+      //cout<<"new"<<endl;
       for(int itrk=0;itrk<nTracks;itrk++){
 	if(!IsReconstructed[itrk]) continue;
+#ifdef MVAREADING
+	double eqdist=IronDistance[itrk]+(PlasticDistance[itrk]/IronCarbonRatio);
+	double CutValue=MuonMVACut;
+#ifdef MVA2DCut
+	if(eqdist<Limit2DCut) CutValue=MuonMVACut_slope*eqdist+MuonMVACut_origin;
+#endif
+	
+	//if(MVAdiscriminant[itrk]>MuonMVACut) MuonLike++;
+	if(MVAdiscriminant[itrk]>CutValue) MuonLike++;
+	else if(MVAdiscriminant2[itrk]>ProtonMVACut) ProtonLike++;
+	// for WM, mucl=-1 corresponds to undetremined tracks (to few isohits)
+	else Undetermined++;
+	//cout<<"This track has mumva="<<MVAdiscriminant[itrk]<<", pmva="<<MVAdiscriminant2[itrk]<<", number of mu-like="<<MuonLike<<", "<<ProtonLike<<", "<<Undetermined<<endl;
+
+#else	    
 	if(ChosenCL[itrk]>MuonCut) MuonLike++;
 	else if(ChosenCL[itrk]<ProtonCut && !BadCL[itrk]) ProtonLike++;
 	// for WM, mucl=-1 corresponds to undetermined tracks (to few isohits) -> BadCL flag 
 	else Undetermined++;
+#endif
       }
-      double rnd=rand->Uniform(0,1);
+      //double rnd=rand->Uniform(0,1);
             
       //if((nTracks==1 && ChosenCL[0]>-3) || ((nTracks==2 && TMath::Max(ChosenCL[0],ChosenCL[1])>-3 && TMath::Min(ChosenCL[0],ChosenCL[1])<-3) && (TMath::Min(ChosenCL[0],ChosenCL[1])>=0)) || ((nTracks==3 && ChosenCL[MuonRec]>-3 && ChosenCL[(MuonRec+1)%3]<-3 && ChosenCL[(MuonRec+2)%3]<-3)) || ((nTracks==4 && ChosenCL[MuonRec]>-3 && ChosenCL[(MuonRec+1)%4]<-3 && ChosenCL[(MuonRec+2)%4]<-3 && ChosenCL[(MuonRec+3)%4]<-3))){
       
@@ -1703,69 +1813,87 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
       if(MuonTrueMVA==MuonRec) MuonIDMVA->Fill(TrueMomentumMuon,TrueAngleMuon,weight);
       MuonIDTotal->Fill(TrueMomentumMuon,TrueAngleMuon,weight);
       
-      // for CC1pi MuonSample2 is set to 5
-      if(Selection==1 && (Sample[MuonRec]!=MuonSample1)&&(Sample[MuonRec]!=MuonSample2)) continue; // ML done later for CC1pi
       
       int nRecTracks=nTracks-nBadRecTracks;
 
     
-      if(Plots){
-	
-	if(nRecTracks==1){
-	  hMuCL[FSIInt]->Fill(ChosenCL[MuonRec],weight);
-	  int SimplifiedPDG=DetermineSimplifiedPDG(TypeOfTrack[0]);
-	  TrueParticleType_1track[FSIInt]->Fill(SimplifiedPDG);
-	}
-	if(nRecTracks==2){
-	  hMuCL_2tracks[FSIInt]->Fill(ChosenCL[MuonRec],ChosenCL[LowestMuCL],weight);
-	  int SimplifiedPDG[2]={DetermineSimplifiedPDG(TypeOfTrack[0]),DetermineSimplifiedPDG(TypeOfTrack[1])};
-	  TrueParticleType_2tracks[FSIInt]->Fill(SimplifiedPDG[0],SimplifiedPDG[1]);
-	  if(MuonLike==1 && Undetermined==0){
-	    hMuCL_Lowest[FSIInt]->Fill(ChosenCL[LowestMuCL],weight);
-	    if(ChosenCL[LowestMuCL]<-1){
-	      if(FSIInt<3) PE_Lowest_CC0pi->Fill(ProportionHighPE[LowestMuCL],MeanHighPE[LowestMuCL],weight);
-	      else PE_Lowest_Other->Fill(ProportionHighPE[LowestMuCL],MeanHighPE[LowestMuCL],weight);		    
+      if((Sample[MuonRec]==MuonSample1) || (Sample[MuonRec]==MuonSample2)){
+	if(Plots){
+	  // for CC1pi MuonSample2 is set to 5
+	  if(nRecTracks==1){
+	    hMuCL[FSIInt]->Fill(ChosenCL[MuonRec],weight);
+	    int SimplifiedPDG=DetermineSimplifiedPDG(TypeOfTrack[0]);
+	    TrueParticleType_1track[FSIInt]->Fill(SimplifiedPDG);
+	  }
+	  if(nRecTracks==2){
+	    if(MuonRec==0) LowestMuCL=1;
+	    else LowestMuCL=0;
+	    hMuCL_2tracks[FSIInt]->Fill(ChosenCL[MuonRec],ChosenCL[LowestMuCL],weight);
+	    int SimplifiedPDG[2]={DetermineSimplifiedPDG(TypeOfTrack[0]),DetermineSimplifiedPDG(TypeOfTrack[1])};
+	    TrueParticleType_2tracks[FSIInt]->Fill(SimplifiedPDG[0],SimplifiedPDG[1]);
+	    if(MuonLike==1 && Undetermined==0){
+	      hMuCL_Lowest[FSIInt]->Fill(ChosenCL[LowestMuCL],weight);
+	      if(ChosenCL[LowestMuCL]<-1){
+		if(FSIInt<3) PE_Lowest_CC0pi->Fill(ProportionHighPE[LowestMuCL],MeanHighPE[LowestMuCL],weight);
+		else PE_Lowest_Other->Fill(ProportionHighPE[LowestMuCL],MeanHighPE[LowestMuCL],weight);		    
+	      }
 	    }
 	  }
-	}
-      }
-      
-      hNTracks[FSIInt]->Fill(nRecTracks,weight);
-      hRecMom[FSIInt]->Fill(EquivalentIronDistance,weight);
-      hRecAngle[FSIInt]->Fill(TrackAngle[MuonRec],weight);
 
 #ifdef MVAREADING
+	  //if(FSIInt==3) cout<<"FSI type="<<FSIInt<<", Number of mu-like / p-like / undet = "<<MuonLike<<" / "<<ProtonLike<<" / "<<Undetermined<<endl;
+
 	  //MVA
 	  if(Plots){
 	    if(nTracks==1){
+	      int SimplifiedPDG=DetermineSimplifiedPDG(TypeOfTrack[0]);
+	      hMVAMuondiscriminantVSPDG_1track[FSIInt]->Fill(SimplifiedPDG,LargestMVAdiscriminant_1track,weight);
 	      hMVAMuondiscriminant_1track[FSIInt]->Fill(LargestMVAdiscriminant_1track,weight);
 	      hMVAMuondiscriminantVSMuonMomentum_1track[FSIInt]->Fill(TrueMomentumMuon,LargestMVAdiscriminant_1track,weight);
+	      hMVAMuondiscriminantVSDistance_1track[FSIInt]->Fill(EquivalentIronDistance,LargestMVAdiscriminant_1track,weight);
 	    }
 	    if(nTracks==2){
 	      hMVAProtondiscriminant_2tracks[FSIInt]->Fill(LargestMVAdiscriminant2_2tracks,weight);
 	      hMVAMuonVSProtondiscriminant_2tracks[FSIInt]->Fill(LargestMVAdiscriminant_2tracks,LargestMVAdiscriminant2_2tracks,weight);
+	      //Small search of the proton track: 2 track sample so proton track is the non muon track.
+	      int ProtonRec=-1;//double EquivalentIronDistance_Proton=0;
+	      if(MuonRec==0) ProtonRec=1;
+	      else ProtonRec=0;
+	      //EquivalentIronDistance_Proton=IronDistance[ProtonRec]+(PlasticDistance[ProtonRec]/IronCarbonRatio);
+	      //
+	      hMVAProtondiscriminantVSDistance_2tracks_LowestMVA[FSIInt]->Fill(PlasticDistance[ProtonRec],LargestMVAdiscriminant2_2tracks,weight);//The proton is not required to stop, so checking is distance is less meaningful, since it can escape.
 	    }
 	  }
 #endif
-
+	}
+	hNTracks[FSIInt]->Fill(nRecTracks,weight);
+	hRecMom[FSIInt]->Fill(EquivalentIronDistance,weight);
+	hRecAngle[FSIInt]->Fill(TrackAngle[MuonRec],weight);
+      }
+      
       if(MuonLike==1 && Undetermined==0/*&& nRecTracks<=2*/){//CC0pi
 	//cout<<"Interaction value="<<FSIInt<<", Ion distance="<<IronDistance[MuonRec]+(PlasticDistance[MuonRec]/IronCarbonRatio)<<endl;
-
+	//cout<<"passed the cut"<<endl;
 	//TEMPORARY
+	nEvents[3]+=weight;
+	nEventsInter[3][FSIInt]+=weight;
+
 	if(nRecTracks==2) hSampleSecondTrack[FSIInt]->Fill(Sample[LowestMuCL]);
 	//
 
-	if(Sample[MuonRec]==MuonSample1 || Sample[MuonRec]==MuonSample2){
-	  hRecMom_CC0pi[FSIInt]->Fill(EquivalentIronDistance,weight);
-	  hRecAngle_CC0pi[FSIInt]->Fill(TrackAngle[MuonRec],weight);
-	  
-	  if(nRecTracks==2){
-	    hRecMom_CC0pi_2tr[FSIInt]->Fill(EquivalentIronDistance,weight);
-	    hRecAngle_CC0pi_2tr[FSIInt]->Fill(TrackAngle[MuonRec],weight);
-	  }
-	}
-
 	if(Selection==1){
+	  
+	  if(Sample[MuonRec]==MuonSample1 || Sample[MuonRec]==MuonSample2){
+	    hRecMom_CC0pi[FSIInt]->Fill(EquivalentIronDistance,weight);
+	    hRecAngle_CC0pi[FSIInt]->Fill(TrackAngle[MuonRec],weight);
+	    
+	    if(nRecTracks==2){
+	      hRecMom_CC0pi_2tr[FSIInt]->Fill(EquivalentIronDistance,weight);
+	      hRecAngle_CC0pi_2tr[FSIInt]->Fill(TrackAngle[MuonRec],weight);
+	    }
+	  }
+	  
+	  
 	  hNTracks_sel[FSIInt]->Fill(nRecTracks,weight);
 	  DataSelected[BinRecMom][BinRecAngle]+=weight;
 	  //cout<<"Bin="<<BinRecMom<<","<<BinRecAngle<<", data="<<DataSelected[BinRecMom][BinRecAngle]<<endl;
@@ -1787,11 +1915,64 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
 	      BkgSelected[BinRecMom][BinRecAngle]+=weight;
 	    }
 	  }
+	  hRecMom_CC0pi[FSIInt]->Fill(EquivalentIronDistance,weight);
+	  hRecAngle_CC0pi[FSIInt]->Fill(TrackAngle[MuonRec],weight);
 	}
-      }
-      else if(MuonLike==2 &&(/*_isPM?true:*/ Undetermined==0)){//Side band CC1pi - for WM I reject Undertermined tracks (mucl=-1)
-	// for PM, no requirement on Undetermined==0 was done -> I make it now
+	
+	
+	if(nRecTracks>2) continue;
+	if(Sample[MuonRec]>2){//only ingrid tracks
+	  hRecMom_CC0pi_full[FSIInt]->Fill(EquivalentIronDistance,weight);
+	  hRecAngle_CC0pi_full[FSIInt]->Fill(TrackAngle[MuonRec],weight);
+	  if(Sample[MuonRec]==3) MuCL_vs_IronDist->Fill(EquivalentIronDistance,ChosenCL[MuonRec],weight);
+	}
 	      
+	if(Selection==1){
+	  nEvents[4]+=weight;
+	  nEventsInter[4][FSIInt]+=weight;
+	  DataSelected_full[BinRecMom][BinRecAngle]+=weight;
+	  if(!IsData){
+	    if(FSIInt<3 && IsNuMu){
+	      if(Plots) MCEfficiency_Energy->Fill(Enu,weight);
+	      MCSelected_full[BinTrueMom][BinTrueAngle][BinRecMom][BinRecAngle]+=weight;
+	      Efficiency_full[BinTrueMom][BinTrueAngle]+=weight;
+	    }
+	    else{
+	      BkgSelected_full[BinRecMom][BinRecAngle]+=weight;
+	    }
+	  }
+	  if((Sample[MuonRec]!=MuonSample1)&&(Sample[MuonRec]!=MuonSample2)) continue;
+	  nEvents[5]+=weight;
+	  nEventsInter[5][FSIInt]+=weight;
+	  hRecMom_CC0pi[FSIInt]->Fill(EquivalentIronDistance,weight);
+	  hRecAngle_CC0pi[FSIInt]->Fill(TrackAngle[MuonRec],weight);
+				
+	  DataSelected[BinRecMom][BinRecAngle]+=weight;
+	  hNTracks_CC0pi[FSIInt]->Fill(nRecTracks,weight);
+	  
+	  if(!IsData){
+	    if(FSIInt<3 && IsNuMu){
+	      if(Plots) MCEfficiency_Energy->Fill(Enu,weight);
+	      MCSelected[BinTrueMom][BinTrueAngle][BinRecMom][BinRecAngle]+=weight;
+	      Efficiency[BinTrueMom][BinTrueAngle]+=weight;
+	    }
+	    else{
+	      BkgSelected[BinRecMom][BinRecAngle]+=weight;
+	    }
+	  }
+	  if(Sample[MuonRec]==MuonSample1){
+	    nEvents[6]+=weight;
+	    nEventsInter[6][FSIInt]+=weight;
+	    double leq=EquivalentIronDistance;
+	    hRecMom_CC0pi_restr[FSIInt]->Fill(leq,weight);
+	    hRecAngle_CC0pi_restr[FSIInt]->Fill(TrackAngle[MuonRec],weight);
+	  }
+	}
+
+      }
+      else if((MuonLike==2 && Undetermined==0) || (MuonLike==1 && Undetermined==1)){//Side band CC1pi - for WM I reject Undertermined tracks (mucl=-1)
+	// for PM, no requirement on Undetermined==0 was done -> I make it now
+	
 	nEvents[3]+=weight;
 	nEventsInter[3][FSIInt]+=weight;
 	      
@@ -1847,6 +2028,50 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
 	    hRecAngle_CC1pi_restr[FSIInt]->Fill(TrackAngle[MuonRec],weight);
 	  }
 	}
+	else if(Selection==1){//Side band case
+	  /*
+	  nEvents[4]+=weight;
+	  nEventsInter[4][FSIInt]+=weight;
+	  DataSelected_full[BinRecMom][BinRecAngle]+=weight;
+
+	  if(!IsData){
+	    if(FSIInt==3 && IsNuMu){
+	      if(Plots) MCEfficiency_Energy->Fill(Enu,weight);
+	      MCSelected_full[BinTrueMom][BinTrueAngle][BinRecMom][BinRecAngle]+=weight;
+	      Efficiency_full[BinTrueMom][BinTrueAngle]+=weight;
+	    }
+	    else{
+	      BkgSelected_full[BinRecMom][BinRecAngle]+=weight;
+	    }
+	  }
+	  */	
+
+	  if((Sample[MuonRec]!=MuonSample1)&&(Sample[MuonRec]!=MuonSample2)) continue;
+	  //nEvents[5]+=weight;
+	  //nEventsInter[5][FSIInt]+=weight;
+	  hRecMom_CC1pi[FSIInt]->Fill(EquivalentIronDistance,weight);
+	  hRecAngle_CC1pi[FSIInt]->Fill(TrackAngle[MuonRec],weight);
+	  /*			
+	  DataSelected[BinRecMom][BinRecAngle]+=weight;
+	  if(!IsData){
+	    if(FSIInt==3 && IsNuMu){
+	      if(Plots) MCEfficiency_Energy->Fill(Enu,weight);
+	      MCSelected[BinTrueMom][BinTrueAngle][BinRecMom][BinRecAngle]+=weight;
+	      Efficiency[BinTrueMom][BinTrueAngle]+=weight;
+	    }
+	    else{
+	      BkgSelected[BinRecMom][BinRecAngle]+=weight;
+	    }
+	  }
+	  if(Sample[MuonRec]==MuonSample1){
+	    nEvents[6]+=weight;
+	    nEventsInter[6][FSIInt]+=weight;
+	    double leq=EquivalentIronDistance;
+	    hRecMom_CC1pi_restr[FSIInt]->Fill(leq,weight);
+	    hRecAngle_CC1pi_restr[FSIInt]->Fill(TrackAngle[MuonRec],weight);
+	    }*/
+	}
+
       }
       else if(MuonLike>=3){//Side band CCNpi
 	hRecAngle_CCNpi_full[FSIInt]->Fill(TrackAngle[MuonRec],weight);
@@ -1902,8 +2127,58 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
       CutPurity->SetBinContent(i+1,nEventsInter[i][3]/nEvents[i]*100);
     }
   }
+  else if(Selection==1){
+    cout<<"\\hline"<<endl;
+    cout << " & Total & Purity & Efficiency & CC0$\\pi$ & CC1$\\pi^{\\pm}$ & CC$\\pi^{0}$ & CCothers & NC \\\\"<<endl<<"\\hline"<<endl;
+    for(int i=0;i<nCuts;i++){
+      cout<<setprecision(0)<<std::fixed<<myCuts[i]<<" & "<<nEvents[i]<<" & "<< 100*(nEventsInter[i][0]+nEventsInter[i][1]+nEventsInter[i][2])/nEvents[i]<<" $\\%$ & "<< 100*(nEventsInter[i][0]+nEventsInter[i][1]+nEventsInter[i][2])/TotalTrue0 <<" $\\%$ & "<<(nEventsInter[i][0]+nEventsInter[i][1]+nEventsInter[i][2])<<" & "<<nEventsInter[i][3]<<" & "<<nEventsInter[i][4]<<" & "<<nEventsInter[i][5]<<" & "<<nEventsInter[i][6]<<" \\\\"<<endl; 
+      CutEfficiency->SetBinContent(i+1,nEventsInter[i][3]/TotalTrue0*100);
+      CutPurity->SetBinContent(i+1,nEventsInter[i][3]/nEvents[i]*100);
+    }
+    cout<<"\\hline"<<endl;
+    cout<<endl<<endl;
 
+    
+    cout<<"Side bande CC1pi:"<<endl;
+    double TotalSideBand=0;
+    for(int ifsi=0;ifsi<NFSIs;ifsi++) TotalSideBand+=hRecMom_CC1pi[ifsi]->Integral();
+    cout<<"\\hline"<<endl;
+    cout << " & CC0$\\pi$ & CC1$\\pi^{\\pm}$ & CC$\\pi^{0}$ & CCothers & NC \\\\"<<endl<<"\\hline"<<endl;
+    cout<<"\\hline"<<endl;
+    cout<<"Nevents & "<<(hRecMom_CC1pi[0]->Integral()+hRecMom_CC1pi[1]->Integral()+hRecMom_CC1pi[2]->Integral())<<" & "<<hRecMom_CC1pi[3]->Integral() << " & "<< hRecMom_CC1pi[4]->Integral() <<" & "<< hRecMom_CC1pi[5]->Integral()<<" & "<< hRecMom_CC1pi[6]->Integral() <<"\\\\"<<endl; 
+    cout<<"Nevents & "<<100*(hRecMom_CC1pi[0]->Integral()+hRecMom_CC1pi[1]->Integral()+hRecMom_CC1pi[2]->Integral())/TotalSideBand<<" $\\%$ & "<<100*hRecMom_CC1pi[3]->Integral()/TotalSideBand << " $\\%$ & "<< 100*hRecMom_CC1pi[4]->Integral()/TotalSideBand <<" $\\%$ & "<< 100*hRecMom_CC1pi[5]->Integral()/TotalSideBand<<" $\\%$ & "<< 100*hRecMom_CC1pi[6]->Integral()/TotalSideBand << " $\\%$ \\\\"<<endl; 
+    cout<<"\\hline"<<endl;
 
+    //
+    double SelectedCC0pi_1track=0;
+    double SelectedCC0pi_2tracks=0;
+    double SelectedAll_1track=0;
+    double SelectedAll_2tracks=0;
+    
+    double TotalCC0pi_1track=0;
+    double TotalCC0pi_2tracks=0;
+    double TotalAll_1track=0;
+    double TotalAll_2tracks=0;
+    for(int ifsi=0;ifsi<NFSIs;ifsi++){
+      if(ifsi<3){
+	SelectedCC0pi_1track += hNTracks_CC0pi[ifsi]->GetBinContent(2);
+	SelectedCC0pi_2tracks += hNTracks_CC0pi[ifsi]->GetBinContent(3);
+	TotalCC0pi_1track += hNTracks[ifsi]->GetBinContent(2);
+	TotalCC0pi_2tracks += hNTracks[ifsi]->GetBinContent(3);
+      }
+      SelectedAll_1track += hNTracks_CC0pi[ifsi]->GetBinContent(2);
+      SelectedAll_2tracks += hNTracks_CC0pi[ifsi]->GetBinContent(3);    
+      TotalAll_1track += hNTracks[ifsi]->GetBinContent(2);
+      TotalAll_2tracks += hNTracks[ifsi]->GetBinContent(3);    
+    }
+    cout<<"Check of the CC0pi Selection:"<<endl;
+    cout<<"\\hline"<<endl;
+    cout<<"Original Purity & Efficiency & Purity \\\\"<<endl;
+    cout<<100*TotalCC0pi_1track/TotalAll_1track<<" & "<<100*SelectedCC0pi_1track/TotalCC0pi_1track<<" & "<<100*SelectedCC0pi_1track/SelectedAll_1track<<" \\\\ "<<endl;
+    cout<<100*TotalCC0pi_2tracks/TotalAll_2tracks<<" & "<<100*SelectedCC0pi_2tracks/TotalCC0pi_2tracks<<" & "<<100*SelectedCC0pi_2tracks/SelectedAll_2tracks<<" \\\\ "<<endl;
+    cout<<"\\hline"<<endl;
+  }
+  
   if(Plots){
     if(Selection==1) MCEfficiency_Energy->Divide(TotalCC0piEvent_Energy);
     else if(Selection==2) {
@@ -1922,6 +2197,7 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
   char OutNameEvent[256];
   char OutNameEvent_root[256];
   ofstream fEvent;
+
   sprintf(OutNameEvent,"%s%s_m%1.1f_p%1.1f.txt",outnameevent,(_isPM?"PM":"WM"),fabs(MuonCut),fabs(ProtonCut));
   sprintf(OutNameEvent_root,"%s%s_m%1.1f_p%1.1f.root",outnameevent,(_isPM?"PM":"WM") ,fabs(MuonCut),fabs(ProtonCut));
 
@@ -2015,10 +2291,17 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
       THStack * Stack_RecMom = new THStack("Stack_RecMom","");
       THStack * Stack_RecAngle = new THStack("Stack_RecAngle","");
       THStack * Stack_FCFVTrueEvents = new THStack("Stack_FCFVTrueEvents","");
+      THStack * Stack_NTracks_CC0pi = new THStack("Stack_NTracks_CC0pi","");
+      THStack * Stack_RecMom_CC0pi_restr = new THStack("Stack_RecMom_CC0pi_restr","");
+      THStack * Stack_RecAngle_CC0pi_restr = new THStack("Stack_RecAngle_CC0pi_restr","");
       THStack * Stack_RecMom_CC0pi = new THStack("Stack_RecMom_CC0pi","");
       THStack * Stack_RecAngle_CC0pi = new THStack("Stack_RecAngle_CC0pi","");
+
       THStack * Stack_RecMom_CC0pi_2tr = new THStack("Stack_RecMom_CC0pi_2tr","");
       THStack * Stack_RecAngle_CC0pi_2tr = new THStack("Stack_RecAngle_CC0pi_2tr","");
+      THStack * Stack_RecMom_CC0pi_full = new THStack("Stack_RecMom_CC0pi_full","");
+      THStack * Stack_RecAngle_CC0pi_full = new THStack("Stack_RecAngle_CC0pi_full","");
+
       THStack * Stack_RecMom_CC1pi_restr = new THStack("Stack_RecMom_CC1pi_restr","");
       THStack * Stack_RecAngle_CC1pi_restr = new THStack("Stack_RecAngle_CC1pi_restr","");
       THStack * Stack_RecMom_CC1pi = new THStack("Stack_RecMom_CC1pi","");
@@ -2053,10 +2336,17 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
       ProduceStack(hRecMom,Stack_RecMom);
       ProduceStack(hRecAngle,Stack_RecAngle);
       ProduceStack(hFCFVTrueEvents,Stack_FCFVTrueEvents);
+      ProduceStack(hRecMom_CC0pi_restr,Stack_RecMom_CC0pi_restr);
+      ProduceStack(hRecAngle_CC0pi_restr,Stack_RecAngle_CC0pi_restr);
       ProduceStack(hRecMom_CC0pi,Stack_RecMom_CC0pi);
       ProduceStack(hRecAngle_CC0pi,Stack_RecAngle_CC0pi);
+
       ProduceStack(hRecMom_CC0pi_2tr,Stack_RecMom_CC0pi_2tr);
       ProduceStack(hRecAngle_CC0pi_2tr,Stack_RecAngle_CC0pi_2tr);
+      ProduceStack(hRecMom_CC0pi_full,Stack_RecMom_CC0pi_full);
+      ProduceStack(hRecAngle_CC0pi_full,Stack_RecAngle_CC0pi_full);
+      ProduceStack(hNTracks_CC0pi,Stack_NTracks_CC0pi);
+
       ProduceStack(hRecMom_CC1pi_restr,Stack_RecMom_CC1pi_restr);
       ProduceStack(hRecAngle_CC1pi_restr,Stack_RecAngle_CC1pi_restr);
       ProduceStack(hRecMom_CC1pi,Stack_RecMom_CC1pi);
@@ -2099,10 +2389,17 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
       Stack_NTracks_sel->Write();
       Stack_RecMom->Write();
       Stack_RecAngle->Write();
+      Stack_RecMom_CC0pi_restr->Write();
+      Stack_RecAngle_CC0pi_restr->Write();
       Stack_RecMom_CC0pi->Write();
       Stack_RecAngle_CC0pi->Write();
+
       Stack_RecMom_CC0pi_2tr->Write();
       Stack_RecAngle_CC0pi_2tr->Write();
+      Stack_RecMom_CC0pi_full->Write();
+      Stack_RecAngle_CC0pi_full->Write();
+      Stack_NTracks_CC0pi->Write();
+
       Stack_RecMom_CC1pi_restr->Write();
       Stack_RecAngle_CC1pi_restr->Write();
       Stack_RecMom_CC1pi->Write();
@@ -2146,9 +2443,13 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
 	hMuCL_Lowest[fsi]->Write();
 	hMuCL_2tracks[fsi]->Write();
 	hNTracks[fsi]->Write();
+	hNTracks_CC0pi[fsi]->Write();
 	hMVAMuondiscriminant_1track[fsi]->Write();
+	hMVAMuondiscriminantVSPDG_1track[fsi]->Write();
 	hMVAMuondiscriminantVSMuonMomentum_1track[fsi]->Write();
-	hMVAProtondiscriminant_2tracks[fsi]->Write();
+	hMVAMuondiscriminantVSDistance_1track[fsi]->Write();
+	hMVAProtondiscriminantVSDistance_2tracks_LowestMVA[fsi]->Write();
+  	hMVAProtondiscriminant_2tracks[fsi]->Write();
 	hMVAMuonVSProtondiscriminant_2tracks[fsi]->Write();
 	TrueParticleType_2tracks[fsi]->Write();
 	TrueParticleType_1track[fsi]->Write();
@@ -2156,6 +2457,7 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
 	//hTotalChargePerDistanceSecondTrack[fsi]->Write();
  	//hSampleSecondTrack[fsi]->Write();
       }
+      for(int i=0;i<NSimplifiedPDG;i++) hMVAMuondiscriminantVSDistance_TrueParticle[i]->Write();
       hMuCL_TrueMuon->Write();
       hMuCL_TruePion->Write();
       hMuCL_TrueProton->Write();
@@ -2458,6 +2760,8 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
       delete hMVAProtondiscriminant_2tracks[fsi];
       delete hMVAMuonVSProtondiscriminant_2tracks[fsi];
     }
+    
+    
 #ifdef DEBUG2
   cout<<"End of deleting table of pointers."<<endl;
 #endif
@@ -2596,7 +2900,6 @@ int main(int argc, char ** argv){
      ScalingMC=DataEquivalent/(Efile-Ifile);//tmp I only use a subsample
      cout<<NMCfiles<<endl;
 
-
      for(int i=Ifile;i<Efile;i++){
      	       //sprintf(fName,i);
 	        //sprintf(fName,"%s",InNameEvent);
@@ -2623,7 +2926,7 @@ int main(int argc, char ** argv){
    }
    else if(SelectedError_Source>=Systematics_Flux_Start && SelectedError_Source<=Systematics_Flux_End){
      Systematics_Flux=true;
-     TFile * FluxError = new TFile("files/ErrorVarFinal.root");
+     TFile * FluxError = new TFile("Flux/ErrorVarFinal.root");
      FluxVector = new TVectorD();
      cout<<"variation in flux #"<<SelectedError_Variation<<endl;
      sprintf(Name,"Var[%d]",( (int) SelectedError_Variation ));
@@ -2639,6 +2942,7 @@ int main(int argc, char ** argv){
      Systematics_Xsec=true;
      Xsec_dial=((int) SelectedError_Variation);
      File_Number=Xsec_dial;
+     cout << "XS error is checked, using the dial #" << Xsec_dial << endl;
      CC0piDistributions(chain,chainMVA,Data,Sample,IsPlots,Systematics_Flux,File_Number,*FluxVector,Systematics_Xsec,Xsec_dial,Systematics_Detector,ErrorType,OutNameEvent,isPM); 
    }
    else{

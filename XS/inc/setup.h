@@ -84,7 +84,7 @@ double NMCfiles=1000; // up to now only 1000 are available with NEUT 5.3.6
 
 double DataPOT=0.58;//In units of 10^21 POT
 const int StartError=0;
-const int EndError=0;//17;//34;//34;//41 for 2012 ;//17
+const int EndError=34;//17;//34;//34;//41 for 2012 ;//17
 int NFluxFiles;
 int StartXsec=0;int EndXsec=24;int NXsecVariations=7;
 int CenterXsecVariations=(int) (NXsecVariations-1-((double) (NXsecVariations-1)/2));
@@ -113,7 +113,7 @@ const int npdg=4;
 int pdgValues[npdg]={13,211,-211,2212};
 
 
-const int NBinsEnergyFlux=43;
+const int NBinsEnergyFlux=20;
 double BinningEnergyFlux[NBinsEnergyFlux+1];
 const int NBinsTrueEnergy=6;
 const int NBinsRecEnergy=6;
@@ -154,10 +154,16 @@ void InitializeGlobal(bool PM=true){
   if(!PM)  Initialize_INGRID_Dimension();
 
   for(int i=0;i<=NBinsEnergyFlux;i++){
+    if(i<=15) BinningEnergyFlux[i]=i*0.2;//in GeV
+    else if(i<=16) BinningEnergyFlux[i]=BinningEnergyFlux[15]+(i-15)*1;
+    else if(i<=19) BinningEnergyFlux[i]=BinningEnergyFlux[16]+(i-17)*2;
+    else if(i<=20) BinningEnergyFlux[i]=30.;
+    else cout<<"Error in binning the flux in energy. Please look at setup.h"<<endl;
+    /*
     if(i==0) BinningEnergyFlux[i]=0;
     else if(i>=1 && i<36) BinningEnergyFlux[i]=0.5+(i-1)*0.1;
     else if(i>=36 && i<42) BinningEnergyFlux[i]=4+(i-36)*1;
-    BinningEnergyFlux[42]=10; BinningEnergyFlux[NBinsEnergyFlux]=30;
+    BinningEnergyFlux[42]=10; BinningEnergyFlux[NBinsEnergyFlux]=30;*/
   }
 
 
