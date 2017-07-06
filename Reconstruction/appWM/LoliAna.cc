@@ -315,8 +315,9 @@ int main(int argc,char *argv[]){
 	      hits.view  = inghitsum->view;
 	      hits.pln   = inghitsum->pln;
 	      hits.ch    = inghitsum->ch;
-	      hits.pe    = inghitsum->pe+inghitsum->pe_cross; //2017-01-17 to read calib info and 2017/03/21 to read crosstalk
-	      hits.lope  = inghitsum->lope;
+	      // 2017/07/06 WARNING: INGRID hits not calibrated in data 
+	      hits.pe    = inghitsum->pe; // no need to use pecorr since no Xtalk here.
+	      hits.lope  = inghitsum->lope; //not used
 	      hits.isohit= inghitsum->isohit;
 
 	      hits.recon_id=i;
@@ -376,12 +377,15 @@ int main(int argc,char *argv[]){
 	    hits.view  = inghitsum->view;
 	    hits.pln   = inghitsum->pln;
 	    hits.ch    = inghitsum->ch;
+
 	    // since I did not rerun calibration with the new switching point I use pe instead of pecorr. 
-	    hits.pe    = inghitsum->pe+inghitsum->pe_cross;
+	    hits.pe    = inghitsum->pe;
 	    hits.lope  = inghitsum->lope;
 	    // now I compute the switch
 	    if(evt->NIngridSimVertexes()==0) //ie data
 	      hits.pe=(0.5*(hits.pe+hits.lope)<43? hits.pe:hits.lope);
+	    else //ie MC
+	      hits.pe+=inghitsum->pe_cross;
 
 	    hits.isohit= inghitsum->isohit;
 
@@ -874,6 +878,7 @@ void GetNonRecHits(IngridEventSummary* evt, int cyc){
     pln= reconpln;
     ch = reconch;
 
+    // this pe may be uncorrect (Mc->pecorr; data->switch) but never used -- ML 2017/07/06
     nonrechits[view][pln][ch]=pe;
   }
   delete fdim_temp;
@@ -894,6 +899,7 @@ void GetNonRecHits(IngridEventSummary* evt, int cyc){
       else pdg = 0;
       if(pln>=11) continue; // veto planes of INGRID modules
       ingnonrechits[mod][view][pln][ch]=pe;
+      // *** WARNING not calibrated yet for data *** 2017/07/06
       ingnonrechits_lope[mod][view][pln][ch]=lope;
       ingnonrechits_pdg [mod][view][pln][ch]=pdg;
       ingnonrechits_id [mod][view][pln][ch]=ihit;

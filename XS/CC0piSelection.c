@@ -86,10 +86,10 @@ double SandReweight=0.6;
 double MuonSample1=3;
 double MuonSample2=3;
 
-double MuonCut=0.9;
-double ProtonCut=0.9;
-//double MuonCut=-2.5;
-//double ProtonCut=-3.5;
+//double MuonCut=0.9;
+//double ProtonCut=0.9;
+double MuonCut=-2.5;
+double ProtonCut=-3.5;
 double MuonMVACut=0.06;
 double ProtonMVACut=0.1;
 

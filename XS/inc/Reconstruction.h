@@ -30,7 +30,7 @@ class Reconstruction{
   vector <Hit3D> Hit2DMatchingPM(IngridEventSummary* evt, PMAnaSummary * recon,vector <HitTemp> HitV,vector <Hit3D> Vec, bool MC);
   vector <double> GetTrackAnglePM(vector <Hit3D> Vec, double anglex, double angley, int TrackSample);
   vector <Hit3D> SeveralHitsPlanePM(PMAnaSummary * recon,vector <HitTemp> HitV,vector <Hit3D> Vec);
-  vector <Hit3D> Hit2DMatchingClusterPM(IngridEventSummary* evt, PMAnaSummary * recon);
+  vector <Hit3D> Hit2DMatchingClusterPM(IngridEventSummary* evt, PMAnaSummary * recon, bool MC); // ML 2017/07/06
   vector <Hit3D> ClusterPM(IngridEventSummary* evt, PMAnaSummary * recon, int nTracks);
   vector <HitTemp> EraseDoubleHitsAllTracksPM(PMAnaSummary * recon, vector <HitTemp> HitV);
   vector <Hit3D> Hit2DMatchingAllTracksPM(PMAnaSummary * recon, bool MC);

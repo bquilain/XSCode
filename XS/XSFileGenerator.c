@@ -94,7 +94,6 @@ int main(int argc, char **argv){
   char InputFile[100];
   cout<<"Selected particle generator is"<<(ParticleGun?" a particle gun":" neutrino event")<<endl;
 
-
   
   ///////////FOR THE PREREQUISITE, SO DO NOT CLEAN FOR EACH ERROR/////////////////////
   sprintf(Command01,"");
@@ -342,8 +341,8 @@ int main(int argc, char **argv){
 
 	    }
 
-	    sprintf(Name1,"%s/MC/Jobs/%sMC%d%s_Systematics%d_%d.sh",cINSTALLREPOSITORY,DetName,i,Sand,ErrorType,n);
-	    sprintf(Name2,"%s/MC/Jobs/condor%sMC%d%s_Systematics%d_%d.sh",cINSTALLREPOSITORY,DetName,i,Sand,ErrorType,n);
+	    sprintf(Name1,"%s/MC/Jobs/%sMC%d%s_Systematics%d_%d.sh",cINSTALLREPOSITORY,DetName,i,Sand,ErrorType,n);	
+    sprintf(Name2,"%s/MC/Jobs/condor%sMC%d%s_Systematics%d_%d.sh",cINSTALLREPOSITORY,DetName,i,Sand,ErrorType,n);
 	    if(i==1) cout<<Name1<<" is created, and for other neutfiles also (number of neutfile = NMCFiles: see inc/setup.h"<<endl;
 	    ofstream ScriptMC(Name1);
 	    if(ScriptMC)
@@ -361,15 +360,15 @@ int main(int argc, char **argv){
 		else{
 
 		  ScriptMC<<"#!/bin/bash +x"<<endl
-		    /*			  <<Command1<<endl
+			  <<Command1<<endl
 			  <<Command1_1<<endl
 			  <<Command1_2<<endl
 			  <<Command1_3<<endl
 			  <<Command1_4<<endl
-			  <<Command1_5<<endl*/
-		    //<<Command1_6<<endl
-		    //  <<Command2<<endl
-		    //  <<Command3<<endl
+			  <<Command1_5<<endl
+			  <<Command1_6<<endl
+			  <<Command2<<endl
+			  <<Command3<<endl
 			  <<Command4<<endl
 			  <<Command5<<endl
 			  <<Command6<<endl;
@@ -544,7 +543,7 @@ int main(int argc, char **argv){
   
   
   ///////////////////////////////////PREREQUISITE//////////////////////////////////////////
-    sprintf(Name1,"%s/MC/Jobs/Prerequisite%s.sh",cINSTALLREPOSITORY,DetName);
+  sprintf(Name1,"%s/MC/Jobs/Prerequisite%s.sh",cINSTALLREPOSITORY,DetName);
   sprintf(Name2,"%s/MC/Jobs/condorPrerequisite%s.sh",cINSTALLREPOSITORY,DetName);
   //sprintf(Name1,"$(INSTALLREPOSITORY)/MC/Jobs/Prerequisite.sh");
   //sprintf(Name2,"$(INSTALLREPOSITORY)/MC/Jobs/condorPrerequisite.sh");
@@ -556,13 +555,14 @@ int main(int argc, char **argv){
 	    <<Command01<<endl
 	    <<Command02<<endl
 	    <<Command03<<endl
-	    <<Command04<<endl;
+	    <<Command04<<endl
+	    <<Command05<<endl;
     }
   
   
-  sprintf(Command10,"Executable = ${INSTALLREPOSITORY}/MC/Jobs/Prerequisite%s.sh",DetName);
-  sprintf(Command20,"Output = ${INSTALLREPOSITORY}/MC/Jobs/log_Prerequisite%s.txt",DetName);
-  sprintf(Command30,"Error = ${INSTALLREPOSITORY}/MC/Jobs/err_Prerequisite%s.txt",DetName);
+  sprintf(Command10,"Executable = %s/MC/Jobs/Prerequisite%s.sh",cINSTALLREPOSITORY,DetName);
+  sprintf(Command20,"Output = %s/MC/Jobs/log_Prerequisite%s.txt",cINSTALLREPOSITORY,DetName);
+  sprintf(Command30,"Error = %s/MC/Jobs/err_Prerequisite%s.txt",cINSTALLREPOSITORY,DetName);
   ofstream CondorPre(Name2);
   if(CondorPre){
     CondorPre<<Command10<<endl

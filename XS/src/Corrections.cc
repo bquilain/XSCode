@@ -113,6 +113,7 @@ vector <Hit3D> Corrections::GetDXCorrection(vector <Hit3D> Vec,double dx){
       }
       else {
 	Vec[i].pecorr=(Vec[i].pecorr/(1.3*dx))/INGRIDSCIBAR;
+	// just for comparison with INGRID light yield. Could be removed, can be left; no matter.
       }
     }
     else if(Vec[i].mod<14){//INGRID

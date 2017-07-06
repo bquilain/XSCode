@@ -972,7 +972,7 @@ int main(int argc, char **argv)
 	    TrackSample=Rec->Reconstruction::SelectTrackSample((recon->pm_stop)[itrk],Geom,(recon->ing_trk)[itrk],(recon->ing_stop)[itrk],(recon->ing_endpln)[itrk]);
 	    //3. Search for INGRID hits aligned with tracks in the PM, in the case the latter is not matched w/ any INGRID track
 	                  /********************************Here 3D hits are reconstructed, but not only those from the track, all those of the reconstruction************************/
-	    VecAll=Rec->Reconstruction::Hit2DMatchingClusterPM(evt,recon);	   
+	    VecAll=Rec->Reconstruction::Hit2DMatchingClusterPM(evt,recon,MC);	   
             VecAll=Rec->Reconstruction::IsInTrk(VecAll,VecTrk);
 	                  /*******************************They are used to determine if tracks stops in INGRID in the first iron plane (before being reconstructed)*************/
 	    //Vec=Rec->Reconstruction::SearchIngridHit(Vec,VecAll,DegRad((recon->thetax)[itrk]), DegRad((recon->thetay)[itrk]),TrackSample);

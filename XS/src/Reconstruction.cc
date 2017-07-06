@@ -607,16 +607,18 @@ vector <Hit3D> Reconstruction::Hit2DMatchingPM( IngridEventSummary* evt, PMAnaSu
 #endif
 
     
-    if(MC) hit3d.pe=hit->pe/*+hit->pe_cross*/;
-    // *** WARNING *** for the WM MC, the total pe is pe+pe_cross !!!
-    //  but if I add that it won't compute anymore with the PM libraries
+    if(MC) hit3d.pe=hit->pecorr/*+hit->pe_cross*/;
+    // For the WM MC,  pecorr=pe+pe_cross
     else{
       if(_isPM){
 	if((hit->pe + hit->lope)/2.<39) hit3d.pe=hit->pe;
 	else hit3d.pe=hit->lope;
       }
       else{
-	if(hit->mod==15)hit3d.pe=hit->pecorr;
+	if(hit->mod==15){// pecorr is done with the old switch (27), now 43.
+	  if((hit->pe + hit->lope)/2.<43) hit3d.pe=hit->pe;
+	  else hit3d.pe=hit->lope;
+	}
 	// *** WARNING *** for the WM data, INGRID hits are not calibrated !!!
 	else hit3d.pe=hit->pe; 
       }
@@ -730,17 +732,24 @@ vector <Hit3D> Reconstruction::Hit2DMatchingAllTracksPM(PMAnaSummary * recon, bo
     }
     else hit3d.z=zposi(hit->mod,hit->view,hit->pln)/10.; //cm;  defined in Lolirecon
         
-    if(MC) hit3d.pe=hit->pe;
-    // *** WARNING *** for the WM MC, the total pe is pe+pe_cross !!!
-    //  but if I add that it won't compute anymore with the PM libraries
+    if(MC) hit3d.pe=hit->pecorr/*+hit->pe_cross*/;
+    // For the WM MC,  pecorr=pe+pe_cross
     else{
       if(_isPM){
 	if((hit->pe + hit->lope)/2.<39) hit3d.pe=hit->pe;
 	else hit3d.pe=hit->lope;
       }
-      else hit3d.pe=hit->pecorr;
-      // *** WARNING *** for the WM data, INGRID hits are not calibrated !!!
+      else{
+	if(hit->mod==15){// pecorr is done with the old switch (27), now 43.
+	  if((hit->pe + hit->lope)/2.<43) hit3d.pe=hit->pe;
+	  else hit3d.pe=hit->lope;
+	}
+	// *** WARNING *** for the WM data, INGRID hits are not calibrated !!!
+	else hit3d.pe=hit->pe; 
+      }
     }
+
+
     hit3d.view=hit->view;
     hit3d.pln=hit->pln;
     hit3d.mod=hit->mod;
@@ -1320,7 +1329,7 @@ vector <Hit3D> Reconstruction::SeveralHitsPlanePM(PMAnaSummary * recon,vector <H
 */
 
 
-vector <Hit3D> Reconstruction::Hit2DMatchingClusterPM(IngridEventSummary* evt, PMAnaSummary * recon){
+vector <Hit3D> Reconstruction::Hit2DMatchingClusterPM(IngridEventSummary* evt, PMAnaSummary * recon, bool MC){
   //cout<<"Change Z and X/Y of hits in Hit2DMatchingClusterPM before to use"<<endl;
   IngridHitSummary * hit =new IngridHitSummary();
   IngridHitSummary * hit2 =new IngridHitSummary();
@@ -1371,11 +1380,23 @@ vector <Hit3D> Reconstruction::Hit2DMatchingClusterPM(IngridEventSummary* evt, P
       else if(!_isPM && hit2->mod==15) hit3d.z=hit->z + 40.95;
       else hit3d.z=hit->z+107.45;
 
-      if(_isPM){
-	if((hit->pe + hit->lope)/2.<39) hit3d.pe=hit->pe;
-	else hit3d.pe=hit->lope;     
+      if(MC) hit3d.pe=hit->pecorr/*+hit->pe_cross*/;
+      // For the WM MC,  pecorr=pe+pe_cross
+      else{
+	if(_isPM){
+	  if((hit->pe + hit->lope)/2.<39) hit3d.pe=hit->pe;
+	  else hit3d.pe=hit->lope;
+	}
+	else{
+	  if(hit->mod==15){// pecorr is done with the old switch (27), now 43.
+	    if((hit->pe + hit->lope)/2.<43) hit3d.pe=hit->pe;
+	    else hit3d.pe=hit->lope;
+	  }
+	  // *** WARNING *** for the WM data, INGRID hits are not calibrated !!!
+	  else hit3d.pe=hit->pe; 
+	}
       }
-      else hit3d.pe=hit->pecorr;
+
 
       hit3d.view=hit->view;
       hit3d.pln=hit->pln;
@@ -1387,11 +1408,22 @@ vector <Hit3D> Reconstruction::Hit2DMatchingClusterPM(IngridEventSummary* evt, P
       else if(!_isPM && hit2->mod==15) hit3d2.z=hit2->z + 40.95;
       else hit3d2.z=hit2->z+107.45;
 
-      if(_isPM){
-	if((hit2->pe + hit2->lope)/2.<39) hit3d2.pe=hit2->pe;
-	else hit3d2.pe=hit2->lope;
+      if(MC) hit3d2.pe=hit2->pecorr/*+hit2->pe_cross*/;
+      // For the WM MC,  pecorr=pe+pe_cross
+      else{
+	if(_isPM){
+	  if((hit2->pe + hit2->lope)/2.<39) hit3d2.pe=hit2->pe;
+	  else hit3d2.pe=hit2->lope;
+	}
+	else{
+	  if(hit2->mod==15){// pecorr is done with the old switch (27), now 43.
+	    if((hit2->pe + hit2->lope)/2.<43) hit3d2.pe=hit2->pe;
+	    else hit3d2.pe=hit2->lope;
+	  }
+	  // *** WARNING *** for the WM data, INGRID hits are not calibrated !!!
+	  else hit3d2.pe=hit2->pe; 
+	}
       }
-      else hit3d2.pe=hit2->pecorr;
 
       hit3d2.pln=hit2->pln;
       hit3d2.view=hit2->view;

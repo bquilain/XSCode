@@ -285,6 +285,7 @@ int main(int argc,char *argv[]){
 	      for(int ch  =0;ch<CH    ;ch++){
 		if( inghitsum->mod == mod && inghitsum->view == view && inghitsum->pln == pln && inghitsum->ch == ch && pe_cross[view][pln][ch]>0){
 		  inghitsum->pe_cross += pe_cross[view][pln][ch];
+		  inghitsum->pecorr += pe_cross[view][pln][ch]; // ML 2017/07/06
 		  //cout<<"\ncross-talk added to hit (view,pln,ch)="<<view<<" "<<pln<<" "<<ch<<", pe_cross="<<pe_cross[view][pln][ch]<<endl;
 		  pe_cross[view][pln][ch]=0;
 		}
@@ -305,7 +306,7 @@ int main(int argc,char *argv[]){
 		hit->time = inghitsum->time;	
 		hit->timecorr=inghitsum->timecorr;
 		hit->pe = 0;
-		hit->pecorr=0;
+		hit->pecorr= pe_cross[view][pln][ch];// ML 2017/07/06
 		hit->pe_cross = pe_cross[view][pln][ch];
 		double xy, z;
 		fdim_temp-> get_pos_loli_xy( mod, view, pln, ch, &xy, &z);

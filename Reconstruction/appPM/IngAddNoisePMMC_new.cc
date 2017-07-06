@@ -168,7 +168,7 @@ int main(int argc,char *argv[]){
 	  //  nota2: I don't understand the time offset... but IDC
 	  int ttime = fHtime->GetRandom();              //### generate time
 	  inghitsum -> time  = ttime - 200 - 320;// - 580 * 5+50;       //### add offset 
-
+	  if(mod==15) inghitsum -> timecorr = inghitsum -> time; // ML 2017/07/06 needed for WM
 
 	  //cout << inghitsum -> time << endl;
 	  int view, pln, ch,tch;                            //### channel ID

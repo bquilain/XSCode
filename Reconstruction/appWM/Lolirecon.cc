@@ -240,23 +240,33 @@ int main(int argc,char *argv[]){
 		//if(inghitsum -> pe < 1.5) continue;
 		//if(inghitsum -> pe < -1) continue;
 		//if(inghitsum -> pe < 0) inghitsum -> pe=0;
-		if(inghitsum -> pecorr +  inghitsum -> pe_cross < 1.5) continue;
+	    //if(inghitsum -> pecorr +  inghitsum -> pe_cross < 1.5) continue;
+	    // ML 2017/07/06 -- pecorr is the sum of all contributions (pe+pe_cross for MC)
+	    // *** WARNING: old switch is used for WM data (27 -> 43) so pecorr is obsolete
+	    //  but for the following condition it is the same and we don't use the value of pe in this code ***
+	    if(inghitsum->pecorr < 1.5) continue; 
 	  }
 	  else{
-		if(inghitsum -> pecorr < 2.5) continue;
+	    // ML don't use pecorr because it's -1e5 for INGRID data hits
+	    if(inghitsum -> pe < 2.5) continue;
 	  }
 
 	  inghitsum -> addbasicrecon = false;
 
 	  hit.mod   = mod;
 	  hit.id    = i;
-	  hit.pe    = inghitsum -> pecorr;
+
+	  // the value of the charge is not always the correct one but the precise value is not needed
+	  // ML 2017/07/06
+	  hit.pe    = inghitsum -> pe;
 	  hit.lope  = inghitsum -> lope;
+	  //	  hit.pe_cross    = inghitsum -> pe_cross; // ML 2017/07/06 never used
+
 	  hit.time  = (Long_t)inghitsum -> timecorr;
 	  hit.view  = inghitsum -> view;
 	  hit.pln   = inghitsum -> pln;
 	  hit.ch    = inghitsum -> ch;
-	  hit.pe_cross    = inghitsum -> pe_cross;
+
 
 	  /*
 	  if((inghitsum -> NSimHits()) > 0)

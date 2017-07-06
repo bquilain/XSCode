@@ -224,7 +224,7 @@ int main(int argc, char **argv)
 	  Hit->pe=Hit2->pe;                 // number of photoelectrons, without correction
 	  Hit->lope=Hit2->lope;               // number of photoelectrons, without correction
 	  Hit->pecorr=Hit2->pecorr;             // number of photoelectrons, with correction
-	  // *** DONT FORGET TO COPY pe_cross FOR WM HITS ****
+	  // pecorr contains pe_cross in case of WM MC hits
 	  Hit->tdc=Hit2->tdc;                // raw TDC value
 	  Hit->time=Hit2->time;               // hit time (ns).
 	  Hit->tnearhit=Hit2->tnearhit;           // minumum value of hit time difference (ns).
@@ -296,7 +296,6 @@ int main(int argc, char **argv)
 		      //  double Inef = TMath::Abs(DataEfficiency_WMPlan->GetBinContent(BinRecAngle)-MCEfficiency_WMPlan->GetBinContent(BinRecAngle));
 		    }
 		    else{
-		      continue; // ML 2017/07/03 TMP - I DONT APPLY IT
 		      d=DataEfficiency_WMPlan->GetBinContent(BinRecAngle);
 		      m=MCEfficiency_WMPlan->GetBinContent(BinRecAngle);
 		      //double Inef = TMath::Abs(DataEfficiency_WMGrid->GetBinContent(BinRecAngle)-MCEfficiency_WMGrid->GetBinContent(BinRecAngle));

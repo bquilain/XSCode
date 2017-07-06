@@ -619,8 +619,8 @@ int main(int argc, char **argv){
     }
   }
 
-  if(MC) sprintf(Name,"%s/XS/files/MCHitEfficiency_test_%s.root",cINSTALLREPOSITORY,DetName);
-  else sprintf(Name,"%s/XS/files/DataHitEfficiency_test_%s.root",cINSTALLREPOSITORY,DetName);
+  if(MC) sprintf(Name,"%s/XS/files/MCHitEfficiency_%s.root",cINSTALLREPOSITORY,DetName);
+  else sprintf(Name,"%s/XS/files/DataHitEfficiency_%s.root",cINSTALLREPOSITORY,DetName);
   cout<<"writing in "<<Name<<endl;
   TFile * wfile = new TFile(Name,"recreate");
 
