@@ -170,7 +170,7 @@ int main(int argc,char *argv[]){
   IngridHitSummary* inghitsum;  IngridHitSummary* inghitsum2;
   for(int ievt = 0; ievt < nevt; ++ievt){
   
-    if(ievt%1000==0)cout<<"Run#"<<run_number<<"\tadd noise event:"<<ievt<<endl;
+    if(ievt%1000==0)cout<<"Run#"<<run_number<<"\tmerging event:"<<ievt<<endl;
     summary -> Clear();
     asummary -> Clear();
     wsummary-> Clear();

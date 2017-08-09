@@ -76,6 +76,15 @@ bool Reconstruction::GetDetector(){
 }
 
 
+// ML new 2017/08
+double Reconstruction::GetNormalAngleRad(bool grid,double angle3D, double angle2D){
+  // input/output in radians
+  if(grid){
+    return acos(tan(angle2D)*cos(angle3D));
+  }
+  else return angle3D;
+}
+
 vector <Hit3D> Reconstruction::ApplyPEError(vector <Hit3D> Vec, double angle){
   int BinAngle= (int) (angle/3);
   char FileName[32]; char HistName[32];
@@ -607,8 +616,11 @@ vector <Hit3D> Reconstruction::Hit2DMatchingPM( IngridEventSummary* evt, PMAnaSu
 #endif
 
     
-    if(MC) hit3d.pe=hit->pecorr/*+hit->pe_cross*/;
-    // For the WM MC,  pecorr=pe+pe_cross
+    if(MC){
+      if(_isPM) hit3d.pe=hit->pe;
+      else hit3d.pe=hit->pecorr/*+hit->pe_cross*/;
+      // For the WM MC,  pecorr=pe+pe_cross
+    }
     else{
       if(_isPM){
 	if((hit->pe + hit->lope)/2.<39) hit3d.pe=hit->pe;
@@ -732,8 +744,11 @@ vector <Hit3D> Reconstruction::Hit2DMatchingAllTracksPM(PMAnaSummary * recon, bo
     }
     else hit3d.z=zposi(hit->mod,hit->view,hit->pln)/10.; //cm;  defined in Lolirecon
         
-    if(MC) hit3d.pe=hit->pecorr/*+hit->pe_cross*/;
-    // For the WM MC,  pecorr=pe+pe_cross
+    if(MC){
+      if(_isPM) hit3d.pe=hit->pe;
+      else hit3d.pe=hit->pecorr/*+hit->pe_cross*/;
+      // For the WM MC,  pecorr=pe+pe_cross
+    }
     else{
       if(_isPM){
 	if((hit->pe + hit->lope)/2.<39) hit3d.pe=hit->pe;
@@ -1380,8 +1395,11 @@ vector <Hit3D> Reconstruction::Hit2DMatchingClusterPM(IngridEventSummary* evt, P
       else if(!_isPM && hit2->mod==15) hit3d.z=hit->z + 40.95;
       else hit3d.z=hit->z+107.45;
 
-      if(MC) hit3d.pe=hit->pecorr/*+hit->pe_cross*/;
-      // For the WM MC,  pecorr=pe+pe_cross
+      if(MC){
+	if(_isPM) hit3d.pe=hit->pe;
+	else hit3d.pe=hit->pecorr/*+hit->pe_cross*/;
+	// For the WM MC,  pecorr=pe+pe_cross
+      }
       else{
 	if(_isPM){
 	  if((hit->pe + hit->lope)/2.<39) hit3d.pe=hit->pe;

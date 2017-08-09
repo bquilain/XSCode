@@ -74,17 +74,20 @@ const float Mmu=105.66/1000.;
 const float Mp=938.272/1000.;
 const float Mn=939.5659/1000.;
 #endif
-const int StartRun=14000;
-const int EndRun=14000;//15999;
+const int StartRun=29596;
+const int EndRun=29600;//15999;
 const int StartSubRun=0;
 const int EndSubRun=0;//300
-const int StartRunList=14;//Which list will be read (14=>14000.txt). Necessary to use only run processed
-const int EndRunList=15;//Which list will be read (14=>14000.txt). Necessary to use only run processed
-double NMCfiles=1000; // up to now only 1000 are available with NEUT 5.3.6
+const int StartRunList=29;//14 for PM; Which list will be read (29=>29000.txt). Necessary to use only run processed
+const int EndRunList=30;//15 for PM; Which list will be read (29=>29000.txt). Necessary to use only run processed
+double NMCfiles=50; // up to now only 1000 are available with NEUT 5.3.6
 
-double DataPOT=0.58;//In units of 10^21 POT
-const int StartError=0;
-const int EndError=34;//17;//34;//34;//41 for 2012 ;//17
+double DataPOTPM=0.58;//In units of 10^21 POT -- runs 234
+//double DataPOTPM=0.76;//In units of 10^21 POT -- runs 234  (+56)
+double DataPOTWM=0.72;//In units of 10^21 POT -- run 8
+double DataPOT;
+const int StartError=2;
+const int EndError=16;//17;//34;//34;//41 for 2012 ;//17
 int NFluxFiles;
 int StartXsec=0;int EndXsec=24;int NXsecVariations=7;
 int CenterXsecVariations=(int) (NXsecVariations-1-((double) (NXsecVariations-1)/2));
@@ -94,7 +97,7 @@ double Step[EndError+1];
 double Start[EndError+1];
 double End[EndError+1];
 double Nominal; double Err;
-const int Systematics_Detector_Start=1;
+const int Systematics_Detector_Start=2;
 const int Systematics_Detector_End=15;
 const int Systematics_Flux_Start=16;
 const int Systematics_Flux_End=16;
@@ -122,8 +125,8 @@ double BinningRecEnergy[NBinsRecEnergy+1];
 const int NFSIs=13;//cc0pi+0p,cc0pi+1p,cc0pi+morep,cc1pi,cc1pi0,ccother,nc,+all bkg
 const int NBinsTrueMom=5;
 const int NBinsTrueAngle=5;
-const int NBinsRecMom=17;
-const int NBinsRecAngle=30;
+const int NBinsRecMom=11;// was 17 -- ML 2017/08/03
+const int NBinsRecAngle=15;// was 30 -- ML 2017/08/03
 double BinningTrueMom[NBinsTrueMom+1];
 double BinningTrueAngle[NBinsTrueAngle+1];
 double BinningRecMom[NBinsRecMom+1];
@@ -152,6 +155,7 @@ double BinningRecAngle[NBinsRecAngle+1];
 void InitializeGlobal(bool PM=true){
 
   if(!PM)  Initialize_INGRID_Dimension();
+  DataPOT=(PM?DataPOTPM:DataPOTWM);
 
   for(int i=0;i<=NBinsEnergyFlux;i++){
     if(i<=15) BinningEnergyFlux[i]=i*0.2;//in GeV
@@ -177,11 +181,15 @@ void InitializeGlobal(bool PM=true){
   }
 
   for(int i=0;i<NBinsRecMom+1;i++){
-    BinningRecMom[0]=0;
+    /* BinningRecMom[0]=0;
     BinningRecMom[1]=10;    
     if(i>1 && i<NBinsRecMom) BinningRecMom[i]=10+5*(i-1);
-    if(i==NBinsRecMom) BinningRecMom[i]=150;
+    if(i==NBinsRecMom) BinningRecMom[i]=150;*/
+    if(i<=6) BinningRecMom[i]=10*i;
+    else if(i<=9) BinningRecMom[i]=60+5*(i-6);
   }
+  BinningRecMom[10]=85;
+  BinningRecMom[11]=150;
 
   BinningTrueAngle[0]=0;
   BinningTrueAngle[1]=10;
@@ -191,7 +199,8 @@ void InitializeGlobal(bool PM=true){
   BinningTrueAngle[5]=180;
 
   for(int i=0;i<NBinsRecAngle+1;i++){
-    BinningRecAngle[i]=3*i;
+    //BinningRecAngle[i]=3*i;
+    BinningRecAngle[i]=6*i;
   }
     
 
@@ -377,5 +386,33 @@ double _DistAngleBin[_NBinsAngle+1];
 const int _NBinsTrueAngle=10;
 double _DistTrueAngleBin[_NBinsAngle+1];
 */
+
+
+// ML for Production 2 -- files NEUT 5.3.3 from Koga-san -- 2017/08/02
+const int NBadMCFilesPM=39;
+const int NBadMCFilesWM=28;
+const int BadMCFilesPM[NBadMCFilesPM]={0,15,34,74,141,150,190,189,257,277,278,284,292,318,324,335,386,416,462,594,626,639,751,792,833,851,852,880,886,909,93,174,293,436,518,785,861,903,992};
+const int BadMCFilesWM[NBadMCFilesWM]={0,14,19,80,176,189,190,284,415,462,594,655,666,673,743,792,814,988,93,174,293,436,518,544,785,861,903,992};
+
+bool isBadFile(int ifile, bool PM){
+  if(PM){
+    for(int i=0;i<NBadMCFilesPM;i++)
+      if(BadMCFilesPM[i]==ifile) return true;
+  }
+  else{
+    for(int i=0;i<NBadMCFilesWM;i++)
+      if(BadMCFilesWM[i]==ifile) return true;
+  }
+  return false;
+}
+
+// number of good files in the range [ifile,ffile-1]
+int NGoodFiles(int ifile,int ffile,bool PM){
+  int good=ffile-ifile;
+  for(int i=ifile;i<ffile;i++)
+    if(isBadFile(i,PM)) good--;
+  return good;
+}
+
 
 #endif

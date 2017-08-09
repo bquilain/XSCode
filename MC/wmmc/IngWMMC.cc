@@ -129,9 +129,10 @@ int main(int argc, char** argv)
 	G4cout << "NumberOfEvent :" << NumberOfEvent << G4endl;
   }
   // set mandatory user initialization classes...
+  cout<<"Neut Init OK"<<endl;
 
   // detector setup
-  runManager-> SetUserInitialization(new IngridDetectorConstruction(nd));
+  runManager-> SetUserInitialization(new IngridDetectorConstruction(nd,CBIRKS_values[BirksIndex]));
   //runManager-> SetUserInitialization(new IngridDetectorConstruction());
   G4cout << "Detector Init OK" << G4endl;
 

@@ -49,7 +49,8 @@ const G4double PixelGainVari_loli = 0.133;  // gain variation among pixels
 const G4double MeV2PE = 45.9;  // v3r4
 
 //const G4double MeV2PE_loli = 31.5;  // v3r4
-const G4double MeV2PE_loli = 31.5;  // ML retuned 2017/04
+//const G4double MeV2PE_loli = 31.5;  // ML retuned 2017/04
+const G4double MeV2PE_loli = 28;  // ML retuned 2017/08 -- after change of attlen_loli
 
 const G4double MPPCPixel = 667.; //v3
 //const G4double Eff_PDE = -0.292;  // @deltaV = 1.14 V

@@ -41,9 +41,9 @@ int main(int argc, char **argv){
   bool ParticleGun=false;
 
   bool sandOnly=false;
-
+  int channel=2; // channel for analysis; 0:sand 1:cc0pi 2:cc1pi
    
-  while ((c = getopt(argc, argv, "mdspwgS")) != -1) {
+  while ((c = getopt(argc, argv, "mdspwgSc:")) != -1) {
     switch(c){
     case 'm':
       MC=true;
@@ -66,8 +66,12 @@ int main(int argc, char **argv){
     case 'g':
       ParticleGun=true;
       break;
+    case 'c':
+      channel=atoi(optarg);
+      break;
+
     }      
-  }  
+  } 
 
   char Name1[100], Name2[100];
   char Command001[300], Command002[300], Command003[300], Command004[300], Command005[300], Command006[300];
@@ -112,23 +116,30 @@ int main(int argc, char **argv){
 
       
       if(ErrorType==3){
-	sprintf(Command01,"${INSTALLREPOSITORY}/XS/HitEfficiency -m -i 1 -f 100"); //Generate a file containing MC hit efficiency (XS/files_MCDataComparison/MC_CalibrationPM.root )
-	sprintf(Command02,"${INSTALLREPOSITORY}/XS/HitEfficiency -r 14510 -t 14510 -i 0 -f 300"); //Generate a file containing Data hit efficiency (${INSTALLREPOSITORY}/XS/files_MCDataComparison/MC_CalibrationPM.root )
+	if(PM){
+	  sprintf(Command01,"${INSTALLREPOSITORY}/XS/HitEfficiency -m -i 1 -f 300"); //Generate a file containing MC hit efficiency (XS/files_MCDataComparison/MC_CalibrationPM.root )
+	  sprintf(Command02,"${INSTALLREPOSITORY}/XS/HitEfficiency -r 14510 -t 14510 -i 0 -f 300"); //Generate a file containing Data hit efficiency (${INSTALLREPOSITORY}/XS/files_MCDataComparison/MC_CalibrationPM.root )
+	}
+	else {
+	  sprintf(Command01,"${INSTALLREPOSITORY}/XS/HitEfficiency_WM -mw -i 1 -f 300"); //Generate a file containing MC hit efficiency (XS/files_MCDataComparison/MC_CalibrationPM.root )
+	  sprintf(Command02,"${INSTALLREPOSITORY}/XS/HitEfficiency_WM -r 29652 -t 29652 -i 0 -f 300 -w"); //Generate a file containing Data hit efficiency (${INSTALLREPOSITORY}/XS/files_MCDataComparison/MC_CalibrationPM.root )
+	}
       }
       else if(ErrorType==4){
 	if(PM){	
-	  sprintf(Command03,"${INSTALLREPOSITORY}/XS/CompareCalibrationsPM -m -i 1 -f 100"); //-> Generate a file containing each hit info for MC (XS/files_MCDataComparison/MC_CalibrationPM.root )
+	  sprintf(Command03,"${INSTALLREPOSITORY}/XS/CompareCalibrationsPM -m -i 1 -f 500"); //-> Generate a file containing each hit info for MC (XS/files_MCDataComparison/MC_CalibrationPM.root )
 	  sprintf(Command04,"${INSTALLREPOSITORY}/XS/CompareCalibrationsPM -r 14510 -t 14570 -i 0 -f 300");//-> Generate a file containing each hit info for Data (XS/files_MCDataComparison/Data_CalibrationPM.root )
 	  sprintf(Command05,"${INSTALLREPOSITORY}/XS/GeneratePEAngleDistributions");//Read the data and MC files above and create the dependency of PE with angle.
 	}
 	else{
-	  sprintf(Command03,"${INSTALLREPOSITORY}/XS/CompareCalibrationsPM_WM -mw -i 1 -f 100");
+	  sprintf(Command03,"${INSTALLREPOSITORY}/XS/CompareCalibrationsPM_WM -mw -i 1 -f 500");
 	  sprintf(Command04,"${INSTALLREPOSITORY}/XS/CompareCalibrationsPM_WM -r 29652 -t 29652 -i 0 -f 300 -w"); //tmp, all data have not been processed yet
 	  sprintf(Command05,"${INSTALLREPOSITORY}/XS/GeneratePEAngleDistributions -w");
 	}
       }
       if(ErrorType==5){
-	sprintf(Command06,"#Don't forget to copy your MC two times and change the Birks Constant. The path and name of this MC can be changed in XSFileGenerator.c");
+	// ML 2017/08 not needed anymore
+	//	sprintf(Command06,"#Don't forget to copy your MC two times and change the Birks Constant. The path and name of this MC can be changed in XSFileGenerator.c");
       }
 
  
@@ -173,7 +184,7 @@ int main(int argc, char **argv){
 	      //Run 1
 	      if(ParticleGun){
 
-		if(i<1000) sprintf(InputFile,(PM?"${MCINPUTSTORAGE}/13a_nd2_numu_ch_%d.nt":"${MCINPUTSTORAGE_WM}/13a_nd3_numu_h2o_%d.nt"),i);
+		if(i<1000) sprintf(InputFile,(PM?"${MCINPUTSTORAGE}/13a_nd2_numu_ch_%d.nt":"${MCINPUTSTORAGE_WM}/13a_nd2_numu_h2o_%d.nt"),i);
 		else {cout<<"*** only 1000 NEUT files available ***"<<endl; return 0;}
 
 		sprintf(Command1,"");
@@ -187,9 +198,10 @@ int main(int argc, char **argv){
 	      }
 	      else{
 		//NuMu
-		if(i<1000) sprintf(InputFile,(PM?"${MCINPUTSTORAGE}/13a_nd2_numu_ch_%d.nt":"${MCINPUTSTORAGE_WM}/13a_nd3_numu_h2o_%d.nt"),i);
+		// *** warning MC-output's filename changed cause I have only numu ***
+		if(i<1000) sprintf(InputFile,(PM?"${MCINPUTSTORAGE}/13a_nd2_numu_ch_%d.nt":"${MCINPUTSTORAGE_WM}/13a_nd2_numu_h2o_%d.nt"),i);
 		else {cout<<"*** only 1000 NEUT files available ***"<<endl; return 0;}
-		sprintf(Command1,"${INSTALLREPOSITORY}/MC/bin/Linux-g++/%s -o ${MCOUTPUTSTORAGE%s}/%sMC_Numu_Run1_%d.root -i %s -m %d -f 1",execMC,suffix,DetName,i,InputFile,MCDetID);
+		sprintf(Command1,"${INSTALLREPOSITORY}/MC/bin/Linux-g++/%s -o ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d.root -i %s -m %d -f 1",execMC,suffix,DetName,i,InputFile,MCDetID);
 		
 		//if(i<=500) sprintf(Command1,"${INSTALLREPOSITORY}/MC/bin/Linux-g++/%s -o ${MCOUTPUTSTORAGE}/PMMC_Numu_Run1_%d.root -i ${MCINPUTSTORAGE}/run1/11bfluka_nd2_numu_ch_%d.nt -m %d -f 1",execMC,i,i,MCDetID);
 		//else if(i<=1000) sprintf(Command1,"${INSTALLREPOSITORY}/MC/bin/Linux-g++/%s -o ${MCOUTPUTSTORAGE}/PMMC_Numu_Run1_%d.root -i ${MCINPUTSTORAGE}/run1add1/11bfluka_nd2_numu_ch_%d.nt -m %d -f 1",execMC,i,i-500,MCDetID);
@@ -265,7 +277,7 @@ int main(int argc, char **argv){
 
 	      //NEUT 5.3.2  -> now NEUT 5.3.6 (ML 2017/02/01)
 
-	      sprintf(Command6,"${INSTALLREPOSITORY}/XS/XS_CC0pi_Plan%s -i ${MCOUTPUTSTORAGE%s}/%sMC%s%s_Run1_%d_wNoise_ana_pidI.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s%s%s_Run1_%d_Plan_pidI.root -f 1 -m%s",suffix,suffix,DetName,ParticleGenerator,Sand,i,DetName,ParticleGenerator,Sand,i,(PM?"":"w"));
+	      sprintf(Command6,"${INSTALLREPOSITORY}/XS/XS_CC0pi_Plan%s -i ${MCOUTPUTSTORAGE%s}/%sMC%s%s_Run1_%d_wNoise_ana.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s%s%s_Run1_%d_Plan.root -f 1 -m%s",suffix,suffix,DetName,ParticleGenerator,Sand,i,DetName,ParticleGenerator,Sand,i,(PM?"":"w"));
 
 	      //NEUT 5.1.4.2
 	      //sprintf(Command6,"${INSTALLREPOSITORY}/XS/XS_CC0pi_Plan -i ${MCOUTPUTSTORAGE}/PM_MC_Beam%d_BirksCorrectedMIP40_ReWeight_SciBar188_wNoise_KSana_woXtalk.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_Old_%d_Plan.root -f 1 -m",i,i);
@@ -279,23 +291,23 @@ int main(int argc, char **argv){
 	      sprintf(Command1,"${INSTALLREPOSITORY}/Reconstruction/app%s/IngAddNoisePMMC_new -f ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d.root -o ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_Systematics%d_%d.root -n %2.1f",DetName,suffix,DetName,i,suffix,DetName,i,ErrorType,n,ErrorValue);  
 	      sprintf(Command2,"${INSTALLREPOSITORY}/Reconstruction/app%s/%s -r 14000 -s 0 -f ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_Systematics%d_%d.root -o ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_recon_Systematics%d_%d.root",DetName,execRecon,suffix,DetName,i,ErrorType,n,suffix,DetName,i,ErrorType,n);
 	      sprintf(Command3,"${INSTALLREPOSITORY}/Reconstruction/app%s/%s -r 14000 -s 0 -f ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_recon_Systematics%d_%d.root -o ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_ana_Systematics%d_%d.root",DetName,execAna,suffix,DetName,i,ErrorType,n,suffix,DetName,i,ErrorType,n);
-	      sprintf(Command4,"${INSTALLREPOSITORY}/XS/XS_CC0pi_Plan%s -i ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_ana_Systematics%d_%d.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s_Run1_%d_Systematics%d_%d_Plan.root -f 1 -m%s",suffix,suffix,DetName,i,ErrorType,n,DetName,i,ErrorType,n,(PM?"":"w"));
+	      sprintf(Command6,"${INSTALLREPOSITORY}/XS/XS_CC0pi_Plan%s -i ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_ana_Systematics%d_%d.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s_Run1_%d_Systematics%d_%d_Plan.root -f 1 -m%s",suffix,suffix,DetName,i,ErrorType,n,DetName,i,ErrorType,n,(PM?"":"w"));
 	    }
 	    else if(ErrorType==3){//One should give in input the file name of the data/MC difference
 	      //The best thing would be just to generate everything w/ an option
 	      sprintf(Command1,"${INSTALLREPOSITORY}/XS/GenerateHitEfficiencyMask%s -i ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_ana.root -o ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_Systematics%d_%d.root %s",suffix,suffix,DetName,i,suffix,DetName,i,ErrorType,n,(PM?"":"-w"));
 	      sprintf(Command2,"${INSTALLREPOSITORY}/Reconstruction/app%s/%s -f ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_Systematics%d_%d.root -o ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_recon_Systematics%d_%d.root",DetName,execRecon,suffix,DetName,i,ErrorType,n,suffix,DetName,i,ErrorType,n);
 	      sprintf(Command3,"${INSTALLREPOSITORY}/Reconstruction/app%s/%s -f ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_recon_Systematics%d_%d.root -o ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_ana_Systematics%d_%d.root",DetName,execAna,suffix,DetName,i,ErrorType,n,suffix,DetName,i,ErrorType,n);
-	      sprintf(Command4,"${INSTALLREPOSITORY}/XS/XS_CC0pi_Plan%s -i ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_ana_Systematics%d_%d.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s_Run1_%d_Systematics%d_%d_Plan.root -f 1 -m%s",suffix,suffix,DetName,i,ErrorType,n,DetName,i,ErrorType,n,(PM?"":"w"));
+	      sprintf(Command6,"${INSTALLREPOSITORY}/XS/XS_CC0pi_Plan%s -i ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_ana_Systematics%d_%d.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s_Run1_%d_Systematics%d_%d_Plan.root -f 1 -m%s",suffix,suffix,DetName,i,ErrorType,n,DetName,i,ErrorType,n,(PM?"":"w"));
 	    }
 	    else if(ErrorType==4){//One should give in input the file name of the data/MC difference
 	      // for WM, input in LoliAna -- for PM, input inXS_CC0pi_Plan
 	      if(!PM){
 		sprintf(Command1,"${INSTALLREPOSITORY}/Reconstruction/app%s/%s -f ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_recon.root -o ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_ana_Systematics%d_%d.root -e %d -v ${INSTALLREPOSITORY}/XS/files/PEXAngle_WM.root",DetName,execAna,suffix,DetName,i,suffix,DetName,i,ErrorType,n,ErrorType);
-		sprintf(Command2,"${INSTALLREPOSITORY}/XS/XS_CC0pi_Plan%s -i ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_ana_Systematics%d_%d.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s_Run1_%d_Systematics%d_%d_Plan.root -f 1 -m%s",suffix,suffix,DetName,i,ErrorType,n,DetName,i,ErrorType,n,(PM?"":"w"));
+		sprintf(Command6,"${INSTALLREPOSITORY}/XS/XS_CC0pi_Plan%s -i ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_ana_Systematics%d_%d.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s_Run1_%d_Systematics%d_%d_Plan.root -f 1 -m%s",suffix,suffix,DetName,i,ErrorType,n,DetName,i,ErrorType,n,(PM?"":"w"));
 	      }
 	      else {
-		sprintf(Command2,"${INSTALLREPOSITORY}/XS/XS_CC0pi_Plan -i ${MCOUTPUTSTORAGE}/PMMC_Run1_%d_wNoise_ana.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_Run1_%d_Systematics%d_%d_Plan.root -f 1 -m -e %d -v ${INSTALLREPOSITORY}/XS/files/PEXAngle_PM.root",i,i,ErrorType,n,ErrorType);
+		sprintf(Command6,"${INSTALLREPOSITORY}/XS/XS_CC0pi_Plan -i ${MCOUTPUTSTORAGE}/PMMC_Run1_%d_wNoise_ana.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_PM_Run1_%d_Systematics%d_%d_Plan.root -f 1 -m -e %d -v ${INSTALLREPOSITORY}/XS/files/PEXAngle_PM.root",i,i,ErrorType,n,ErrorType);
 	      }	
 	    }
 	    else if(ErrorType==5){
@@ -303,14 +315,15 @@ int main(int argc, char **argv){
 	      // -B (0,1,or 2) for (-1sigma, nominal, or +1sigma) [0.0185,0.0208,0.0231]
 	      int birksindex=2*n;
 
+	      // *** warning MC-output's filename changed cause I have only numu ***
 	      sprintf(InputFile,(PM?"${MCINPUTSTORAGE}/ingbg_5.3.6/13a_nd2_numu_ch_%d.nt":"${MCINPUTSTORAGE_WM}/ingbg_5.3.6/13a_nd2_numu_h2o_%d.nt"),i);
-	      sprintf(Command1,"${INSTALLREPOSITORY}/MC/bin/Linux-g++/%s -o ${MCOUTPUTSTORAGE%s}/%sMC_Numu_Run1_%d_Systematics%d_%d.root -i %s -m %d -f 1 -B %d",execMC,suffix,DetName,i,ErrorType,birksindex,InputFile,MCDetID,birksindex);
+	      sprintf(Command1,"${INSTALLREPOSITORY}/MC/bin/Linux-g++/%s -o ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_Systematics%d_%d.root -i %s -m %d -f 1 -B %d",execMC,suffix,DetName,i,ErrorType,birksindex,InputFile,MCDetID,birksindex);
 
 	      // re-run FinalOutputMaker with background files (unmodified) 
 	      sprintf(Command1_6,"${INSTALLREPOSITORY}/XS/FinalMCOutputMaker -a ${MCOUTPUTSTORAGE%s}/%sMC_Numu_Run1_%d_Systematics%d_%d.root -b ${MCOUTPUTSTORAGE%s}/%sMC_Numubar_Run1_%d.root -c ${MCOUTPUTSTORAGE%s}/%sMC_Nue_Run1_%d.root -d ${MCOUTPUTSTORAGE%s}/%sMC_Wall_Run1_%d.root -e ${MCOUTPUTSTORAGE%s}/%sMC_INGRIDH_Run1_%d.root -f ${MCOUTPUTSTORAGE%s}/%sMC_INGRIDV_Run1_%d.root -o ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_Systematics%d_%d.root",suffix,DetName,i,ErrorType,birksindex,suffix,DetName,i,suffix,DetName,i,suffix,DetName,i,suffix,DetName,i,suffix,DetName,i,suffix,DetName,i,ErrorType,birksindex);
 	
 	      if(!PM) sprintf(Command2,"${INSTALLREPOSITORY}/Reconstruction/appWM/Loli_addcrosstalk_slit -f ${MCOUTPUTSTORAGE_WM}/WMMC%s_Run1_%d_Systematics%d_%d.root -o ${MCOUTPUTSTORAGE_WM}/WMMC%s_Run1_%d_wXtalk_Systematics%d_%d.root",Sand,i,ErrorType,birksindex,Sand,i,ErrorType,birksindex);     	  
-	      sprintf(Command3,"${INSTALLREPOSITORY}/Reconstruction/app%s/IngAddNoisePMMC_new -f ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d%s_Sytematics%d_%d.root -o ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_Systematics%d_%d.root %s",DetName,suffix,DetName,i,(PM?"":"_wXtalk"),ErrorType,birksindex,suffix,DetName,i,ErrorType,birksindex,(PM?"":Form("-n %2.1f -w",DNRateWM)));  
+	      sprintf(Command3,"${INSTALLREPOSITORY}/Reconstruction/app%s/IngAddNoisePMMC_new -f ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d%s_Systematics%d_%d.root -o ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_Systematics%d_%d.root %s",DetName,suffix,DetName,i,(PM?"":"_wXtalk"),ErrorType,birksindex,suffix,DetName,i,ErrorType,birksindex,(PM?"":Form("-n %2.1f -w",DNRateWM)));  
 	      sprintf(Command4,"${INSTALLREPOSITORY}/Reconstruction/app%s/%s -r 14000 -s 0 -f ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_Systematics%d_%d.root -o ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_recon_Systematics%d_%d.root",DetName,execRecon,suffix,DetName,i,ErrorType,birksindex,suffix,DetName,i,ErrorType,birksindex);
 	      sprintf(Command5,"${INSTALLREPOSITORY}/Reconstruction/app%s/%s -r 14000 -s 0 -f ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_recon_Systematics%d_%d.root -o ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_ana_Systematics%d_%d.root",DetName,execAna,suffix,DetName,i,ErrorType,birksindex,suffix,DetName,i,ErrorType,birksindex);
 	      sprintf(Command6,"${INSTALLREPOSITORY}/XS/XS_CC0pi_Plan%s -i ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_ana_Systematics%d_%d.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s_Run1_%d_Systematics%d_%d_Plan.root -f 1 -m%s",suffix,suffix,DetName,i,ErrorType,birksindex,DetName,i,ErrorType,birksindex,(PM?"":"w"));
@@ -318,17 +331,17 @@ int main(int argc, char **argv){
 	    else if(ErrorType==6){
 	      // done at the level of CC0piSelection.c
 	      // sprintf(Command1,"${INSTALLREPOSITORY}/XS/CC0piSelection -s 1 -w %2.2f",ErrorValue);
-	    }
+ 	    }
 	    else if(ErrorType>=7 && ErrorType<=10){
 	      // modif of PMrecon - use the pre-existing files as an input
 	      sprintf(Command1,"${INSTALLREPOSITORY}/Reconstruction/app%s/%s -r 14000 -s 0 -f ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise.root -o ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_recon_Systematics%d_%d.root -e %d -v %3.1f",DetName,execRecon,suffix,DetName,i,suffix,DetName,i,ErrorType,n,ErrorType,ErrorValue);
 	      sprintf(Command2,"${INSTALLREPOSITORY}/Reconstruction/app%s/%s -r 14000 -s 0 -f ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_recon_Systematics%d_%d.root -o ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_ana_Systematics%d_%d.root",DetName,execAna,suffix,DetName,i,ErrorType,n,suffix,DetName,i,ErrorType,n);
-	      sprintf(Command3,"${INSTALLREPOSITORY}/XS/XS_CC0pi_Plan%s -i ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_ana_Systematics%d_%d.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s_Run1_%d_Systematics%d_%d_Plan.root -f 1 -m%s",suffix,suffix,DetName,i,ErrorType,n,DetName,i,ErrorType,n,(PM?"":"w"));
+	      sprintf(Command6,"${INSTALLREPOSITORY}/XS/XS_CC0pi_Plan%s -i ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_ana_Systematics%d_%d.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s_Run1_%d_Systematics%d_%d_Plan.root -f 1 -m%s",suffix,suffix,DetName,i,ErrorType,n,DetName,i,ErrorType,n,(PM?"":"w"));
 	    }
 	    else if(ErrorType>=11 && ErrorType<=15){ 
 	      // modif of PMAna - use the pre-existing files as an input
 	      sprintf(Command1,"${INSTALLREPOSITORY}/Reconstruction/app%s/%s -r 14000 -s 0 -f ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_recon.root -o ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_ana_Systematics%d_%d.root -e %d -v %3.1f",DetName,execAna,suffix,DetName,i,suffix,DetName,i,ErrorType,n,ErrorType,ErrorValue);
-	      sprintf(Command2,"${INSTALLREPOSITORY}/XS/XS_CC0pi_Plan%s -i ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_ana_Systematics%d_%d.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s_Run1_%d_Systematics%d_%d_Plan.root -f 1 -m%s",suffix,suffix,DetName,i,ErrorType,n,DetName,i,ErrorType,n,(PM?"":"w"));
+	      sprintf(Command6,"${INSTALLREPOSITORY}/XS/XS_CC0pi_Plan%s -i ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_ana_Systematics%d_%d.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s_Run1_%d_Systematics%d_%d_Plan.root -f 1 -m%s",suffix,suffix,DetName,i,ErrorType,n,DetName,i,ErrorType,n,(PM?"":"w"));
 	    }
 	    else if(ErrorType==16) continue;
 	    //sprintf(Command2,"${INSTALLREPOSITORY}/XS/XS_CC0pi_Plan -i ${MCOUTPUTSTORAGE}/PMMC_Run1_%d_wNoise_ana.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_Run1_%d_Plan_ReWeight2015.root -f 1 -m",i,i);
@@ -360,17 +373,17 @@ int main(int argc, char **argv){
 		else{
 
 		  ScriptMC<<"#!/bin/bash +x"<<endl
-			  <<Command1<<endl
-			  <<Command1_1<<endl
+		    <<Command1<<endl
+		    /*  <<Command1_1<<endl
 			  <<Command1_2<<endl
 			  <<Command1_3<<endl
 			  <<Command1_4<<endl
 			  <<Command1_5<<endl
-			  <<Command1_6<<endl
-			  <<Command2<<endl
-			  <<Command3<<endl
-			  <<Command4<<endl
-			  <<Command5<<endl
+			  <<Command1_6<<endl*/
+		      <<Command2<<endl
+		      <<Command3<<endl
+		      <<Command4<<endl
+		      <<Command5<<endl
 			  <<Command6<<endl;
 		  //		  <<Command7<<endl;
 		}
@@ -409,12 +422,13 @@ int main(int argc, char **argv){
 	    sprintf(Name,"%s/Data/%d000.txt",cINSTALLREPOSITORY,l);
 	    List.open(Name);
 	    char MIDAS[150];
+	    const int wm=(PM?0:8);
 	    if(List.is_open()){
 	      while(!List.eof()){
 		List>>MIDAS;
 		//cout<<MIDAS<<", 20e="<<MIDAS[50]<<endl;
-		sprintf(RunNumber,"%c%c%c%c%c",MIDAS[50],MIDAS[51],MIDAS[52],MIDAS[53],MIDAS[54]);
-		sprintf(SubRunNumber,"%c%c%c%c",MIDAS[56],MIDAS[57],MIDAS[58],MIDAS[59]);
+		sprintf(RunNumber,"%c%c%c%c%c",MIDAS[50+wm],MIDAS[51+wm],MIDAS[52+wm],MIDAS[53+wm],MIDAS[54+wm]);
+		sprintf(SubRunNumber,"%c%c%c%c",MIDAS[56+wm],MIDAS[57+wm],MIDAS[58+wm],MIDAS[59+wm]);
 		RunNum=atoi(RunNumber);
 		SubRunNum=atoi(SubRunNumber);
 	
@@ -454,56 +468,97 @@ int main(int argc, char **argv){
 		sprintf(Command30,"");
 		//sprintf(Command40,"");
 
-		if(ErrorType==0){
-		  sprintf(Command1,"${INGRIDSOFTWARE_INGRID}/v1r1/Linux-x86_64/Calc_MPPC_new_ci_2.exe -r %d -s %d -t 1",RunNum,SubRunNum);
-		  sprintf(Command2,"if [ -f ${DATAOUTPUTSTORAGE_CALIB}/ingrid_%08d_%04d_Calib00.root ]",RunNum,SubRunNum);
-		  sprintf(Command3,"then");
-		  sprintf(Command4,"${INGRIDSOFTWARE_INGRID}/v1r1/Linux-x86_64/DSTMaker.exe -r %d -s %d -t 1",RunNum,SubRunNum);
-		  sprintf(Command5,"${INGRIDSOFTWARE_INGRID}/v1r1/Linux-x86_64/IngCalib_ADCNLCorrected.exe -r %d -s %d -f ${DATAOUTPUTSTORAGE_DST}/ingrid_%08d_%04d.root -o ${DATAOUTPUTSTORAGE_RECONSTRUCTED}/ingrid_%08d_%04d_calib.root",RunNum,SubRunNum,RunNum,SubRunNum,RunNum,SubRunNum);
-		  sprintf(Command6,"${INGRIDSOFTWARE_INGRID}/v1r1/Linux-x86_64/DSTMaker.exe -r %d -s %d -t 1 -p",RunNum,SubRunNum);
-		  sprintf(Command7,"${INGRIDSOFTWARE_INGRID}/v1r1/Linux-x86_64/IngCalib_ADCNLCorrected.exe -r %d -s %d -f ${DATAOUTPUTSTORAGE_ROOT}/ingrid_%08d_%04d.root -o ${DATAOUTPUTSTORAGE_RECONSTRUCTED}/ingrid_%08d_%04d_pmcalib.root -p",RunNum,SubRunNum,RunNum,SubRunNum,RunNum,SubRunNum);
-		  sprintf(Command8,"${INSTALLREPOSITORY}/Reconstruction/appPM/IngMergePM -r %d -s %d -f ${DATAOUTPUTSTORAGE_RECONSTRUCTED}/ingrid_%08d_%04d_pmcalib.root -a ${DATAOUTPUTSTORAGE_RECONSTRUCTED}/ingrid_%08d_%04d_calib.root -o ${DATAOUTPUTSTORAGE_RECONSTRUCTED}/ingrid_%08d_%04d_pmmerged.root",RunNum,SubRunNum,RunNum,SubRunNum,RunNum,SubRunNum,RunNum,SubRunNum);
-		  ////////////////////////////////////////////////////////RECONSTRUCTION////////////////////////////////////////////////////////////
-		  sprintf(Command9,"if [ -f ${DATAOUTPUTSTORAGE_RECONSTRUCTED}/ingrid_%08d_%04d_pmmerged.root ]",RunNum,SubRunNum);
-		  sprintf(Command11,"then");
-		  sprintf(Command12,"${INSTALLREPOSITORY}/Reconstruction/appPM/PMreconRevOfficial -r %d -s %d -f ${DATAOUTPUTSTORAGE_RECONSTRUCTED}/ingrid_%08d_%04d_pmmerged.root -o ${DATAOUTPUTSTORAGE_RECONSTRUCTED}/ingrid_%08d_%04d_pmmergedKSrecon_woXTalk.root",RunNum,SubRunNum,RunNum,SubRunNum,RunNum,SubRunNum);
-		  //////////////////////////////////////////////////////PM ANALYSIS////////////////////////////////////////////////////////////
-		  sprintf(Command13,"${INSTALLREPOSITORY}/Reconstruction/appPM/PMAnaRevOfficial -r %d -s %d -f ${DATAOUTPUTSTORAGE_RECONSTRUCTED}/ingrid_%08d_%04d_pmmergedKSrecon_woXTalk.root -o ${DATAOUTPUTSTORAGE_RECONSTRUCTED}/ingrid_%08d_%04d_pmmergedKSPMana_woXTalk.root",RunNum,SubRunNum,RunNum,SubRunNum,RunNum,SubRunNum);
-		  sprintf(Command14,"${INGRIDSOFTWARE_INGRIDFORMAT}/app/IngAddBSD -r %08d -s %04d -f ${DATAOUTPUTSTORAGE_RECONSTRUCTED}/ingrid_%08d_%04d_pmmergedKSPMana_woXTalk.root -o ${DATAOUTPUTSTORAGE_RECONSTRUCTED}/ingrid_%08d_%04d_pmmergedKSPManabsd_woXTalk.root -v -p",RunNum,SubRunNum,RunNum,SubRunNum,RunNum,SubRunNum);
-		  sprintf(Command15,"source ${INSTALLREPOSITORY}/source_T2KReweight.sh");
-		  sprintf(Command16,"${INSTALLREPOSITORY}/XS/XS_CC0pi_Plan -i ${DATAOUTPUTSTORAGE_RECONSTRUCTED}/ingrid_%08d_%04d_pmmergedKSPManabsd_woXTalk.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%08d_%04d.root -f 1 -n 5",RunNum,SubRunNum,RunNum,SubRunNum);
-		  sprintf(Command17,"fi");
-		  sprintf(Command18,"fi");
+		if(PM){
+		  if(ErrorType==0){
+		    sprintf(Command1,"${INGRIDSOFTWARE_INGRID}/v1r1/Linux-x86_64/Calc_MPPC_new_ci_2.exe -r %d -s %d -t 1",RunNum,SubRunNum);
+		    sprintf(Command2,"if [ -f ${DATAOUTPUTSTORAGE_CALIB}/ingrid_%08d_%04d_Calib00.root ]",RunNum,SubRunNum);
+		    sprintf(Command3,"then");
+		    sprintf(Command4,"${INGRIDSOFTWARE_INGRID}/v1r1/Linux-x86_64/DSTMaker.exe -r %d -s %d -t 1",RunNum,SubRunNum);
+		    sprintf(Command5,"${INGRIDSOFTWARE_INGRID}/v1r1/Linux-x86_64/IngCalib_ADCNLCorrected.exe -r %d -s %d -f ${DATAOUTPUTSTORAGE_DST}/ingrid_%08d_%04d.root -o ${DATAOUTPUTSTORAGE_RECONSTRUCTED}/ingrid_%08d_%04d_calib.root",RunNum,SubRunNum,RunNum,SubRunNum,RunNum,SubRunNum);
+		    sprintf(Command6,"${INGRIDSOFTWARE_INGRID}/v1r1/Linux-x86_64/DSTMaker.exe -r %d -s %d -t 1 -p",RunNum,SubRunNum);
+		    sprintf(Command7,"${INGRIDSOFTWARE_INGRID}/v1r1/Linux-x86_64/IngCalib_ADCNLCorrected.exe -r %d -s %d -f ${DATAOUTPUTSTORAGE_ROOT}/ingrid_%08d_%04d.root -o ${DATAOUTPUTSTORAGE_RECONSTRUCTED}/ingrid_%08d_%04d_pmcalib.root -p",RunNum,SubRunNum,RunNum,SubRunNum,RunNum,SubRunNum);
+		    sprintf(Command8,"${INSTALLREPOSITORY}/Reconstruction/appPM/IngMergePM -r %d -s %d -f ${DATAOUTPUTSTORAGE_RECONSTRUCTED}/ingrid_%08d_%04d_pmcalib.root -a ${DATAOUTPUTSTORAGE_RECONSTRUCTED}/ingrid_%08d_%04d_calib.root -o ${DATAOUTPUTSTORAGE_RECONSTRUCTED}/ingrid_%08d_%04d_pmmerged.root",RunNum,SubRunNum,RunNum,SubRunNum,RunNum,SubRunNum,RunNum,SubRunNum);
+		    ////////////////////////////////////////////////////////RECONSTRUCTION////////////////////////////////////////////////////////////
+		    sprintf(Command9,"if [ -f ${DATAOUTPUTSTORAGE_RECONSTRUCTED}/ingrid_%08d_%04d_pmmerged.root ]",RunNum,SubRunNum);
+		    sprintf(Command11,"then");
+		    sprintf(Command12,"${INSTALLREPOSITORY}/Reconstruction/appPM/PMreconRevOfficial -r %d -s %d -f ${DATAOUTPUTSTORAGE_RECONSTRUCTED}/ingrid_%08d_%04d_pmmerged.root -o ${DATAOUTPUTSTORAGE_RECONSTRUCTED}/ingrid_%08d_%04d_pmmergedKSrecon_woXTalk.root",RunNum,SubRunNum,RunNum,SubRunNum,RunNum,SubRunNum);
+		    //////////////////////////////////////////////////////PM ANALYSIS////////////////////////////////////////////////////////////
+		    sprintf(Command13,"${INSTALLREPOSITORY}/Reconstruction/appPM/PMAnaRevOfficial -r %d -s %d -f ${DATAOUTPUTSTORAGE_RECONSTRUCTED}/ingrid_%08d_%04d_pmmergedKSrecon_woXTalk.root -o ${DATAOUTPUTSTORAGE_RECONSTRUCTED}/ingrid_%08d_%04d_pmmergedKSPMana_woXTalk.root",RunNum,SubRunNum,RunNum,SubRunNum,RunNum,SubRunNum);
+		    sprintf(Command14,"${INGRIDSOFTWARE_INGRIDFORMAT}/app/IngAddBSD -r %08d -s %04d -f ${DATAOUTPUTSTORAGE_RECONSTRUCTED}/ingrid_%08d_%04d_pmmergedKSPMana_woXTalk.root -o ${DATAOUTPUTSTORAGE_RECONSTRUCTED}/ingrid_%08d_%04d_pmmergedKSPManabsd_woXTalk.root -v -p",RunNum,SubRunNum,RunNum,SubRunNum,RunNum,SubRunNum);
+		    sprintf(Command15,"source ${INSTALLREPOSITORY}/source_T2KReweight.sh");
+		    sprintf(Command16,"${INSTALLREPOSITORY}/XS/XS_CC0pi_Plan -i ${DATAOUTPUTSTORAGE_RECONSTRUCTED}/ingrid_%08d_%04d_pmmergedKSPManabsd_woXTalk.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%08d_%04d.root -f 1 -n 5",RunNum,SubRunNum,RunNum,SubRunNum);
+		    sprintf(Command17,"fi");
+		    sprintf(Command18,"fi");
+		  }
+		  else if(ErrorType>=7 && ErrorType<=10){
+		    sprintf(Command1,"${INSTALLREPOSITORY}/Reconstruction/appPM/PMreconRevOfficial -r %d -s %d -f ${DATAOUTPUTSTORAGE_RECONSTRUCTED}/ingrid_%08d_%04d_pmmerged.root -o ${DATAOUTPUTSTORAGE_RECONSTRUCTED}/ingrid_%08d_%04d_pmmergedKSrecon_woXTalk_Systematics%d_%d.root -e %d -v %3.1f",RunNum,SubRunNum,RunNum,SubRunNum,RunNum,SubRunNum,ErrorType,n,ErrorType,ErrorValue);
+		    sprintf(Command2,"${INSTALLREPOSITORY}/Reconstruction/appPM/PMAnaRevOfficial -r %d -s %d -f ${DATAOUTPUTSTORAGE_RECONSTRUCTED}/ingrid_%08d_%04d_pmmergedKSrecon_woXTalk_Systematics%d_%d.root -o ${DATAOUTPUTSTORAGE_RECONSTRUCTED}/ingrid_%08d_%04d_pmmergedKSPMana_woXTalk_Systematics%d_%d.root",RunNum,SubRunNum,RunNum,SubRunNum,ErrorType,n,RunNum,SubRunNum,ErrorType,n);
+		    sprintf(Command3,"${INGRIDSOFTWARE_INGRIDFORMAT}/app/IngAddBSD -r %08d -s %04d -f ${DATAOUTPUTSTORAGE_RECONSTRUCTED}/ingrid_%08d_%04d_pmmergedKSPMana_woXTalk_Systematics%d_%d.root -o ${DATAOUTPUTSTORAGE_RECONSTRUCTED}/ingrid_%08d_%04d_pmmergedKSPManabsd_woXTalk_Systematics%d_%d.root -v -p",RunNum,SubRunNum,RunNum,SubRunNum,ErrorType,n,RunNum,SubRunNum,ErrorType,n);
+		    sprintf(Command4,"source ${INSTALLREPOSITORY}/source_T2KReweight.sh");
+		    sprintf(Command5,"${INSTALLREPOSITORY}/XS/XS_CC0pi_Plan -i ${DATAOUTPUTSTORAGE_RECONSTRUCTED}/ingrid_%08d_%04d_pmmergedKSPManabsd_woXTalk_Systematics%d_%d.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%08d_%04d_Systematics%d_%d.root -f 1 -n 5",RunNum,SubRunNum,ErrorType,n,RunNum,SubRunNum,ErrorType,n);
+		  }
+		  else if(ErrorType>=11 && ErrorType<=15){
+		    sprintf(Command1,"${INSTALLREPOSITORY}/Reconstruction/appPM/PMAnaRevOfficial -r %d -s %d -f ${DATAOUTPUTSTORAGE_RECONSTRUCTED}/ingrid_%08d_%04d_pmmergedKSrecon_woXTalk_Systematics%d_%d.root -o ${DATAOUTPUTSTORAGE_RECONSTRUCTED}/ingrid_%08d_%04d_pmmergedKSPMana_woXTalk_Systematics%d_%d.root",RunNum,SubRunNum,RunNum,SubRunNum,ErrorType,n,RunNum,SubRunNum,ErrorType,n);
+		    sprintf(Command2,"${INGRIDSOFTWARE_INGRIDFORMAT}/app/IngAddBSD -r %08d -s %04d -f ${DATAOUTPUTSTORAGE_RECONSTRUCTED}/ingrid_%08d_%04d_pmmergedKSPMana_woXTalk_Systematics%d_%d.root -o ${DATAOUTPUTSTORAGE_RECONSTRUCTED}/ingrid_%08d_%04d_pmmergedKSPManabsd_woXTalk_Systematics%d_%d.root -v -p",RunNum,SubRunNum,RunNum,SubRunNum,ErrorType,n,RunNum,SubRunNum,ErrorType,n);
+		    sprintf(Command3,"source ${INSTALLREPOSITORY}/source_T2KReweight.sh");
+		    sprintf(Command4,"${INSTALLREPOSITORY}/XS/XS_CC0pi_Plan -i ${DATAOUTPUTSTORAGE_RECONSTRUCTED}/ingrid_%08d_%04d_pmmergedKSPManabsd_woXTalk_Systematics%d_%d.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%08d_%04d_Systematics%d_%d.root -f 1 -n 5",RunNum,SubRunNum,ErrorType,n,RunNum,SubRunNum,ErrorType,n);
+		  }
+		  else continue;
 		}
-		else if(ErrorType>=7 && ErrorType<=10){
-		  sprintf(Command1,"${INSTALLREPOSITORY}/Reconstruction/appPM/PMreconRevOfficial -r %d -s %d -f ${DATAOUTPUTSTORAGE_RECONSTRUCTED}/ingrid_%08d_%04d_pmmerged.root -o ${DATAOUTPUTSTORAGE_RECONSTRUCTED}/ingrid_%08d_%04d_pmmergedKSrecon_woXTalk_Systematics%d_%d.root -e %d -v %3.1f",RunNum,SubRunNum,RunNum,SubRunNum,RunNum,SubRunNum,ErrorType,n,ErrorType,ErrorValue);
-		  sprintf(Command2,"${INSTALLREPOSITORY}/Reconstruction/appPM/PMAnaRevOfficial -r %d -s %d -f ${DATAOUTPUTSTORAGE_RECONSTRUCTED}/ingrid_%08d_%04d_pmmergedKSrecon_woXTalk_Systematics%d_%d.root -o ${DATAOUTPUTSTORAGE_RECONSTRUCTED}/ingrid_%08d_%04d_pmmergedKSPMana_woXTalk_Systematics%d_%d.root",RunNum,SubRunNum,RunNum,SubRunNum,ErrorType,n,RunNum,SubRunNum,ErrorType,n);
-		  sprintf(Command3,"${INGRIDSOFTWARE_INGRIDFORMAT}/app/IngAddBSD -r %08d -s %04d -f ${DATAOUTPUTSTORAGE_RECONSTRUCTED}/ingrid_%08d_%04d_pmmergedKSPMana_woXTalk_Systematics%d_%d.root -o ${DATAOUTPUTSTORAGE_RECONSTRUCTED}/ingrid_%08d_%04d_pmmergedKSPManabsd_woXTalk_Systematics%d_%d.root -v -p",RunNum,SubRunNum,RunNum,SubRunNum,ErrorType,n,RunNum,SubRunNum,ErrorType,n);
-		  sprintf(Command4,"source ${INSTALLREPOSITORY}/source_T2KReweight.sh");
-		  sprintf(Command5,"${INSTALLREPOSITORY}/XS/XS_CC0pi_Plan -i ${DATAOUTPUTSTORAGE_RECONSTRUCTED}/ingrid_%08d_%04d_pmmergedKSPManabsd_woXTalk_Systematics%d_%d.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%08d_%04d_Systematics%d_%d.root -f 1 -n 5",RunNum,SubRunNum,ErrorType,n,RunNum,SubRunNum,ErrorType,n);
+		else { //WM
+		  if(ErrorType==0){
+		    sprintf(Command1,"${INGRIDSOFTWARE_INGRID}/v1r1/Linux-x86_64/Calc_MPPC_new.exe -r %d -s %d -t 1",RunNum,SubRunNum);
+		    sprintf(Command2,"if [ -f ${DATAOUTPUTSTORAGE_WM_CALIB}/ingrid_%08d_%04d_Calib00.root ]",RunNum,SubRunNum);
+		    sprintf(Command3,"then");
+		    sprintf(Command4,"${INGRIDSOFTWARE_INGRID}/v1r1/Linux-x86_64/DSTMaker_WM.exe -r %d -s %d -t 1 -o ${DATAOUTPUTSTORAGE_WM_DST}/ingrid_%08d_%04d.root",RunNum,SubRunNum,RunNum,SubRunNum);
+		    sprintf(Command5,"${INGRIDSOFTWARE_INGRID}/v1r1/Linux-x86_64/DSTMaker_WM.exe -r %d -s %d -t 1 -w -o ${DATAOUTPUTSTORAGE_WM_ROOT}/ingrid_%08d_%04d.root",RunNum,SubRunNum,RunNum,SubRunNum);
+		    sprintf(Command6,"${INGRIDSOFTWARE_INGRID}/v1r1/Linux-x86_64/IngCalib_ADCNLCorrected.exe -r %d -s %d -f ${DATAOUTPUTSTORAGE_WM_DST}/ingrid_%08d_%04d.root -o ${DATAOUTPUTSTORAGE_WM_RECONSTRUCTED}/ingrid_%08d_%04d_calib.root",RunNum,SubRunNum,RunNum,SubRunNum,RunNum,SubRunNum); // use Ben's macro
+		    sprintf(Command7,"${INGRIDSOFTWARE_INGRIDFORMAT}/app/IngCalib_new_WM -r %d -s %d -f ${DATAOUTPUTSTORAGE_WM_ROOT}/ingrid_%08d_%04d.root -o ${DATAOUTPUTSTORAGE_WM_RECONSTRUCTED}/ingrid_%08d_%04d_wmcalib.root -w",RunNum,SubRunNum,RunNum,SubRunNum,RunNum,SubRunNum);
+		    sprintf(Command8,"${INSTALLREPOSITORY}/Reconstruction/appWM/IngMergePM -f ${DATAOUTPUTSTORAGE_WM_RECONSTRUCTED}/ingrid_%08d_%04d_wmcalib.root -a ${DATAOUTPUTSTORAGE_WM_RECONSTRUCTED}/ingrid_%08d_%04d_calib.root -o ${DATAOUTPUTSTORAGE_WM_RECONSTRUCTED}/ingrid_%08d_%04d_wmmerged.root",RunNum,SubRunNum,RunNum,SubRunNum,RunNum,SubRunNum);
+		    ////////////////////////////////////////////////////////RECONSTRUCTION////////////////////////////////////////////////////////////
+		    sprintf(Command9,"if [ -f ${DATAOUTPUTSTORAGE_WM_RECONSTRUCTED}/ingrid_%08d_%04d_wmmerged.root ]",RunNum,SubRunNum);
+		    sprintf(Command11,"then");
+		    sprintf(Command12,"${INSTALLREPOSITORY}/Reconstruction/appWM/Lolirecon -f ${DATAOUTPUTSTORAGE_WM_RECONSTRUCTED}/ingrid_%08d_%04d_wmmerged.root -o ${DATAOUTPUTSTORAGE_WM_RECONSTRUCTED}/ingrid_%08d_%04d_recon.root",RunNum,SubRunNum,RunNum,SubRunNum);
+		    //////////////////////////////////////////////////////WM ANALYSIS////////////////////////////////////////////////////////////
+		    sprintf(Command13,"${INSTALLREPOSITORY}/Reconstruction/appWM/LoliAna -f ${DATAOUTPUTSTORAGE_WM_RECONSTRUCTED}/ingrid_%08d_%04d_recon.root -o ${DATAOUTPUTSTORAGE_WM_RECONSTRUCTED}/ingrid_%08d_%04d_ana.root",RunNum,SubRunNum,RunNum,SubRunNum);
+		    sprintf(Command14,"${INGRIDSOFTWARE_INGRIDFORMAT}/app/IngAddBSD -r %08d -s %04d -f ${DATAOUTPUTSTORAGE_WM_RECONSTRUCTED}/ingrid_%08d_%04d_ana.root -q ${DATAOUTPUTSTORAGE_WM_RECONSTRUCTED}/ingrid_%08d_%04d_bsd.root -v -w",RunNum,SubRunNum,RunNum,SubRunNum,RunNum,SubRunNum);
+		    //		    sprintf(Command15,"source ${INSTALLREPOSITORY}/source_T2KReweight.sh");
+		    sprintf(Command16,"${INSTALLREPOSITORY}/XS/XS_CC0pi_Plan_WM -i ${DATAOUTPUTSTORAGE_WM_RECONSTRUCTED}/ingrid_%08d_%04d_bsd.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%08d_%04d.root -f 1 -w",RunNum,SubRunNum,RunNum,SubRunNum);
+		    sprintf(Command17,"fi");
+		    sprintf(Command18,"fi");
+		  }
+		  else if(ErrorType>=7 && ErrorType<=10){
+		    sprintf(Command12,"${INSTALLREPOSITORY}/Reconstruction/appWM/Lolirecon -f ${DATAOUTPUTSTORAGE_WM_RECONSTRUCTED}/ingrid_%08d_%04d_wmmerged.root -o ${DATAOUTPUTSTORAGE_WM_RECONSTRUCTED}/ingrid_%08d_%04d_recon_Systematics%d_%d.root -e %d -v %3.1f",RunNum,SubRunNum,RunNum,SubRunNum,ErrorType,n,ErrorType,ErrorValue);
+		    sprintf(Command13,"${INSTALLREPOSITORY}/Reconstruction/appWM/LoliAna -f ${DATAOUTPUTSTORAGE_WM_RECONSTRUCTED}/ingrid_%08d_%04d_recon_Systematics%d_%d.root -o ${DATAOUTPUTSTORAGE_WM_RECONSTRUCTED}/ingrid_%08d_%04d_ana_Systematics%d_%d.root",RunNum,SubRunNum,RunNum,SubRunNum,ErrorType,n,RunNum,SubRunNum,ErrorType,n);
+		    sprintf(Command14,"${INGRIDSOFTWARE_INGRIDFORMAT}/app/IngAddBSD -f ${DATAOUTPUTSTORAGE_WM_RECONSTRUCTED}/ingrid_%08d_%04d_ana_Systematics%d_%d.root -q ${DATAOUTPUTSTORAGE_WM_RECONSTRUCTED}/ingrid_%08d_%04d_bsd_Systematics%d_%d.root -v -w",RunNum,SubRunNum,RunNum,SubRunNum,ErrorType,n,RunNum,SubRunNum,ErrorType,n);
+		    //sprintf(Command15,"source ${INSTALLREPOSITORY}/source_T2KReweight.sh");
+		    sprintf(Command16,"${INSTALLREPOSITORY}/XS/XS_CC0pi_Plan_WM -i ${DATAOUTPUTSTORAGE_WM_RECONSTRUCTED}/ingrid_%08d_%04d_bsd_Systematics%d_%d.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%08d_%04d_Systematics%d_%d.root -f 1 -w",RunNum,SubRunNum,ErrorType,n,RunNum,SubRunNum,ErrorType,n);
+		  }
+		  else if(ErrorType>=11 && ErrorType<=15){
+		    sprintf(Command13,"${INSTALLREPOSITORY}/Reconstruction/appWM/LoliAna -f ${DATAOUTPUTSTORAGE_WM_RECONSTRUCTED}/ingrid_%08d_%04d_recon.root -o ${DATAOUTPUTSTORAGE_WM_RECONSTRUCTED}/ingrid_%08d_%04d_ana_Systematics%d_%d.root",RunNum,SubRunNum,RunNum,SubRunNum,ErrorType,n);
+		    sprintf(Command14,"${INGRIDSOFTWARE_INGRIDFORMAT}/app/IngAddBSD  -f ${DATAOUTPUTSTORAGE_WM_RECONSTRUCTED}/ingrid_%08d_%04d_ana_Systematics%d_%d.root -q ${DATAOUTPUTSTORAGE_WM_RECONSTRUCTED}/ingrid_%08d_%04d_bsd_Systematics%d_%d.root -v -w",RunNum,SubRunNum,ErrorType,n,RunNum,SubRunNum,ErrorType,n);
+		    //sprintf(Command15,"source ${INSTALLREPOSITORY}/source_T2KReweight.sh");
+		    sprintf(Command16,"${INSTALLREPOSITORY}/XS/XS_CC0pi_Plan_WM -i ${DATAOUTPUTSTORAGE_WM_RECONSTRUCTED}/ingrid_%08d_%04d_bsd_Systematics%d_%d.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%08d_%04d_Systematics%d_%d.root -f 1 -n 5",RunNum,SubRunNum,ErrorType,n,RunNum,SubRunNum,ErrorType,n);
+		  }
+		  else continue;
 		}
-		else if(ErrorType>=11 && ErrorType<=15){
-		  sprintf(Command1,"${INSTALLREPOSITORY}/Reconstruction/appPM/PMAnaRevOfficial -r %d -s %d -f ${DATAOUTPUTSTORAGE_RECONSTRUCTED}/ingrid_%08d_%04d_pmmergedKSrecon_woXTalk_Systematics%d_%d.root -o ${DATAOUTPUTSTORAGE_RECONSTRUCTED}/ingrid_%08d_%04d_pmmergedKSPMana_woXTalk_Systematics%d_%d.root",RunNum,SubRunNum,RunNum,SubRunNum,ErrorType,n,RunNum,SubRunNum,ErrorType,n);
-		  sprintf(Command2,"${INGRIDSOFTWARE_INGRIDFORMAT}/app/IngAddBSD -r %08d -s %04d -f ${DATAOUTPUTSTORAGE_RECONSTRUCTED}/ingrid_%08d_%04d_pmmergedKSPMana_woXTalk_Systematics%d_%d.root -o ${DATAOUTPUTSTORAGE_RECONSTRUCTED}/ingrid_%08d_%04d_pmmergedKSPManabsd_woXTalk_Systematics%d_%d.root -v -p",RunNum,SubRunNum,RunNum,SubRunNum,ErrorType,n,RunNum,SubRunNum,ErrorType,n);
-		  sprintf(Command3,"source ${INSTALLREPOSITORY}/source_T2KReweight.sh");
-		  sprintf(Command4,"${INSTALLREPOSITORY}/XS/XS_CC0pi_Plan -i ${DATAOUTPUTSTORAGE_RECONSTRUCTED}/ingrid_%08d_%04d_pmmergedKSPManabsd_woXTalk_Systematics%d_%d.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%08d_%04d_Systematics%d_%d.root -f 1 -n 5",RunNum,SubRunNum,ErrorType,n,RunNum,SubRunNum,ErrorType,n);
-		}
-		else continue;
-		sprintf(Name1,"%s/MC/Jobs/PMData_Run%d_SubRun%d_Systematics%d_%d.sh",cINSTALLREPOSITORY,RunNum,SubRunNum,ErrorType,n);
-		sprintf(Name2,"%s/MC/Jobs/condorPMData_Run%d_SubRun%d_Systematics%d_%d.sh",cINSTALLREPOSITORY,RunNum,SubRunNum,ErrorType,n);
+
+
+		sprintf(Name1,"%s/MC/Jobs/%sData_Run%d_SubRun%d_Systematics%d_%d.sh",cINSTALLREPOSITORY,DetName,RunNum,SubRunNum,ErrorType,n);
+		sprintf(Name2,"%s/MC/Jobs/condor%sData_Run%d_SubRun%d_Systematics%d_%d.sh",cINSTALLREPOSITORY,DetName,RunNum,SubRunNum,ErrorType,n);
 		cout<<Name1<<endl;
 		ofstream ScriptData(Name1);
 		if(ScriptData)
 		  {
 		    ScriptData<<"#!/bin/bash +x"<<endl
-		      //  <<Command1<<endl
+			      <<Command1<<endl
 			      <<Command2<<endl
 			      <<Command3<<endl
-		      //  <<Command4<<endl
-		      //  <<Command5<<endl
-		      //  <<Command6<<endl
-		      //  <<Command7<<endl
-		      //  <<Command8<<endl
+			      <<Command4<<endl
+			      <<Command5<<endl
+			      <<Command6<<endl
+			      <<Command7<<endl
+			      <<Command8<<endl
 			      <<Command9<<endl
 			      <<Command11<<endl
 			      <<Command12<<endl
@@ -581,6 +636,7 @@ int main(int argc, char **argv){
 
   
   //////////////////////////////////////POSTREQUISITE////////////////////////////////////////////////. Ne prends pas en compte les Xsec pour l'instant
+  char optionWM[2];sprintf(optionWM,(PM?"":"-W"));
   for(int ErrorType=StartError;ErrorType<=EndError;ErrorType++){
     for(int n=0;n<NE[ErrorType];n++){
       double ErrorValue=Start[ErrorType]+n*Step[ErrorType];
@@ -597,30 +653,31 @@ int main(int argc, char **argv){
       cout<<Name1<<endl;
       ofstream ScriptPost(Name1);
       if(ErrorType==0){
-	sprintf(Command001,"${INSTALLREPOSITORY}/XS/CC0piSelection -i ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s%s_Run1_%s_Plan.root -o ${INSTALLREPOSITORY}/XS/files/MCSelected_%s%s_Systematics%d_%d -s 1 -e %d -v %3.3f -m -p %2.2f",DetName,ParticleGenerator,"%d",DetName,ParticleGenerator,ErrorType,n,ErrorType,ErrorValue,DataPOT);
-	sprintf(Command002,"${INSTALLREPOSITORY}/XS/CC0piSelection -i ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s_%s.root -o ${INSTALLREPOSITORY}/XS/files/DataSelected_Systematics%d_%d -s 1 -e %d -v %3.3f","%08d","%04d",ErrorType,n,ErrorType,ErrorValue);
+	sprintf(Command001,"${INSTALLREPOSITORY}/XS/CC0piSelection -i ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s%s_Run1_%s_Plan.root -o ${INSTALLREPOSITORY}/XS/files/MCSelected_%s%s_Systematics%d_%d -s %d -e %d -v %3.3f -m -p %2.2f %s",DetName,ParticleGenerator,"%d",DetName,ParticleGenerator,ErrorType,n,channel,ErrorType,ErrorValue,DataPOT,optionWM);
+	sprintf(Command002,"${INSTALLREPOSITORY}/XS/CC0piSelection -i ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s_%s.root -o ${INSTALLREPOSITORY}/XS/files/DataSelected_Systematics%d_%d -s %d -e %d -v %3.3f %s","%08d","%04d",ErrorType,n,channel,ErrorType,ErrorValue,optionWM);
 	sprintf(Command004,"${INSTALLREPOSITORY}/XS/UnfoldingOptimisation_Dvt -d ${INSTALLREPOSITORY}/XS/files/DataSelected_%s%s_Systematics%d_%d -m ${INSTALLREPOSITORY}/XS/files/MCSelected_%s%s_Systematics%d_%d -o ${INSTALLREPOSITORY}/XS/files/DataUnfolded_%s%s_Systematics%d_%d -n 1",DetName,ParticleGenerator,ErrorType,n,DetName,ParticleGenerator,ErrorType,n,DetName,ParticleGenerator,ErrorType,n);
       }
-      else if(ErrorType==6) sprintf(Command001,"${INSTALLREPOSITORY}/XS/CC0piSelection -i ${INSTALLREPOSITORY}/XS/root_input/XSFormat_Run1_%s_Plan.root -o ${INSTALLREPOSITORY}/XS/files/MCSelected_Systematics%d_%d -s 1 -e %d -v %3.3f -m -w %2.2f -p %2.2f","%d",ErrorType,n,ErrorType,ErrorValue,ErrorValue,DataPOT);
-      else sprintf(Command001,"${INSTALLREPOSITORY}/XS/CC0piSelection -i ${INSTALLREPOSITORY}/XS/root_input/XSFormat_Run1_%s_Systematics%d_%d_Plan.root -o ${INSTALLREPOSITORY}/XS/files/MCSelected_Systematics%d_%d -s 1 -e %d -v %3.3f -m -p %2.2f","%d",ErrorType,n,ErrorType,n,ErrorType,ErrorValue,DataPOT);
+      else if(ErrorType==6) sprintf(Command001,"${INSTALLREPOSITORY}/XS/CC0piSelection -i ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s_Run1_%s_Plan.root -o ${INSTALLREPOSITORY}/XS/files/MCSelected_%s_Systematics%d_%d -s %d -e %d -v %3.3f -m -w %2.2f -p %2.2f %s",DetName,"%d",DetName,ErrorType,n,channel,ErrorType,ErrorValue,ErrorValue,DataPOT,optionWM);
+      else if(ErrorType==5) sprintf(Command001,"${INSTALLREPOSITORY}/XS/CC0piSelection -i ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s_Run1_%s_Systematics%d_%d_Plan.root -o ${INSTALLREPOSITORY}/XS/files/MCSelected_%s_Systematics%d_%d -s %d -e %d -v %3.3f -m -p %2.2f %s",DetName,"%d",ErrorType,2*n,DetName,ErrorType,n,channel,ErrorType,ErrorValue,DataPOT,optionWM);
+      else sprintf(Command001,"${INSTALLREPOSITORY}/XS/CC0piSelection -i ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s_Run1_%s_Systematics%d_%d_Plan.root -o ${INSTALLREPOSITORY}/XS/files/MCSelected_%s_Systematics%d_%d -s %d -e %d -v %3.3f -m -p %2.2f %s",DetName,"%d",ErrorType,n,DetName,ErrorType,n,channel,ErrorType,ErrorValue,DataPOT,optionWM);
       if(ErrorType>=7 && ErrorType<=15){
-	sprintf(Command002,"${INSTALLREPOSITORY}/XS/CC0piSelection -i ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s_%s_Systematics%d_%d.root -o ${INSTALLREPOSITORY}/XS/files/DataSelected_Systematics%d_%d -s 1 -e %d -v %3.3f","%08d","%04d",ErrorType,n,ErrorType,n,ErrorType,ErrorValue);
+	sprintf(Command002,"${INSTALLREPOSITORY}/XS/CC0piSelection -i ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s_%s_Systematics%d_%d.root -o ${INSTALLREPOSITORY}/XS/files/DataSelected_Systematics%d_%d -s %d -e %d -v %3.3f %s","%08d","%04d",ErrorType,n,ErrorType,n,channel,ErrorType,ErrorValue,optionWM);
 	sprintf(Command004,"${INSTALLREPOSITORY}/XS/UnfoldingOptimisation_Dvt -d ${INSTALLREPOSITORY}/XS/files/DataSelected_%s%s_Systematics%d_%d -m ${INSTALLREPOSITORY}/XS/files/MCSelected_%s%s_Systematics%d_%d -o ${INSTALLREPOSITORY}/XS/files/DataUnfolded_%s%s_Systematics%d_%d -n 1",DetName,ParticleGenerator,ErrorType,n,DetName,ParticleGenerator,ErrorType,n,DetName,ParticleGenerator,ErrorType,n);
 	//sprintf(Command004,"${INSTALLREPOSITORY}/XS/UnfoldingOptimisation_Dvt -d ${INSTALLREPOSITORY}/XS/files/DataSelected_Systematics%d_%d -m ${INSTALLREPOSITORY}/XS/files/MCSelected_Systematics%d_%d -o ${INSTALLREPOSITORY}/XS/files/DataUnfolded_Systematics%d_%d -n 1",ErrorType,n,ErrorType,n,ErrorType,n);
-      }
+      } 
       else if(ErrorType==16){
-	sprintf(Command001,"${INSTALLREPOSITORY}/XS/CC0piSelection -i ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s%s_Run1_%s_Plan.root -o ${INSTALLREPOSITORY}/XS/files/MCSelected_%s%s_Systematics%d_%d -s 1 -e %d -v %3.3f -m -p %2.2f",DetName,ParticleGenerator,"%d",DetName,ParticleGenerator,ErrorType,n,ErrorType,ErrorValue,DataPOT);
+	sprintf(Command001,"${INSTALLREPOSITORY}/XS/CC0piSelection -i ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s%s_Run1_%s_Plan.root -o ${INSTALLREPOSITORY}/XS/files/MCSelected_%s%s_Systematics%d_%d -s %d -e %d -v %3.3f -m -p %2.2f %s",DetName,ParticleGenerator,"%d",DetName,ParticleGenerator,ErrorType,n,channel,ErrorType,ErrorValue,DataPOT,optionWM); 
 	cout <<"Flux" << endl;
-	//sprintf(Command001,"${INSTALLREPOSITORY}/XS/CC0piSelection -i ${INSTALLREPOSITORY}/XS/root_input/XSFormat_Run1_%s_Plan.root -o ${INSTALLREPOSITORY}/XS/files/MCSelected_Systematics%d_%d -s 1 -e %d -v %3.3f -m -p %2.2f","%d",ErrorType,n,ErrorType,ErrorValue,DataPOT);	
+	//sprintf(Command001,"${INSTALLREPOSITORY}/XS/CC0piSelection -i ${INSTALLREPOSITORY}/XS/root_input/XSFormat_Run1_%s_Plan.root -o ${INSTALLREPOSITORY}/XS/files/MCSelected_Systematics%d_%d -s %d -e %d -v %3.3f -m -p %2.2f","%d",ErrorType,n,ErrorType,ErrorValue,DataPOT);	
       }
       else if(ErrorType>=17){
 	//double XsecVariation=ErrorValue-CenterXsecVariations*(ErrorType-Systematics_Xsec_Start);//The variation of Xsec parameter, in #sigma. A number between 0 and 175 - the center of the current systematic source (nominal). For example, for Xsec error source #10, it starts from 7*(10-1)=63 and ends at 70. from 63 to 70, it contains the variariation of -3,-2,-1,0,1,2,3 sigma respectively. The center is then located at 66. For the example of a 2 sigma variation, the substraction will be therefore equal to: 68-66=2, which gives the number of sigmas!
-	sprintf(Command001,"${INSTALLREPOSITORY}/XS/CC0piSelection -i ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s%s_Run1_%s_ReWeight2015_Plan.root -o ${INSTALLREPOSITORY}/XS/files/MCSelected_%s%s_Systematics%d_%d -s 1 -e %d -v %3.3f -m -p %2.2f",DetName,ParticleGenerator,"%d",DetName,ParticleGenerator,ErrorType,n,ErrorType,ErrorValue,DataPOT);
-	//sprintf(Command001,"${INSTALLREPOSITORY}/XS/CC0piSelection -i ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s_Run1_%s_ReWeight2015_Plan.root -o ${INSTALLREPOSITORY}/XS/files/MCSelected_Systematics%d_%d -s 1 -e %d -v %3.3f -m -p %2.2f","%d",DetName,ErrorType,n,ErrorType,ErrorValue,DataPOT);
+	sprintf(Command001,"${INSTALLREPOSITORY}/XS/CC0piSelection -i ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s%s_Run1_%s_ReWeight2015_Plan.root -o ${INSTALLREPOSITORY}/XS/files/MCSelected_%s%s_Systematics%d_%d -s %d -e %d -v %3.3f -m -p %2.2f %s",DetName,ParticleGenerator,"%d",DetName,ParticleGenerator,ErrorType,n,channel,ErrorType,ErrorValue,DataPOT,optionWM);
+	//sprintf(Command001,"${INSTALLREPOSITORY}/XS/CC0piSelection -i ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s_Run1_%s_ReWeight2015_Plan.root -o ${INSTALLREPOSITORY}/XS/files/MCSelected_Systematics%d_%d -s %d -e %d -v %3.3f -m -p %2.2f","%d",DetName,ErrorType,n,ErrorType,ErrorValue,DataPOT);
       }
       
       sprintf(Command003,"${INSTALLREPOSITORY}/XS/UnfoldingOptimisation_Dvt -d ${INSTALLREPOSITORY}/XS/files/MCSelected_%s%s_Systematics0_0 -m ${INSTALLREPOSITORY}/XS/files/MCSelected_%s%s_Systematics%d_%d -o ${INSTALLREPOSITORY}/XS/files/MCUnfolded_%s%s_Systematics%d_%d -n 1",DetName,ParticleGenerator,DetName,ParticleGenerator,ErrorType,n,DetName,ParticleGenerator,ErrorType,n);
-      if(ErrorType==1) sprintf(Command003,"${INSTALLREPOSITORY}/XS/UnfoldingOptimisation_Dvt -d ${INSTALLREPOSITORY}/XS/files/MCSelected_%s%s_Systematics0_0 -m ${INSTALLREPOSITORY}/XS/files/MCSelected_%s%s_Systematics0_0 -o ${INSTALLREPOSITORY}/XS/files/MCUnfolded_%s%s_Systematics%d_%d -n 1 -s 1",DetName,ParticleGenerator,DetName,ParticleGenerator,DetName,ParticleGenerator,ErrorType,n);
+      if(ErrorType==1) sprintf(Command003,"${INSTALLREPOSITORY}/XS/UnfoldingOptimisation_Dvt -d ${INSTALLREPOSITORY}/XS/files/MCSelected_%s%s_Systematics0_0 -m ${INSTALLREPOSITORY}/XS/files/MCSelected_%s%s_Systematics0_0 -o ${INSTALLREPOSITORY}/XS/files/MCUnfolded_%s%s_Systematics%d_%d -n 1 -s %d",DetName,ParticleGenerator,DetName,ParticleGenerator,DetName,ParticleGenerator,ErrorType,n);
       
       //sprintf(Command003,"${INSTALLREPOSITORY}/XS/UnfoldingOptimisation_Dvt -d ${INSTALLREPOSITORY}/XS/files/MCSelected_Systematics%d_%d -m ${INSTALLREPOSITORY}/XS/files/MCSelected_Systematics%d_%d -o ${INSTALLREPOSITORY}/XS/files/MCUnfolded_Systematics%d_%d -n 1",ErrorType,n,ErrorType,n,ErrorType,n);// Not for stat. variations, since unfolded is already done differently
       //if(ErrorType==1) sprintf(Command003,"${INSTALLREPOSITORY}/XS/UnfoldingOptimisation_Dvt -d ${INSTALLREPOSITORY}/XS/files/MCSelected_Systematics0_0 -m ${INSTALLREPOSITORY}/XS/files/MCSelected_Systematics0_0 -o ${INSTALLREPOSITORY}/XS/files/MCUnfolded_Systematics%d_%d -n 1 -s 1",ErrorType,n);
@@ -629,10 +686,10 @@ int main(int argc, char **argv){
       if(ScriptPost)
 	{
 	  ScriptPost<<"#!/bin/bash +x"<<endl
-	    //<<Command001<<endl
-		    <<Command002<<endl
+		    <<Command001<<endl;
+	  /*<<Command002<<endl
 		    <<Command003<<endl
-		    <<Command004<<endl;
+		    <<Command004<<endl;*/
 	}
       sprintf(Command10,"Executable = %s/MC/Jobs/Postrequisite%s_Systematics%d_%d.sh",cINSTALLREPOSITORY,DetName,ErrorType,n);
       sprintf(Command20,"Output = %s/MC/Jobs/log_Postrequisite%s_Systematics%d_%d.txt",cINSTALLREPOSITORY,DetName,ErrorType,n);

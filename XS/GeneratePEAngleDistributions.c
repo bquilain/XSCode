@@ -153,7 +153,6 @@ int main(int argc, char **argv){
   TTree * tData=(TTree*) fData->Get("wtree");
   int nevt_Data=(int) tData->GetEntries();
   cout<<nevt_Data<<endl;
-  
   tData->SetBranchAddress("utime",&utime);
   tData->SetBranchAddress("Angle",&Angle);
   tData->SetBranchAddress("Charge",&Charge);

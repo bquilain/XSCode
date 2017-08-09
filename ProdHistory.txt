@@ -27,3 +27,7 @@ and QGSP_BIC 3.3 in WM)
 Ready for Production 1 : May 2017
 
 -------------------------------------------------
+
+Production 2: some bugs fixed + NEUT 5.3.5
+
+Started July 2017

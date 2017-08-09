@@ -113,7 +113,11 @@ vector <Hit3D> Corrections::GetDXCorrection(vector <Hit3D> Vec,double dx){
       }
       else {
 	Vec[i].pecorr=(Vec[i].pecorr/(1.3*dx))/INGRIDSCIBAR;
-	// just for comparison with INGRID light yield. Could be removed, can be left; no matter.
+	// INGRIDSCIBAR factor: just for comparison with INGRID light yield. 
+	// in PM-MuCL-likelihood computation sometimes we add the pe of adjacents hits in a plane
+	//   and it may happen that 1 is Ingrid and 1 is Scibar: the factors impacts this sum.
+	//   So the factor scales the relative weight of the two hits. 
+	//   Its value should have been chosen on purpose.
       }
     }
     else if(Vec[i].mod<14){//INGRID

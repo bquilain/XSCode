@@ -168,6 +168,8 @@ int main(int argc, char **argv)
   IngridSimParticleSummary * SimPart;
   PMAnaSummary * recon;
     
+  double n=0,N=0;
+
   for(int ievt=0;ievt<nevt;ievt++){//loop over INGRID event (ingridsimvertex if MC, integration cycle of 580ns if data)
     if((ievt%100)==0) cout<<"Processing "<<ievt<<endl;
     evt->Clear();
@@ -268,6 +270,7 @@ int main(int argc, char **argv)
 		//cout<<HitTrk->mod<<", "<<Hit2->mod<<endl;
 		if(HitTrk->mod == Hit2->mod && HitTrk->tdc==Hit2->tdc && HitTrk->pln==Hit2->pln && HitTrk->ch==Hit2->ch && HitTrk->view==Hit2->view){
 		  TrackHit=true;
+		  N++;
 		  int BinRecAngle;
 		  for(int i=0;i<=NBinsRecAngle;i++){
 		    if((recon->angle)[itrk]<BinningRecAngle[i+1]){BinRecAngle=i;break;}
@@ -302,9 +305,10 @@ int main(int argc, char **argv)
 		    }
 		  }//WM
 		  
-		  double Inef=1.-(d/m);
+		  double Inef=0;
+		  if(d>0 && m>0) Inef=1.-(d/m);
 		  double IRand=Rand->Uniform();
-		  if(IRand<Inef){cout<<"Hit removed"<<endl;continue;}
+		  if(IRand<Inef){cout<<"Hit removed; angle="<<BinningRecAngle[BinRecAngle]<<" Inef="<<Inef<<endl;n++;continue;}
 		  else evt2->AddIngridModHit(Hit,mod,cyc);
 
 		}//same hit
@@ -319,6 +323,9 @@ int main(int argc, char **argv)
     wtree->Fill();
 
   }
+
+  cout<<"Total # of track hits="<<N<<" and "<<100.*n/N<<" % are removed."<<endl;
+
   wfile->cd();
   wtree->Write();
   wfile->Close();

@@ -1,7 +1,0 @@
-#!/bin/bash +x
-#/home/bquilain/Ingrid_Process/INGRID/v1r1/Linux-x86_64/DSTMaker.exe -r 15812 -s 147 -t 1
-/home/bquilain/Ingrid_Process/INGRID/v1r1/Linux-x86_64/Calc_MPPC_new_ci_2.exe -r 15812 -s 147 -t 1
-#/home/bquilain/Ingrid_Process/INGRID/v1r1/Linux-x86_64/IngCalib_ADCNLCorrected.exe -r 15812 -s 147 -f /export/scraid2/data/bquilain/dst/ingrid_00015812_0147.root -o /export/scraid2/data/bquilain/ingrid_00015812_0147_calib.root
-#/home/bquilain/Ingrid_Process/INGRID/v1r1/Linux-x86_64/DSTMaker.exe -r 15812 -s 147 -t 1 -p
-#/home/bquilain/Ingrid_Process/INGRID/v1r1/Linux-x86_64/IngCalib_ADCNLCorrected.exe -r 15812 -s 147 -f /export/scraid2/data/bquilain/dst/ingrid_00015812_0147.root -o /export/scraid2/data/bquilain/ingrid_00015812_0147_calib.root -p
-#/home/bquilain/Ingrid_Process/INGRID_analysis/app/IngMergePM -r 15812 -s 147 -f /export/scraid2/data/bquilain/ingrid_00015812_0147_pmcalib.root -a /export/scraid2/data/bquilain/ingrid_00015812_0147_calib.root -o /export/scraid2/data/bquilain/ingrid_00015812_0147_pmmerged.root

@@ -219,13 +219,15 @@ int main(int argc,char *argv[]){
 
   for(int ievt=Nini; ievt<nevt; ievt++){
 
-    if(ievt%100==0)cout << "analyze event# " << ievt<<endl;
+    if(ievt%10==0)cout << "analyze event# " << ievt<<endl;
     wsummary -> Clear();
     evt      -> Clear();
     tree     -> GetEntry(ievt);
 
     for( int cyc=Scyc; cyc<Ncyc; cyc++ ){  //### Cycle Loop
       for( int mod=0; mod<Nmod; mod++ ){   //### Module Loop
+
+	if(mod>6 && mod<15) continue; // ML to speed up a bit
 
         allhit.clear();
 	int ninghit = evt -> NIngridModHits(mod, cyc);
@@ -282,10 +284,12 @@ int main(int argc,char *argv[]){
 	  allhit_for_disp.push_back(hit);
 	}
 
-	if(allhit.size()<2)continue;
+	//cout<<"evt="<<ievt<<" cyc="<<cyc<<" mod="<<mod<<" #hits="<<allhit.size()<<endl;
+	if(allhit.size()<6)continue; // 3h + 3v required 
 	fSortTime(allhit);
 	while(fFindTimeClster(allhit, hitcls, fcTime)){
 
+	  if(hitcls.size()<6) continue; // 3h + 3v required
 	  int nactnum;
 	  recon->nactpln = fNactpln(mod);
 	  nactnum = fNactpln(mod);

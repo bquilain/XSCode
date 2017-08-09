@@ -16,7 +16,7 @@ class Reconstruction{
   ~Reconstruction();
   void SetDetector(bool);
   bool GetDetector();
-
+  double GetNormalAngleRad(bool grid,double angle3D, double angle3D);
   vector <Hit3D> ApplyPEError(vector <Hit3D> Vec, double angle);
   vector <Hit3D> SearchIngridHit(vector <Hit3D> Vec, vector <Hit3D> VecAll, double thetaX, double thetaY, double TrackSample);
   //vector <HitTemp> EraseDoubleHits(IngridBasicReconSummary * recon, int itrk, vector <HitTemp> HitV);
