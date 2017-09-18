@@ -75,21 +75,21 @@ const float Mp=938.272/1000.;
 const float Mn=939.5659/1000.;
 #endif
 const int StartRun=29596;
-const int EndRun=29600;//15999;
+const int EndRun=29760;
 const int StartSubRun=0;
-const int EndSubRun=0;//300
+const int EndSubRun=300;//300
 const int StartRunList=29;//14 for PM; Which list will be read (29=>29000.txt). Necessary to use only run processed
 const int EndRunList=30;//15 for PM; Which list will be read (29=>29000.txt). Necessary to use only run processed
-double NMCfiles=50; // up to now only 1000 are available with NEUT 5.3.6
+double NMCfiles=200; // up to now only 1000 are available with NEUT 5.3.6
 
 double DataPOTPM=0.58;//In units of 10^21 POT -- runs 234
 //double DataPOTPM=0.76;//In units of 10^21 POT -- runs 234  (+56)
 double DataPOTWM=0.72;//In units of 10^21 POT -- run 8
 double DataPOT;
-const int StartError=2;
-const int EndError=16;//17;//34;//34;//41 for 2012 ;//17
+const int StartError=0;
+const int EndError=36;//15 for det, 16 for det+flux, 36 for det+flux+xs, 37 to add NEUT tunings
 int NFluxFiles;
-int StartXsec=0;int EndXsec=24;int NXsecVariations=7;
+int StartXsec=0;const int EndXsec=19;int NXsecVariations=7; int NXsecTunings=7;
 int CenterXsecVariations=(int) (NXsecVariations-1-((double) (NXsecVariations-1)/2));
 
 int NE[EndError+1];
@@ -102,7 +102,7 @@ const int Systematics_Detector_End=15;
 const int Systematics_Flux_Start=16;
 const int Systematics_Flux_End=16;
 const int Systematics_Xsec_Start=17;
-const int Systematics_Xsec_End=Systematics_Xsec_Start+24;
+const int Systematics_Xsec_End=Systematics_Xsec_Start+EndXsec;
 bool EStatistics=true;//if true, estimate stat. error after unfolding
 const int NStatisticalVariations=1000;//number of stat. varied toy experiments to evaluate the stat. error.
     
@@ -110,7 +110,7 @@ const int NSamples = 6;//number of track samples, see Reconstruction.cc
 const int LimitTracks = 5;
 const int LimitHits = 25;
 double RangeRelativeDistance = 1.;
-const int NDials=175;
+const int NDials=147; //NXsecVariations*(EndXsec+1) + NXsecTunings
 //For particle gun
 const int npdg=4;
 int pdgValues[npdg]={13,211,-211,2212};
@@ -346,7 +346,7 @@ void InitializeGlobal(bool PM=true){
       Err=1;
       Start[n]=Nominal;
       Step[n]=Err;
-      NE[n]=500;
+      NE[n]=1000;
       NFluxFiles=NE[n];
     }
     else if(n>=Systematics_Xsec_Start && n<=Systematics_Xsec_End){//17: cross section error
@@ -355,6 +355,11 @@ void InitializeGlobal(bool PM=true){
       Start[n]=(StartXsec+(n-Systematics_Xsec_Start))*NXsecVariations;
       Step[n]=1;
       NE[n]=NXsecVariations;
+    }
+    else if(n==Systematics_Xsec_End+1){ // tunings
+      Start[n]=(StartXsec+(n-Systematics_Xsec_Start))*NXsecVariations;
+      Step[n]=1;
+      NE[n]=NXsecTunings;
     }
     End[n]=Start[n]+(NE[n]+1)*Step[n];
   }
@@ -389,9 +394,9 @@ double _DistTrueAngleBin[_NBinsAngle+1];
 
 
 // ML for Production 2 -- files NEUT 5.3.3 from Koga-san -- 2017/08/02
-const int NBadMCFilesPM=39;
+const int NBadMCFilesPM=40;
 const int NBadMCFilesWM=28;
-const int BadMCFilesPM[NBadMCFilesPM]={0,15,34,74,141,150,190,189,257,277,278,284,292,318,324,335,386,416,462,594,626,639,751,792,833,851,852,880,886,909,93,174,293,436,518,785,861,903,992};
+const int BadMCFilesPM[NBadMCFilesPM]={0,1,15,34,74,141,150,190,189,257,277,278,284,292,318,324,335,386,416,462,594,626,639,751,792,833,851,852,880,886,909,93,174,293,436,518,785,861,903,992};
 const int BadMCFilesWM[NBadMCFilesWM]={0,14,19,80,176,189,190,284,415,462,594,655,666,673,743,792,814,988,93,174,293,436,518,544,785,861,903,992};
 
 bool isBadFile(int ifile, bool PM){

@@ -96,9 +96,9 @@ int main(int argc,char *argv[]){
   bool Error=false;
   int ErrorType;
   double ErrorValue=0;
-  int ActivePlaneCriteria=0; // ?? tbd
-  int VetoUpstreamCriteria=0;// ?? tbd
-  double VetoEdgeCriteria=0; // ?? tbd
+  int ActivePlaneCriteria=0; // nominal
+  int VetoUpstreamCriteria=0;// nominal
+  double VetoEdgeCriteria=0; // not used for WM
   double FVCriteria=80;//cm, size of FV, always centered
 
   while ((c = getopt(argc, argv, "r:s:f:cado:i:e:v:")) != -1) {
@@ -149,12 +149,13 @@ int main(int argc,char *argv[]){
     else if(ErrorType==9) VetoEdgeCriteria=(double) ErrorValue;
     else if(ErrorType==10) FVCriteria=(double) ErrorValue;
   }
+  else cout<<"***Warning: the default ActivePlaneCriteria is badly set***"<<endl;
   
   FVCriteria=(1200.-10.*FVCriteria)/2.; 
   // WM center is (600,600)mm in transverse plane (same as PM)
   // 80cm means 100mm margin on the edge of the WM and 200mm margin wrt PM dimensions
 
-  cout<<"VetoCriteria="<<VetoUpstreamCriteria<<", EdgeCriteria="<<VetoEdgeCriteria<<", FV exclusion="<<FVCriteria<<"mm"<<endl;
+  cout<<"ActivePlaneCriteria="<<ActivePlaneCriteria<<", VetoCriteria="<<VetoUpstreamCriteria<<", EdgeCriteria="<<VetoEdgeCriteria<<", FV exclusion="<<FVCriteria<<"mm"<<endl;
 
   FileStat_t fs;
   // ifstream timing;

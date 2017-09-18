@@ -3,7 +3,7 @@
 //For now, isreconstructed is not systematically applied
 //For now, I removed the track witdth and matching parameters!
 //CAREFUL: I REMOVED THE FIRST MC FILE!
- 
+  
 // TO FOLLOW THE IMPORTANT STEPS OF THE CODE: SEARCH FOR THE KEYWORD "KEY" IN THE COMMENTS
 
 #include<iostream>
@@ -163,7 +163,7 @@ void ProduceStack(TH1D * h[NFSIs], THStack * hStack){
 
 }
 
-
+ 
 void ProduceStackParticles(TH1D * hmu, TH1D * hpi, TH1D * hp, THStack * hStack){
 
   hmu->GetYaxis()->SetTitleOffset(1.3);
@@ -208,7 +208,7 @@ void InitialiseTable(double DataSelected[NBinsRecMom][NBinsRecAngle],double MCSe
 //void CC0piDistributions(TChain * wtree,bool IsData,int Sample,bool IsPlots,int SelectedError_Source,double SelectedError_Variation,char * OutNameEvent);
 
 
-void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Selection,bool Plots,bool Systematics_Flux,int File_Number,TVectorD FluxVector,bool Systematics_Xsec,int dial,bool Systematics_Detector,int ErrorType,char * outnameevent, bool _isPM){
+void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Selection,bool Plots,bool Systematics_Flux,int File_Number,TVectorD FluxVector,bool Systematics_Xsec,int dial,bool Systematics_Detector,int ErrorType,char * outnameevent, bool _isPM, bool retuned, int tuneDial){
 
   cout<<"hello"<<endl;
   int nevt=(int) wtree->GetEntries();
@@ -228,8 +228,8 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
   }
 
   //TO DO
-  const int nCuts=7;
-  string myCuts[nCuts]={"Generated","Reconstruted + one INGRID track","FCFV","CC1pi Selection","2 or 3 tracks","MuTrk is INGRID stop/through","MuTrk is INGRID stop"};//For CC1pi
+  const int nCuts=8;
+  string myCuts[nCuts]={"Generated","Reconstruted + one INGRID track","FCFV","CC1pi Selection","2 or 3 tracks","MuTrk is INGRID","MuTrk is INGRID stop/through","MuTrk is INGRID stop"};//For CC1pi
   if(Selection==1){
     myCuts[3]="CC0pi Selection";
     myCuts[4]="1 or 2 tracks";
@@ -684,7 +684,7 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
     
     
     //Keep in mind here that I only use 1/2 of trees for training and 1/2 for testing (default). This option can be changed!
-    
+     
     cout<<"End of second BDT training"<<endl;
 
     MVAoutputProton->Close();
@@ -1108,14 +1108,14 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
 	
       sprintf(Name,"hRecMom%d",i);
       sprintf(Title,"Distance in iron for the %dth-fsi",i);
-      hRecMom[i] = new TH1D(Name,Title,20,0,100);
+      hRecMom[i] = new TH1D(Name,Title,NBinsRecMom,BinningRecMom);
       //hRecMom->Sumw2();
       hRecMom[i]->GetXaxis()->SetTitle("Equivalent length in iron (cm)");
       hRecMom[i]->GetYaxis()->SetTitle("Number of events");
 	
       sprintf(Name,"hRecAngle%d",i);
       sprintf(Title,"Reconstructed angle for the %dth-fsi",i);
-      hRecAngle[i] = new TH1D(Name,Title,30,0,90);
+      hRecAngle[i] = new TH1D(Name,Title,NBinsRecAngle,BinningRecAngle);
       //hRecAngle->Sumw2();
       hRecAngle[i]->GetXaxis()->SetTitle("Angle (°)");
       hRecAngle[i]->GetYaxis()->SetTitle("Number of events");
@@ -1129,119 +1129,119 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
 
       sprintf(Name,"hRecMom_CC0pi%d",i);
       sprintf(Title,"Distance in iron for the %dth-fsi",i);
-      hRecMom_CC0pi[i] = new TH1D(Name,Title,20,0,100);
+      hRecMom_CC0pi[i] = new TH1D(Name,Title,NBinsRecMom,BinningRecMom);
       //hRecMom_CC0pi->Sumw2();
       hRecMom_CC0pi[i]->GetXaxis()->SetTitle("Equivalent length in iron (cm)");
       hRecMom_CC0pi[i]->GetYaxis()->SetTitle("Number of events");
 	
       sprintf(Name,"hRecMom_CC0pi_2tr%d",i);
       sprintf(Title,"Distance in iron for the %dth-fsi",i);
-      hRecMom_CC0pi_2tr[i] = new TH1D(Name,Title,20,0,100);
+      hRecMom_CC0pi_2tr[i] = new TH1D(Name,Title,NBinsRecMom,BinningRecMom);
       //hRecMom_CC0pi->Sumw2();
       hRecMom_CC0pi_2tr[i]->GetXaxis()->SetTitle("Equivalent length in iron (cm)");
       hRecMom_CC0pi_2tr[i]->GetYaxis()->SetTitle("Number of events");
 	
       sprintf(Name,"hRecAngle_CC0pi%d",i);
       sprintf(Title,"Reconstructed angle for the %dth-fsi",i);
-      hRecAngle_CC0pi[i] = new TH1D(Name,Title,30,0,90);
+      hRecAngle_CC0pi[i] = new TH1D(Name,Title,NBinsRecAngle,BinningRecAngle);
       //hRecAngle_CC0pi->Sumw2();
       hRecAngle_CC0pi[i]->GetXaxis()->SetTitle("Angle_CC0pi (°)");
       hRecAngle_CC0pi[i]->GetYaxis()->SetTitle("Number of events");
 
       sprintf(Name,"hRecAngle_CC0pi_2tr%d",i);
       sprintf(Title,"Reconstructed angle for the %dth-fsi",i);
-      hRecAngle_CC0pi_2tr[i] = new TH1D(Name,Title,30,0,90);
+      hRecAngle_CC0pi_2tr[i] = new TH1D(Name,Title,NBinsRecAngle,BinningRecAngle);
       //hRecAngle_CC0pi_2tr->Sumw2();
       hRecAngle_CC0pi_2tr[i]->GetXaxis()->SetTitle("Angle_CC0pi (°)");
       hRecAngle_CC0pi_2tr[i]->GetYaxis()->SetTitle("Number of events");
 	
       sprintf(Name,"hRecMom_CC0pi_restr%d",i);
       sprintf(Title,"Distance in iron for the %dth-fsi",i);
-      hRecMom_CC0pi_restr[i] = new TH1D(Name,Title,14,0,100);
+      hRecMom_CC0pi_restr[i] = new TH1D(Name,Title,NBinsRecMom,BinningRecMom);
       //hRecMom_CC0pi_restr->Sumw2();
       hRecMom_CC0pi_restr[i]->GetXaxis()->SetTitle("Equivalent length in iron (cm)");
       hRecMom_CC0pi_restr[i]->GetYaxis()->SetTitle("Number of events");
 	
       sprintf(Name,"hRecAngle_CC0pi_restr%d",i);
       sprintf(Title,"Reconstructed angle for the %dth-fsi",i);
-      hRecAngle_CC0pi_restr[i] = new TH1D(Name,Title,30,0,90);
+      hRecAngle_CC0pi_restr[i] = new TH1D(Name,Title,NBinsRecAngle,BinningRecAngle);
       //hRecAngle_CC0pi_restr->Sumw2();
       hRecAngle_CC0pi_restr[i]->GetXaxis()->SetTitle("Angle_CC0pi (°)");
       hRecAngle_CC0pi_restr[i]->GetYaxis()->SetTitle("Number of events");
 
       sprintf(Name,"hRecMom_CC0pi_full%d",i);
       sprintf(Title,"Distance in iron for the %dth-fsi",i);
-      hRecMom_CC0pi_full[i] = new TH1D(Name,Title,20,0,100);
+      hRecMom_CC0pi_full[i] = new TH1D(Name,Title,NBinsRecMom,BinningRecMom);
       //hRecMom_CC0pi_full->Sumw2();
       hRecMom_CC0pi_full[i]->GetXaxis()->SetTitle("Equivalent length in iron (cm)");
       hRecMom_CC0pi_full[i]->GetYaxis()->SetTitle("Number of events");
 	
       sprintf(Name,"hRecAngle_CC0pi_full%d",i);
       sprintf(Title,"Reconstructed angle for the %dth-fsi",i);
-      hRecAngle_CC0pi_full[i] = new TH1D(Name,Title,30,0,90);
+      hRecAngle_CC0pi_full[i] = new TH1D(Name,Title,NBinsRecAngle,BinningRecAngle);
       //hRecAngle_CC0pi_full->Sumw2();
       hRecAngle_CC0pi_full[i]->GetXaxis()->SetTitle("Angle_CC0pi (°)");
       hRecAngle_CC0pi_full[i]->GetYaxis()->SetTitle("Number of events");
       //
       sprintf(Name,"hRecMom_CC1pi%d",i);
       sprintf(Title,"Distance in iron for the %dth-fsi",i);
-      hRecMom_CC1pi[i] = new TH1D(Name,Title,20,0,100);
+      hRecMom_CC1pi[i] = new TH1D(Name,Title,NBinsRecMom,BinningRecMom);
       //hRecMom_CC1pi->Sumw2();
       hRecMom_CC1pi[i]->GetXaxis()->SetTitle("Equivalent length in iron (cm)");
       hRecMom_CC1pi[i]->GetYaxis()->SetTitle("Number of events");
 	
       sprintf(Name,"hRecAngle_CC1pi%d",i);
       sprintf(Title,"Reconstructed angle for the %dth-fsi",i);
-      hRecAngle_CC1pi[i] = new TH1D(Name,Title,30,0,90);
+      hRecAngle_CC1pi[i] = new TH1D(Name,Title,NBinsRecAngle,BinningRecAngle);
       //hRecAngle_CC1pi->Sumw2();
       hRecAngle_CC1pi[i]->GetXaxis()->SetTitle("Angle_CC1pi (°)");
       hRecAngle_CC1pi[i]->GetYaxis()->SetTitle("Number of events");
 
       sprintf(Name,"hRecMom_CC1pi_restr%d",i);
       sprintf(Title,"Distance in iron for the %dth-fsi",i);
-      hRecMom_CC1pi_restr[i] = new TH1D(Name,Title,14,0,100);
+      hRecMom_CC1pi_restr[i] = new TH1D(Name,Title,NBinsRecMom,BinningRecMom);
       //hRecMom_CC1pi_restr->Sumw2();
       hRecMom_CC1pi_restr[i]->GetXaxis()->SetTitle("Equivalent length in iron (cm)");
       hRecMom_CC1pi_restr[i]->GetYaxis()->SetTitle("Number of events");
 	
       sprintf(Name,"hRecAngle_CC1pi_restr%d",i);
       sprintf(Title,"Reconstructed angle for the %dth-fsi",i);
-      hRecAngle_CC1pi_restr[i] = new TH1D(Name,Title,30,0,90);
+      hRecAngle_CC1pi_restr[i] = new TH1D(Name,Title,NBinsRecAngle,BinningRecAngle);
       //hRecAngle_CC1pi_restr->Sumw2();
       hRecAngle_CC1pi_restr[i]->GetXaxis()->SetTitle("Angle_CC1pi (°)");
       hRecAngle_CC1pi_restr[i]->GetYaxis()->SetTitle("Number of events");
 
       sprintf(Name,"hRecMom_CC1pi_full%d",i);
       sprintf(Title,"Distance in iron for the %dth-fsi",i);
-      hRecMom_CC1pi_full[i] = new TH1D(Name,Title,20,0,100);
+      hRecMom_CC1pi_full[i] = new TH1D(Name,Title,NBinsRecMom,BinningRecMom);
       //hRecMom_CC1pi_full->Sumw2();
       hRecMom_CC1pi_full[i]->GetXaxis()->SetTitle("Equivalent length in iron (cm)");
       hRecMom_CC1pi_full[i]->GetYaxis()->SetTitle("Number of events");
 	
       sprintf(Name,"hRecAngle_CC1pi_full%d",i);
       sprintf(Title,"Reconstructed angle for the %dth-fsi",i);
-      hRecAngle_CC1pi_full[i] = new TH1D(Name,Title,30,0,90);
+      hRecAngle_CC1pi_full[i] = new TH1D(Name,Title,NBinsRecAngle,BinningRecAngle);
       //hRecAngle_CC1pi_full->Sumw2();
       hRecAngle_CC1pi_full[i]->GetXaxis()->SetTitle("Angle_CC1pi (°)");
       hRecAngle_CC1pi_full[i]->GetYaxis()->SetTitle("Number of events");
 
       sprintf(Name,"hRecMom_CCNpi%d",i);
       sprintf(Title,"Distance in iron for the %dth-fsi",i);
-      hRecMom_CCNpi[i] = new TH1D(Name,Title,20,0,100);
+      hRecMom_CCNpi[i] = new TH1D(Name,Title,NBinsRecMom,BinningRecMom);
       //hRecMom_CCNpi->Sumw2();
       hRecMom_CCNpi[i]->GetXaxis()->SetTitle("Equivalent length in iron (cm)");
       hRecMom_CCNpi[i]->GetYaxis()->SetTitle("Number of events");
 	
       sprintf(Name,"hRecAngle_CCNpi%d",i);
       sprintf(Title,"Reconstructed angle for the %dth-fsi",i);
-      hRecAngle_CCNpi[i] = new TH1D(Name,Title,30,0,90);
+      hRecAngle_CCNpi[i] = new TH1D(Name,Title,NBinsRecAngle,BinningRecAngle);
       //hRecAngle_CCNpi->Sumw2();
       hRecAngle_CCNpi[i]->GetXaxis()->SetTitle("Angle_CCNpi (°)");
       hRecAngle_CCNpi[i]->GetYaxis()->SetTitle("Number of events");
 
       sprintf(Name,"hRecAngle_CCNpi_full%d",i);
       sprintf(Title,"Reconstructed angle for the %dth-fsi",i);
-      hRecAngle_CCNpi_full[i] = new TH1D(Name,Title,30,0,90);
+      hRecAngle_CCNpi_full[i] = new TH1D(Name,Title,NBinsRecAngle,BinningRecAngle);
       //hRecAngle_CCNpi->Sumw2();
       hRecAngle_CCNpi_full[i]->GetXaxis()->SetTitle("Angle_CCNpi (°)");
       hRecAngle_CCNpi_full[i]->GetYaxis()->SetTitle("Number of events");
@@ -1463,9 +1463,12 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
       if(ievt%10000==0)cout<<"weight="<<weight<<", and after reweight="<<weight*(1+Errorweight)<<endl;
       weight*=(1+Errorweight);
     }
-    else if(Systematics_Xsec){
-      if(ievt%10000==0)cout<<"weight="<<weight<<", and after reweight="<<weight*ReWeight[dial]<<endl;
-      weight=weight*ReWeight[dial];
+    if(Systematics_Xsec || retuned){
+      int Dial=tuneDial;
+      if(Systematics_Xsec) Dial=dial;// usual XS dial;
+     
+      if(ievt%10000==0)cout<<"weight="<<weight<<", and after reweight="<<weight*ReWeight[Dial]<<",  selected dial="<<Dial<<endl;
+      weight=weight*ReWeight[Dial];
     }
 
     //##################################################################
@@ -1931,20 +1934,19 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
 	if(nRecTracks==2) hSampleSecondTrack[FSIInt]->Fill(Sample[LowestMuCL]);
 	//
 
-	if(Selection==1){
-	  nEvents[4]+=weight;
-	  nEventsInter[4][FSIInt]+=weight;
-	  
-	  if(Sample[MuonRec]==MuonSample1 || Sample[MuonRec]==MuonSample2){
-	    hRecMom_CC0pi[FSIInt]->Fill(EquivalentIronDistance,weight);
-	    hRecAngle_CC0pi[FSIInt]->Fill(TrackAngle[MuonRec],weight);
+	if(Sample[MuonRec]==MuonSample1 || Sample[MuonRec]==MuonSample2){
+	  hRecMom_CC0pi[FSIInt]->Fill(EquivalentIronDistance,weight);
+	  hRecAngle_CC0pi[FSIInt]->Fill(TrackAngle[MuonRec],weight);
 	    
-	    if(nRecTracks==2){
-	      hRecMom_CC0pi_2tr[FSIInt]->Fill(EquivalentIronDistance,weight);
-	      hRecAngle_CC0pi_2tr[FSIInt]->Fill(TrackAngle[MuonRec],weight);
-	    }
+	  if(nRecTracks==2){
+	    hRecMom_CC0pi_2tr[FSIInt]->Fill(EquivalentIronDistance,weight);
+	    hRecAngle_CC0pi_2tr[FSIInt]->Fill(TrackAngle[MuonRec],weight);
 	  }
+	}
 	  
+	if(Selection==1){
+	  nEvents[3]+=weight;
+	  nEventsInter[3][FSIInt]+=weight;
 	  
 	  hNTracks_sel[FSIInt]->Fill(nRecTracks,weight);
 	  DataSelected[BinRecMom][BinRecAngle]+=weight;
@@ -1993,9 +1995,13 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
 	      BkgSelected_full[BinRecMom][BinRecAngle]+=weight;
 	    }
 	  }
-	  if((Sample[MuonRec]!=MuonSample1)&&(Sample[MuonRec]!=MuonSample2)) continue;
+	  if(Sample[MuonRec]<=2) continue;
 	  nEvents[5]+=weight;
 	  nEventsInter[5][FSIInt]+=weight;
+
+	  if((Sample[MuonRec]!=MuonSample1)&&(Sample[MuonRec]!=MuonSample2)) continue;
+	  nEvents[6]+=weight;
+	  nEventsInter[6][FSIInt]+=weight;
 	  hRecMom_CC0pi[FSIInt]->Fill(EquivalentIronDistance,weight);
 	  hRecAngle_CC0pi[FSIInt]->Fill(TrackAngle[MuonRec],weight);
 	    
@@ -2013,8 +2019,8 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
 	    }
 	  }
 	  if(Sample[MuonRec]==MuonSample1){
-	    nEvents[6]+=weight;
-	    nEventsInter[6][FSIInt]+=weight;
+	    nEvents[7]+=weight;
+	    nEventsInter[7][FSIInt]+=weight;
 	    double leq=EquivalentIronDistance;
 	    hRecMom_CC0pi_restr[FSIInt]->Fill(leq,weight);
 	    hRecAngle_CC0pi_restr[FSIInt]->Fill(TrackAngle[MuonRec],weight);
@@ -2050,11 +2056,14 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
 	      BkgSelected_full[BinRecMom][BinRecAngle]+=weight;
 	    }
 	  }
-		
 
-	  if((Sample[MuonRec]!=MuonSample1)&&(Sample[MuonRec]!=MuonSample2)) continue;
+	  if(Sample[MuonRec]<=2) continue;
 	  nEvents[5]+=weight;
 	  nEventsInter[5][FSIInt]+=weight;
+	
+	  if((Sample[MuonRec]!=MuonSample1)&&(Sample[MuonRec]!=MuonSample2)) continue;
+	  nEvents[6]+=weight;
+	  nEventsInter[6][FSIInt]+=weight;
 	  hRecMom_CC1pi[FSIInt]->Fill(EquivalentIronDistance,weight);
 	  hRecAngle_CC1pi[FSIInt]->Fill(TrackAngle[MuonRec],weight);
 
@@ -2084,8 +2093,8 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
 	    }
 	  }
 	  if(Sample[MuonRec]==MuonSample1){
-	    nEvents[6]+=weight;
-	    nEventsInter[6][FSIInt]+=weight;
+	    nEvents[7]+=weight;
+	    nEventsInter[7][FSIInt]+=weight;
 	    hRecMom_CC1pi_restr[FSIInt]->Fill(EquivalentIronDistance,weight);
 	    hRecAngle_CC1pi_restr[FSIInt]->Fill(TrackAngle[MuonRec],weight);
 	  }
@@ -2883,9 +2892,11 @@ int main(int argc, char ** argv){
   TVectorD * FluxVector=new TVectorD();     
   int c=-1;
   bool MuCl_cut_ext=false;
+  bool retuned=false;
+  int tuneDial=146; 
   DataEquivalent=DataPOTPM;
 
-  while ((c = getopt(argc, argv, "w:ms:e:v:i:o:p:WM:P:")) != -1) {
+  while ((c = getopt(argc, argv, "w:ms:e:v:i:o:p:WM:P:t:")) != -1) {
     switch(c){
     case 'w':
       SandReweight=atof(optarg);
@@ -2924,6 +2935,10 @@ int main(int argc, char ** argv){
       ProtonCut=atof(optarg);
       MuCl_cut_ext=true;
       break;
+    case 't':
+      retuned=true;
+      tuneDial=atoi(optarg);//140 MAQE, 141 PF(C), 142 MEC(C), 143 SF->RFG no RPA, 144 SF->RFG non-rel RPA, 145 SF->RFG rel RPA, 146 MAQE+PF(C)+MEC(C)+SR->RFG rel RPA (default)
+      break;
     }
   }
     
@@ -2941,11 +2956,11 @@ int main(int argc, char ** argv){
   if(Sample==2)    MuonSample2=5;
   
   
-  int Ifile=0,Efile=500; 
-  //  int Ifile=0,Efile=NMCiles;
+  //   int Ifile=0,Efile=50; 
+  int Ifile=0,Efile=NMCfiles;
 
   int nGoodMCFiles=NGoodFiles(Ifile,Efile,isPM);
-  cout<<"Number of Good MC Files="<<nGoodMCFiles<<endl; 
+  //  cout<<"Number of Good MC Files="<<nGoodMCFiles<<endl; 
   TChain * chain = new TChain("wtree");
   TChain * chainMVA = new TChain("wtreeMVA");
   if(Data){
@@ -2959,7 +2974,7 @@ int main(int argc, char ** argv){
 	//sprintf(fName,"/home/bquilain/CC0pi_XS/XS/root_input/XSFormat_Run1_%d_Plan.root",i);
 	//sprintf(fName,"/home/bquilain/CC0pi_XS/XS/root_input/XSFormat_Run1_%d_Plan_RandomPE.root",i);	
 	fName=Form(InNameEvent,i,j);
-	cout<<fName<<endl;
+	cout<<fName<<endl; 
 	chain->Add(fName);
       }
     }
@@ -2969,10 +2984,11 @@ int main(int argc, char ** argv){
     //cin>>DataEquivalent;
 
     ScalingMC=DataEquivalent/nGoodMCFiles;//one MC file is equivalent to 1e21 POT
-    cout<<NMCfiles<<endl;
+    cout<<"MCfiles="<<NMCfiles<<", good MCfiles="<<nGoodMCFiles<<endl;
      
     //    for(int i=0;i<NMCfiles;i++){
     for(int i=Ifile;i<Efile;i++){
+      if(isBadFile(i,isPM)) continue;
       //sprintf(fName,i);
       //sprintf(fName,"%s",InNameEvent);
       //sprintf(fName,"root_input/CC0piTree%d.root",i);
@@ -2997,7 +3013,7 @@ int main(int argc, char ** argv){
   if(SelectedError_Source>=Systematics_Detector_Start && SelectedError_Source<=Systematics_Detector_End){
     Systematics_Detector=true;
      
-    CC0piDistributions(chain,chainMVA,Data,Sample,IsPlots,Systematics_Flux,File_Number,*FluxVector,Systematics_Xsec,Xsec_dial,Systematics_Detector,ErrorType,OutNameEvent,isPM);	 
+    CC0piDistributions(chain,chainMVA,Data,Sample,IsPlots,Systematics_Flux,File_Number,*FluxVector,Systematics_Xsec,Xsec_dial,Systematics_Detector,ErrorType,OutNameEvent,isPM,retuned,tuneDial);	 
   }
   else if(SelectedError_Source>=Systematics_Flux_Start && SelectedError_Source<=Systematics_Flux_End){
     Systematics_Flux=true;
@@ -3010,19 +3026,20 @@ int main(int argc, char ** argv){
 
     //Distributions(chain,Data,Sample,IsPlots,SelectedError_Source,SelectedError_Variation,OutNameEvent);
     //Systematics_Flux,File_Number,*FluxVector,Systematics_Xsec,Xsec_dial,Systematics_Detector,ErrorType,OutNameEvent);
-    CC0piDistributions(chain,chainMVA,Data,Sample,IsPlots,Systematics_Flux,File_Number,*FluxVector,Systematics_Xsec,Xsec_dial,Systematics_Detector,ErrorType,OutNameEvent,isPM);
+    CC0piDistributions(chain,chainMVA,Data,Sample,IsPlots,Systematics_Flux,File_Number,*FluxVector,Systematics_Xsec,Xsec_dial,Systematics_Detector,ErrorType,OutNameEvent,isPM,retuned,tuneDial);
     FluxError->Close();
   }
-  else if(SelectedError_Source>=Systematics_Xsec_Start && SelectedError_Source<=Systematics_Xsec_End){
+  else if(SelectedError_Source>=Systematics_Xsec_Start && SelectedError_Source<=Systematics_Xsec_End+1){
+    if(!retuned) {cout<<"ERROR: XS systematics evaluation requires tuning. Add option -t"<<endl; return 0;}
     Systematics_Xsec=true;
     Xsec_dial=((int) SelectedError_Variation);
     File_Number=Xsec_dial;
     cout << "XS error is checked, using the dial #" << Xsec_dial << endl;
-    CC0piDistributions(chain,chainMVA,Data,Sample,IsPlots,Systematics_Flux,File_Number,*FluxVector,Systematics_Xsec,Xsec_dial,Systematics_Detector,ErrorType,OutNameEvent,isPM); 
+    CC0piDistributions(chain,chainMVA,Data,Sample,IsPlots,Systematics_Flux,File_Number,*FluxVector,Systematics_Xsec,Xsec_dial,Systematics_Detector,ErrorType,OutNameEvent,isPM,retuned,tuneDial); 
   }
   else{
     cout<<"Simple selection on the MC or data"<<endl;
-    CC0piDistributions(chain,chainMVA,Data,Sample,IsPlots,Systematics_Flux,File_Number,*FluxVector,Systematics_Xsec,Xsec_dial,Systematics_Detector,ErrorType,OutNameEvent,isPM);
+    CC0piDistributions(chain,chainMVA,Data,Sample,IsPlots,Systematics_Flux,File_Number,*FluxVector,Systematics_Xsec,Xsec_dial,Systematics_Detector,ErrorType,OutNameEvent,isPM,retuned,tuneDial);
   }
    
   return 0;

@@ -1,6 +1,6 @@
-#include<iostream>
+#include<iostream> 
 #include<sstream>
-#include<fstream>
+#include<fstream> 
 using namespace std;
 #include <iomanip>
 #include <sys/stat.h>
@@ -62,7 +62,7 @@ using namespace std;
 
 //#define PI_LIKELIHOOD
 #define MUPI_LIKELIHOOD
-
+ 
 
 //#define MVA
 //#define ALLSTUDY
@@ -568,13 +568,17 @@ int main(int argc, char **argv)
   TH1D * PEAngleMC_PMIng;  
   TH1D * PEAngleData_PMSci;  
   TH1D * PEAngleMC_PMSci;  
+  TH1D * PEAngleData_WM;  
+  TH1D * PEAngleMC_WM;  
   double SystematicsPECorrected_Ing;
+  double SystematicsPECorrected_WM;
   double SystematicsPECorrected_PMIng;
   double SystematicsPECorrected_PMSci;
 
   int XSEC=false;string xsec_file;
+  int retuned=false;
   
-  while ((c = getopt(argc, argv, "i:o:f:dmr:x:e:v:w")) != -1) {
+  while ((c = getopt(argc, argv, "i:o:f:dmr:x:e:v:wt:")) != -1) {
     switch(c){
     case 'i':
       InputFileName=optarg;
@@ -598,6 +602,10 @@ int main(int argc, char **argv)
       XSEC=true;
       xsec_file=optarg;
       break;
+    case 't':
+      retuned=true;
+      xsec_file=optarg;
+      break;
     case 'e':
       ErrorType=atoi(optarg);
       break;
@@ -606,6 +614,8 @@ int main(int argc, char **argv)
       break;
     }
   }
+
+  XSEC=XSEC || retuned;
 
   bool PM=!WM;
   cout<<"Detector is "<<(PM?"PM":"WM")<<endl;
@@ -620,16 +630,27 @@ int main(int argc, char **argv)
     fPEAngle = new TFile((ErrorValue).c_str());
     PEAngleData_Ing = (TH1D*) fPEAngle->Get("PEAngleData_Ing");  
     PEAngleMC_Ing = (TH1D*) fPEAngle->Get("PEAngleMC_Ing");  
-    PEAngleData_PMIng = (TH1D*) fPEAngle->Get("PEAngleData_PMIng");  
-    PEAngleMC_PMIng = (TH1D*) fPEAngle->Get("PEAngleMC_PMIng");  
-    PEAngleData_PMSci = (TH1D*) fPEAngle->Get("PEAngleData_PMSci");  
-    PEAngleMC_PMSci = (TH1D*) fPEAngle->Get("PEAngleMC_PMSci");      
+    if(PM){
+      PEAngleData_PMIng = (TH1D*) fPEAngle->Get("PEAngleData_PMIng");  
+      PEAngleMC_PMIng = (TH1D*) fPEAngle->Get("PEAngleMC_PMIng");  
+      PEAngleData_PMSci = (TH1D*) fPEAngle->Get("PEAngleData_PMSci");  
+      PEAngleMC_PMSci = (TH1D*) fPEAngle->Get("PEAngleMC_PMSci");      
+    }
+    else {
+      PEAngleData_WM = (TH1D*) fPEAngle->Get("PEAngleData_WM");  
+      PEAngleMC_WM = (TH1D*) fPEAngle->Get("PEAngleMC_WM");      
+
+      //ML tmp -- I use the INGRID MC/data comparisons from PM runs
+      TFile* fPEAngle_tmp = new TFile("$INSTALLREPOSITORY/XS/files/PEXAngle_PM.root");
+      PEAngleData_Ing = (TH1D*) fPEAngle_tmp->Get("PEAngleData_Ing");  
+      PEAngleMC_Ing = (TH1D*) fPEAngle_tmp->Get("PEAngleMC_Ing");  
+      //
+    }
   }  
 
   double Nu_E;
   double TrueParticleNRJ=0;
   IngridEventSummary* evt = new IngridEventSummary();
-  TBranch * Br;
   IngridSimVertexSummary * simver;//il y a un numéro. On peut donc bien avoir plusieurs simvert/periode d'integ ;-)?
   IngridSimParticleSummary * SimPart;
   BeamInfoSummary * BeamSummary;
@@ -803,9 +824,10 @@ int main(int argc, char **argv)
   if(tree!=tree){cout<<"Problem in reading the tree, seems not to be any"<<endl;return 0;}
   int nevt=(int) tree->GetEntries();
   cout<<"Total Number Of Events="<<nevt<<endl;
+  tree->SetBranchAddress("fDefaultReco.",&evt);
 
   //////////////////////////////////XSEC case/////////////////////////////////////
-  if(XSEC){  
+  if(XSEC){
     _file1 = new TFile(xsec_file.c_str());
     if(_file1->IsOpen()) cout << _file1->GetName() <<" is open"<< endl ;
     else{cout<<"No file containing the cross section error effects"<<endl; return 0;}
@@ -816,17 +838,8 @@ int main(int argc, char **argv)
     if(nevt_weightstree!=nevt) cout<<"Problem in weights tree: number of events different from Input reconstructed files. Are you sure to have input the correct weightstree?"<<endl;
     
     reweight = NULL;
-    Br_reweight = weightstree->GetBranch("weights");
-    Br_reweight->SetAddress(&reweight);
     weightstree->SetBranchAddress("weights",&reweight);
   }
-
-
-  
-  Br=tree->GetBranch("fDefaultReco.");
-  Br->SetAddress(&evt);
-  tree->SetBranchAddress("fDefaultReco.",&evt);
-
  
   ////////////////////////////////////////////////START THE LOOP//////////////////////////////////////////////////
  
@@ -852,7 +865,6 @@ int main(int argc, char **argv)
       }
       if(ievt%100==0) cout<<endl<<endl;
     }
-
 
      
     /////////////////////////////////////DEFINE THE WEIGHT AND TRUE VERTEX PROPERTIES AND TRUE MUON TRUE PROPERTIES//////////////////////////////
@@ -1044,23 +1056,34 @@ int main(int argc, char **argv)
 
 
 	if(ErrorType==4){
-	  int BinAnglePEWidth_PMIng=PEAngleData_PMIng->GetBinWidth(1);
-	  int BinAngle=((int) ((recon->angle)[itrk]/BinAnglePEWidth_PMIng))+1;
-	  SystematicsPECorrected_PMIng=PEAngleData_PMIng->GetBinContent(BinAngle)-PEAngleMC_PMIng->GetBinContent(BinAngle);
-	  cout<<PEAngleData_PMIng->GetBinContent(BinAngle)<<" " <<PEAngleMC_PMIng->GetBinContent(BinAngle)<<endl;
-	  if(PEAngleMC_PMIng->GetBinContent(BinAngle)!=0) SystematicsPECorrected_PMIng/=PEAngleMC_PMIng->GetBinContent(BinAngle);
+	  if(PM){
+	    int BinAnglePEWidth_PMIng=PEAngleData_PMIng->GetBinWidth(1);
+	    int BinAngle=((int) ((recon->angle)[itrk]/BinAnglePEWidth_PMIng))+1;
+	    if(BinAngle<10) {SystematicsPECorrected_PMIng=PEAngleData_PMIng->GetBinContent(BinAngle)-PEAngleMC_PMIng->GetBinContent(BinAngle);
+	      if(PEAngleMC_PMIng->GetBinContent(BinAngle)!=0 && PEAngleData_PMIng->GetBinContent(BinAngle)!=0)
+		SystematicsPECorrected_PMIng/=PEAngleMC_PMIng->GetBinContent(BinAngle);
+	      else SystematicsPECorrected_PMIng=0.;
+	    }
+	    else SystematicsPECorrected_PMIng=0.;
 	      
-	  int BinAnglePEWidth_PMSci=PEAngleData_PMSci->GetBinWidth(1);
-	  BinAngle=((int) ((recon->angle)[itrk]/BinAnglePEWidth_PMSci))+1;
-	  SystematicsPECorrected_PMSci=PEAngleData_PMSci->GetBinContent(BinAngle)-PEAngleMC_PMSci->GetBinContent(BinAngle);
-	  if(PEAngleMC_PMSci->GetBinContent(BinAngle)!=0) SystematicsPECorrected_PMSci/=PEAngleMC_PMSci->GetBinContent(BinAngle);
+	    int BinAnglePEWidth_PMSci=PEAngleData_PMSci->GetBinWidth(1);
+	    BinAngle=((int) ((recon->angle)[itrk]/BinAnglePEWidth_PMSci))+1;
+	    SystematicsPECorrected_PMSci=PEAngleData_PMSci->GetBinContent(BinAngle)-PEAngleMC_PMSci->GetBinContent(BinAngle);
+	    if(PEAngleMC_PMSci->GetBinContent(BinAngle)!=0 && PEAngleData_PMSci->GetBinContent(BinAngle)!=0)
+	      SystematicsPECorrected_PMSci/=PEAngleMC_PMSci->GetBinContent(BinAngle);
+	    else SystematicsPECorrected_PMSci=0.;
+	  }
 
 	  // ML added 2017/07/21
 	  int BinAnglePEWidth_Ing=PEAngleData_Ing->GetBinWidth(1);
-	  BinAngle=((int) ((recon->angle)[itrk]/BinAnglePEWidth_Ing))+1;
+	  int BinAngle=((int) ((recon->angle)[itrk]/BinAnglePEWidth_Ing))+1;
 	  SystematicsPECorrected_Ing=PEAngleData_Ing->GetBinContent(BinAngle)-PEAngleMC_Ing->GetBinContent(BinAngle);
-	  if(PEAngleMC_Ing->GetBinContent(BinAngle)!=0) SystematicsPECorrected_Ing/=PEAngleMC_Ing->GetBinContent(BinAngle);
-
+	  if(BinAngle<9){
+	    if(PEAngleMC_Ing->GetBinContent(BinAngle)!=0 && PEAngleData_Ing->GetBinContent(BinAngle)!=0)
+	      SystematicsPECorrected_Ing/=PEAngleMC_Ing->GetBinContent(BinAngle);
+	    else SystematicsPECorrected_Ing=0.;
+	  }
+	  else  SystematicsPECorrected_Ing=0.;
 	     
 #ifdef DEBUG
 	  cout<<"Track angle="<<(recon->angle)[itrk]<<", Systematics Ing="<<SystematicsPECorrected_PMIng<<", Sci="<<SystematicsPECorrected_PMSci<<endl;
@@ -1509,6 +1532,9 @@ int main(int argc, char **argv)
 	  double cllikelihood_pion,cllikelihood_notpion;
 	  double CLLikelihood_Pion=1,CLLikelihood_NotPion=1;
 
+	  int BinAnglePEWidth_WM;
+	  if(ErrorType==4) BinAnglePEWidth_WM=PEAngleData_WM->GetBinWidth(1);
+
 	  for(int i=0;i<Vec.size();i++){
 	    if(Vec[i].used>1) continue;
 
@@ -1521,26 +1547,40 @@ int main(int argc, char **argv)
 	      else if(normalAngle>70) normalAngleSlice=1;
 
 	      if(Vec[i].pecorr<5) continue; // avoid hits with de/dz < 5 pe/3mm
-	      cllikelihood_muon=CL_WM_Muon->Eval(Vec[i].pecorr,normalAngleSlice);
-	      cllikelihood_notmuon=CL_WM_NotMuon->Eval(Vec[i].pecorr,normalAngleSlice);
+	      double PECorrected=Vec[i].pecorr;
+	      if(ErrorType==4){
+		int BinAngle=((int) normalAngle/BinAnglePEWidth_WM)+1;
+		if(PEAngleMC_WM->GetBinContent(BinAngle)!=0 && PEAngleData_WM->GetBinContent(BinAngle)!=0) 
+		  SystematicsPECorrected_WM=(PEAngleData_WM->GetBinContent(BinAngle)-PEAngleMC_WM->GetBinContent(BinAngle))/PEAngleMC_WM->GetBinContent(BinAngle);
+		else SystematicsPECorrected_WM=0.;
+
+		PECorrected=PECorrected+PECorrected*SystematicsPECorrected_WM;
+	      }	      
+
+	      cllikelihood_muon=CL_WM_Muon->Eval(PECorrected,normalAngleSlice);
+	      cllikelihood_notmuon=CL_WM_NotMuon->Eval(PECorrected,normalAngleSlice);
 	      CLLikelihood_Muon*=cllikelihood_muon;
 	      CLLikelihood_NotMuon*=cllikelihood_notmuon;
 #ifdef PI_LIKELIHOOD
-	      cllikelihood_pion=CL_WM_Pion->Eval(Vec[i].pecorr,normalAngleSlice);
-	      cllikelihood_notpion=CL_WM_NotPion->Eval(Vec[i].pecorr,normalAngleSlice);
+	      cllikelihood_pion=CL_WM_Pion->Eval(PECorrected,normalAngleSlice);
+	      cllikelihood_notpion=CL_WM_NotPion->Eval(PECorrected,normalAngleSlice);
 	      CLLikelihood_Pion*=cllikelihood_pion;
 	      CLLikelihood_NotPion*=cllikelihood_notpion;
 #endif
 	    }
 	    else{
 	      if(Vec[i].pecorr<7) continue; // avoid hits with de/dz < 7 pe/cm
-	      cllikelihood_muon=CL_Ing_Muon->Eval(Vec[i].pecorr);
-	      cllikelihood_notmuon=CL_Ing_NotMuon->Eval(Vec[i].pecorr);
+
+	      double PECorrected=Vec[i].pecorr;
+	      if(ErrorType==4) PECorrected=PECorrected+PECorrected*SystematicsPECorrected_Ing;
+
+	      cllikelihood_muon=CL_Ing_Muon->Eval(PECorrected);
+	      cllikelihood_notmuon=CL_Ing_NotMuon->Eval(PECorrected);
 	      CLLikelihood_Muon*=cllikelihood_muon;
 	      CLLikelihood_NotMuon*=cllikelihood_notmuon;
 #ifdef PI_LIKELIHOOD
-	      cllikelihood_pion=CL_Ing_Pion->Eval(Vec[i].pecorr);
-	      cllikelihood_notpion=CL_Ing_NotPion->Eval(Vec[i].pecorr);
+	      cllikelihood_pion=CL_Ing_Pion->Eval(PECorrected);
+	      cllikelihood_notpion=CL_Ing_NotPion->Eval(PECorrected);
 	      CLLikelihood_Pion*=cllikelihood_pion;
 	      CLLikelihood_NotPion*=cllikelihood_notpion;	      
 #endif
@@ -1836,9 +1876,10 @@ int main(int argc, char **argv)
 	
     }//Recons
   }//Evt
-  if(XSEC) _file1->Close();
+  if(XSEC) {
+    _file1->Close();
+  }
 
-  Br->Delete();
   cout<<"writing"<<endl;
   cout<<"Low CL="<<LowCL<<", High="<<HighCL<<endl;
   cout<<"Nb Low CL="<<nLowCL<<", Nb High="<<nHighCL<<endl;

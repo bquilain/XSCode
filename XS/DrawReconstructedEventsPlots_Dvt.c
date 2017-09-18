@@ -48,6 +48,8 @@ using namespace std;
 #include "Xsec.cc"
 //Step 0. Select here if we wish to produce the error table and plots on the reconstructed distributions or on the unfolded distributions (comment #define RECONSTRUCTED)
 #define RECONSTRUCTED
+//#define DETECTORSYST
+
 //#define XSTABLE
 //3 modes should not be mixed:
 //1. Predictions MC: (Varied MC - varied bkg) - (Fixed MC - fixed bkg)
@@ -56,6 +58,10 @@ using namespace std;
 //U.(Fixed MC - varied bkg) - U.(Fixed MC - fixed bkg)
 // So, if we wish to evaluate the variation of MC prediction: this is the mode 0. For the real systematics, select the mode 1
 const int MODE=1;
+
+inline bool IsReducedXSSyst(int s){
+  return (s==4 || s==5 || s==14 || s==15 || s==17 || s==19);
+}
 
 void Evaluate1DError(TH2D * NominalMC, double **** CovarianceMatrix, TH1D * NominalMC_RecMom, TH1D * NominalMC_RecAngle){
 
@@ -71,6 +77,7 @@ void Evaluate1DError(TH2D * NominalMC, double **** CovarianceMatrix, TH1D * Nomi
     for(int e1=0;e1<NBinsAngle;e1++){//loop over effect 1
       for(int f1=0;f1<NBinsAngle;f1++){//loop over effect 1
 	ErrorSquared+= ((double) CovarianceMatrix[e0][e1][e0][f1]);//Case of momentum histogram
+	//	cout<<CovarianceMatrix[e0][e1][e0][f1]<<endl;
       }
     }
     double Error=TMath::Sqrt(ErrorSquared);
@@ -96,7 +103,22 @@ void Evaluate1DError(TH2D * NominalMC, double **** CovarianceMatrix, TH1D * Nomi
     NominalMC_RecAngle->SetBinContent(e0+1,RelativeError);
     //NominalMC_RecAngle->SetBinError(e0+1,Error);
   }
-  
+
+  //Finally cout the total 1-bin error
+  double Value=0, ErrorSquared=0;
+  for(int e0=0;e0<NBinsMom;e0++){
+    for(int e1=0;e1<NBinsAngle;e1++){
+      Value+=NominalMC->GetBinContent(e0+1,e1+1);
+      for(int f0=0;f0<NBinsMom;f0++){
+	for(int f1=0;f1<NBinsAngle;f1++){
+	  ErrorSquared+=CovarianceMatrix[e0][e1][f0][f1];  
+	}
+      }
+    }
+  }
+  double Error=TMath::Sqrt(ErrorSquared);
+  double RelativeError=Error / (Value==0 ? 1 : Value);
+  cout<<"Total 1-bin relative error = "<<RelativeError<<endl;
 }
 
 int main(int argc, char ** argv){
@@ -131,7 +153,7 @@ int main(int argc, char ** argv){
 
     }
   }
-
+ 
 
 #ifdef RECONSTRUCTED
   const int NBinsMom=NBinsRecMom;
@@ -157,7 +179,7 @@ int main(int argc, char ** argv){
 
   
 
-
+ 
   // Step 1. Declare and initialize the variables and tables
   char suffix[3];sprintf(suffix,(PM?"":"_WM"));
   char DetName[2];sprintf(DetName,(PM?"PM":"WM"));
@@ -279,8 +301,11 @@ int main(int argc, char ** argv){
   //Selected number of events
   TH2D * NominalSelectedMC = new TH2D("NominalSelectedMC","",NBinsMom,BinningMom,NBinsAngle,BinningAngle);
   TH2D * NominalSelectedData = new TH2D("NominalSelectedData","",NBinsMom,BinningMom,NBinsAngle,BinningAngle);
-  TH1D * NominalSelectedMC_RecMom = new TH1D("NominalSelectedMC_RecMom","",NBinsMom,BinningMom);
-  TH1D * NominalSelectedMC_RecAngle = new TH1D("NominalSelectedMC_RecAngle","",NBinsAngle,BinningAngle);
+  TH1D * NominalSelectedMC_RecMom = new TH1D("NominalSelectedMC_RecMom","d_#mu distribution of selected events",NBinsMom,BinningMom);
+#ifndef RECONSTRUCTED
+  NominalSelectedMC_RecMom->SetTitle("p_#mu distribution of selected events");
+#endif
+  TH1D * NominalSelectedMC_RecAngle = new TH1D("NominalSelectedMC_RecAngle","#theta_#mu distribution of selected events",NBinsAngle,BinningAngle);
   TH2D * NominalSelectedMC_XSTemp = new TH2D("NominalSelectedMC_XSTemp","",NBinsMom,BinningMom,NBinsAngle,BinningAngle);
   TH2D * NominalTrueMC = new TH2D("NominalTrueMC","",NBinsMom,BinningMom,NBinsAngle,BinningAngle);
 
@@ -296,12 +321,12 @@ int main(int argc, char ** argv){
   double ErrorTotalStatistics_RecAngle_Minus[NBinsAngle];
 
   //ML 2017/07/18 added
-  double ErrorTotalDetector_Plus[NBinsMom][NBinsAngle];
-  double ErrorTotalDetector_Minus[NBinsMom][NBinsAngle];
-  double ErrorTotalDetector_RecMom_Plus[NBinsMom];
-  double ErrorTotalDetector_RecMom_Minus[NBinsMom];
-  double ErrorTotalDetector_RecAngle_Plus[NBinsAngle];
-  double ErrorTotalDetector_RecAngle_Minus[NBinsAngle];
+  double ErrorTotalDetector_Plus[NBinsMom][NBinsAngle]={{0.}};
+  double ErrorTotalDetector_Minus[NBinsMom][NBinsAngle]={{0.}};
+  double ErrorTotalDetector_RecMom_Plus[NBinsMom]={0};
+  double ErrorTotalDetector_RecMom_Minus[NBinsMom]={0};
+  double ErrorTotalDetector_RecAngle_Plus[NBinsAngle]={0};
+  double ErrorTotalDetector_RecAngle_Minus[NBinsAngle]={0};
 
   double ErrorTotalXS_Plus[NBinsMom][NBinsAngle];
   double ErrorTotalXS_Minus[NBinsMom][NBinsAngle];
@@ -345,6 +370,9 @@ int main(int argc, char ** argv){
   TGraph * gErrorXS[Systematics_Xsec_End-Systematics_Xsec_Start+1][NBinsMom][NBinsAngle];
   double xXS[Systematics_Xsec_End-Systematics_Xsec_Start+1][NBinsMom][NBinsAngle][NXsecVariations];
   double yXS[Systematics_Xsec_End-Systematics_Xsec_Start+1][NBinsMom][NBinsAngle][NXsecVariations];
+  // ML (tmp?) for errors with some invalid points
+  double xXS_reduced[Systematics_Xsec_End-Systematics_Xsec_Start+1][NBinsMom][NBinsAngle][NXsecVariations-2];
+  double yXS_reduced[Systematics_Xsec_End-Systematics_Xsec_Start+1][NBinsMom][NBinsAngle][NXsecVariations-2];
 
   TAxis * aX_NominalSelectedMC = (TAxis*) NominalSelectedMC->GetXaxis();
   TAxis * aY_NominalSelectedMC = (TAxis*) NominalSelectedMC->GetYaxis();
@@ -355,7 +383,7 @@ int main(int argc, char ** argv){
   TAxis * aX_NominalSelectedMC_RecAngle = (TAxis*) NominalSelectedMC_RecAngle->GetXaxis();
   TAxis * aY_NominalSelectedMC_RecAngle = (TAxis*) NominalSelectedMC_RecAngle->GetYaxis();
 
-
+  double TotalValue=0;
 
   // Step 2. Loop over all the errors to determine the variation of number of events for: each error source & bin
   for(int ErrorType=StartError;ErrorType<=EndError;ErrorType++){
@@ -364,6 +392,10 @@ int main(int argc, char ** argv){
     if (ErrorType==1) continue;
     //    if(ErrorType>=2 && ErrorType<7) continue;
     cout<<"The error currently tested is number "<<ErrorType<<endl;
+
+#ifndef DETECTORSYST
+    if(ErrorType>=Systematics_Detector_Start && ErrorType<=Systematics_Detector_End) continue;
+#endif
 
         
     //##############################HISTOGRAM INITIALIZATION#########################################
@@ -409,6 +441,8 @@ int main(int argc, char ** argv){
 
 
     //#################################TEMPORARY, SINCE THE XS VARIATION OF 0 SIGMA DOES NOT CORRESPONDS TO THE NOMINAL MC, WE REDEFINE NOMINAL ONLY FOR XS ERROR AS THE 0 SIGMA VARIATION#################################
+    // ----------------------------------- ML 2017/08/31 for me it corresponds ------------------------
+    /*
     if(ErrorType>=Systematics_Xsec_Start && ErrorType<=Systematics_Xsec_End){
       int n=3;
 
@@ -437,7 +471,8 @@ int main(int argc, char ** argv){
 	}
       }
     }
-      //#################################################################"
+    */
+    //#################################################################"
 
     
     
@@ -447,6 +482,13 @@ int main(int argc, char ** argv){
     //##############################LOADING: FILL THE HISTOGRAMS#########################################
     for(int n=0;n<NE[ErrorType];n++){
       double ErrorValue=Start[ErrorType]+n*Step[ErrorType];
+
+      //The variation of Xsec parameter, in #sigma:
+      double XsecVariation=ErrorValue-(ErrorType-Systematics_Xsec_Start)*NXsecVariations-CenterXsecVariations; //. A number between 0 and 175 - the center of the current systematic source (nominal). For example, for Xsec error source #10, it starts from 7*(10-1)=63 and ends at 70. from 63 to 70, it contains the variariation of -3,-2,-1,0,1,2,3 sigma respectively. The center is then located at 66. For the example of a 2 sigma variation, the substraction will be therefore equal to: 68-66=2, which gives the number of sigmas!      
+      if(ErrorType>=Systematics_Xsec_Start){
+	// some troublesome Xsec values
+	if(IsReducedXSSyst(ErrorType-Systematics_Xsec_Start) && abs(XsecVariation)>1) continue;
+      }
       
 #ifdef RECONSTRUCTED
       sprintf(txtMCName,"%s/XS/files/MCSelected_%s_Systematics%d_%d.txt",cINSTALLREPOSITORY,DetName,ErrorType,n);
@@ -518,12 +560,14 @@ int main(int argc, char ** argv){
       
       
       /////////////////////////////////	
+
+
       for(int e0=0;e0<NBinsMom;e0++){//loop over effect 0
 	for(int e1=0;e1<NBinsAngle;e1++){//loop over effect 1
 	  //cout<<"Error="<<ErrorType<<", "<<e0<<", "<<e1<<", "<<MCReconstructedEvents[e0][e1]<<endl;
 	  //For the reconstructed data, MCReconstructedEvents/DataReconstructedEvents contains the number of selected events -> should substract ther bkg
 	  //For the unfolded data, MCReconstructedEvents/DataReconstructedEvents contains the number of unfolded(selected - bkg) events -> should NOT substract the bkg
-  
+
 	  if(ErrorType==0){
 	    NominalSelectedMC->SetBinContent(e0+1,e1+1,MCReconstructedEvents[e0][e1]);
 	    //ML for consistency, the error should be initialized to ErrorSquared=Value;
@@ -532,6 +576,8 @@ int main(int argc, char ** argv){
 	    NominalTrueMC->SetBinContent(e0+1,e1+1,MCTrueEvents[e0][e1]);//not filled ifdef RECONSTRUCTED
 	    NominalSelectedData->SetBinContent(e0+1,e1+1,DataReconstructedEvents[e0][e1]);
 	    NominalMCBkg->SetBinContent(e0+1,e1+1,MCReconstructedBkgEvents[e0][e1]);
+	    
+	    TotalValue+=NominalSelectedMC->GetBinContent(e0+1,e1+1);
 	  }
 	  
 	  double RelativeValue = (MCReconstructedEvents[e0][e1] - NominalSelectedMC->GetBinContent(e0+1,e1+1));
@@ -640,20 +686,22 @@ int main(int argc, char ** argv){
 	    }
 	  }
 	  else if(ErrorType>=Systematics_Xsec_Start && ErrorType<=Systematics_Xsec_End){
-	    double XsecVariation=ErrorValue-(ErrorType-Systematics_Xsec_Start)*NXsecVariations-CenterXsecVariations;//The variation of Xsec parameter, in #sigma. A number between 0 and 175 - the center of the current systematic source (nominal). For example, for Xsec error source #10, it starts from 7*(10-1)=63 and ends at 70. from 63 to 70, it contains the variariation of -3,-2,-1,0,1,2,3 sigma respectively. The center is then located at 66. For the example of a 2 sigma variation, the substraction will be therefore equal to: 68-66=2, which gives the number of sigmas!
-	    //if(XsecVariation==0) NominalSelectedMC_XSTemp->SetBinContent(e0+1,e1+1,MCReconstructedEvents[e0][e1]);
 	    double RelativeMC=MCReconstructedEvents[e0][e1];
-	    if(NominalSelectedMC_XSTemp->GetBinContent(e0+1,e1+1)!=0) RelativeMC/=NominalSelectedMC_XSTemp->GetBinContent(e0+1,e1+1);
-	    //if(NominalSelectedMC_XSTemp->GetBinContent(e0+1,e1+1)!=0) RelativeMC/=NominalSelectedMC_XSTemp->GetBinContent(e0+1,e1+1);
 
+	    //if(NominalSelectedMC_XSTemp->GetBinContent(e0+1,e1+1)!=0) RelativeMC/=NominalSelectedMC_XSTemp->GetBinContent(e0+1,e1+1);
+	    if(NominalSelectedMC->GetBinContent(e0+1,e1+1)!=0) RelativeMC/=NominalSelectedMC->GetBinContent(e0+1,e1+1);
+ 
 	    ErrorXS[ErrorType-Systematics_Xsec_Start][e0][e1]->Fill(XsecVariation,RelativeMC);	    
 	    ErrorXS_Norm[ErrorType-Systematics_Xsec_Start][e0][e1]->Fill(XsecVariation);
 	    //cout<<XsecVariation<<endl;
 	    xXS[ErrorType-Systematics_Xsec_Start][e0][e1][((int) (XsecVariation+CenterXsecVariations))]=XsecVariation;
 	    yXS[ErrorType-Systematics_Xsec_Start][e0][e1][((int) (XsecVariation+CenterXsecVariations))]=RelativeMC;
-	    
+	    // cout<<ErrorType<<" "<<e0<<" "<<e1<<" "<<XsecVariation<<" "<<RelativeMC<<endl;
+	    xXS_reduced[ErrorType-Systematics_Xsec_Start][e0][e1][((int) (XsecVariation+CenterXsecVariations-2))]=XsecVariation;
+	    yXS_reduced[ErrorType-Systematics_Xsec_Start][e0][e1][((int) (XsecVariation+CenterXsecVariations-2))]=RelativeMC;
+	    //   if(abs(XsecVariation)<=1)   cout<<XsecVariation<<" "<<e0<<" "<<e1<<" "<<MCReconstructedEvents[e0][e1]<<" "<<NominalSelectedMC->GetBinContent(e0+1,e1+1)<<" "<<RelativeMC<<endl;
 
-	    /*	    if(XsecVariation<-1){
+	    /*	    if(XsecVariation<-1){ 
 	      if(e0==0 && e1==0) cout<<"Temp, keep only variation +-1 sigma in XS"<<endl;
 	      yXS[ErrorType-Systematics_Xsec_Start][e0][e1][((int) (XsecVariation+CenterXsecVariations))]=1;//TEMP
 	      }*/
@@ -801,22 +849,25 @@ int main(int argc, char ** argv){
       for(int e0=0;e0<NBinsMom;e0++){//loop over effect 0
 	for(int e1=0;e1<NBinsAngle;e1++){//loop over effect 1
 	  XSEventFunctions->cd();
-	  gErrorXS[ErrorType-Systematics_Xsec_Start][e0][e1] = new TGraph(NXsecVariations,xXS[ErrorType-Systematics_Xsec_Start][e0][e1],yXS[ErrorType-Systematics_Xsec_Start][e0][e1]);
-	  gErrorXS[ErrorType-Systematics_Xsec_Start][e0][e1]->Write(Form("gErrorXS[%d][%d][%d]",ErrorType-Systematics_Xsec_Start,e0,e1));
+	  if(IsReducedXSSyst(ErrorType-Systematics_Xsec_Start)){
+	    gErrorXS[ErrorType-Systematics_Xsec_Start][e0][e1] = new TGraph(NXsecVariations-4,xXS_reduced[ErrorType-Systematics_Xsec_Start][e0][e1],yXS_reduced[ErrorType-Systematics_Xsec_Start][e0][e1]);
+	  }
+	  else {
+	    gErrorXS[ErrorType-Systematics_Xsec_Start][e0][e1] = new TGraph(NXsecVariations,xXS[ErrorType-Systematics_Xsec_Start][e0][e1],yXS[ErrorType-Systematics_Xsec_Start][e0][e1]);
+	  }
+	  gErrorXS[ErrorType-Systematics_Xsec_Start][e0][e1]->Write(Form("gErrorXS_%d_%d_%d",ErrorType-Systematics_Xsec_Start,e0,e1));
 	  sErrorXS[ErrorType-Systematics_Xsec_Start][e0][e1] = new TSpline3(Form("sErrorXS[%d][%d][%d]",ErrorType-Systematics_Xsec_Start,e0,e1),gErrorXS[ErrorType-Systematics_Xsec_Start][e0][e1]);
 	  sErrorXS[ErrorType-Systematics_Xsec_Start][e0][e1]->Write(Form("sErrorXS_%d_%d_%d",ErrorType-Systematics_Xsec_Start,e0,e1)); 
 	}
       }
     }
-    
+
+
+    // covariance reduced not filled here for Flux or XS errors    
     for(int e0=0;e0<NBinsMom;e0++){//loop over effect 0
       for(int e1=0;e1<NBinsAngle;e1++){//loop over effect 1
 	for(int f0=0;f0<NBinsMom;f0++){//loop over effect 0
 	  for(int f1=0;f1<NBinsAngle;f1++){//loop over effect 1
-	    //cout<<Covariance[ErrorType][ErrorType][f0][f1][f0][f1]<<endl;
-	    //double Diagonal=Covariance[ErrorType][ErrorType][e0][e1][e0][e1]*Covariance[ErrorType][ErrorType][f0][f1][f0][f1];
-	    //Correlation[ErrorType][ErrorType][e0][e1][f0][f1]=Covariance[ErrorType][ErrorType][e0][e1][f0][f1];
-	    //if(Diagonal!=0) Correlation[ErrorType][ErrorType][e0][e1][f0][f1]/=pow(Diagonal,1/2);
 	    double Diagonal=CovarianceReduced[ErrorType][e0][e1][e0][e1]*CovarianceReduced[ErrorType][f0][f1][f0][f1];
 	    CorrelationReduced[ErrorType][e0][e1][f0][f1]=CovarianceReduced[ErrorType][e0][e1][f0][f1];
 	    if(Diagonal!=0) CorrelationReduced[ErrorType][e0][e1][f0][f1]/=pow(Diagonal,1/2);
@@ -835,33 +886,32 @@ int main(int argc, char ** argv){
 
  
   //#########################SPECIAL TREATMENT FOR XSECTION SOURCE: THE CORRELATION IS ALSO CHECKED BETWEEN THE ERROR SOUCRES (NOT ONLY THE BINS)
-    if(EndError>=Systematics_Xsec_Start){
+  //--- although here no correlations is assumed in the computation of the total CovarianceXS ... -----
+  double TotalRelxsError[EndXsec+1];
+  if(EndError>=Systematics_Xsec_Start){
     //cout<<"hello"<<endl;
-  //Starts the toy experiments:
+    //Starts the toy experiments:
  
-  int NBinsTotal=NBinsMom*NBinsAngle;
-  double Error;
-  double NEventsXS[NBinsTotal];
-  int NToysXsec=500;
-  TRandom3 * rxs = new TRandom3();
+    int NBinsTotal=NBinsMom*NBinsAngle;
+    double Error;
+    double NEventsXS[NBinsTotal];
+    int NToysXsec=1000;
+    TRandom3 * rxs = new TRandom3();
   
-  for(int s1=0;s1<=EndError-Systematics_Xsec_Start;s1++){
-  //for(int s1=0;s1<=0;s1++){//TEMP
+    for(int s1=0;s1<=EndError-Systematics_Xsec_Start;s1++){
+      //for(int s1=0;s1<=0;s1++){//TEMP
     
-      cout<<"source tested="<<s1+Systematics_Xsec_Start<<endl;
-
+      cout<<"source tested="<<s1<<endl;
       
       for(int nt=0;nt<NToysXsec;nt++){
 	if(nt%100==0) cout<<"toy #"<<nt<<endl;
 	Error=10;
 	
-	while(TMath::Abs(Error)>3) Error=rxs->Gaus(0,1);//My interpolation doesn't go further away than -+3sigma. Therefore, only keep toy experiment inside these values.
+	while(TMath::Abs(Error)>1 || (!IsReducedXSSyst(s1)&&TMath::Abs(Error)>3)) Error=rxs->Gaus(0,1);//My interpolation doesn't go further away than -+3sigma. Therefore, only keep toy experiment inside these values.
 	for(int e0=0;e0<NBinsMom;e0++){//loop over effect 0
 	  for(int e1=0;e1<NBinsAngle;e1++){//loop over effect 1
 	    int bin1=NBinsAngle*e0+e1;
 	    NEventsXS[bin1]=NominalSelectedMC->GetBinContent(e0+1,e1+1)*sErrorXS[s1][e0][e1]->Eval(Error);
-	    
-	    
 	    
 	    
 	    //if(e0==4 && e1==4) cout<<"Error="<<Error<<", "<<NEventsXS[bin1]-NominalSelectedMC->GetBinContent(e0+1,e1+1)<<", value="<<sErrorXS[2][4][4]->Eval(Error)<<endl;
@@ -869,94 +919,88 @@ int main(int argc, char ** argv){
 	      for(int f1=0;f1<NBinsAngle;f1++){//loop over effect 1
 		int bin2=NBinsAngle*f0+f1;
 		NEventsXS[bin2]=NominalSelectedMC->GetBinContent(f0+1,f1+1)*sErrorXS[s1][f0][f1]->Eval(Error);
-		//CovarianceReduced[e0][e1][f0][f1]+=(1./(NToysXsec-1.))*(NEventsXS[bin1]-NominalSelectedMC->GetBinContent(e0+1,e1+1))*(NEventsXS[bin2]-NominalSelectedMC->GetBinContent(f0+1,f1+1)); 
-		
+		//cout<<bin1<<" "<<NEventsXS[bin1]<<" "<<sErrorXS[s1][e0][e1]->Eval(Error)<<" "<<bin2<<" "<<NEventsXS[bin2]<<" "<<sErrorXS[s1][f0][f1]->Eval(Error)<<endl;
 		CovarianceReduced[Systematics_Xsec_Start+s1][e0][e1][f0][f1]+=(1./(NToysXsec-1.))*(NEventsXS[bin1]-NominalSelectedMC->GetBinContent(e0+1,e1+1))*(NEventsXS[bin2]-NominalSelectedMC->GetBinContent(f0+1,f1+1)); 
+		// assuming no correlations between error sources:
 		CovarianceXS[e0][e1][f0][f1]+=(1./(NToysXsec-1.))*(NEventsXS[bin1]-NominalSelectedMC->GetBinContent(e0+1,e1+1))*(NEventsXS[bin2]-NominalSelectedMC->GetBinContent(f0+1,f1+1)); 
-		//CovarianceCurrent[e0][e1][f0][f1]+=(1./(NToysXsec-1.))*(NEventsXS[bin1]-NominalSelectedMC->GetBinContent(e0+1,e1+1))*(NEventsXS[bin2]-NominalSelectedMC->GetBinContent(f0+1,f1+1));
-		//Covariance[Systematics_Xsec_Start+s1][Systematics_Xsec_Start+s1][e0][e1][f0][f1]+=(1./(NToysXsec-1.))*(NEventsXS[bin1]-NominalSelectedMC->GetBinContent(e0+1,e1+1))*(NEventsXS[bin2]-NominalSelectedMC->GetBinContent(f0+1,f1+1)); 
-		
-		//CovarianceReduced[e0][e1][f0][f1]+=(1./(NToysXsec-1.))*(NEventsXS[bin1]-sErrorXS[s1][e0][e1]->Eval(0))*(NEventsXS[bin2]-sErrorXS[s1][f0][f1]->Eval(0)); 
-		
 	      }
 	    }	
 	  }
 	}
       }
   
-    for(int e0=0;e0<NBinsMom;e0++){//loop over effect 0
-      for(int e1=0;e1<NBinsAngle;e1++){//loop over effect 1
-	//double err=TMath::Sqrt(CovarianceReduced[s1][e0][e1][e0][e1]);
-	double err=TMath::Sqrt(CovarianceXS[e0][e1][e0][e1]);
-	if(NominalSelectedMC->GetBinContent(e0+1,e1+1)!=0) err/=NominalSelectedMC->GetBinContent(e0+1,e1+1);
-	Error_Minus[Systematics_Xsec_Start+s1]->SetBinContent(e0+1,e1+1,-err);
-	Error_Plus[Systematics_Xsec_Start+s1]->SetBinContent(e0+1,e1+1,err);
+      for(int e0=0;e0<NBinsMom;e0++){//loop over effect 0
+	for(int e1=0;e1<NBinsAngle;e1++){//loop over effect 1
+	  double err=TMath::Sqrt(CovarianceReduced[s1][e0][e1][e0][e1]);
+	  //double err=TMath::Sqrt(CovarianceXS[e0][e1][e0][e1]);
+	  if(NominalSelectedMC->GetBinContent(e0+1,e1+1)!=0) err/=NominalSelectedMC->GetBinContent(e0+1,e1+1);
+	  Error_Minus[Systematics_Xsec_Start+s1]->SetBinContent(e0+1,e1+1,-err);
+	  Error_Plus[Systematics_Xsec_Start+s1]->SetBinContent(e0+1,e1+1,err);
 
-	
-	//cout<<"Error="<<1e6*TMath::Sqrt(CovarianceReduced[e0][e1][e0][e1])<<endl;
-	
 	  for(int f0=0;f0<NBinsMom;f0++){//loop over effect 0
 	    for(int f1=0;f1<NBinsAngle;f1++){//loop over effect 1
+	      TotalRelxsError[s1]+=CovarianceReduced[Systematics_Xsec_Start+s1][e0][e1][f0][f1];
 	      double Diagonal=CovarianceXS[e0][e1][e0][e1]*CovarianceXS[f0][f1][f0][f1];
 	      if(Diagonal!=0) CorrelationXS[e0][e1][f0][f1]/=pow(Diagonal,1/2);
-	      //double Diagonal=Covariance[Systematics_Xsec_Start+s1][Systematics_Xsec_Start+s1][e0][e1][e0][e1]*Covariance[Systematics_Xsec_Start+s1][Systematics_Xsec_Start+s1][f0][f1][f0][f1];
-	      //if(Diagonal!=0) Correlation[Systematics_Xsec_Start+s1][Systematics_Xsec_Start+s1][e0][e1][f0][f1]/=pow(Diagonal,1/2);
 	      //double Diagonal=CovarianceReduced[s1][e0][e1][e0][e1]*CovarianceReduced[s1][f0][f1][f0][f1];
 	      //if(Diagonal!=0) CorrelationReduced[s1][e0][e1][f0][f1]/=pow(Diagonal,1/2);
 	      
 	    }
 	  }
+	}
       }
-    }
-    file->cd();
-    Error_Minus[Systematics_Xsec_Start+s1]->Write();
-    Error_Plus[Systematics_Xsec_Start+s1]->Write();
-    Evaluate1DError(NominalSelectedMC, CovarianceReduced[Systematics_Xsec_Start+s1], Error_RecMom[Systematics_Xsec_Start+s1], Error_RecAngle[Systematics_Xsec_Start+s1]);
-    Error_RecMom[Systematics_Xsec_Start+s1]->Write();
-    Error_RecAngle[Systematics_Xsec_Start+s1]->Write();
+      file->cd();
+      Error_Minus[Systematics_Xsec_Start+s1]->Write();
+      Error_Plus[Systematics_Xsec_Start+s1]->Write();
+
+      Evaluate1DError(NominalSelectedMC, CovarianceReduced[Systematics_Xsec_Start+s1], Error_RecMom[Systematics_Xsec_Start+s1], Error_RecAngle[Systematics_Xsec_Start+s1]);
+      Error_RecMom[Systematics_Xsec_Start+s1]->Write();
+      Error_RecAngle[Systematics_Xsec_Start+s1]->Write();
+
+      if(TotalValue!=0) TotalRelxsError[s1]=TMath::Sqrt(TotalRelxsError[s1])/TotalValue;
     
 #ifdef XSTABLE
     
-    cout<<"Total error so far, when adding="<<Systematics_Xsec_Start+s1<<endl;
-    for(int e0=0;e0<NBinsMom;e0++){
-      for(int e1=0;e1<NBinsAngle;e1++){
-	double ErrorSquared=CovarianceXS[e0][e1][e0][e1];
-	double Value=NominalSelectedMC->GetBinContent(e0+1,e1+1);
-	cout<<"Error XS="<<setprecision(3)<<std::scientific<<ErrorSquared<<endl;
-	double RelativeError=TMath::Sqrt(ErrorSquared);
-	if(Value!=0) RelativeError/=Value;
-	cout<<setprecision(0)<<std::fixed<<RelativeError*100<<"%, ";
+      cout<<"Total error so far, when adding="<<Systematics_Xsec_Start+s1<<endl;
+      for(int e0=0;e0<NBinsMom;e0++){
+	for(int e1=0;e1<NBinsAngle;e1++){
+	  double ErrorSquared=CovarianceXS[e0][e1][e0][e1];
+	  double Value=NominalSelectedMC->GetBinContent(e0+1,e1+1);
+	  cout<<"Error XS="<<setprecision(3)<<std::scientific<<ErrorSquared<<endl;
+	  double RelativeError=TMath::Sqrt(ErrorSquared);
+	  if(Value!=0) RelativeError/=Value;
+	  cout<<setprecision(0)<<std::fixed<<RelativeError*100<<"%, ";
+	}
+	cout<<endl;
       }
-      cout<<endl;
-    }
     
 #endif
-  }
     }
+  }
 
-    //###################################################################################
-    //###################################################################################
-    //###################################################################################
-    //###################################################################################
-    //###################################################################################
-    // From here, we do not have access to XS errors individually. They are all summed in
-    // a XS covariance matrix. This is for RAM reason.
-    // It also means that any individual treatment of the systematics should be done
-    // before this text!
-    //###################################################################################
-    //###################################################################################
-    //###################################################################################
-    //###################################################################################
+  //###################################################################################
+  //###################################################################################
+  //###################################################################################
+  //###################################################################################
+  //###################################################################################
+  // From here, we do not have access to XS errors individually. They are all summed in
+  // a XS covariance matrix. This is for RAM reason.
+  // It also means that any individual treatment of the systematics should be done
+  // before this text!
+  //###################################################################################
+  //###################################################################################
+  //###################################################################################
+  //###################################################################################
 
-    /*
-#ifdef DEBUG
+  /*
+    #ifdef DEBUG
     for(int e0=0;e0<NBinsMom;e0++){//loop over effect 0
-      for(int e1=0;e1<NBinsAngle;e1++){//loop over effect 1
-	for(int f0=0;f0<NBinsMom;f0++){//loop over effect 0
-	  for(int f1=0;f1<NBinsAngle;f1++){//loop over effect 1
-	    cout << CovarianceFlux[e0][e1][f0][f1] << " ";
-#endif
-*/
+    for(int e1=0;e1<NBinsAngle;e1++){//loop over effect 1
+    for(int f0=0;f0<NBinsMom;f0++){//loop over effect 0
+    for(int f1=0;f1<NBinsAngle;f1++){//loop over effect 1
+    cout << CovarianceFlux[e0][e1][f0][f1] << " ";
+    #endif
+  */
 
 
 
@@ -1018,7 +1062,6 @@ int main(int argc, char ** argv){
   //#########################################STAT ERROR################################
   cout<<"Statistical error:"<<endl;
 
-  
   for(int e0=0;e0<NBinsMom;e0++){//loop over effect 0
     for(int e1=0;e1<NBinsAngle;e1++){//loop over effect 1
       double Value=0;double Error=0;double ErrorSquared=0;
@@ -1118,10 +1161,29 @@ int main(int argc, char ** argv){
     boxErrorStat_RecAngle[e1] = new TBox(NominalSelectedMC_RecAngle->GetXaxis()->GetBinLowEdge(e1+1),Value-Error,NominalSelectedMC_RecAngle->GetXaxis()->GetBinUpEdge(e1+1),Value+Error);
     boxErrorStat_RecAngle[e1]->SetFillColor(kRed);
   }
+
+  double TotalErrorStatSquared=0,TotalRelErrorStat=0.;
+#ifndef RECONSTRUCTED
+  for(int e0=0;e0<NBinsMom;e0++){
+    for(int e1=0;e1<NBinsAngle;e1++){
+      for(int f0=0;f0<NBinsMom;f0++){
+	for(int f1=0;f1<NBinsAngle;f1++){
+	  TotalErrorStatSquared+=CovarianceStatistics[e0][e1][f0][f1];
+	}
+      }
+    }
+  }
+#else
+  TotalErrorStatSquared=TotalValue;
+#endif
+  if(TotalValue!=0) TotalRelErrorStat=TMath::Sqrt(TotalErrorStatSquared)/TotalValue;
+    
+ 
   //#########################################END OF STAT ERROR################################
 
-
   //################# ML newly added 2017/07/18  DETECTOR ERROR  #############################
+  double TotalErrorDetSquared=0,TotalRelErrorDet=0.;
+#ifdef DETECTORSYST
   cout<<"Detector error:"<<endl;
     
   for(int e0=0;e0<NBinsMom;e0++){//loop over effect 0
@@ -1132,7 +1194,7 @@ int main(int argc, char ** argv){
       double total_error=0;
       for(int ErrorType=StartError;ErrorType<=EndError;ErrorType++){
 	if(ErrorType>Systematics_Detector_End || ErrorType<Systematics_Detector_Start) continue;
-	if(ErrorType==2 || ErrorType==5) continue;
+	if(ErrorType!=5) continue;
 	// I assume uncorrelated error sources 
 	total_error_plus+=pow(Error_Plus[ErrorType]->GetBinContent(e0+1,e1+1),2);
 	total_error_minus+=pow(Error_Minus[ErrorType]->GetBinContent(e0+1,e1+1),2);
@@ -1175,7 +1237,7 @@ int main(int argc, char ** argv){
       for(int f1=0;f1<NBinsAngle;f1++){//loop over effect 1
 	for(int ErrorType=StartError;ErrorType<=EndError;ErrorType++){
 	  if(ErrorType>Systematics_Detector_End || ErrorType<Systematics_Detector_Start) continue;
-	  if(ErrorType==2 || ErrorType==5) continue;
+	  if(ErrorType!=5) continue;
 	  total_error+=CovarianceReduced[ErrorType][e0][e1][e0][f1];
 	}
       }
@@ -1212,7 +1274,7 @@ int main(int argc, char ** argv){
       for(int f0=0;f0<NBinsMom;f0++){//loop over effect 1
 	for(int ErrorType=StartError;ErrorType<=EndError;ErrorType++){
 	  if(ErrorType>Systematics_Detector_End || ErrorType<Systematics_Detector_Start) continue;
-	  if(ErrorType==2 || ErrorType==5) continue;
+	  if(ErrorType!=5) continue;
 	  total_error+=CovarianceReduced[ErrorType][e0][e1][f0][e1];
 	}
       }
@@ -1238,12 +1300,28 @@ int main(int argc, char ** argv){
     boxErrorDet_RecAngle[e1]->SetFillColor(kOrange);
   }
 
+  for(int ErrorType=StartError;ErrorType<=EndError;ErrorType++){
+    if(ErrorType>Systematics_Detector_End || ErrorType<Systematics_Detector_Start) continue;
+    if(ErrorType!=5) continue;
+    for(int e0=0;e0<NBinsMom;e0++){
+      for(int e1=0;e1<NBinsAngle;e1++){
+	for(int f0=0;f0<NBinsMom;f0++){
+	  for(int f1=0;f1<NBinsAngle;f1++){
+	    TotalErrorDetSquared+=CovarianceReduced[ErrorType][e0][e1][f0][f1];
+	  }
+	}
+      }
+    }
+  }
+  if(TotalValue!=0) TotalRelErrorDet=TMath::Sqrt(TotalErrorDetSquared)/TotalValue;
   
   //#########################################END OF DETECTOR ERROR################################
-
+#endif
   
 
   //#########################################XS ERROR################################
+  double TotalErrorXSSquared=0,TotalRelErrorXS=0.;
+
   if(EndError>=Systematics_Xsec_Start){
     cout<<"Xsec error:"<<endl;
 
@@ -1289,7 +1367,6 @@ int main(int argc, char ** argv){
       if(Value!=0) RelativeError/=Value;      
       ErrorTotalXS_RecMom_Plus[e0]=RelativeError;
       ErrorTotalXS_RecMom_Minus[e0]=-RelativeError;
-      ErrorSquared+=NominalSelectedMC_RecMom->GetBinError(e0+1);
 
       Error=TMath::Sqrt(ErrorSquared);
       cout<<"Mom="<<BinningRecMom[e0]<<", value="<<Value<<", "<<Error<<endl;
@@ -1315,8 +1392,7 @@ int main(int argc, char ** argv){
       ErrorTotalXS_RecAngle_Plus[e1]=RelativeError;
       ErrorTotalXS_RecAngle_Minus[e1]=-RelativeError;
       ErrorSquared+=NominalSelectedMC_RecAngle->GetBinError(e1+1);
-      Error=TMath::Sqrt(ErrorSquared);
-
+ 
       Error=TMath::Sqrt(ErrorSquared);
       cout<<"Angle="<<BinningRecAngle[e1]<<", value="<<Value<<", "<<Error<<endl;
       //NominalSelectedMC_RecAngle->SetBinContent(e1+1,Value);
@@ -1325,10 +1401,24 @@ int main(int argc, char ** argv){
       boxErrorXS_RecAngle[e1] = new TBox(NominalSelectedMC_RecAngle->GetXaxis()->GetBinLowEdge(e1+1),NominalSelectedMC_RecAngle->GetBinContent(e1+1)-Error,NominalSelectedMC_RecAngle->GetXaxis()->GetBinUpEdge(e1+1),NominalSelectedMC_RecAngle->GetBinContent(e1+1)+Error);
       boxErrorXS_RecAngle[e1]->SetFillColor(kGreen);
     }
+  
+
+    for(int e0=0;e0<NBinsMom;e0++){
+      for(int e1=0;e1<NBinsAngle;e1++){
+	for(int f0=0;f0<NBinsMom;f0++){
+	  for(int f1=0;f1<NBinsAngle;f1++){
+	    TotalErrorXSSquared+=CovarianceXS[e0][e1][f0][f1];
+	  }
+	}
+      }
+    }
+    if(TotalValue!=0) TotalRelErrorXS=TMath::Sqrt(TotalErrorXSSquared)/TotalValue;
   }
   //#########################################END OF XS ERROR################################
 
   //#########################################FLUX ERROR################################
+  double TotalErrorFluxSquared=0,TotalRelErrorFlux=0.;
+
   if(EndError>=Systematics_Flux_Start){
     cout<<"Flux error:"<<endl;
     int ErrorType=ErrorType>=Systematics_Flux_Start;
@@ -1393,7 +1483,6 @@ int main(int argc, char ** argv){
     for(int e1=0;e1<NBinsAngle;e1++){//loop over effect 0
       double Value=0;double ErrorSquared=0;double Error=0;
       Value=NominalSelectedMC_RecAngle->GetBinContent(e1+1);
-      //ErrorSquared=NominalSelectedMC_RecAngle->GetBinError(e1+1);
       
       for(int e0=0;e0<NBinsMom;e0++){//loop over effect 1
 	
@@ -1418,8 +1507,18 @@ int main(int argc, char ** argv){
       NominalSelectedMC_RecAngle->SetBinError(e1+1,ErrorSquared);
     }
     
+  
+    for(int e0=0;e0<NBinsMom;e0++){
+      for(int e1=0;e1<NBinsAngle;e1++){
+	for(int f0=0;f0<NBinsMom;f0++){
+	  for(int f1=0;f1<NBinsAngle;f1++){
+	    TotalErrorFluxSquared+=CovarianceFlux[e0][e1][f0][f1];
+	  }
+	}
+      }
+    }
+    if(TotalValue!=0) TotalRelErrorFlux=TMath::Sqrt(TotalErrorFluxSquared)/TotalValue;
   }
-
   //#########################################END FLUX ERROR################################
 
 
@@ -1466,7 +1565,9 @@ int main(int argc, char ** argv){
     for(int e0=0;e0<NBinsMom;e0++){//loop over effect 0
       if(EndError>=Systematics_Flux_Start) boxsliceErrorFlux_RecMom[e0][e1]->Draw("same");
       if(EndError>=Systematics_Xsec_Start) boxsliceErrorXS_RecMom[e0][e1]->Draw("same");
+#ifdef DETECTORSYST
       if(EndError>=Systematics_Detector_Start) boxsliceErrorDet_RecMom[e0][e1]->Draw("same");
+#endif
       boxsliceErrorStat_RecMom[e0][e1]->Draw("same");
     }
     sliceNominalSelectedMC_RecMom[e1]->Draw("E1same");
@@ -1487,7 +1588,9 @@ int main(int argc, char ** argv){
   for(int e0=0;e0<NBinsMom;e0++){//loop over effect 0
     if(EndError>=Systematics_Flux_Start) boxErrorFlux_RecMom[e0]->Draw("same");
     if(EndError>=Systematics_Xsec_Start) boxErrorXS_RecMom[e0]->Draw("same");
+#ifdef DETECTORSYST
     if(EndError>=Systematics_Detector_Start) boxErrorDet_RecMom[e0]->Draw("same");
+#endif
     boxErrorStat_RecMom[e0]->Draw("same");
   }
   NominalSelectedMC_RecMom->Draw("E1same");
@@ -1507,7 +1610,9 @@ int main(int argc, char ** argv){
   for(int e0=0;e0<NBinsAngle;e0++){//loop over effect 0
     if(EndError>=Systematics_Flux_Start) boxErrorFlux_RecAngle[e0]->Draw("same");
     if(EndError>=Systematics_Xsec_Start) boxErrorXS_RecAngle[e0]->Draw("same");
+#ifdef DETECTORSYST
     if(EndError>=Systematics_Detector_End) boxErrorDet_RecAngle[e0]->Draw("same");
+#endif
     boxErrorStat_RecAngle[e0]->Draw("same");
   }
   NominalSelectedMC_RecAngle->Draw("E1same");
@@ -1541,6 +1646,14 @@ int main(int argc, char ** argv){
     cout<<setprecision(2)<<std::fixed<<NominalSelectedMC_RecAngle->GetBinContent(e0+1)<<"+-"<<TMath::Abs(ErrorTotalFlux_RecAngle_Plus[e0])<<"(Flux)+-"<<TMath::Abs(ErrorTotalXS_RecAngle_Plus[e0])<<"(XS)+-"<<TMath::Abs(ErrorTotalDetector_RecAngle_Plus[e0])<<"(Det)+-"<<TMath::Abs(ErrorTotalStatistics_RecAngle_Plus[e0])<<"(stat)"<<endl;
   }
 
+  cout<<endl<<"1bin result"<<endl;
+  cout<<setprecision(2)<<std::fixed<<TotalValue<<"+-"<<100*TMath::Abs(TotalRelErrorFlux)<<"%(Flux)+-"<<100*TMath::Abs(TotalRelErrorXS)<<"%(XS)+-"<<100*TMath::Abs(TotalRelErrorDet)<<"%(Det)+-"<<100*TMath::Abs(TotalRelErrorStat)<<"%(stat)"<<endl;
+
+  if(EndError>=Systematics_Xsec_Start){
+    cout<<"xscn systematics breakdown:"<<endl; 
+    for(int i=StartXsec;i<=EndXsec;i++)
+      cout<<setprecision(2)<<"param "<<i<<" +-"<<100*TMath::Abs(TotalRelxsError[i])<<"%"<<endl;
+  }
   //#########################################END ERROR TABLE####################################
 
     

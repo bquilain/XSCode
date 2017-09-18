@@ -108,7 +108,6 @@ int main(int argc, char** argv)
 	Neut *neut = new Neut;
 	NumberOfEvent = neut->NtupleReadInit(neutfile);
 	G4cout << "NumberOfEvent :" << NumberOfEvent << G4endl;
-
   // set mandatory user initialization classes...
 
   // detector setup

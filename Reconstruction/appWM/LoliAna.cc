@@ -551,7 +551,7 @@ int main(int argc,char *argv[]){
 	  pmanasum -> pdg         .push_back(pmtrack[i].trk[t].pdg);
 	  pmanasum -> trkpe       .push_back(pmtrack[i].trk[t].trkpe);
 
-	  if(!calcMuCL(pmtrack[i].trk[t],isoHitCut,useINGRID_PID,Error,PEAngleData,PEAngleMC))  {
+	  if(!calcMuCL(pmtrack[i].trk[t],isoHitCut,useINGRID_PID,(ErrorType==4),PEAngleData,PEAngleMC))  {
 	    biasedMuCL++;
 	    pmanasum->mucl .push_back( -1);
 	  }
