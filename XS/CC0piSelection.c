@@ -70,6 +70,7 @@ using namespace std;
 //#define PI_LIKELIHOOD
 //#define TEMPORARY
 //#define DEBUGMVA
+#define CCCOH_TUNING
 
 //If wish to cut part of the track for the MVA. This is the starting bin of the relative track length where to use the MVA.
 int FirstHit=0;
@@ -323,7 +324,6 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
   wtree->SetBranchAddress("nTracks",&nTracks);
   wtree->SetBranchAddress("NewEvent",&NewEvent);
   wtree->SetBranchAddress("nIngBasRec",&nIngBasRec);
-  wtree->SetBranchAddress("InteractionType",&Num_Int);  
   wtree->SetBranchAddress("nTracks",&nTracks);
   wtree->SetBranchAddress("OpeningAngle",&OpeningAngle);
   wtree->SetBranchAddress("CoplanarityAngle",&CoplanarityAngle);
@@ -1452,23 +1452,40 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
     }
     if(IsSand) weight*=(1+SandReweight);
 
+    //Scintillator CC1pi is treated as signal
+    if(FSIInt==12) FSIInt=3;
+
     ////////////////DETERMINE THE REWEIGHTING OF THE EVENT IF SYSTEMATICS ERROR FLUX
-    if(Systematics_Flux){
-      for(int i=0;i<NBinsEnergyFlux;i++){
-	if(Enu<BinningEnergyFlux[i+1]) {
-	  Errorweight=FluxVector[i];
-	  break;
+    if(!IsData){
+      if(Systematics_Flux){
+	for(int i=0;i<NBinsEnergyFlux;i++){
+	  if(Enu<BinningEnergyFlux[i+1]) {
+	    Errorweight=FluxVector[i];
+	    break;
+	  }
 	}
+	if(ievt%10000==0)cout<<"weight="<<weight<<", and after reweight="<<weight*(1+Errorweight)<<endl;
+	weight*=(1+Errorweight);
       }
-      if(ievt%10000==0)cout<<"weight="<<weight<<", and after reweight="<<weight*(1+Errorweight)<<endl;
-      weight*=(1+Errorweight);
-    }
-    if(Systematics_Xsec || retuned){
-      int Dial=tuneDial;
-      if(Systematics_Xsec) Dial=dial;// usual XS dial;
+      if(Systematics_Xsec || retuned){
+	int Dial=tuneDial;
+	if(Systematics_Xsec) Dial=dial;// usual XS dial;
      
-      if(ievt%10000==0)cout<<"weight="<<weight<<", and after reweight="<<weight*ReWeight[Dial]<<",  selected dial="<<Dial<<endl;
-      weight=weight*ReWeight[Dial];
+	if(ievt%10000==0)cout<<"weight="<<weight<<", and after reweight="<<weight*ReWeight[Dial]<<",  selected dial="<<Dial<<endl;
+	weight=weight*ReWeight[Dial];
+#ifdef CCCOH_TUNING
+	if(Num_Int==16) { 
+	  if(FSIInt==3){
+	    double Epi=TMath::Sqrt(TrueMomentumPion*TrueMomentumPion+Mpi*Mpi);//GeV
+	    int bin=4;
+	    for(int i=0;i<5;i++) if(Epi>EpiBins[i]) bin=i;
+	    weight*=EpiReWeight[bin];
+	    //	    cout<<"CC Coherent reweight: p_pi="<<TrueMomentumPion<<"GeV, E_pi="<<Epi<<"GeV, bin="<<bin<<" rw="<<EpiReWeight[bin]<<endl;
+	  }
+	  else cout<<"** CC Coherent not in the CC1pi sampe **"<<endl;
+	}
+#endif
+      }
     }
 
     //##################################################################
@@ -1526,10 +1543,6 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
 
     if((/*IsFV &&*/ !IsData) || IsData){ 
       // why that condition here ?? too easy to remove all external background this way
-
-
-      //ML tmps
-      if(FSIInt==12) FSIInt=3;
 
 #ifdef DEBUG3
       cout<<"Entering within the FV, nbasrec="<<nIngBasRec<<endl;
@@ -2956,7 +2969,7 @@ int main(int argc, char ** argv){
   if(Sample==2)    MuonSample2=5;
   
   
-  //   int Ifile=0,Efile=50; 
+  //  int Ifile=0,Efile=50; 
   int Ifile=0,Efile=NMCfiles;
 
   int nGoodMCFiles=NGoodFiles(Ifile,Efile,isPM);

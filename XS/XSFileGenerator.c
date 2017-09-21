@@ -354,8 +354,8 @@ int main(int argc, char **argv){
 	    else if(ErrorType>=17){
 	      if(n!=0 || ErrorType>17) continue;//this is a something only for XS errors. This is because all the error is contained in one file (the files contains nominal tree + Reweight vector) and so, we do not need to generate different files for different sources or for 7 different variations of it (-3,-2,-1,0,1,2,3)sigmas.
 	      // so just run at the first iteration
-	      sprintf(Command2,"${T2KREWEIGHT}/app/genWeightsFromINGRID_2015ML.exe -i ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d.root -o ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_ReWeight2015.root",suffix,DetName,i,suffix,DetName,i); 
-	      sprintf(Command6,"${INSTALLREPOSITORY}/XS/XS_CC0pi_Plan%s -i ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_ana.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s%s_Run1_%d_ReWeight2015_Plan.root -f 1 -m -x ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_ReWeight2015.root %s",suffix,suffix,DetName,i,DetName,ParticleGenerator,i,suffix,DetName,i,(PM?"":"-w"));
+	      sprintf(Command2,"${T2KREWEIGHT}/app/genWeightsFromINGRID_2015ML.exe -i ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d.root -o ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_ReWeight2015%s.root %s",suffix,DetName,i,suffix,DetName,i,(retuned?"tuned":""),(retuned?"-t":"")); 
+	      sprintf(Command6,"${INSTALLREPOSITORY}/XS/XS_CC0pi_Plan%s -i ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_ana.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s%s_Run1_%d_ReWeight2015%s_Plan.root -f 1 -m -x ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_ReWeight2015%s.root %s",suffix,suffix,DetName,i,DetName,ParticleGenerator,i,(retuned?"tuned":""),suffix,DetName,i,(retuned?"tuned":""),(PM?"":"-w")); 
 
 	    }
 
@@ -384,11 +384,11 @@ int main(int argc, char **argv){
 			  <<Command1_3<<endl
  			  <<Command1_4<<endl
 			  <<Command1_5<<endl
-			  <<Command1_6<<endl
+			  <<Command1_6<<endl*/
 			  <<Command2<<endl
 		      <<Command3<<endl
 		      <<Command4<<endl
-		      <<Command5<<endl*/ 
+		      <<Command5<<endl
 			  <<Command6<<endl;
 		  //		  <<Command7<<endl;
 		}
@@ -677,7 +677,7 @@ int main(int argc, char **argv){
       }
       else if(ErrorType>=17){
 	//double XsecVariation=ErrorValue-CenterXsecVariations*(ErrorType-Systematics_Xsec_Start);//The variation of Xsec parameter, in #sigma. A number between 0 and 175 - the center of the current systematic source (nominal). For example, for Xsec error source #10, it starts from 7*(10-1)=63 and ends at 70. from 63 to 70, it contains the variariation of -3,-2,-1,0,1,2,3 sigma respectively. The center is then located at 66. For the example of a 2 sigma variation, the substraction will be therefore equal to: 68-66=2, which gives the number of sigmas!
-	sprintf(Command001,"${INSTALLREPOSITORY}/XS/CC0piSelection -i ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s%s_Run1_%s_ReWeight2015_Plan.root -o ${INSTALLREPOSITORY}/XS/files/MCSelected_%s%s_Systematics%d_%d -s %d -e %d -v %3.3f -m -p %2.2f %s %s",DetName,ParticleGenerator,"%d",DetName,ParticleGenerator,ErrorType,n,channel,ErrorType,ErrorValue,DataPOT,optionWM,(retuned?"-t 146":""));
+	sprintf(Command001,"${INSTALLREPOSITORY}/XS/CC0piSelection -i ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s%s_Run1_%s_ReWeight2015%s_Plan.root -o ${INSTALLREPOSITORY}/XS/files/MCSelected_%s%s_Systematics%d_%d -s %d -e %d -v %3.3f -m -p %2.2f %s %s",DetName,ParticleGenerator,"%d",(retuned?"tuned":""),DetName,ParticleGenerator,ErrorType,n,channel,ErrorType,ErrorValue,DataPOT,optionWM,(retuned?"-t 146":""));
 	//sprintf(Command001,"${INSTALLREPOSITORY}/XS/CC0piSelection -i ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s_Run1_%s_ReWeight2015_Plan.root -o ${INSTALLREPOSITORY}/XS/files/MCSelected_Systematics%d_%d -s %d -e %d -v %3.3f -m -p %2.2f","%d",DetName,ErrorType,n,ErrorType,ErrorValue,DataPOT);
       }
       

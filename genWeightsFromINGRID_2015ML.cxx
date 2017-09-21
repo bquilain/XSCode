@@ -58,10 +58,15 @@ int main(int argc, char *argv[])
      return 0;
      }*/
   int c=-1;
-  while ((c = getopt(argc, argv, "i:o:")) != -1) {
+  bool tune=false;
+
+  while ((c = getopt(argc, argv, "i:o:t")) != -1) {
     switch(c){
     case 'i':
       fSKFileName=optarg;
+      break;
+    case 't':
+      tune=true;
       break;
     case 'o':
       fOutFileName=optarg;
@@ -222,34 +227,36 @@ int main(int argc, char *argv[])
     Double_t piprodial = 0.;
 
 
-    if(dial>=0 && dial<140){//redefined the nominal as the tuning
-      pfcdial = 0.0276;
-      maqedial = -0.0496;
-      meccdial = -0.73;
+    if(dial>=0 && dial<140){//redefined the nominal as the tune
+      if(tune){
+	pfcdial = 0.0276;
+	maqedial = -0.0496;
+	meccdial = -0.73;
+      }
       rw.Systematics().SetTwkDial(t2krew::kNIWG2014a_SF_RFG,1); // SF->RFG tuning
       rw.Systematics().SetTwkDial(t2krew::kNIWG_rpaCCQE_norm,1); // add RPA
       rw.Systematics().SetTwkDial(t2krew::kNIWG_rpaCCQE_shape,0); // rel RPA
     }else{
-      rw.Systematics().SetTwkDial(t2krew::kNIWG2014a_SF_RFG,0); // SF->RFG tuning
-      rw.Systematics().SetTwkDial(t2krew::kNIWG_rpaCCQE_norm,0); // add RPA
-      rw.Systematics().SetTwkDial(t2krew::kNIWG_rpaCCQE_shape,0); // rel RPA
+      rw.Systematics().SetTwkDial(t2krew::kNIWG2014a_SF_RFG,0); 
+      rw.Systematics().SetTwkDial(t2krew::kNIWG_rpaCCQE_norm,0);
+      rw.Systematics().SetTwkDial(t2krew::kNIWG_rpaCCQE_shape,0);
     }
 
 
     if(dial>=0&&dial<=6){
-      pfcdial += (dial-3-7*0.)*0.143; //**** Nominal is 217 MeV/c for C12.  Fit result (TN192 Table13) was 223 +/- 31 MeV/c. Apply fractional change of 31/217 = 0.143
+      pfcdial += (dial-3-7*0.)*(tune?0.143:0.0737); //**** Nominal is 217 MeV/c for C12.  Fit result (TN192 Table13) was 223 +/- 31 MeV/c. Apply fractional change of 31/217 = 0.143
     }else if(dial>=7&&dial<=13){
-      pfodial = (dial-3-7*1.)*0.143; //**** Nominal is 225 MeV/c for O16 and same fractional error as C12. 
+      pfodial = (dial-3-7*1.)*(tune?0.143:0.0737); //**** Nominal is 225 MeV/c for O16 and same fractional error as C12. 
     }else if(dial>=14&&dial<=20){
       ebcdial = (dial-3-7*2.)*0.36; //Nominal is 25+/-9 MeV for C12. 9/25= 0.36 fractional error
     }else if(dial>=21&&dial<=27){
       ebodial = (dial-3-7*3.)*0.33333; //Nominal is 27+/-9 MeV for O16. 9/27= 0.3333 fractional error
     }else if(dial>=28&&dial<=34){
-      meccdial += (dial-3-7*4.)*.73; //***Nominal is 1. Use 73% error
+      meccdial += (dial-3-7*4.)*(tune?.73:1.); //***Nominal is 1. Use 73% error
     }else if(dial>=35&&dial<=41){
       mecodial = (dial-3-7*5.)*1; //****Nominal is 1. Use 100% error
     }else if(dial>=42&&dial<=48){
-      maqedial += (dial-3-7*6.)*0.1565; //****Nominal is 1.21. Fit result is 1.15+/-0.18. Apply fractional change of 0.18/1.15 = 0.1565
+      maqedial += (dial-3-7*6.)*(tune?0.1565:0.1488); //****Nominal is 1.21. Fit result is 1.15+/-0.18. Apply fractional change of 0.18/1.15 = 0.1565 or 0.18/1.21 = 0.1488
     }else if(dial>=49&&dial<=55){
       cadial = (dial-3-7*7.)*0.1188; // Fit result is 1.01+/-0.12
     }else if(dial>=56&&dial<=62){
@@ -261,9 +268,9 @@ int main(int argc, char *argv[])
     }else if(dial>=77&&dial<=83){
       cccohdial = (dial-3-7*11.)*.3; //1+/-0.3
     }else if(dial>=84&&dial<=90){
-      nccohdial = (dial-3-7*12.)*0.30; // Same as 2012/2013. 1+/-0.30
+      nccohdial = (dial-3-7*12.)*.3; // Same as 2012/2013. 1+/-0.30
     }else if(dial>=91&&dial<=97){
-      ncothdial = (dial-3-7*13.)*0.30; // Same as 2012/2013. 1+/-0.30
+      ncothdial = (dial-3-7*13.)*.3; // Same as 2012/2013. 1+/-0.30
     }else if(dial>=98&&dial<=104){
       absdial = (dial-3-7*14)*0.5;
     }else if(dial>=105&&dial<=111){
@@ -278,21 +285,15 @@ int main(int argc, char *argv[])
       piprodial = (dial-3-7*19)*.5;
     }
 
-    // Special dials for applying NIWG 2015 tuning (Note: MEC_O and pF_O instead of MEC_C and pF_C, but using the same fractional change)
-    else if(dial==140){
+    // Special dials for applying NIWG 2015 tuning 
+    if(dial>=144){
       maqedial = -0.0496; // MaQE tuning 1.21 -> 1.15
     }
-    else if(dial==141){
+    if(dial>=145){
       pfcdial = 0.0276; // pF_C tuning 217 -> 223
     }
-    else if(dial==142){
+    if(dial==146){
       meccdial = -.73; // MEC tuning 100 -> 27
-    }
-  
-    else if(dial==142 || dial==146){
-      maqedial = -0.0496; 
-      pfcdial = 0.0276;
-      meccdial= -0.73;
     }
     
     /*
@@ -349,18 +350,21 @@ int main(int argc, char *argv[])
     rw.Systematics().SetTwkDial(t2krew::kNCasc_FrPiProd_pi, piprodial);
 
     // now the individual tunings 140->146    
-    if(dial>=143) rw.Systematics().SetTwkDial(t2krew::kNIWG2014a_SF_RFG,1); // SF->RFG tuning
-    else if(dial>=140) rw.Systematics().SetTwkDial(t2krew::kNIWG2014a_SF_RFG,0);
+    if(dial>=141) rw.Systematics().SetTwkDial(t2krew::kNIWG2014a_SF_RFG,1); // SF->RFG tuning
+    else if(dial==140) {
+      rw.Systematics().SetTwkDial(t2krew::kNIWG2014a_SF_RFG,0);
+      rw.Systematics().SetTwkDial(t2krew::kNXSec_VecFFCCQE,402); 
+    }
 
-    if(dial==143){ // no RPA
+    if(dial==141){ // no RPA
       rw.Systematics().SetTwkDial(t2krew::kNIWG_rpaCCQE_norm,0);
       rw.Systematics().SetTwkDial(t2krew::kNIWG_rpaCCQE_shape,0);
     }
-    else if(dial==144){ //  non-relativistic RPA
+    else if(dial==142){ //  non-relativistic RPA
       rw.Systematics().SetTwkDial(t2krew::kNIWG_rpaCCQE_norm,1);
       rw.Systematics().SetTwkDial(t2krew::kNIWG_rpaCCQE_shape,-1);
     }
-    else if(dial>=145){ //  relativistic RPA
+    else if(dial>=143){ //  relativistic RPA
       rw.Systematics().SetTwkDial(t2krew::kNIWG_rpaCCQE_norm,1);
       rw.Systematics().SetTwkDial(t2krew::kNIWG_rpaCCQE_shape,0);
     }
@@ -371,7 +375,7 @@ int main(int argc, char *argv[])
 
     // Loop over SK entries and calculate weights.
     if(fNskEvts < 0) fNskEvts = skVtxs->GetEntries();
-
+    //fNskEvts=1;
     for(int i = 0; i < fNskEvts; i++){
       skVtxs->GetEntry(i);
       Double_t weight =1.0;

@@ -486,7 +486,7 @@ int main(int argc, char ** argv){
       //The variation of Xsec parameter, in #sigma:
       double XsecVariation=ErrorValue-(ErrorType-Systematics_Xsec_Start)*NXsecVariations-CenterXsecVariations; //. A number between 0 and 175 - the center of the current systematic source (nominal). For example, for Xsec error source #10, it starts from 7*(10-1)=63 and ends at 70. from 63 to 70, it contains the variariation of -3,-2,-1,0,1,2,3 sigma respectively. The center is then located at 66. For the example of a 2 sigma variation, the substraction will be therefore equal to: 68-66=2, which gives the number of sigmas!      
       if(ErrorType>=Systematics_Xsec_Start){
-	// some troublesome Xsec values
+	// some troublesome Xsec values where only +-1 sigma is meaningfull
 	if(IsReducedXSSyst(ErrorType-Systematics_Xsec_Start) && abs(XsecVariation)>1) continue;
       }
       
@@ -977,6 +977,12 @@ int main(int argc, char ** argv){
 #endif
     }
   }
+
+  // Here I compute the variation of th
+
+
+
+
 
   //###################################################################################
   //###################################################################################
