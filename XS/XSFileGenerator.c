@@ -384,11 +384,11 @@ int main(int argc, char **argv){
 			  <<Command1_3<<endl
  			  <<Command1_4<<endl
 			  <<Command1_5<<endl
-			  <<Command1_6<<endl*/
+			  <<Command1_6<<endl
 			  <<Command2<<endl
 		      <<Command3<<endl
 		      <<Command4<<endl
-		      <<Command5<<endl
+		      <<Command5<<endl*/
 			  <<Command6<<endl;
 		  //		  <<Command7<<endl;
 		}
@@ -658,26 +658,26 @@ int main(int argc, char **argv){
       cout<<Name1<<endl;
       ofstream ScriptPost(Name1);
       if(ErrorType==0){
-	sprintf(Command001,"${INSTALLREPOSITORY}/XS/CC0piSelection -i ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s%s_Run1_%s_Plan.root -o ${INSTALLREPOSITORY}/XS/files/MCSelected_%s%s_Systematics%d_%d -s %d -e %d -v %3.3f -m -p %2.2f %s %s",DetName,ParticleGenerator,"%d",DetName,ParticleGenerator,ErrorType,n,channel,ErrorType,ErrorValue,DataPOT,optionWM,(retuned?"-t 146":""));
+	sprintf(Command001,"${INSTALLREPOSITORY}/XS/CC0piSelection -i ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s%s_Run1_%s_Plan.root -o ${INSTALLREPOSITORY}/XS/files/MCSelected_%s%s_Systematics%d_%d -s %d -e %d -v %3.3f -m -p %2.2f %s %s",DetName,ParticleGenerator,"%d",DetName,ParticleGenerator,ErrorType,n,channel,ErrorType,ErrorValue,DataPOT,optionWM,(retuned?"-t 146":"-t 143"));
 	sprintf(Command002,"${INSTALLREPOSITORY}/XS/CC0piSelection -i ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s_%s.root -o ${INSTALLREPOSITORY}/XS/files/DataSelected_Systematics%d_%d -s %d -e %d -v %3.3f %s","%08d","%04d",ErrorType,n,channel,ErrorType,ErrorValue,optionWM);
 	sprintf(Command004,"${INSTALLREPOSITORY}/XS/UnfoldingOptimisation_Dvt -d ${INSTALLREPOSITORY}/XS/files/DataSelected_%s%s_Systematics%d_%d -m ${INSTALLREPOSITORY}/XS/files/MCSelected_%s%s_Systematics%d_%d -o ${INSTALLREPOSITORY}/XS/files/DataUnfolded_%s%s_Systematics%d_%d -n 1",DetName,ParticleGenerator,ErrorType,n,DetName,ParticleGenerator,ErrorType,n,DetName,ParticleGenerator,ErrorType,n);
       }
-      else if(ErrorType==6) sprintf(Command001,"${INSTALLREPOSITORY}/XS/CC0piSelection -i ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s_Run1_%s_Plan.root -o ${INSTALLREPOSITORY}/XS/files/MCSelected_%s_Systematics%d_%d -s %d -e %d -v %3.3f -m -w %2.2f -p %2.2f %s %s",DetName,"%d",DetName,ErrorType,n,channel,ErrorType,ErrorValue,ErrorValue,DataPOT,optionWM,(retuned?"-t 146":""));
-      else if(ErrorType==5) sprintf(Command001,"${INSTALLREPOSITORY}/XS/CC0piSelection -i ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s_Run1_%s_Systematics%d_%d_Plan.root -o ${INSTALLREPOSITORY}/XS/files/MCSelected_%s_Systematics%d_%d -s %d -e %d -v %3.3f -m -p %2.2f %s %s",DetName,"%d",ErrorType,2*n,DetName,ErrorType,n,channel,ErrorType,ErrorValue,DataPOT,optionWM,(retuned?"-t 146":""));
-      else sprintf(Command001,"${INSTALLREPOSITORY}/XS/CC0piSelection -i ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s_Run1_%s_Systematics%d_%d_Plan.root -o ${INSTALLREPOSITORY}/XS/files/MCSelected_%s_Systematics%d_%d -s %d -e %d -v %3.3f -m -p %2.2f %s %s",DetName,"%d",ErrorType,n,DetName,ErrorType,n,channel,ErrorType,ErrorValue,DataPOT,optionWM,(retuned?"-t 146":""));
+      else if(ErrorType==6) sprintf(Command001,"${INSTALLREPOSITORY}/XS/CC0piSelection -i ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s_Run1_%s_Plan.root -o ${INSTALLREPOSITORY}/XS/files/MCSelected_%s_Systematics%d_%d -s %d -e %d -v %3.3f -m -w %2.2f -p %2.2f %s %s",DetName,"%d",DetName,ErrorType,n,channel,ErrorType,ErrorValue,ErrorValue,DataPOT,optionWM,(retuned?"-t 146":"-t 143"));
+      else if(ErrorType==5) sprintf(Command001,"${INSTALLREPOSITORY}/XS/CC0piSelection -i ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s_Run1_%s_Systematics%d_%d_Plan.root -o ${INSTALLREPOSITORY}/XS/files/MCSelected_%s_Systematics%d_%d -s %d -e %d -v %3.3f -m -p %2.2f %s %s",DetName,"%d",ErrorType,2*n,DetName,ErrorType,n,channel,ErrorType,ErrorValue,DataPOT,optionWM,(retuned?"-t 146":"-t 143"));
+      else sprintf(Command001,"${INSTALLREPOSITORY}/XS/CC0piSelection -i ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s_Run1_%s_Systematics%d_%d_Plan.root -o ${INSTALLREPOSITORY}/XS/files/MCSelected_%s_Systematics%d_%d -s %d -e %d -v %3.3f -m -p %2.2f %s %s",DetName,"%d",ErrorType,n,DetName,ErrorType,n,channel,ErrorType,ErrorValue,DataPOT,optionWM,(retuned?"-t 146":"-t 143"));
       if(ErrorType>=7 && ErrorType<=15){
 	sprintf(Command002,"${INSTALLREPOSITORY}/XS/CC0piSelection -i ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s_%s_Systematics%d_%d.root -o ${INSTALLREPOSITORY}/XS/files/DataSelected_Systematics%d_%d -s %d -e %d -v %3.3f %s","%08d","%04d",ErrorType,n,ErrorType,n,channel,ErrorType,ErrorValue,optionWM);
 	sprintf(Command004,"${INSTALLREPOSITORY}/XS/UnfoldingOptimisation_Dvt -d ${INSTALLREPOSITORY}/XS/files/DataSelected_%s%s_Systematics%d_%d -m ${INSTALLREPOSITORY}/XS/files/MCSelected_%s%s_Systematics%d_%d -o ${INSTALLREPOSITORY}/XS/files/DataUnfolded_%s%s_Systematics%d_%d -n 1",DetName,ParticleGenerator,ErrorType,n,DetName,ParticleGenerator,ErrorType,n,DetName,ParticleGenerator,ErrorType,n);
 	//sprintf(Command004,"${INSTALLREPOSITORY}/XS/UnfoldingOptimisation_Dvt -d ${INSTALLREPOSITORY}/XS/files/DataSelected_Systematics%d_%d -m ${INSTALLREPOSITORY}/XS/files/MCSelected_Systematics%d_%d -o ${INSTALLREPOSITORY}/XS/files/DataUnfolded_Systematics%d_%d -n 1",ErrorType,n,ErrorType,n,ErrorType,n);
       } 
       else if(ErrorType==16){
-	sprintf(Command001,"${INSTALLREPOSITORY}/XS/CC0piSelection -i ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s%s_Run1_%s_Plan.root -o ${INSTALLREPOSITORY}/XS/files/MCSelected_%s%s_Systematics%d_%d -s %d -e %d -v %3.3f -m -p %2.2f %s %s",DetName,ParticleGenerator,"%d",DetName,ParticleGenerator,ErrorType,n,channel,ErrorType,ErrorValue,DataPOT,optionWM,(retuned?"-t 146":"")); 
+	sprintf(Command001,"${INSTALLREPOSITORY}/XS/CC0piSelection -i ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s%s_Run1_%s_Plan.root -o ${INSTALLREPOSITORY}/XS/files/MCSelected_%s%s_Systematics%d_%d -s %d -e %d -v %3.3f -m -p %2.2f %s %s",DetName,ParticleGenerator,"%d",DetName,ParticleGenerator,ErrorType,n,channel,ErrorType,ErrorValue,DataPOT,optionWM,(retuned?"-t 146":"-t 143")); 
 	cout <<"Flux" << endl;
 	//sprintf(Command001,"${INSTALLREPOSITORY}/XS/CC0piSelection -i ${INSTALLREPOSITORY}/XS/root_input/XSFormat_Run1_%s_Plan.root -o ${INSTALLREPOSITORY}/XS/files/MCSelected_Systematics%d_%d -s %d -e %d -v %3.3f -m -p %2.2f","%d",ErrorType,n,ErrorType,ErrorValue,DataPOT);	
       }
       else if(ErrorType>=17){
 	//double XsecVariation=ErrorValue-CenterXsecVariations*(ErrorType-Systematics_Xsec_Start);//The variation of Xsec parameter, in #sigma. A number between 0 and 175 - the center of the current systematic source (nominal). For example, for Xsec error source #10, it starts from 7*(10-1)=63 and ends at 70. from 63 to 70, it contains the variariation of -3,-2,-1,0,1,2,3 sigma respectively. The center is then located at 66. For the example of a 2 sigma variation, the substraction will be therefore equal to: 68-66=2, which gives the number of sigmas!
-	sprintf(Command001,"${INSTALLREPOSITORY}/XS/CC0piSelection -i ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s%s_Run1_%s_ReWeight2015%s_Plan.root -o ${INSTALLREPOSITORY}/XS/files/MCSelected_%s%s_Systematics%d_%d -s %d -e %d -v %3.3f -m -p %2.2f %s %s",DetName,ParticleGenerator,"%d",(retuned?"tuned":""),DetName,ParticleGenerator,ErrorType,n,channel,ErrorType,ErrorValue,DataPOT,optionWM,(retuned?"-t 146":""));
+	sprintf(Command001,"${INSTALLREPOSITORY}/XS/CC0piSelection -i ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s%s_Run1_%s_ReWeight2015%s_Plan.root -o ${INSTALLREPOSITORY}/XS/files/MCSelected_%s%s_Systematics%d_%d -s %d -e %d -v %3.3f -m -p %2.2f %s %s",DetName,ParticleGenerator,"%d",(retuned?"tuned":""),DetName,ParticleGenerator,ErrorType,n,channel,ErrorType,ErrorValue,DataPOT,optionWM,(retuned?"-t 146":"-t 143"));
 	//sprintf(Command001,"${INSTALLREPOSITORY}/XS/CC0piSelection -i ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s_Run1_%s_ReWeight2015_Plan.root -o ${INSTALLREPOSITORY}/XS/files/MCSelected_Systematics%d_%d -s %d -e %d -v %3.3f -m -p %2.2f","%d",DetName,ErrorType,n,ErrorType,ErrorValue,DataPOT);
       }
       
