@@ -270,19 +270,19 @@ void LoadMuCLDistributions_Likelihood(bool PM=true){
   else{
     double Start_WM_Muon=s_WM_Likelihood_Muon[0]->GetXmin();double End_WM_Muon=s_WM_Likelihood_Muon[0]->GetXmax();
     double Start_WM_NotMuon=s_WM_Likelihood_NotMuon[0]->GetXmin();double End_WM_NotMuon=s_WM_Likelihood_NotMuon[0]->GetXmax();
-    CL_WM_Muon = new TF1("CL_PMSci_Muon",Likelihood_WM_Muon,Start_WM_Muon,End_WM_Muon,2);
-    CL_WM_NotMuon = new TF1("CL_PMSci_NotMuon",Likelihood_WM_NotMuon,Start_WM_NotMuon,End_WM_NotMuon,2);
+    CL_WM_Muon = new TF1("CL_WM_Muon",Likelihood_WM_Muon,Start_WM_Muon,End_WM_Muon,2);
+    CL_WM_NotMuon = new TF1("CL_WM_NotMuon",Likelihood_WM_NotMuon,Start_WM_NotMuon,End_WM_NotMuon,2);
     CL_WM_Muon->SetParameter(0,Start_WM_Muon);CL_WM_Muon->SetParameter(1,End_WM_Muon);
     CL_WM_NotMuon->SetParameter(0,Start_WM_NotMuon);CL_WM_NotMuon->SetParameter(1,End_WM_NotMuon);
 #ifdef PI_LIKELIHOOD
     double Start_WM_Pion=s_WM_Likelihood_Pion[0]->GetXmin();double End_WM_Pion=s_WM_Likelihood_Pion[0]->GetXmax();
     double Start_WM_NotPion=s_WM_Likelihood_NotPion[0]->GetXmin();double End_WM_NotPion=s_WM_Likelihood_NotPion[0]->GetXmax();
-    CL_WM_Pion = new TF1("CL_PMSci_Pion",Likelihood_WM_Pion,Start_WM_Pion,End_WM_Pion,2);
-    CL_WM_NotPion = new TF1("CL_PMSci_NotPion",Likelihood_WM_NotPion,Start_WM_NotPion,End_WM_NotPion,2);
+    CL_WM_Pion = new TF1("CL_WM_Pion",Likelihood_WM_Pion,Start_WM_Pion,End_WM_Pion,2);
+    CL_WM_NotPion = new TF1("CL_WM_NotPion",Likelihood_WM_NotPion,Start_WM_NotPion,End_WM_NotPion,2);
     CL_WM_Pion->SetParameter(0,Start_WM_Pion);CL_WM_Pion->SetParameter(1,End_WM_Pion);
     CL_WM_NotPion->SetParameter(0,Start_WM_NotPion);CL_WM_NotPion->SetParameter(1,End_WM_NotPion);
 #endif 
- }
+  }
   double Start_Ing_Muon=s_Ing_Likelihood_Muon->GetXmin();double End_Ing_Muon=s_Ing_Likelihood_Muon->GetXmax();
   CL_Ing_Muon = new TF1("CL_Ing_Muon",Likelihood_Ing_Muon,Start_Ing_Muon,End_Ing_Muon,2);
   CL_Ing_Muon->SetParameter(0,Start_Ing_Muon);CL_Ing_Muon->SetParameter(1,End_Ing_Muon);
@@ -407,7 +407,7 @@ vector <double> eenergydeposition[LimitTracks];
 TGraphErrors * gEnergyDeposition[LimitTracks];
 TSpline3 * sEnergyDeposition[LimitTracks];
 
-void ResetInputVariables(){
+void ResetInputVariables(bool newEventReset=true){
   for(int itrk=0;itrk<LimitTracks;itrk++){
     TrackAngle[itrk]=-1;
     TrackThetaX[itrk]=-1;
@@ -460,20 +460,28 @@ void ResetInputVariables(){
   OpeningAngle=-1.;
   CoplanarityAngle=-1.;
   NewEvent=false;
-  
-  NIngBasRec=-1;
-  TrueAngleMuon=-1;
-  TrueMomentumMuon=-1;
-  TrueAnglePion=-1;
-  TrueMomentumPion=-1;
-  IsFV=false;
-  FSIInt=-1;
-  Num_Int=-1;
   nTracks=-1;
-  weight=0;
-  Enu=0;
-  GoodSpill=0;
-  Spill=0;
+
+  if(newEventReset){
+    NIngBasRec=-1;
+    TrueAngleMuon=-1;
+    TrueMomentumMuon=-1;
+    TrueAnglePion=-1;
+    TrueMomentumPion=-1;
+    IsFV=false;
+    FSIInt=-1;
+    Num_Int=-1;
+    weight=0;
+    Enu=0;
+    GoodSpill=0;
+    Spill=0;
+    IsSand=false;
+    IsAnti=false;
+    IsNuE=false;
+    IsBkgH=false;
+    IsBkgV=false;
+    IsSciBkg=false;
+  }
 
 }
 
@@ -899,7 +907,7 @@ int main(int argc, char **argv)
 
       // cout<<IsSciBkg<<" "<<TrueVertexPosition[0]<<" "<<TrueVertexPosition[1]<<" "<<TrueVertexPosition[2]+120<<endl;
 
-      if(FSIInt==3){
+      if(FSIInt==3 || FSIInt==12){
 	vector<double> PionTrue = Rec->Reconstruction::GetTruePionInformation(evt);
 	TrueAnglePion=PionTrue[1];
 	TrueMomentumPion=PionTrue[0];
@@ -1872,7 +1880,7 @@ int main(int argc, char **argv)
       }//Tracks
       //xcout<<"Is Detected="<<VIsDetected<<endl;
       wtree->Fill();
-      ResetInputVariables();	
+      ResetInputVariables(false);	
 	
     }//Recons
   }//Evt
