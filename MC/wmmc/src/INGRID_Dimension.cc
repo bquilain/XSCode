@@ -11,7 +11,9 @@ using namespace std;
 
 //------------------------------------------------
 void Initialize_INGRID_Dimension(){
-  TFile* f = TFile::Open("/export/scbn25/data1/taichiro/T2K/work/basesoft/git/watermodule/wmmc/assembly_checklist.root","READ");
+  char * cINSTALLREPOSITORY = getenv("INSTALLREPOSITORY");
+
+  TFile* f = TFile::Open(Form("%s/MC/wmmc/src/assembly_checklist.root",cINSTALLREPOSITORY),"READ");
   TTree* t = (TTree*) f->Get("tree");
   double xy1,xy3,xy0;
   int view,pln,ch;
@@ -38,7 +40,7 @@ void Initialize_INGRID_Dimension(){
   f->Close();
   f->Delete();
 
-  f = TFile::Open("/export/scbn25/data1/taichiro/T2K/work/basesoft/git/watermodule/wmmc/position_module_z.root","READ");
+  f = TFile::Open(Form("%s/MC/wmmc/src/position_module_z.root",cINSTALLREPOSITORY),"READ");
   t = (TTree*) f->Get("tree");
   double z;
   double z0;

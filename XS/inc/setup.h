@@ -74,25 +74,29 @@ const float Mmu=105.66/1000.;
 const float Mp=938.272/1000.;
 const float Mn=939.5659/1000.;
 #endif
+const float Mpi=139.57/1000.;
+float EpiBins[5]={0,0.25,0.50,0.75,1};
+float EpiReWeight[5]={0.135,0.4,0.294,1.206,1};
 const int StartRun=29596;
-const int EndRun=29760;
+const int EndRun=29760; //up to Dec 2016
 const int StartSubRun=0;
 const int EndSubRun=300;//300
 const int StartRunList=29;//14 for PM; Which list will be read (29=>29000.txt). Necessary to use only run processed
 const int EndRunList=30;//15 for PM; Which list will be read (29=>29000.txt). Necessary to use only run processed
-double NMCfiles=200; // up to now only 1000 are available with NEUT 5.3.6
+double NMCfiles=500; // up to now only 1000 are available with NEUT 5.3.6
 
 double DataPOTPM=0.58;//In units of 10^21 POT -- runs 234
 //double DataPOTPM=0.76;//In units of 10^21 POT -- runs 234  (+56)
 double DataPOTWM=0.72;//In units of 10^21 POT -- run 8
 double DataPOT;
-const int StartError=0;
-const int EndError=36;//15 for det, 16 for det+flux, 36 for det+flux+xs, 37 to add NEUT tunings
+const int StartError=17;
+const int EndError=37;//15 for det, 16 for det+flux, 36 for det+flux+xs, 37 to add NEUT tunings
+const int MaxError=37;
 int NFluxFiles;
 int StartXsec=0;const int EndXsec=19;int NXsecVariations=7; int NXsecTunings=7;
 int CenterXsecVariations=(int) (NXsecVariations-1-((double) (NXsecVariations-1)/2));
 
-int NE[EndError+1];
+int NE[MaxError+1];
 double Step[EndError+1];
 double Start[EndError+1];
 double End[EndError+1];
@@ -123,6 +127,7 @@ const int NBinsRecEnergy=6;
 double BinningTrueEnergy[NBinsTrueEnergy+1];
 double BinningRecEnergy[NBinsRecEnergy+1];
 const int NFSIs=13;//cc0pi+0p,cc0pi+1p,cc0pi+morep,cc1pi,cc1pi0,ccother,nc,+all bkg
+const int NIntTypes=6;//ccqe,ccmec,ccres,cccoh,ccres,other
 const int NBinsTrueMom=5;
 const int NBinsTrueAngle=5;
 const int NBinsRecMom=11;// was 17 -- ML 2017/08/03
@@ -160,7 +165,7 @@ void InitializeGlobal(bool PM=true){
   for(int i=0;i<=NBinsEnergyFlux;i++){
     if(i<=15) BinningEnergyFlux[i]=i*0.2;//in GeV
     else if(i<=16) BinningEnergyFlux[i]=BinningEnergyFlux[15]+(i-15)*1;
-    else if(i<=19) BinningEnergyFlux[i]=BinningEnergyFlux[16]+(i-17)*2;
+    else if(i<=19) BinningEnergyFlux[i]=BinningEnergyFlux[16]+(i-16)*2; // ML corr 2017/10
     else if(i<=20) BinningEnergyFlux[i]=30.;
     else cout<<"Error in binning the flux in energy. Please look at setup.h"<<endl;
     /*
@@ -204,7 +209,7 @@ void InitializeGlobal(bool PM=true){
   }
     
 
-  for(int n=StartError;n<=EndError;n++){
+  for(int n=0;n<=37;n++){
     NE[n]=1;
     Start[n]=1;
     Step[n]=1;
@@ -346,7 +351,7 @@ void InitializeGlobal(bool PM=true){
       Err=1;
       Start[n]=Nominal;
       Step[n]=Err;
-      NE[n]=1000;
+      NE[n]=500;
       NFluxFiles=NE[n];
     }
     else if(n>=Systematics_Xsec_Start && n<=Systematics_Xsec_End){//17: cross section error
