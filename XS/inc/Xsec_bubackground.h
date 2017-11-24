@@ -12,7 +12,6 @@ using namespace std;
 
 class Xsec{
  public:
-  TRandom3 * r;
   Xsec(bool=true);
   ~Xsec();
   
@@ -34,22 +33,16 @@ class Xsec{
 
   void LoadInputFiles_OnlySelectedDataSB(char * fDataName,char * fDataNameSB,double ** DataReconstructedEvents);
     
-  void LoadInputFiles(char * fDataName,char * fMCName, double **** MCReconstructedEvents_TrueSignal, double ** DataReconstructedEvents,double ** MCReconstructedEvents, double ** MCReconstructedBkgEvents, double ** Efficiency, double *NumberOfPOT,double **** MCReconstructedEvents_TrueSignal=NULL,bool FakeData=false);
-
-  void LoadInputFilesSB(char * fDataName,char * fMCName, char * fDataNameSB,char * fMCNameSB, double **** MCReconstructedEvents_TrueSignal, double ** DataReconstructedEvents,double ** MCReconstructedEvents, double ** MCReconstructedBkgEvents, double ** Efficiency, double *NumberOfPOT,double **** MCReconstructedEvents_TrueSignal=NULL,bool FakeData=false);
-  //void LoadInputFilesSB(char * fDataName,char * fMCName, char * fDataNameSB,char * fMCNameSB, double **** MCReconstructedEvents_TrueSignal, double ** DataReconstructedEvents,double ** MCReconstructedEvents, double ** MCReconstructedBkgEvents, double ** Efficiency, double *NumberOfPOT);
+  void LoadInputFiles(char * fDataName,char * fMCName, double **** MCReconstructedEvents_TrueSignal, double ** DataReconstructedEvents,double ** MCReconstructedEvents, double ** MCReconstructedBkgEvents, double ** Efficiency, double *NumberOfPOT);
+  void LoadInputFilesSB(char * fDataName,char * fMCName, char * fDataNameSB,char * fMCNameSB, double **** MCReconstructedEvents_TrueSignal, double ** DataReconstructedEvents,double ** MCReconstructedEvents, double ** MCReconstructedBkgEvents, double ** Efficiency, double *NumberOfPOT);
 
   void LoadNeutrinoFlux(TH1D * NeutrinoFlux);
   
-  void BuildLikelihood(double **** vLikelihood, double ** vPriorMC, double **** MCReconstructedEvents_TrueSignal);
+  void BuildLikelihood(double **** vLikelihood, double ** vPriorMC, double ** TrueEventsDistribution, double **** MCReconstructedEvents_TrueSignal);
 
-  void ProjectOnTruePhaseSpace_OnlySignal(double ** TrueEventsDistribution_SignalOnly, double **** ReconstructedEvents_TrueSignal);
-    
   void BuildUnfolding(double **** vUnfolding, double **** vLikelihood, double ** vPrior);
 
-  void ApplyUnfoldingBkgSubstraction(double ** vPosteriorEvents, double **** vUnfolding, double ** DataReconstructedEvents, double ** MCReconstructedBkgEvents);
-
-  void ApplyUnfolding(double ** vPosteriorEvents, double ** vPosteriorEvents_SignalOnly, double **** vUnfolding, double ** DataReconstructedEvents);
+  void ApplyUnfolding(double ** vPosteriorEvents, double **** vUnfolding, double ** DataReconstructedEvents, double ** MCReconstructedBkgEvents);
 
   void SetPrior(double ** vPriorNormalised, double ** vPrior, double ** vInitialPriorMC, double ** vInitialPrior,double ** vPosterior, bool PriorMC, double IterationStep);
 

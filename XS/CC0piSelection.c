@@ -69,6 +69,7 @@ using namespace std;
 #define MVAREADING
 //#define TEMPORARY
 //#define DEBUGMVA
+bool BkgSub=false;
 
 //If wish to cut part of the track for the MVA. This is the starting bin of the relative track length where to use the MVA.
 int FirstHit=0;
@@ -81,11 +82,15 @@ double ScalingMC;
 double DataEquivalent=1;
 double SandReweight=0.6;
 double MuonSample1=3;
-double MuonSample2=3;
+double MuonSample2=5;
 double MuonCut=0.9;
 double ProtonCut=0.9;
-double MuonMVACut=0.06;
-double ProtonMVACut=0.1;
+double MuonMVACut;double ProtonMVACut;
+double MuonMVACut_CC0pi=0.06;
+double ProtonMVACut_CC0pi=0.1;
+double MuonMVACut_CC1pi=0.06;
+double ProtonMVACut_CC1pi=0.0;
+
 //double ProtonMVACut=0.1;
 
 //Temp for 1D cut
@@ -179,7 +184,8 @@ void ProduceStackParticles(TH1D * hmu, TH1D * hpi, TH1D * hp, THStack * hStack){
   
 }
   
-void InitialiseTable(double DataSelected[NBinsRecMom][NBinsRecAngle],double MCSelected[NBinsTrueMom][NBinsTrueAngle][NBinsRecMom][NBinsRecAngle],double BkgSelected[NBinsRecMom][NBinsRecAngle],double Efficiency[NBinsTrueMom][NBinsTrueAngle],double TotalCC0piEvent[NBinsTrueMom][NBinsTrueAngle],double TotalCC1piEvent[NBinsTrueMom][NBinsTrueAngle]){
+//void InitialiseTable(double DataSelected[NBinsRecMom][NBinsRecAngle],double MCSelected[NBinsTrueMom][NBinsTrueAngle][NBinsRecMom][NBinsRecAngle],double BkgSelected[NBinsRecMom][NBinsRecAngle],double Efficiency[NBinsTrueMom][NBinsTrueAngle],double TotalCC0piEvent[NBinsTrueMom][NBinsTrueAngle],double TotalCC1piEvent[NBinsTrueMom][NBinsTrueAngle]){
+void InitialiseTable(double ** DataSelected,double **** MCSelected,double ** BkgSelected,double ** Efficiency,double ** TotalCC0piEvent,double ** TotalCC1piEvent){
   for(int c0=0;c0<NBinsTrueMom;c0++){//loop over cause 0
     for(int c1=0;c1<NBinsTrueAngle;c1++){//loop over cause 1
       Efficiency[c0][c1]=0;
@@ -208,6 +214,8 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
   int sig;
   TH1D * NeutrinoFlux;
   TRandom3 * rand = new TRandom3();
+
+
   ///////////////////////////////LOAD THE NEUTRINO FLUX
   //TFile * f = new TFile("files/nd34_tuned_11bv3.1_250ka.root");
   //NeutrinoFlux = (TH1D*) f->Get("ing3_tune_numu");
@@ -724,16 +732,44 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
 
   //Difference between variables and variables_full: the first can have a track sample selection (example: INGRID stop) while the second has no track sample selection
   double POTCount=0;//Number of POT (for data)
-  double DataSelected[NBinsRecMom][NBinsRecAngle];
-  double MCSelected[NBinsTrueMom][NBinsTrueAngle][NBinsRecMom][NBinsRecAngle];
-  double BkgSelected[NBinsRecMom][NBinsRecAngle];
-  double Efficiency[NBinsTrueMom][NBinsTrueAngle];
-  double DataSelected_full[NBinsRecMom][NBinsRecAngle];
-  double MCSelected_full[NBinsTrueMom][NBinsTrueAngle][NBinsRecMom][NBinsRecAngle];
-  double BkgSelected_full[NBinsRecMom][NBinsRecAngle];
-  double Efficiency_full[NBinsTrueMom][NBinsTrueAngle];
-  double TotalCC0piEvent[NBinsTrueMom][NBinsTrueAngle]={{0}};
-  double TotalCC1piEvent[NBinsTrueMom][NBinsTrueAngle]={{0}};
+
+  double ** DataSelected = new double*[NBinsRecMom];
+  double ** BkgSelected = new double*[NBinsRecMom];
+  double ** DataSelected_full = new double*[NBinsRecMom];
+  double ** BkgSelected_full = new double*[NBinsRecMom];
+  for(int i=0;i<NBinsRecMom;i++){
+    DataSelected[i] = new double[NBinsRecAngle];
+    BkgSelected[i] = new double[NBinsRecAngle];
+    DataSelected_full[i] = new double[NBinsRecAngle];
+    BkgSelected_full[i] = new double[NBinsRecAngle];
+  }
+
+  double ** Efficiency = new double*[NBinsTrueMom];
+  double ** Efficiency_full = new double*[NBinsTrueMom];
+  double ** TotalCC0piEvent = new double*[NBinsTrueMom];
+  double ** TotalCC1piEvent = new double*[NBinsTrueMom];
+  for(int i=0;i<NBinsTrueMom;i++){
+    Efficiency[i] = new double[NBinsTrueAngle];
+    Efficiency_full[i] = new double[NBinsTrueAngle];
+    TotalCC0piEvent[i] = new double[NBinsTrueAngle];
+    TotalCC1piEvent[i] = new double[NBinsTrueAngle];
+  }
+
+  double **** MCSelected = new double***[NBinsTrueMom];
+  double **** MCSelected_full = new double***[NBinsTrueMom];
+  for(int i=0;i<NBinsTrueMom;i++){
+    MCSelected[i] = new double**[NBinsTrueAngle];
+    MCSelected_full[i] = new double**[NBinsTrueAngle];
+    for(int j=0;j<NBinsTrueAngle;j++){
+      MCSelected[i][j] = new double*[NBinsRecMom];
+      MCSelected_full[i][j] = new double*[NBinsRecMom];
+      for(int k=0;k<NBinsRecMom;k++){
+	MCSelected[i][j][k] = new double[NBinsRecAngle];
+	MCSelected_full[i][j][k] = new double[NBinsRecAngle];
+      }
+    }
+  }
+
   double TotalCC1pi=0;
 
   InitialiseTable(DataSelected,MCSelected,BkgSelected,Efficiency,TotalCC0piEvent,TotalCC0piEvent);//Set the variables to 0
@@ -1328,6 +1364,8 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
 
   
   double NEvents=0;double NEventsFV=0;double NEventsLost=0;double NEventsLostDetected=0;
+
+  int BinTrueInteraction=0;
   int BinTrueMom=0;
   int BinTrueAngle=0;
   //cout<<"going to read events"<<endl;
@@ -1450,15 +1488,40 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
       // Fill also MC events
       
       if(NewEvent){
+	if(FSIInt<3) BinTrueInteraction=1;
+	else if(FSIInt==3) BinTrueInteraction=2;
+	else BinTrueInteraction=3;
+	
 	BinTrueMom=0;
 	BinTrueAngle=0;
-	for(int i=0;i<=NBinsTrueMom;i++){
-	  if(TrueMomentumMuon<BinningTrueMom[i+1]){BinTrueMom=i;break;}
+
+	if(FSIInt<3){
+	  for(int i=0;i<NBinsTrueMomSignal;i++){
+	    if(TrueMomentumMuon<BinningTrueMom[i+1]){BinTrueMom=i;break;}
+	  }
+	  for(int i=0;i<NBinsTrueAngleSignal;i++){
+	    if(TrueAngleMuon<BinningTrueAngle[i+1]){BinTrueAngle=i;break;}
+	  }
+	}//
+	else if(FSIInt==3){
+	  for(int i=0;i<NBinsTrueMomSB;i++){
+	    if(TrueMomentumMuon<BinningTrueMomSB[i+1]){BinTrueMom=i+NBinsTrueMomSignal;break;}
+	  }
+	  for(int i=0;i<NBinsTrueAngleSB;i++){
+	    if(TrueAngleMuon<BinningTrueAngleSB[i+1]){BinTrueAngle=i+NBinsTrueAngleSignal;break;}
+	  }
 	}
-	for(int i=0;i<=NBinsTrueAngle;i++){
-	  if(TrueAngleMuon<BinningTrueAngle[i+1]){BinTrueAngle=i;break;}
+	else{
+	  for(int i=0;i<NBinsTrueMomTrash;i++){
+	    if(TrueMomentumMuon<BinningTrueMomTrash[i+1]){BinTrueMom=i+NBinsTrueAngleSignal+NBinsTrueMomSB;break;}
+	  }
+	  for(int i=0;i<NBinsTrueAngleTrash;i++){
+	    if(TrueAngleMuon<BinningTrueAngleTrash[i+1]){BinTrueAngle=i+NBinsTrueAngleSignal+NBinsTrueAngleSB;break;}
+	  }
 	}
-	//cout<<FSIInt<<", "<<Num_Int<<endl;
+
+	
+	//cout<<FSIInt<<", "<<Num_Int<<", bin true mom="<<BinTrueMom<<", bin true angle="<<BinTrueAngle<<endl;
 
       
 	if(!IsData){
@@ -1688,6 +1751,7 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
 	NEventsLost+=weight;
 	continue;
       }
+
       
       int MuonLike=0;int ProtonLike=0;int Undetermined=0;
       //cout<<"new"<<endl;
@@ -1849,9 +1913,11 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
 	  nEventsInter[4][FSIInt]+=weight;
 	  DataSelected_full[BinRecMom][BinRecAngle]+=weight;
 	  if(!IsData){
+	    if(!BkgSub) MCSelected_full[BinTrueMom][BinTrueAngle][BinRecMom][BinRecAngle]+=weight;//New: likelihood without background substraction case.
+	    else if(FSIInt<3 && IsNuMu) MCSelected_full[BinTrueMom][BinTrueAngle][BinRecMom][BinRecAngle]+=weight;
+	    
 	    if(FSIInt<3 && IsNuMu){
 	      if(Plots) MCEfficiency_Energy->Fill(Enu,weight);
-	      MCSelected_full[BinTrueMom][BinTrueAngle][BinRecMom][BinRecAngle]+=weight;
 	      Efficiency_full[BinTrueMom][BinTrueAngle]+=weight;
 	    }
 	    else{
@@ -1868,9 +1934,11 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
 	  hNTracks_CC0pi[FSIInt]->Fill(nRecTracks,weight);
 	  
 	  if(!IsData){
+	    //cout<<FSIInt<<", "<<Num_Int<<", bin true mom="<<BinTrueMom<<", bin true angle="<<BinTrueAngle<<endl;
+	    if(!BkgSub){MCSelected[BinTrueMom][BinTrueAngle][BinRecMom][BinRecAngle]+=weight;/*cout<<"filled"<<endl;*/}//New: likelihood without background substraction case.
+	    else if(FSIInt<3 && IsNuMu) MCSelected[BinTrueMom][BinTrueAngle][BinRecMom][BinRecAngle]+=weight;
 	    if(FSIInt<3 && IsNuMu){
 	      if(Plots) MCEfficiency_Energy->Fill(Enu,weight);
-	      MCSelected[BinTrueMom][BinTrueAngle][BinRecMom][BinRecAngle]+=weight;
 	      Efficiency[BinTrueMom][BinTrueAngle]+=weight;
 	    }
 	    else{
@@ -1904,10 +1972,13 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
 	  nEvents[4]+=weight;
 	  nEventsInter[4][FSIInt]+=weight;
 	  DataSelected_full[BinRecMom][BinRecAngle]+=weight;
+	  
 	  if(!IsData){
+	    if(!BkgSub) MCSelected_full[BinTrueMom][BinTrueAngle][BinRecMom][BinRecAngle]+=weight;//New: likelihood without background substraction case.
+	    else if(FSIInt==3 && IsNuMu) MCSelected_full[BinTrueMom][BinTrueAngle][BinRecMom][BinRecAngle]+=weight;
 	    if(FSIInt==3 && IsNuMu){
 	      if(Plots) MCEfficiency_Energy->Fill(Enu,weight);
-	      MCSelected_full[BinTrueMom][BinTrueAngle][BinRecMom][BinRecAngle]+=weight;
+	      //MCSelected_full[BinTrueMom][BinTrueAngle][BinRecMom][BinRecAngle]+=weight;
 	      Efficiency_full[BinTrueMom][BinTrueAngle]+=weight;
 	    }
 	    else{
@@ -1924,9 +1995,11 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
 				
 	  DataSelected[BinRecMom][BinRecAngle]+=weight;
 	  if(!IsData){
+	    if(!BkgSub) MCSelected[BinTrueMom][BinTrueAngle][BinRecMom][BinRecAngle]+=weight;//New: likelihood without background substraction case.
+	    else if(FSIInt==3 && IsNuMu) MCSelected[BinTrueMom][BinTrueAngle][BinRecMom][BinRecAngle]+=weight;
 	    if(FSIInt==3 && IsNuMu){
 	      if(Plots) MCEfficiency_Energy->Fill(Enu,weight);
-	      MCSelected[BinTrueMom][BinTrueAngle][BinRecMom][BinRecAngle]+=weight;
+	      //MCSelected[BinTrueMom][BinTrueAngle][BinRecMom][BinRecAngle]+=weight;
 	      Efficiency[BinTrueMom][BinTrueAngle]+=weight;
 	    }
 	    else{
@@ -2035,6 +2108,10 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
       cout<<myCuts[i]<<": \tselected="<<nEvents[i]<<" \tpurity="<<100.*nEventsInter[i][3]/nEvents[i]<<" \tefficiency="<<nEventsInter[i][3]/TotalTrue0*100<<endl;
       CutEfficiency->SetBinContent(i+1,nEventsInter[i][3]/TotalTrue0*100);
       CutPurity->SetBinContent(i+1,nEventsInter[i][3]/nEvents[i]*100);
+
+      cout<<"\\hline"<<endl;
+      cout << " & Total & Purity & Efficiency & CC0$\\pi$ & CC1$\\pi^{\\pm}$ & CC$\\pi^{0}$ & CCothers & NC \\\\"<<endl<<"\\hline"<<endl;
+      cout<<setprecision(0)<<std::fixed<<myCuts[i]<<" & "<<nEvents[i]<<" & "<< 100*(nEventsInter[i][3])/nEvents[i]<<" $\\%$ & "<< 100*(nEventsInter[i][3])/TotalTrue0 <<" $\\%$ & "<<(nEventsInter[i][0]+nEventsInter[i][1]+nEventsInter[i][2])<<" & "<<nEventsInter[i][3]<<" & "<<nEventsInter[i][4]<<" & "<<nEventsInter[i][5]<<" & "<<nEventsInter[i][6]<<" \\\\"<<endl; 
     }
   }
   else if(Selection==1){
@@ -2042,8 +2119,8 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
     cout << " & Total & Purity & Efficiency & CC0$\\pi$ & CC1$\\pi^{\\pm}$ & CC$\\pi^{0}$ & CCothers & NC \\\\"<<endl<<"\\hline"<<endl;
     for(int i=0;i<nCuts;i++){
       cout<<setprecision(0)<<std::fixed<<myCuts[i]<<" & "<<nEvents[i]<<" & "<< 100*(nEventsInter[i][0]+nEventsInter[i][1]+nEventsInter[i][2])/nEvents[i]<<" $\\%$ & "<< 100*(nEventsInter[i][0]+nEventsInter[i][1]+nEventsInter[i][2])/TotalTrue0 <<" $\\%$ & "<<(nEventsInter[i][0]+nEventsInter[i][1]+nEventsInter[i][2])<<" & "<<nEventsInter[i][3]<<" & "<<nEventsInter[i][4]<<" & "<<nEventsInter[i][5]<<" & "<<nEventsInter[i][6]<<" \\\\"<<endl; 
-      CutEfficiency->SetBinContent(i+1,nEventsInter[i][3]/TotalTrue0*100);
-      CutPurity->SetBinContent(i+1,nEventsInter[i][3]/nEvents[i]*100);
+      CutEfficiency->SetBinContent(i+1,nEventsInter[i][0]+nEventsInter[i][1]+nEventsInter[i][2]/TotalTrue0*100);
+      CutPurity->SetBinContent(i+1,nEventsInter[i][0]+nEventsInter[i][1]+nEventsInter[i][2]/nEvents[i]*100);
     }
     cout<<"\\hline"<<endl;
     cout<<endl<<endl;
@@ -2114,6 +2191,21 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
       NeutrinoFlux->SetBinContent(i,Nneut+Nneut*FluxVector[i-1]);
     }
   }
+  /////
+#ifdef DEBUG2
+  for(int c0=0;c0<NBinsTrueMom;c0++){//loop over cause 0
+    cout<<endl<<"Mom bin:"<<c0<<endl;
+    for(int c1=0;c1<NBinsTrueAngle;c1++){//loop over cause 1
+      cout<<endl<<"Angle bin:"<<c1<<endl;
+      for(int e0=0;e0<NBinsRecMom;e0++){//loop over effect 0
+	for(int e1=0;e1<NBinsRecAngle;e1++){//loop over effect 1
+	  cout<<MCSelected[c0][c1][e0][e1]<<" ";
+	}
+      }
+    }
+  }
+#endif
+  /////
   
   cout<<"opening file "<<OutNameEvent<<" for writing output"<<endl;
   fEvent.open(OutNameEvent,ios::out);
@@ -2663,7 +2755,45 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
 #endif
 
   }
+
+  for(int i=0;i<NBinsRecMom;i++){
+    delete DataSelected[i];
+    delete BkgSelected[i];
+    delete DataSelected_full[i];
+    delete BkgSelected_full[i];
+  }
+  delete DataSelected;
+  delete BkgSelected;
+  delete DataSelected_full;
+  delete BkgSelected_full;
+
+  for(int i=0;i<NBinsTrueMom;i++){
+    delete Efficiency[i];
+    delete Efficiency_full[i];
+    delete TotalCC0piEvent[i];
+    delete TotalCC1piEvent[i];
+  }
+  delete Efficiency;
+  delete Efficiency_full;
+  delete TotalCC0piEvent;
+  delete TotalCC1piEvent;
+
   
+  for(int i=0;i<NBinsTrueMom;i++){
+    for(int j=0;j<NBinsTrueAngle;j++){
+      for(int k=0;k<NBinsRecMom;k++){
+	delete MCSelected[i][j][k];
+	delete MCSelected_full[i][j][k];
+      }
+      delete MCSelected[i][j];
+      delete MCSelected_full[i][j];
+    }
+    delete MCSelected[i];
+    delete MCSelected_full[i];
+  }
+  delete MCSelected;
+  delete MCSelected_full;
+
   delete rand;
 }
 
@@ -2725,15 +2855,22 @@ int main(int argc, char ** argv){
   cout<<"welcome"<<endl;
   cout<<"Detector is "<<(isPM ? "PM" : "WM" )<<endl;
   //  XS->Xsec::Initialize();
-  InitializeGlobal();
+  InitializeGlobal(isPM,Sample);
 
   if(!isPM){
     ProtonCut=ProtonCut_WM;
     MuonCut=MuonCut_WM;
   }
-  if(Sample==2)    MuonSample2=5;
- 
- 
+  
+  if(Sample==2){
+    MuonMVACut = MuonMVACut_CC1pi;
+    ProtonMVACut = ProtonMVACut_CC1pi;
+  }
+  else{
+    MuonMVACut = MuonMVACut_CC0pi;
+    ProtonMVACut = ProtonMVACut_CC0pi;
+  }
+  cout<<"Defined the MVA muon cut as:"<<MuonMVACut<<", and proton cut as:"<<ProtonMVACut<<endl;
    TChain * chain = new TChain("wtree");
    TChain * chainMVA = new TChain("wtreeMVA");
    if(Data){

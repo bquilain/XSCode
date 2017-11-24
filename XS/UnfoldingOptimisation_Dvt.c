@@ -46,31 +46,27 @@ using namespace std;
 #include "Reconstruction.cc"
 #include "Xsec.cc"
 //#define DEBUG
+//#define DEBUG2
 
 int main(int argc, char ** argv){
 
   //TApplication theApp("App",0,0);
   gStyle->SetOptFit(kTRUE);
-  Xsec * XS = new Xsec();
-  XS->Xsec::Initialize();
-  
-  double vLikelihood[NBinsTrueMom][NBinsTrueAngle][NBinsRecMom][NBinsRecAngle];
-  double vUnfolding[NBinsTrueMom][NBinsTrueAngle][NBinsRecMom][NBinsRecAngle];
-  double vInitialPriorMC[NBinsTrueMom][NBinsTrueAngle];
-  double vInitialPrior[NBinsTrueMom][NBinsTrueAngle];
-  double vPrior[NBinsTrueMom][NBinsTrueAngle];
-  double vPriorNormalised[NBinsTrueMom][NBinsTrueAngle];
-  double vPosterior[NBinsTrueMom][NBinsTrueAngle];
-
-
 
   bool PriorMC=true;
   int c=-1;
   int NPriors=0;
+  //Signal
   char * fDataName = new char[256];
   char * fMCName = new char[256];
   sprintf(fDataName,"DistributionsData.root");
   sprintf(fMCName,"DistributionsMC.root");
+  //Will be only used if side band
+  char * fDataNameSB = new char[256];
+  char * fMCNameSB = new char[256];
+  sprintf(fDataNameSB,"DistributionsDataSB.root");
+  sprintf(fMCNameSB,"DistributionsMCSB.root");
+  //
   char * OutputName = new char[256];
   const int NVariations=3;
   int NToys[NVariations]={1,1,1};//Number of toy experiement varying respectively number of iterations (0), number of systematics variation (1) and number of stat. variations (2). 
@@ -78,8 +74,10 @@ int main(int argc, char ** argv){
   bool SystematicFluctuations=false;
   bool NIterationFluctuations=false;
   int NTarget=8.299e28;
+  bool SideBand=false; bool SideBandData=false; bool SideBandMC=false;
+  bool FakeData=false;
   
-  while ((c = getopt(argc, argv, "d:m:n:a:s:y:io:p")) != -1) {
+  while ((c = getopt(argc, argv, "d:m:n:a:s:y:io:b:c:pf")) != -1) {
     switch(c){
     case 'd':
       fDataName=optarg;
@@ -108,19 +106,128 @@ int main(int argc, char ** argv){
     case 'a':
       NTarget=atoi(optarg);
       break;
+    case 'b':
+      SideBandData=true;
+      fDataNameSB=optarg;
+      break;
+    case 'c':
+      SideBandMC=true;
+      fMCNameSB=optarg;
+      break;
     case 'p':
       PriorMC=false;
       cout<<"For now, a flat prior is chosen if the PriorMC is not chosen as in this case!"<<endl;
       break;
+    case 'f':
+      FakeData=true;
+      cout<<"You are using fake data set, not real data"<<endl;
+      break;
     }
   }
-  //00. IF FLAT PRIOR
-  for(int c0=0;c0<NBinsTrueMom;c0++){//loop over cause 0
-    for(int c1=0;c1<NBinsTrueAngle;c1++){//loop over cause 1
-      vInitialPrior[c0][c1]=1/(NBinsTrueMom*NBinsTrueAngle);
-    }
+  if(SideBandData && SideBandMC){
+    SideBand=true;
+    cout<<"We will use a side band"<<endl;
   }
+
+  //InitializeGlobal();
+  InitializeGlobal(true,1);
+#ifdef DEBUG
+  cout<<"Initialized"<<endl;
+  cout<<"Nbins true mom="<<NBinsTrueMom<<", true angle="<<NBinsTrueAngle<<", rec mom="<<NBinsRecMom<<", rec angle="<<NBinsRecAngle<<endl;
+  cout<<"Signal: Nbins true mom="<<NBinsTrueMomSignal<<", true angle="<<NBinsTrueAngleSignal<<", rec mom="<<NBinsRecMomSignal<<", rec angle="<<NBinsRecAngleSignal<<endl;
+  cout<<"SB: Nbins true mom="<<NBinsTrueMomSB<<", true angle="<<NBinsTrueAngleSB<<", rec mom="<<NBinsRecMomSB<<", rec angle="<<NBinsRecAngleSB<<endl;
+#endif
+  Xsec * XS = new Xsec();
+  //To modify the bining if we have a side band
+  ReinitializeUnfoldingBinning(SideBand);
+#ifdef DEBUG
+  cout<<"ReInitialized"<<endl;
+  cout<<"Nbins true mom="<<NBinsTrueMom<<", true angle="<<NBinsTrueAngle<<", rec mom="<<NBinsRecMom<<", rec angle="<<NBinsRecAngle<<endl;
+  cout<<"Signal: Nbins true mom="<<NBinsTrueMomSignal<<", true angle="<<NBinsTrueAngleSignal<<", rec mom="<<NBinsRecMomSignal<<", rec angle="<<NBinsRecAngleSignal<<endl;
+  cout<<"SB: Nbins true mom="<<NBinsTrueMomSB<<", true angle="<<NBinsTrueAngleSB<<", rec mom="<<NBinsRecMomSB<<", rec angle="<<NBinsRecAngleSB<<endl;
+#endif
   
+  /////////////////////////////////////////////
+  double **** vLikelihood = new double ***[NBinsTrueMom];
+  double **** vUnfolding = new double ***[NBinsTrueMom];
+  double **** MCReconstructedEvents_TrueSignal = new double ***[NBinsTrueMom];
+  double **** MCReconstructedEvents_TrueSignal_Default = new double ***[NBinsTrueMom];
+  double **** DataReconstructedEvents_TrueSignal = new double ***[NBinsTrueMom];
+  double **** DataReconstructedEvents_TrueSignal_Default = new double ***[NBinsTrueMom];
+  double **** RelativeSigma = new double ***[NBinsTrueMom];
+
+  for(int h=0;h<NBinsTrueMom;h++){
+    vLikelihood[h] = new double **[NBinsTrueAngle];
+    vUnfolding[h] = new double **[NBinsTrueAngle];
+    MCReconstructedEvents_TrueSignal[h] = new double **[NBinsTrueAngle];
+    MCReconstructedEvents_TrueSignal_Default[h] = new double **[NBinsTrueAngle];
+    DataReconstructedEvents_TrueSignal[h] = new double **[NBinsTrueAngle];
+    DataReconstructedEvents_TrueSignal_Default[h] = new double **[NBinsTrueAngle];
+    RelativeSigma[h] = new double **[NBinsTrueAngle];
+    for(int i=0;i<NBinsTrueAngle;i++){
+      vLikelihood[h][i] = new double *[NBinsRecMom];
+      vUnfolding[h][i] = new double *[NBinsRecMom];
+      MCReconstructedEvents_TrueSignal[h][i] = new double *[NBinsRecMom];
+      MCReconstructedEvents_TrueSignal_Default[h][i] = new double *[NBinsRecMom];
+      DataReconstructedEvents_TrueSignal[h][i] = new double *[NBinsRecMom];
+      DataReconstructedEvents_TrueSignal_Default[h][i] = new double *[NBinsRecMom];
+      RelativeSigma[h][i] = new double *[NBinsRecMom];
+      for(int j=0;j<NBinsRecMom;j++){
+	vLikelihood[h][i][j] = new double [NBinsRecAngle];
+	vUnfolding[h][i][j] = new double [NBinsRecAngle];
+	MCReconstructedEvents_TrueSignal[h][i][j] = new double [NBinsRecAngle];
+	MCReconstructedEvents_TrueSignal_Default[h][i][j] = new double [NBinsRecAngle];
+	DataReconstructedEvents_TrueSignal[h][i][j] = new double [NBinsRecAngle];
+	DataReconstructedEvents_TrueSignal_Default[h][i][j] = new double [NBinsRecAngle];
+	RelativeSigma[h][i][j] = new double [NBinsRecAngle];
+      }      
+    }
+  }
+
+  double ** vInitialPriorMC = new double*[NBinsTrueMom];
+  double ** vInitialPrior = new double*[NBinsTrueMom];
+  double ** vPrior = new double*[NBinsTrueMom];
+  double ** vPriorNormalised = new double*[NBinsTrueMom];
+  double ** vPosterior = new double*[NBinsTrueMom];
+  double ** vPosterior_SignalOnly = new double*[NBinsTrueMom];
+  double ** MCEfficiency = new double*[NBinsTrueMom];
+  double ** UnfoldedData_SignalOnly = new double*[NBinsTrueMom];
+  double ** TrueEventsDistribution_SignalOnly = new double*[NBinsTrueMom];
+  double ** table_TrueEventsDistribution_SignalOnly = new double*[NBinsTrueMom];
+  double ** XSection_SignalOnly = new double*[NBinsTrueMom];
+  for(int i=0;i<NBinsTrueMom;i++){
+    vInitialPriorMC[i] = new double[NBinsTrueAngle];
+    vInitialPrior[i] = new double[NBinsTrueAngle];
+    vPrior[i] = new double[NBinsTrueAngle];
+    vPriorNormalised[i] = new double[NBinsTrueAngle];
+    vPosterior[i] = new double[NBinsTrueAngle];
+    vPosterior_SignalOnly[i] = new double[NBinsTrueAngle];
+    MCEfficiency[i] = new double [NBinsTrueAngle];
+    UnfoldedData_SignalOnly[i] = new double [NBinsTrueAngle];
+    TrueEventsDistribution_SignalOnly[i] = new double [NBinsTrueAngle];
+    table_TrueEventsDistribution_SignalOnly[i] = new double [NBinsTrueAngle];
+    XSection_SignalOnly[i] = new double [NBinsTrueAngle];
+  }
+
+  double ** DataReconstructedEvents = new double*[NBinsRecMom];
+  double ** DataReconstructedEvents_Default = new double*[NBinsRecMom];
+  double ** MCReconstructedBkgEvents = new double*[NBinsRecMom];
+  double ** MCReconstructedEvents = new double*[NBinsRecMom];
+  double ** TrueRecBins = new double*[NBinsRecMom];
+  for(int i=0;i<NBinsRecMom;i++){
+    DataReconstructedEvents[i] = new double [NBinsRecAngle];
+    DataReconstructedEvents_Default[i] = new double [NBinsRecAngle];
+    MCReconstructedBkgEvents[i] = new double [NBinsRecAngle];
+    MCReconstructedEvents[i] = new double [NBinsRecAngle];
+    TrueRecBins[i] = new double [NBinsRecAngle];
+  }
+  double * NumberOfNeutrino = new double;
+
+  TMatrixD * MUnfolding = new TMatrixD(NBinsTrueMom*NBinsTrueAngle,NBinsRecMom*NBinsRecAngle);
+  TMatrixD * MLikelihood = new TMatrixD(NBinsTrueMom*NBinsTrueAngle,NBinsRecMom*NBinsRecAngle);
+  TH2D * hPrior = new TH2D("hPrior","",NBinsTrueMom,BinningTrueMom,NBinsTrueAngle,BinningTrueAngle);
+  TVectorD * VReconstructedEvents = new TVectorD(NBinsRecMom*NBinsRecAngle);
+
   //cout<<NToys[0]<<", "<<NToys[1]<<", "<<NToys[2]<<endl;
   //////////////////////////////////PREPARE FOR READING OF TXT AND ROOT FILES/////////////////////////////////////
   char * rootDataName = new char[256];
@@ -132,48 +239,81 @@ int main(int argc, char ** argv){
   char * txtMCName = new char[256]; 
   sprintf(txtMCName,"%s.txt",fMCName);
   sprintf(txtDataName,"%s.txt",fDataName);
-  
-  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  
+
   cout<<"looking for files named: "<<txtDataName<<" and "<<txtMCName<<endl;
 
-  double MCReconstructedEvents_TrueSignal[NBinsTrueMom][NBinsTrueAngle][NBinsRecMom][NBinsRecAngle];
-  double MCReconstructedEvents_TrueSignal_Default[NBinsTrueMom][NBinsTrueAngle][NBinsRecMom][NBinsRecAngle];
-  double DataReconstructedEvents[NBinsRecMom][NBinsRecAngle], DataReconstructedEvents_Default[NBinsRecMom][NBinsRecAngle], MCReconstructedBkgEvents[NBinsRecMom][NBinsRecAngle], MCReconstructedEvents[NBinsRecMom][NBinsRecAngle];
-  double MCEfficiency[NBinsTrueMom][NBinsTrueAngle];
-  double TrueEventsDistribution[NBinsTrueMom][NBinsTrueAngle];
-  double * NumberOfNeutrino=new double();
+  //Side band. Used only if a side band option is activated
+  char * rootDataNameSB = new char[256];
+  char * rootMCNameSB = new char[256];
+  sprintf(rootMCNameSB,"%s.root",fMCNameSB);
+  sprintf(rootDataNameSB,"%s.root",fDataNameSB);
   
-  double UnfoldedData[NBinsTrueMom][NBinsTrueAngle];
-  double table_TrueEventsDistribution[NBinsTrueMom][NBinsTrueAngle];
-  double XSection[NBinsTrueMom][NBinsTrueAngle];
+  char * txtDataNameSB = new char[256];
+  char * txtMCNameSB = new char[256]; 
+  sprintf(txtMCNameSB,"%s.txt",fMCNameSB);
+  sprintf(txtDataNameSB,"%s.txt",fDataNameSB);
+  
+  cout<<"Side band: looking for files named: "<<txtDataNameSB<<" and "<<txtMCNameSB<<endl;
+  
   ///////////////////////////////////OUTPUT TREE/////////////
-    char * txtOutputName = new char[256];
+  char * txtOutputName = new char[256];
   char * rootOutputName = new char[256];
   sprintf(txtOutputName,"%s.txt",OutputName);
   sprintf(rootOutputName,"%s.root",OutputName);
   int nt0;int nt1;int nt2;
   TFile * file = new TFile(rootOutputName,"recreate");
   file->cd();
+
+  /*
+  double UnfoldedData_SignalOnly_Fill[NBinsTrueMomMax][NBinsTrueAngleMax];
+  double XSection_SignalOnly_Fill[NBinsTrueMomMax][NBinsTrueAngleMax];
+  double table_TrueEventsDistribution_SignalOnly_Fill[NBinsTrueMomMax][NBinsTrueAngleMax];
+  double MCReconstructedEvents_TrueSignal_Fill[NBinsTrueMomMax][NBinsTrueAngleMax][NBinsRecMomMax][NBinsRecAngleMax];
+  */
+  double UnfoldedData_SignalOnly_Fill[NBinsTrueMom][NBinsTrueAngle];
+  double XSection_SignalOnly_Fill[NBinsTrueMom][NBinsTrueAngle];
+  double table_TrueEventsDistribution_SignalOnly_Fill[NBinsTrueMom][NBinsTrueAngle];
+  double DataReconstructedEvents_TrueSignal_Fill[NBinsTrueMom][NBinsTrueAngle][NBinsRecMom][NBinsRecAngle];
+  
   TTree*              wtree    = new TTree("wtree","wtree");
   wtree->SetDirectory(file);
   wtree              -> Branch   ("Iterations",&nt0,"Iterations/I");
   wtree              -> Branch   ("Systematics",&nt1,"Systematics/I");
   wtree              -> Branch   ("Statistics",&nt2,"Statistics/I");
-  wtree              -> Branch   ("Events",UnfoldedData,Form("Events[%d][%d]/D",NBinsTrueMom,NBinsTrueAngle));
-  wtree              -> Branch   ("EventsAll",MCReconstructedEvents_TrueSignal,Form("EventsAll[%d][%d][%d][%d]/D",NBinsTrueMom,NBinsTrueAngle,NBinsRecMom,NBinsRecAngle));
-  wtree              -> Branch   ("TrueEvents",table_TrueEventsDistribution,Form("TrueEvents[%d][%d]/D",NBinsTrueMom,NBinsTrueAngle));
-  wtree              -> Branch   ("XSection",XSection,Form("XSection[%d][%d]/D",NBinsTrueMom,NBinsTrueAngle));
-  TMatrixD * MUnfolding = new TMatrixD(NBinsTrueMom*NBinsTrueAngle,NBinsRecMom*NBinsRecAngle);
-  TMatrixD * MLikelihood = new TMatrixD(NBinsTrueMom*NBinsTrueAngle,NBinsRecMom*NBinsRecAngle);
-  TH2D * hPrior = new TH2D("hPrior","",NBinsTrueMom,BinningTrueMom,NBinsTrueAngle,BinningTrueAngle);
-  //TVectorD * VReconstructedEvents;
-  TVectorD * VReconstructedEvents = new TVectorD(NBinsRecMom*NBinsRecAngle);
+  
+  /*  
+  for(int c0=0;c0<NBinsTrueMom;c0++){//loop over cause 1
+    for(int c1=0;c1<NBinsTrueAngle;c1++){//loop over cause 1
+      wtree              -> Branch   (Form("Events_%d_%d",c0,c1),&(UnfoldedData_SignalOnly[c0][c1]),Form("Events_%d_%d/D",c0,c1));
+      wtree              -> Branch   (Form("TrueEvents_%d_%d",c0,c1),&(table_TrueEventsDistribution_SignalOnly[c0][c1]),Form("TrueEvents_%d_%d/D",c0,c1));
+      wtree              -> Branch   (Form("XSection_SignalOnly_%d_%d",c0,c1),&(XSection_SignalOnly[c0][c1]),Form("XSection_SignalOnly_%d_%d/D",c0,c1));
+      for(int e0=0;e0<NBinsRecMom;e0++){//loop over cause 1
+	for(int e1=0;e1<NBinsRecAngle;e1++){//loop over cause 1
+	  wtree              -> Branch   (Form("EventsAll_%d_%d_%d_%d",c0,c1,e0,e1),&(MCReconstructedEvents_TrueSignal[c0][c1][e0][e1]),Form("EventsAll_%d_%d_%d_%d/D",c0,c1,e0,e1));
+	}
+      }
+    }
+  }
+  */  
+  //wtree              -> Branch   ("Events",&UnfoldedData_SignalOnly);
+  //wtree              -> Branch   ("Events",&UnfoldedData_SignalOnly,"Events/D");
+  wtree              -> Branch   ("Events",UnfoldedData_SignalOnly_Fill,Form("Events[%d][%d]/D",NBinsTrueMom,NBinsTrueAngle));
+  wtree              -> Branch   ("EventsAll",DataReconstructedEvents_TrueSignal_Fill,Form("EventsAll[%d][%d][%d][%d]/D",NBinsTrueMom,NBinsTrueAngle,NBinsRecMom,NBinsRecAngle));
+  wtree              -> Branch   ("TrueEvents",table_TrueEventsDistribution_SignalOnly_Fill,Form("TrueEvents[%d][%d]/D",NBinsTrueMom,NBinsTrueAngle));
+  wtree              -> Branch   ("XSection",XSection_SignalOnly_Fill,Form("XSection[%d][%d]/D",NBinsTrueMom,NBinsTrueAngle));
+
+  //00. IF FLAT PRIOR
+  for(int c0=0;c0<NBinsTrueMom;c0++){//loop over cause 0
+    for(int c1=0;c1<NBinsTrueAngle;c1++){//loop over cause 1
+      vInitialPrior[c0][c1]=1/(NBinsTrueMom*NBinsTrueAngle);
+    }
+  }
 
   //0. Load the input distributions
-  XS->Xsec::LoadInputFiles(txtDataName,txtMCName,MCReconstructedEvents_TrueSignal,DataReconstructedEvents,MCReconstructedEvents,MCReconstructedBkgEvents,MCEfficiency,NumberOfNeutrino);
+  if(SideBand) XS->Xsec::LoadInputFilesSB(txtDataName,txtMCName,txtDataNameSB,txtMCNameSB,MCReconstructedEvents_TrueSignal,DataReconstructedEvents,MCReconstructedEvents,MCReconstructedBkgEvents,MCEfficiency,NumberOfNeutrino,DataReconstructedEvents_TrueSignal,FakeData);
+  else XS->Xsec::LoadInputFiles(txtDataName,txtMCName,MCReconstructedEvents_TrueSignal,DataReconstructedEvents,MCReconstructedEvents,MCReconstructedBkgEvents,MCEfficiency,NumberOfNeutrino,DataReconstructedEvents_TrueSignal,FakeData);
   
-#ifdef DEBUG
+#ifdef DEBUG2
     cout<<"DEBUG, LOAD FILES/////////////////////////////////////////////////////////////////////////////////////////"<<endl;
     cout<<"DEBUGGING, check number of neutrino chosen (read in the -d file):"<<*NumberOfNeutrino<<endl;
         
@@ -201,33 +341,38 @@ int main(int argc, char ** argv){
     }
     
     cout<<endl<<"DEBUGGING, True distribution of events (pmu, thetamu, ironmu,recthetamu):"<<endl;
-   for(int c0=0;c0<NBinsTrueMom;c0++){//loop over cause 0
+    for(int c0=0;c0<NBinsTrueMom;c0++){//loop over cause 0
+      cout<<"Mom bin:"<<c0<<endl;
       for(int c1=0;c1<NBinsTrueAngle;c1++){//loop over cause 1
+	cout<<"Angle bin:"<<c1<<endl;
+	double NeV=0;
 	for(int e0=0;e0<NBinsRecMom;e0++){//loop over effect 0
 	  for(int e1=0;e1<NBinsRecAngle;e1++){//loop over effect 1
-	    cout<<MCReconstructedEvents_TrueSignal[c0][c1][e0][e1]<<" ";
+	    NeV += DataReconstructedEvents_TrueSignal[c0][c1][e0][e1];
+	    //cout<<MCReconstructedEvents_TrueSignal[c0][c1][e0][e1]<<" ";
 	  }
 	}
+	cout<<NeV<<endl;
       }
     }
     cout<<endl;
     
-    double TrueRecBins[NBinsRecMom][NBinsRecAngle];
-	for(int e0=0;e0<NBinsRecMom;e0++){//loop over effect 0
-	  for(int e1=0;e1<NBinsRecAngle;e1++){//loop over effect 1
-	    TrueRecBins[e0][e1]=0;
-	    for(int c0=0;c0<NBinsTrueMom;c0++){//loop over cause 0
-	      for(int c1=0;c1<NBinsTrueAngle;c1++){//loop over cause 1
-		TrueRecBins[e0][e1]+=MCReconstructedEvents_TrueSignal[c0][c1][e0][e1];
-	    }
+    for(int e0=0;e0<NBinsRecMom;e0++){//loop over effect 0
+      for(int e1=0;e1<NBinsRecAngle;e1++){//loop over effect 1
+	TrueRecBins[e0][e1]=0;
+	for(int c0=0;c0<NBinsTrueMom;c0++){//loop over cause 0
+	  for(int c1=0;c1<NBinsTrueAngle;c1++){//loop over cause 1
+	    TrueRecBins[e0][e1]+=DataReconstructedEvents_TrueSignal[c0][c1][e0][e1];
+	  }
 	}
       }
     }
-
+    
     cout<<endl<<"test data - background in rec bins vs sum of true distribution (in case of MC w/o error, should be the same"<<endl;
     for(int e0=0;e0<NBinsRecMom;e0++){//loop over effect 0
       for(int e1=0;e1<NBinsRecAngle;e1++){//loop over effect 1
-	cout<<DataReconstructedEvents[e0][e1]-MCReconstructedBkgEvents[e0][e1]<<"vs"<<TrueRecBins[e0][e1]<<" ";
+	//cout<<DataReconstructedEvents[e0][e1]-MCReconstructedBkgEvents[e0][e1]<<"vs"<<TrueRecBins[e0][e1]<<" ";
+	cout<<DataReconstructedEvents[e0][e1]<<"vs"<<TrueRecBins[e0][e1]<<" ";
       }
       cout<<endl;
     }
@@ -236,7 +381,8 @@ int main(int argc, char ** argv){
     for(nt1=0;nt1<NToys[1];nt1++){//loop on MC variations (syst)
       cout<<nt1<<endl;
       for(nt2=0;nt2<NToys[2];nt2++){//loop on data variations (stat)
-	
+	if(nt2%10 == 0) cout<<"Number of statistical toys = "<<nt2<<endl;
+	  
 	if(nt1==0 && nt2==0){//for each change of MC variations, we reset the Default to the original one.
 	  for(int e0=0;e0<NBinsRecMom;e0++){//loop over effect 0
 	    for(int e1=0;e1<NBinsRecAngle;e1++){//loop over effect 1
@@ -244,6 +390,7 @@ int main(int argc, char ** argv){
 	      for(int c0=0;c0<NBinsTrueMom;c0++){//loop over cause 0
 		for(int c1=0;c1<NBinsTrueAngle;c1++){//loop over cause 1
 		  MCReconstructedEvents_TrueSignal_Default[c0][c1][e0][e1]=MCReconstructedEvents_TrueSignal[c0][c1][e0][e1];
+		  DataReconstructedEvents_TrueSignal_Default[c0][c1][e0][e1]=DataReconstructedEvents_TrueSignal[c0][c1][e0][e1];
 		}
 	      }
 	    }
@@ -262,6 +409,7 @@ int main(int argc, char ** argv){
 	      for(int c0=0;c0<NBinsTrueMom;c0++){//loop over cause 0
 		for(int c1=0;c1<NBinsTrueAngle;c1++){//loop over cause 1
 		  MCReconstructedEvents_TrueSignal[c0][c1][e0][e1]=MCReconstructedEvents_TrueSignal_Default[c0][c1][e0][e1];
+		  DataReconstructedEvents_TrueSignal[c0][c1][e0][e1]=DataReconstructedEvents_TrueSignal_Default[c0][c1][e0][e1];
 		}
 	      }
 	    }
@@ -277,12 +425,11 @@ int main(int argc, char ** argv){
     if(SystematicFluctuations){
       //Toy1. Fluctuation of the MCpart: prior, bkg, unfolding matrix (through likelihood) -> Looks systematics detector variation
       //Step 1: the user should specify variation he wants:
-      double RelativeSigma[NBinsTrueMom][NBinsTrueAngle][NBinsRecMom][NBinsRecAngle];
       for(int c0=0;c0<NBinsTrueMom;c0++){//loop over cause 0
 	for(int c1=0;c1<NBinsTrueAngle;c1++){//loop over cause 1
 	  for(int e0=0;e0<NBinsRecMom;e0++){//loop over effect 0
 	    for(int e1=0;e1<NBinsRecAngle;e1++){//loop over effect 1
-	      RelativeSigma[c0][c1][e0][e1]=0.1;
+	      RelativeSigma[c0][c1][e0][e1]=0.3;
 	    }
 	  }
 	}
@@ -293,9 +440,12 @@ int main(int argc, char ** argv){
 
 
     //1. Build the likelihood matrix & intial prior from the MC
-    XS->Xsec::BuildLikelihood(vLikelihood, vInitialPriorMC, TrueEventsDistribution, MCReconstructedEvents_TrueSignal);
+    XS->Xsec::BuildLikelihood(vLikelihood, vInitialPriorMC, MCReconstructedEvents_TrueSignal);
+    //Provide the true signal distribution projected only on true bins. The important point is that we only sum over the reconstructed bins of the SIGNAL REGION
+    XS->Xsec::ProjectOnTruePhaseSpace_OnlySignal(TrueEventsDistribution_SignalOnly, DataReconstructedEvents_TrueSignal);
     
-#ifdef DEBUG    
+#ifdef DEBUG2
+    
     cout<<endl<<"Likelihood matrix (pmu, thetamu, ironmu,recthetamu):"<<endl;
     for(int c0=0;c0<NBinsTrueMom;c0++){//loop over cause 0
       for(int c1=0;c1<NBinsTrueAngle;c1++){//loop over cause 1
@@ -320,25 +470,34 @@ int main(int argc, char ** argv){
 #endif
 
     for(nt0=0;nt0<NToys[0];nt0++){
-
+#ifdef DEBUG
+      if(nt0%10 == 0) cout<<"Number of toys = "<<nt0<<endl;
+#endif
+      
       //2. Build the prior used in the unfolding
       XS->Xsec::SetPrior(vPriorNormalised,vPrior,vInitialPriorMC,vInitialPrior,vPosterior,PriorMC,nt0);
       if(nt0==0){
-	for(int ibinx=1;ibinx<=NBinsTrueMom;ibinx++){
-	  for(int ibiny=1;ibiny<=NBinsTrueAngle;ibiny++){
-	    hPrior->SetBinContent(ibinx,ibiny,vPriorNormalised[ibinx][ibiny]);
+	for(int ibinx=0;ibinx<NBinsTrueMom;ibinx++){
+	  for(int ibiny=0;ibiny<NBinsTrueAngle;ibiny++){
+	    hPrior->SetBinContent(ibinx+1,ibiny+1,vPriorNormalised[ibinx][ibiny]);
 	  }
 	}
       }
       
+#ifdef DEBUG
+      if(nt0%10 == 0) cout<<"Prior is set"<<endl;
+#endif      
       //3. Build the unfolding matrix
       XS->Xsec::BuildUnfolding(vUnfolding,vLikelihood,vPriorNormalised);
       
-
-      //4. Apply the unfolding on data
-      XS->Xsec::ApplyUnfolding(vPosterior, vUnfolding, DataReconstructedEvents, MCReconstructedBkgEvents);
-    
 #ifdef DEBUG
+      if(nt0%10 == 0) cout<<"Unfolding matrix is built"<<endl;
+#endif
+      //4. Apply the unfolding on data
+      //XS->Xsec::ApplyUnfoldingBkgSubstraction(vPosterior, vUnfolding, DataReconstructedEvents, MCReconstructedBkgEvents);
+      XS->Xsec::ApplyUnfolding(vPosterior, vPosterior_SignalOnly, vUnfolding, DataReconstructedEvents);
+    
+#ifdef DEBUG2
       cout<<"Iteration Step #"<<nt0+1<<" ////////////////////////////////////////////////////////////////////////"<<endl;
 
       cout<<endl<<"Prior chosen (pmu, thetamu):"<<endl;
@@ -373,15 +532,26 @@ int main(int argc, char ** argv){
     
     for(int c0=0;c0<NBinsTrueMom;c0++){//loop over cause 0
       for(int c1=0;c1<NBinsTrueAngle;c1++){//loop over cause 1
-	UnfoldedData[c0][c1]=vPosterior[c0][c1];
-	table_TrueEventsDistribution[c0][c1]=TrueEventsDistribution[c0][c1];
-	double BinningWidth=(BinningTrueMom[c0+1]-BinningTrueMom[c0])*(BinningTrueAngle[c1+1]-BinningTrueAngle[c1]);
+	//Data unfolded that we wish to give to use are not the whole unfolding result. Only the sum over reconstructed bins in the signal reegion. In the example of CC0pi cross section, we do not want the true CC0pi in the reconstructed CC1pi sample to be added to our signal bin result.
+	UnfoldedData_SignalOnly[c0][c1]=vPosterior_SignalOnly[c0][c1];
+	
+	table_TrueEventsDistribution_SignalOnly[c0][c1]=TrueEventsDistribution_SignalOnly[c0][c1];
+	//trick for side band, because lower limit of the first bin pf side band is always assumed to be 0.
+	double BinLowerLimitMom = BinningTrueMom[c0];
+	double BinLowerLimitAngle = BinningTrueAngle[c1];	
+	//if(c0==NBinsTrueMomSignal) BinLowerLimitMom = 0;
+	//if(c1==NBinsTrueAngleSignal) BinLowerLimitAngle = 0;
+	//
+	double BinningWidth=(BinningTrueMom[c0+1]-BinLowerLimitMom)*(BinningTrueAngle[c1+1]-BinLowerLimitAngle);
+	  
+	  
 	double Flux=*NumberOfNeutrino;
 	double Efficiency=MCEfficiency[c0][c1];
 	double Correction=Flux*BinningWidth*Efficiency*NTarget;
-	XSection[c0][c1]=UnfoldedData[c0][c1]/ ( Correction == 0 ? 1 : Correction );
-	//cout<<"("<<c0<<","<<c1<<")     Correction="<<Correction<<", XS="<<XSection[c0][c1]<<endl;
-	//XSection[c0][c1]=UnfoldedData[c0][c1]/Correction;
+	XSection_SignalOnly[c0][c1]=UnfoldedData_SignalOnly[c0][c1]/ ( Correction == 0 ? 1 : Correction );
+	//cout<<"bin ("<<c0<<","<<c1<<"), benji says efficiency="<<Efficiency<<", correction="<<Correction<<", Nev="<<XSection_SignalOnly[c0][c1]<<", XS="<<XSection_SignalOnly[c0][c1]<<endl;
+	//cout<<"("<<c0<<","<<c1<<")     Correction="<<Correction<<", XS="<<XSection_SignalOnly[c0][c1]<<endl;
+	//XSection_SignalOnly[c0][c1]=UnfoldedData_SignalOnly[c0][c1]/Correction;
       }
     }
 
@@ -398,13 +568,35 @@ int main(int argc, char ** argv){
       }
     }
 
-    
-    if(NIterationFluctuations) wtree->Fill();//In the case of check of the unfolding behaviour w/ number of iterations, the number of events is saved for each iterations
-    }
-    if(!(NIterationFluctuations)) wtree->Fill();//In the normal case, the number of events is saved only at the end (after all iterations has been applied)   
-      
+    for(int c0=0;c0<NBinsTrueMom;c0++){//loop over cause 0
+      for(int c1=0;c1<NBinsTrueAngle;c1++){//loop over cause 1
+	XSection_SignalOnly_Fill[c0][c1]=XSection_SignalOnly[c0][c1];
+	UnfoldedData_SignalOnly_Fill[c0][c1]=UnfoldedData_SignalOnly[c0][c1];
+	table_TrueEventsDistribution_SignalOnly_Fill[c0][c1]=table_TrueEventsDistribution_SignalOnly[c0][c1];
+	for(int e0=0;e0<NBinsRecMom;e0++){//loop over effect 0
+	  for(int e1=0;e1<NBinsRecAngle;e1++){//loop over effect 1
+	    DataReconstructedEvents_TrueSignal_Fill[c0][c1][e0][e1]=DataReconstructedEvents_TrueSignal[c0][c1][e0][e1];
+	  }
+	}
       }
     }
+    if(NIterationFluctuations) wtree->Fill();//In the case of check of the unfolding behaviour w/ number of iterations, the number of events is saved for each iterations
+    }
+    if(!(NIterationFluctuations)) wtree->Fill();//In the normal case, the number of events is saved only at the end (after all iterations has been applied)
+#ifdef DEBUG
+    cout<<endl<<"Output: Number of events in each bin:"<<endl;
+    for(int c0=0;c0<NBinsTrueMom;c0++){//loop over cause 0
+      for(int c1=0;c1<NBinsTrueAngle;c1++){//loop over cause 1
+	double Ratio = UnfoldedData_SignalOnly[c0][c1]-TrueEventsDistribution_SignalOnly[c0][c1];
+	Ratio = Ratio/ ( TrueEventsDistribution_SignalOnly[c0][c1] == 0 ? 1 : TrueEventsDistribution_SignalOnly[c0][c1] );
+	
+	cout<<UnfoldedData_SignalOnly[c0][c1]<<", true="<<TrueEventsDistribution_SignalOnly[c0][c1]<<", post/true="<<Ratio*100<<"%"<<endl;
+      }
+      cout<<endl;
+    }
+#endif
+      }//end of loop on toys 2: systematic variations
+    }//end of loop on toys 1: statistical variations
 
 #ifdef DEBUG
   TMatrixD LMom(NBinsTrueMom,NBinsRecMom);
@@ -465,8 +657,8 @@ int main(int argc, char ** argv){
 
 	
 	for(int nt=0;nt<NToys;nt++){
-	  double Value=UnfoldedData[nt][c0][c1]-table_TrueEventsDistribution[0][c0][c1];
-	  if(table_TrueEventsDistribution[0][c0][c1]!=0) Value/=table_TrueEventsDistribution[0][c0][c1];
+	  double Value=UnfoldedData_SignalOnly[nt][c0][c1]-table_TrueEventsDistribution_SignalOnly[0][c0][c1];
+	  if(table_TrueEventsDistribution_SignalOnly[0][c0][c1]!=0) Value/=table_TrueEventsDistribution_SignalOnly[0][c0][c1];
 	  Events[c0][c1]->Fill(Value);
 
 	  double BinningWidth=(BinningTrueMom[c0+1]-BinningTrueMom[c0])*(BinningTrueAngle[c1+1]-BinningTrueAngle[c1]);
@@ -474,14 +666,14 @@ int main(int argc, char ** argv){
 	  double Efficiency=MCEfficiency[c0][c1];
 	  double Correction=Flux*BinningWidth*Efficiency*NTarget;
 	  //if(Correction!=0) Value/=Correction;
-	  xsection[c0][c1]=UnfoldedData[nt][c0][c1];
+	  xsection[c0][c1]=UnfoldedData_SignalOnly[nt][c0][c1];
 	  truedistribution[c0][c1]=hTrueDistribution->GetBinContent(c0+1,c1+1);
 								   
 	  hxsection[c0][c1]->Fill(xsection[c0][c1]);
 	  htruedistribution->SetBinContent(c0+1,c1+1,truedistribution[c0][c1]);
 	  
 #ifdef DEBUG
-	  cout<<"Number of events of the Toy="<<UnfoldedData[nt][c0][c1]<<", true="<<table_TrueEventsDistribution[0][c0][c1]<<", value="<<Value<<endl;
+	  cout<<"Number of events of the Toy="<<UnfoldedData_SignalOnly[nt][c0][c1]<<", true="<<table_TrueEventsDistribution_SignalOnly[0][c0][c1]<<", value="<<Value<<endl;
 #endif
 
 	}
@@ -531,5 +723,88 @@ int main(int argc, char ** argv){
   wtree->Write();
   file->Write();
   file->Close();
+
+
+  //delete
+  for(int h=0;h<NBinsTrueMom;h++){
+    for(int i=0;i<NBinsTrueAngle;i++){
+      for(int j=0;j<NBinsRecMom;j++){
+	delete vLikelihood[h][i][j];
+	delete vUnfolding[h][i][j];
+	delete MCReconstructedEvents_TrueSignal[h][i][j];
+	delete MCReconstructedEvents_TrueSignal_Default[h][i][j];
+	delete DataReconstructedEvents_TrueSignal[h][i][j];
+	delete DataReconstructedEvents_TrueSignal_Default[h][i][j];
+	delete RelativeSigma[h][i][j];
+      }      
+      delete vLikelihood[h][i];
+      delete vUnfolding[h][i];
+      delete MCReconstructedEvents_TrueSignal[h][i];
+      delete MCReconstructedEvents_TrueSignal_Default[h][i];
+      delete DataReconstructedEvents_TrueSignal[h][i];
+      delete DataReconstructedEvents_TrueSignal_Default[h][i];
+      delete RelativeSigma[h][i];
+    }
+    delete vLikelihood[h];
+    delete vUnfolding[h];
+    delete MCReconstructedEvents_TrueSignal[h];
+    delete MCReconstructedEvents_TrueSignal_Default[h];
+    delete DataReconstructedEvents_TrueSignal[h];
+    delete DataReconstructedEvents_TrueSignal_Default[h];
+    delete RelativeSigma[h];
+  }
+  delete vLikelihood;
+  delete vUnfolding;
+  delete MCReconstructedEvents_TrueSignal;
+  delete MCReconstructedEvents_TrueSignal_Default;
+  delete DataReconstructedEvents_TrueSignal;
+  delete DataReconstructedEvents_TrueSignal_Default;
+  delete RelativeSigma;
+
+
+
+
+
+  for(int i=0;i<NBinsTrueMom;i++){
+    delete vInitialPriorMC[i];
+    delete vInitialPrior[i];
+    delete vPrior[i];
+    delete vPriorNormalised[i];
+    delete vPosterior[i];
+    delete vPosterior_SignalOnly[i];
+    delete MCEfficiency[i];
+    delete TrueEventsDistribution_SignalOnly[i];
+    delete UnfoldedData_SignalOnly[i];
+    delete table_TrueEventsDistribution_SignalOnly[i];
+    delete XSection_SignalOnly[i];
+  }  
+  delete vInitialPriorMC;
+  delete vInitialPrior;
+  delete vPrior;
+  delete vPriorNormalised;
+  delete vPosterior;
+  delete vPosterior_SignalOnly;
+  delete MCEfficiency;
+  delete TrueEventsDistribution_SignalOnly;
+  delete UnfoldedData_SignalOnly;
+  delete table_TrueEventsDistribution_SignalOnly;
+  delete XSection_SignalOnly;
+
+ 
+  for(int i=0;i<NBinsRecMom;i++){
+    delete DataReconstructedEvents[i];
+    delete DataReconstructedEvents_Default[i];
+    delete MCReconstructedBkgEvents[i];
+    delete MCReconstructedEvents[i];
+    delete TrueRecBins[i];
+  }
+  delete DataReconstructedEvents;
+  delete DataReconstructedEvents_Default;
+  delete MCReconstructedBkgEvents;
+  delete MCReconstructedEvents;
+  delete TrueRecBins;
+
+  delete NumberOfNeutrino;
+
   return 0;
 }

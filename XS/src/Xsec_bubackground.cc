@@ -370,7 +370,6 @@ void Xsec::LoadInputFiles_OnlyUnfoldedData(char * InputName, double ** DataUnfol
       for(int c1=0;c1<NBinsTrueAngle;c1++){
 	DataUnfoldedEvents[c0][c1]=Events[c0][c1];
 	//DataUnfoldedEvents[c0][c1]=XSection[c0][c1];
-	//cout << "Jben = " << Events[c0][c1] << endl;
 #ifdef DEBUG
 	cout<<"True bin ("<<c0<<","<<c1<<")     XS="<<DataUnfoldedEvents[c0][c1]<<", Nev="<<Events[c0][c1]<<endl;
 #endif
@@ -417,8 +416,8 @@ void Xsec::LoadInputFiles_OnlySelectedDataSB(char * fDataName,char * fDataNameSB
 
   cout<<"opening file "<<fDataName<<" for data input"<<endl;
   fEvent.open(fDataName,ios::in);
-  for(int e0=0;e0<NBinsRecMomSignal;e0++){//loop over effect 0
-    for(int e1=0;e1<NBinsRecAngleSignal;e1++){//loop over effect 1
+  for(int e0=0;e0<NBinsRecMom;e0++){//loop over effect 0
+    for(int e1=0;e1<NBinsRecAngle;e1++){//loop over effect 1
       fEvent>>DataReconstructedEvents[e0][e1];
 #ifdef DEBUG
       cout<<DataReconstructedEvents[e0][e1]<<" ";
@@ -447,10 +446,24 @@ void Xsec::LoadInputFiles_OnlySelectedDataSB(char * fDataName,char * fDataNameSB
 }
 
 //Read the output file of CC0pi selection.
-void Xsec::LoadInputFiles(char * fDataName,char * fMCName, double **** MCReconstructedEvents_TrueSignal, double ** DataReconstructedEvents,double ** MCReconstructedEvents, double ** MCReconstructedBkgEvents, double ** Efficiency,double *NumberOfPOT,double **** DataReconstructedEvents_TrueSignal,bool FakeData){
+void Xsec::LoadInputFiles(char * fDataName,char * fMCName, double **** MCReconstructedEvents_TrueSignal, double ** DataReconstructedEvents,double ** MCReconstructedEvents, double ** MCReconstructedBkgEvents, double ** Efficiency,double *NumberOfPOT){
     //////////
   double check=0;
   ifstream fEvent;
+
+  cout<<"opening file "<<fDataName<<" for data input"<<endl;
+  fEvent.open(fDataName,ios::in);
+  for(int e0=0;e0<NBinsRecMom;e0++){//loop over effect 0
+    for(int e1=0;e1<NBinsRecAngle;e1++){//loop over effect 1
+      fEvent>>DataReconstructedEvents[e0][e1];
+#ifdef DEBUG
+      cout<<DataReconstructedEvents[e0][e1]<<" ";
+#endif
+    }
+  }
+  fEvent>>check;
+  if(check!=666) cout<<"problem in reading data file"<<endl;
+  fEvent.close();
 
   cout<<"opening file "<<fMCName<<" for mc input"<<endl;
   fEvent.open(fMCName,ios::in);
@@ -467,7 +480,6 @@ void Xsec::LoadInputFiles(char * fDataName,char * fMCName, double **** MCReconst
       for(int e0=0;e0<NBinsRecMom;e0++){//loop over effect 0
 	for(int e1=0;e1<NBinsRecAngle;e1++){//loop over effect 1
 	  fEvent>>MCReconstructedEvents_TrueSignal[c0][c1][e0][e1];
-	  if(FakeData) DataReconstructedEvents_TrueSignal[c0][c1][e0][e1]=MCReconstructedEvents_TrueSignal[c0][c1][e0][e1];
 	}
       }
     }
@@ -494,69 +506,11 @@ void Xsec::LoadInputFiles(char * fDataName,char * fMCName, double **** MCReconst
     fEvent>>check;
     cout<<"number="<<*NumberOfPOT<<", check="<<check<<endl;
     if(check!=666) cout<<"problem in reading mc file, Number of POT"<<endl;
-    fEvent.close();
-
-    cout<<"opening file "<<fDataName<<" for data input"<<endl;
-    fEvent.open(fDataName,ios::in);
-      for(int e0=0;e0<NBinsRecMom;e0++){//loop over effect 0
-	for(int e1=0;e1<NBinsRecAngle;e1++){//loop over effect 1
-	  fEvent>>DataReconstructedEvents[e0][e1];
-#ifdef DEBUG
-	  cout<<DataReconstructedEvents[e0][e1]<<" ";
-#endif
-	}
-      }
-      fEvent>>check;
-      if(check!=666) cout<<"problem in reading data file"<<endl;
-
-      if(FakeData){
-      cout<<"Fake data, Filling the Data true content (expectation) by the MC in fake data ones."<<endl;
-	for(int c0=0;c0<NBinsTrueMom;c0++){//loop over cause 0
-	  for(int c1=0;c1<NBinsTrueAngle;c1++){//loop over cause 1
-	    for(int e0=0;e0<NBinsRecMom;e0++){//loop over effect 0
-	      for(int e1=0;e1<NBinsRecAngle;e1++){//loop over effect 1
-		fEvent>>DataReconstructedEvents_TrueSignal[c0][c1][e0][e1];
-	      }
-	    }
-	  }
-	}
-	fEvent>>check;
-	if(check!=666) cout<<"problem in reading mc file, true signal"<<endl;
-	/*	
-	for(int e0=0;e0<NBinsRecMom;e0++){//loop over effect 0
-	  for(int e1=0;e1<NBinsRecAngle;e1++){//loop over effect 1
-	    fEvent>>MCReconstructedBkgEvents[e0][e1];
-	  }
-	}
-	fEvent>>check;
-	if(check!=666) cout<<"problem in reading mc file, background"<<endl;
-	
-	for(int c0=0;c0<NBinsTrueMom;c0++){//loop over cause 0
-	  for(int c1=0;c1<NBinsTrueAngle;c1++){//loop over cause 1
-	    fEvent>>Efficiency[c0][c1];
-	  }
-	} 
-	fEvent>>check;
-	if(check!=666) cout<<"problem in reading mc file, efficiency"<<endl;
-	fEvent>>*NumberOfPOT;
-	fEvent>>check;
-	cout<<"number="<<*NumberOfPOT<<", check="<<check<<endl;
-	if(check!=666) cout<<"problem in reading mc file, Number of POT"<<endl;
-	*/
-	
-      }
-      fEvent.close();
+    fEvent.close();    
 }
 
-//Read the output file of CC0pi selection, with side band. Note that in the case of fake data, we can have access to the true momentum/angle distribution of data. For this reason, we have MCReconstructedEvents_TrueSignal and DataMCReconstructedEvents_TrueSignal
-/*void Xsec::LoadInputFilesSB(char * fDataName,char * fMCName, char * fDataNameSB,char * fMCNameSB, double **** MCReconstructedEvents_TrueSignal, double ** DataReconstructedEvents,double ** MCReconstructedEvents, double ** MCReconstructedBkgEvents, double ** Efficiency,double *NumberOfPOT){
-  double **** DataReconstructedEvents_TrueSignal=NULL;
-  double FakeData=false;
-  LoadInputFilesSB(fDataName,fMCName, fDataNameSB,fMCNameSB, MCReconstructedEvents_TrueSignal, DataReconstructedEvents,MCReconstructedEvents, MCReconstructedBkgEvents, Efficiency,NumberOfPOT,DataReconstructedEvents_TrueSignal,FakeData);
-  }*/
-
-  //Read the output file of CC0pi selection, with side band. Note that in the case of fake data, we can have access to the true momentum/angle distribution of data. For this reason, we have MCReconstructedEvents_TrueSignal and DataMCReconstructedEvents_TrueSignal
-void Xsec::LoadInputFilesSB(char * fDataName,char * fMCName, char * fDataNameSB,char * fMCNameSB, double **** MCReconstructedEvents_TrueSignal, double ** DataReconstructedEvents,double ** MCReconstructedEvents, double ** MCReconstructedBkgEvents, double ** Efficiency,double *NumberOfPOT,double **** DataReconstructedEvents_TrueSignal,bool FakeData){
+//Read the output file of CC0pi selection, with side band.
+void Xsec::LoadInputFilesSB(char * fDataName,char * fMCName, char * fDataNameSB,char * fMCNameSB, double **** MCReconstructedEvents_TrueSignal, double ** DataReconstructedEvents,double ** MCReconstructedEvents, double ** MCReconstructedBkgEvents, double ** Efficiency,double *NumberOfPOT){
 
   //First, fill the matrix with 0 since it will not be filled everywhere (matrix is diagonal by block):
   for(int e0=0;e0<NBinsRecMom;e0++){//loop over effect 0
@@ -571,7 +525,6 @@ void Xsec::LoadInputFilesSB(char * fDataName,char * fMCName, char * fDataNameSB,
       for(int e0=0;e0<NBinsRecMom;e0++){//loop over effect 0
 	for(int e1=0;e1<NBinsRecAngle;e1++){//loop over effect 1
 	  MCReconstructedEvents_TrueSignal[c0][c1][e0][e1]=0;
-	  if(FakeData) DataReconstructedEvents_TrueSignal[c0][c1][e0][e1]=0;
 	}
       }
     }
@@ -587,6 +540,20 @@ void Xsec::LoadInputFilesSB(char * fDataName,char * fMCName, char * fDataNameSB,
   double check=0;
   ifstream fEvent;
 
+  cout<<"opening file "<<fDataName<<" for data input"<<endl;
+  fEvent.open(fDataName,ios::in);
+  for(int e0=0;e0<NBinsRecMomSignal;e0++){//loop over effect 0
+    for(int e1=0;e1<NBinsRecAngleSignal;e1++){//loop over effect 1
+      fEvent>>DataReconstructedEvents[e0][e1];
+#ifdef DEBUG
+      cout<<DataReconstructedEvents[e0][e1]<<" ";
+#endif
+    }
+  }
+  fEvent>>check;
+  if(check!=666) cout<<"problem in reading data file"<<endl;
+  fEvent.close();
+
   cout<<"opening file "<<fMCName<<" for mc input"<<endl;
   fEvent.open(fMCName,ios::in);
   for(int e0=0;e0<NBinsRecMomSignal;e0++){//loop over effect 0
@@ -596,26 +563,19 @@ void Xsec::LoadInputFilesSB(char * fDataName,char * fMCName, char * fDataNameSB,
   }
   fEvent>>check;
   if(check!=666) cout<<"problem in reading mc file, reconstructed events"<<endl;
-#ifdef DEBUG
-  cout<<"MC signal opened"<<endl;
-#endif
 
-  for(int c0=0;c0<NBinsTrueMom;c0++){//loop over cause 0
-    for(int c1=0;c1<NBinsTrueAngle;c1++){//loop over cause 1
+  for(int c0=0;c0<NBinsTrueMomSignal;c0++){//loop over cause 0
+    for(int c1=0;c1<NBinsTrueAngleSignal;c1++){//loop over cause 1
       for(int e0=0;e0<NBinsRecMomSignal;e0++){//loop over effect 0
 	for(int e1=0;e1<NBinsRecAngleSignal;e1++){//loop over effect 1
 	  fEvent>>MCReconstructedEvents_TrueSignal[c0][c1][e0][e1];
-	  if(FakeData) DataReconstructedEvents_TrueSignal[c0][c1][e0][e1]=MCReconstructedEvents_TrueSignal[c0][c1][e0][e1];
 	}
       }
     }
   }
   fEvent>>check;
-  if(check!=666) cout<<"problem in reading mc file, true signal"<<endl; 
-#ifdef DEBUG
-  cout<<"MC Likelihood matrix opened"<<endl;
-#endif
- 
+  if(check!=666) cout<<"problem in reading mc file, true signal"<<endl;
+  
     for(int e0=0;e0<NBinsRecMomSignal;e0++){//loop over effect 0
       for(int e1=0;e1<NBinsRecAngleSignal;e1++){//loop over effect 1
 	fEvent>>MCReconstructedBkgEvents[e0][e1];
@@ -623,12 +583,9 @@ void Xsec::LoadInputFilesSB(char * fDataName,char * fMCName, char * fDataNameSB,
     }
     fEvent>>check;
     if(check!=666) cout<<"problem in reading mc file, background"<<endl;
-#ifdef DEBUG
-  cout<<"MC background opened"<<endl;
-#endif
     
-    for(int c0=0;c0<NBinsTrueMom;c0++){//loop over cause 0
-      for(int c1=0;c1<NBinsTrueAngle;c1++){//loop over cause 1
+    for(int c0=0;c0<NBinsTrueMomSignal;c0++){//loop over cause 0
+      for(int c1=0;c1<NBinsTrueAngleSignal;c1++){//loop over cause 1
 	fEvent>>Efficiency[c0][c1];
       }
     } 
@@ -640,72 +597,23 @@ void Xsec::LoadInputFilesSB(char * fDataName,char * fMCName, char * fDataNameSB,
     if(check!=666) cout<<"problem in reading mc file, Number of POT"<<endl;
     fEvent.close();
 
-    //
-    cout<<"opening file "<<fDataName<<" for data input"<<endl;
-    fEvent.open(fDataName,ios::in);
-    for(int e0=0;e0<NBinsRecMomSignal;e0++){//loop over effect 0
-      for(int e1=0;e1<NBinsRecAngleSignal;e1++){//loop over effect 1
-	fEvent>>DataReconstructedEvents[e0][e1];
+    
+    ////////////////////////SIDE BAND////////////////////////////////////////
+    cout<<"Side Band: opening file "<<fDataNameSB<<" for data input"<<endl;
+    fEvent.open(fDataNameSB,ios::in);
+        
+    for(int e0=0;e0<NBinsRecMomSB;e0++){//loop over effect 0
+      for(int e1=0;e1<NBinsRecAngleSB;e1++){//loop over effect 1
+	fEvent>>DataReconstructedEvents[e0+NBinsRecMomSignal][e1+NBinsRecAngleSignal];
 #ifdef DEBUG
-	cout<<DataReconstructedEvents[e0][e1]<<" ";
+	cout<<DataReconstructedEvents[e0+NBinsRecMomSignal][e1+NBinsRecAngleSignal]<<" ";
 #endif
       }
     }
     fEvent>>check;
     if(check!=666) cout<<"problem in reading data file"<<endl;
-    if(FakeData){
-      cout<<"Fake data, filling the data true content (expectation) by the MC in fake data ones."<<endl;
-
-#ifdef DEBUG
-      double NEvData_SignalOnly=0;double NEvMC_SignalOnly=0;
-#endif
-	for(int c0=0;c0<NBinsTrueMom;c0++){//loop over cause 0
-	  for(int c1=0;c1<NBinsTrueAngle;c1++){//loop over cause 1
-	    for(int e0=0;e0<NBinsRecMomSignal;e0++){//loop over effect 0
-	      for(int e1=0;e1<NBinsRecAngleSignal;e1++){//loop over effect 1
-		fEvent>>DataReconstructedEvents_TrueSignal[c0][c1][e0][e1];
-#ifdef DEBUG
-		if(DataReconstructedEvents_TrueSignal[c0][c1][e0][e1] != MCReconstructedEvents_TrueSignal[c0][c1][e0][e1])cout<<c0<<","<<c1<<","<<e0<<","<<e1<<": "<<DataReconstructedEvents_TrueSignal[c0][c1][e0][e1]<<" vs "<<MCReconstructedEvents_TrueSignal[c0][c1][e0][e1]<<endl;
-		NEvData_SignalOnly+=DataReconstructedEvents_TrueSignal[c0][c1][e0][e1];
-		NEvMC_SignalOnly+=MCReconstructedEvents_TrueSignal[c0][c1][e0][e1];
-#endif
-	      }
-	    }
-	  }
-	}
-#ifdef DEBUG
-	cout<<"Total events data, selected/rec CC0pi region only: "<<NEvData_SignalOnly<<", MC: "<<NEvMC_SignalOnly<<endl;
-#endif
-	fEvent>>check;
-	if(check!=666) cout<<"problem in reading mc file, true signal"<<endl;
-    }
-      /*	
-		for(int e0=0;e0<NBinsRecMom;e0++){//loop over effect 0
-	  for(int e1=0;e1<NBinsRecAngle;e1++){//loop over effect 1
-	    fEvent>>MCReconstructedBkgEvents[e0][e1];
-	  }
-	}
-	fEvent>>check;
-	if(check!=666) cout<<"problem in reading mc file, background"<<endl;
-	
-	for(int c0=0;c0<NBinsTrueMom;c0++){//loop over cause 0
-	  for(int c1=0;c1<NBinsTrueAngle;c1++){//loop over cause 1
-	    fEvent>>Efficiency[c0][c1];
-	  }
-	} 
-	fEvent>>check;
-	if(check!=666) cout<<"problem in reading mc file, efficiency"<<endl;
-	fEvent>>*NumberOfPOT;
-	fEvent>>check;
-	cout<<"number="<<*NumberOfPOT<<", check="<<check<<endl;
-	if(check!=666) cout<<"problem in reading mc file, Number of POT"<<endl;
-	*/
-	
-
-      fEvent.close();
-
-      
-    ////////////////////////SIDE BAND////////////////////////////////////////
+    fEvent.close();
+    
     cout<<"Side Band: opening file "<<fMCNameSB<<" for mc input"<<endl;
     fEvent.open(fMCNameSB,ios::in);
     for(int e0=0;e0<NBinsRecMomSB;e0++){//loop over effect 0
@@ -716,12 +624,11 @@ void Xsec::LoadInputFilesSB(char * fDataName,char * fMCName, char * fDataNameSB,
     fEvent>>check;
     if(check!=666) cout<<"problem in reading mc file, reconstructed events"<<endl;
     
-    for(int c0=0;c0<NBinsTrueMom;c0++){//loop over cause 0
-      for(int c1=0;c1<NBinsTrueAngle;c1++){//loop over cause 1
+    for(int c0=0;c0<NBinsTrueMomSB;c0++){//loop over cause 0
+      for(int c1=0;c1<NBinsTrueAngleSB;c1++){//loop over cause 1
       for(int e0=0;e0<NBinsRecMomSB;e0++){//loop over effect 0
 	for(int e1=0;e1<NBinsRecAngleSB;e1++){//loop over effect 1
-	  fEvent>>MCReconstructedEvents_TrueSignal[c0][c1][e0+NBinsRecMomSignal][e1+NBinsRecAngleSignal];
-	  if(FakeData) DataReconstructedEvents_TrueSignal[c0][c1][e0+NBinsRecMomSignal][e1+NBinsRecAngleSignal]=MCReconstructedEvents_TrueSignal[c0][c1][e0+NBinsRecMomSignal][e1+NBinsRecAngleSignal];
+	  fEvent>>MCReconstructedEvents_TrueSignal[c0+NBinsTrueMomSignal][c1+NBinsTrueAngleSignal][e0+NBinsRecMomSignal][e1+NBinsRecAngleSignal];
 	}
       }
     }
@@ -737,9 +644,9 @@ void Xsec::LoadInputFilesSB(char * fDataName,char * fMCName, char * fDataNameSB,
     fEvent>>check;
     if(check!=666) cout<<"problem in reading mc file, background"<<endl;
     
-    for(int c0=0;c0<NBinsTrueMom;c0++){//loop over cause 0
-      for(int c1=0;c1<NBinsTrueAngle;c1++){//loop over cause 1
-	fEvent>>Efficiency[c0][c1];
+    for(int c0=0;c0<NBinsTrueMomSB;c0++){//loop over cause 0
+      for(int c1=0;c1<NBinsTrueAngleSB;c1++){//loop over cause 1
+	fEvent>>Efficiency[c0+NBinsTrueMomSignal][c1+NBinsTrueAngleSignal];
       }
     } 
     fEvent>>check;
@@ -750,62 +657,7 @@ void Xsec::LoadInputFilesSB(char * fDataName,char * fMCName, char * fDataNameSB,
     if(check!=666) cout<<"problem in reading mc file, Number of POT"<<endl;
     fEvent.close();
 
- cout<<"Side Band: opening file "<<fDataNameSB<<" for data input"<<endl;
-    fEvent.open(fDataNameSB,ios::in);
-        
-    for(int e0=0;e0<NBinsRecMomSB;e0++){//loop over effect 0
-      for(int e1=0;e1<NBinsRecAngleSB;e1++){//loop over effect 1
-	fEvent>>DataReconstructedEvents[e0+NBinsRecMomSignal][e1+NBinsRecAngleSignal];
-#ifdef DEBUG
-	cout<<DataReconstructedEvents[e0+NBinsRecMomSignal][e1+NBinsRecAngleSignal]<<" ";
-#endif
-      }
-    }
-    fEvent>>check;
-    if(check!=666) cout<<"problem in reading data file"<<endl;
-
-    if(FakeData){
-      cout<<"Fake data, replacing the data true content (expectation) by the MC in fake data ones."<<endl;
-      for(int c0=0;c0<NBinsTrueMom;c0++){//loop over cause 0
-	for(int c1=0;c1<NBinsTrueAngle;c1++){//loop over cause 1
-	  for(int e0=0;e0<NBinsRecMomSB;e0++){//loop over effect 0
-	    for(int e1=0;e1<NBinsRecAngleSB;e1++){//loop over effect 1
-	      fEvent>>DataReconstructedEvents_TrueSignal[c0][c1][e0+NBinsRecMomSignal][e1+NBinsRecAngleSignal];
-#ifdef DEBUG
- 	      if(DataReconstructedEvents_TrueSignal[c0][c1][e0][e1] != MCReconstructedEvents_TrueSignal[c0][c1][e0][e1])cout<<c0<<","<<c1<<","<<e0<<","<<e1<<": "<<DataReconstructedEvents_TrueSignal[c0][c1][e0][e1]<<" vs "<<MCReconstructedEvents_TrueSignal[c0][c1][e0][e1]<<endl;
-#endif
-	    }
-	  }
-	}
-      }
-      fEvent>>check;
-      if(check!=666) cout<<"problem in reading mc file, true signal"<<endl;
-      /*	
-		for(int e0=0;e0<NBinsRecMomSB;e0++){//loop over effect 0
-		for(int e1=0;e1<NBinsRecAngleSB;e1++){//loop over effect 1
-	    fEvent>>MCReconstructedBkgEvents[e0][e1];
-	  }
-	}
-	fEvent>>check;
-	if(check!=666) cout<<"problem in reading mc file, background"<<endl;
-	
-	for(int c0=0;c0<NBinsTrueMomSB;c0++){//loop over cause 0
-	  for(int c1=0;c1<NBinsTrueAngleSB;c1++){//loop over cause 1
-	    fEvent>>Efficiency[c0][c1];
-	  }
-	} 
-	fEvent>>check;
-	if(check!=666) cout<<"problem in reading mc file, efficiency"<<endl;
-	fEvent>>*NumberOfPOT;
-	fEvent>>check;
-	cout<<"number="<<*NumberOfPOT<<", check="<<check<<endl;
-	if(check!=666) cout<<"problem in reading mc file, Number of POT"<<endl;
-	*/
-	
-    }
-    fEvent.close();
- 
-       
+    
 }
 
 void Xsec::LoadNeutrinoFlux(TH1D * NeutrinoFlux){
@@ -817,7 +669,7 @@ void Xsec::LoadNeutrinoFlux(TH1D * NeutrinoFlux){
 			    
 //First, build the likelihood matrix (tensor) based on the MC distribution
 //Second, build the prior coming from the MC distribution. Whether to use this prior or not is defined in SetPrior function. Give also the true distribution (ptiot mc not normalised)
-void Xsec::BuildLikelihood(double **** vLikelihood, double ** vPriorMC, double **** MCReconstructedEvents_TrueSignal){
+void Xsec::BuildLikelihood(double **** vLikelihood, double ** vPriorMC, double ** TrueEventsDistribution, double **** MCReconstructedEvents_TrueSignal){
   double ** MCEvents = new double*[NBinsTrueMom];
   for(int c0=0;c0<NBinsTrueMom;c0++){//loop over cause 0
     MCEvents[c0] = new double [NBinsTrueAngle];
@@ -827,8 +679,6 @@ void Xsec::BuildLikelihood(double **** vLikelihood, double ** vPriorMC, double *
   //Prepare the likelihood distribution
   for(int c0=0;c0<NBinsTrueMom;c0++){//loop over cause 0
     for(int c1=0;c1<NBinsTrueAngle;c1++){//loop over cause 1
-
-      //For general case, use for the whole unfolding
       MCEvents[c0][c1]=0;
       for(int e0=0;e0<NBinsRecMom;e0++){//loop over effect 0
 	for(int e1=0;e1<NBinsRecAngle;e1++){//loop over effect 1
@@ -843,7 +693,6 @@ void Xsec::BuildLikelihood(double **** vLikelihood, double ** vPriorMC, double *
 	  if(MCEvents[c0][c1]!=0) vLikelihood[c0][c1][e0][e1]/=MCEvents[c0][c1];//P(Ej/Ci)=P(Ej&Ci)/P(Ci)
 	}
       }
-      
     }
   }
 
@@ -852,43 +701,14 @@ void Xsec::BuildLikelihood(double **** vLikelihood, double ** vPriorMC, double *
     for(int c1=0;c1<NBinsTrueAngle;c1++){//loop over cause 1
       vPriorMC[c0][c1]=MCEvents[c0][c1];
       if(MCEventsTotal!=0) vPriorMC[c0][c1]/=MCEventsTotal;
-
+      TrueEventsDistribution[c0][c1]=MCEvents[c0][c1];
     }
   }
 
-  //cout<<"MC total events="<<MCEventsTotal<<endl;
   for(int c0=0;c0<NBinsTrueMom;c0++){//loop over cause 0
     delete MCEvents[c0];
   }
   delete MCEvents;
-  
-}
-
-//Provide the true signal distribution projected only on true bins. The important point is that we only sum over the reconstructed bins of the SIGNAL REGION
-void Xsec::ProjectOnTruePhaseSpace_OnlySignal(double ** TrueEventsDistribution_SignalOnly, double **** ReconstructedEvents_TrueSignal){
-  double ** Events_SignalOnly = new double*[NBinsTrueMom];
-  for(int c0=0;c0<NBinsTrueMom;c0++){//loop over cause 0
-    Events_SignalOnly[c0] = new double [NBinsTrueAngle];
-  }
-
-  //For signal only rec region, used for extracting the results at the very end
-  for(int c0=0;c0<NBinsTrueMom;c0++){//loop over cause 0
-    for(int c1=0;c1<NBinsTrueAngle;c1++){//loop over cause 1
-      Events_SignalOnly[c0][c1]=0;
-      for(int e0=0;e0<NBinsRecMomSignal;e0++){//loop over effect 0
-	for(int e1=0;e1<NBinsRecAngleSignal;e1++){//loop over effect 1
-	  Events_SignalOnly[c0][c1]+=ReconstructedEvents_TrueSignal[c0][c1][e0][e1];
-	}
-      }
-      TrueEventsDistribution_SignalOnly[c0][c1]=Events_SignalOnly[c0][c1];
-    }
-  }
-
-  //cout<<"Data total events="<<DataEventsTotal<<endl;
-  for(int c0=0;c0<NBinsTrueMom;c0++){//loop over cause 0
-    delete Events_SignalOnly[c0];
-  }
-  delete Events_SignalOnly;
   
 }
 
@@ -971,11 +791,11 @@ void Xsec::BuildUnfolding(double **** vUnfolding, double **** vLikelihood, doubl
 
 }
 //Unfold the signal reconstructed distribution: data-mc
-void Xsec::ApplyUnfoldingBkgSubstraction(double ** vPosteriorEvents, double **** vUnfolding, double ** DataReconstructedEvents, double ** MCReconstructedBkgEvents){
+void Xsec::ApplyUnfolding(double ** vPosteriorEvents, double **** vUnfolding, double ** DataReconstructedEvents, double ** MCReconstructedBkgEvents){
 
   //Build signal =data - background
   double ** DataReconstructedEvents_Signal = new double*[NBinsRecMom];
-  for(int c0=0;c0<NBinsRecMom;c0++){//loop over cause 0
+  for(int c0=0;c0<NBinsTrueMom;c0++){//loop over cause 0
     DataReconstructedEvents_Signal[c0] = new double [NBinsRecAngle];
   }
 
@@ -1033,82 +853,10 @@ void Xsec::ApplyUnfoldingBkgSubstraction(double ** vPosteriorEvents, double ****
 
 }
 
-//Unfold the signal reconstructed distribution: data-mc
-void Xsec::ApplyUnfolding(double ** vPosteriorEvents, double ** vPosteriorEvents_SignalOnly, double **** vUnfolding, double ** DataReconstructedEvents){
-
-  //Build signal =data - background
-  double ** DataReconstructedEvents_Signal = new double*[NBinsRecMom];
-  for(int c0=0;c0<NBinsRecMom;c0++){//loop over cause 0
-    DataReconstructedEvents_Signal[c0] = new double[NBinsRecAngle];
-  }
-
-  for(int e0=0;e0<NBinsRecMom;e0++){//loop over effect 0
-    for(int e1=0;e1<NBinsRecAngle;e1++){//loop over effect 1
-      DataReconstructedEvents_Signal[e0][e1]=DataReconstructedEvents[e0][e1];
-      if(DataReconstructedEvents_Signal[e0][e1]<0) DataReconstructedEvents_Signal[e0][e1]=0;
-      //DataReconstructedEvents_Signal[e0][e1]=DataReconstructedEvents[e0][e1];
-    }
-  }
-#ifdef DEBUG
-
-  cout<<"Test of the signal:"<<endl;
-  for(int e0=0;e0<NBinsRecMom;e0++){//loop over effect 0
-    for(int e1=0;e1<NBinsRecAngle;e1++){//loop over effect 1
-      cout<<DataReconstructedEvents_Signal[e0][e1]<<" ";
-    }
-  }
-  cout<<endl;
-
-    cout<<"Re-Check the unfolding:"<<endl;
-   for(int c0=0;c0<NBinsTrueMom;c0++){//loop over cause 0
-    for(int c1=0;c1<NBinsTrueAngle;c1++){//loop over cause 1
-      for(int e0=0;e0<NBinsRecMom;e0++){//loop over effect 0
-	for(int e1=0;e1<NBinsRecAngle;e1++){//loop over effect 1
-  cout<<vUnfolding[c0][c1][e0][e1]<<" ";
-	}
-      }
-      cout<<endl;
-    }
-   }
-#endif
-  
-  for(int c0=0;c0<NBinsTrueMom;c0++){//loop over cause 0
-    for(int c1=0;c1<NBinsTrueAngle;c1++){//loop over cause 1
-      vPosteriorEvents[c0][c1]=0;
-      vPosteriorEvents_SignalOnly[c0][c1]=0;
-	}
-      }
-
-  for(int c0=0;c0<NBinsTrueMom;c0++){//loop over cause 0
-    for(int c1=0;c1<NBinsTrueAngle;c1++){//loop over cause 1
-      //General case, for unfolding procedure
-      for(int e0=0;e0<NBinsRecMom;e0++){//loop over effect 0
-	for(int e1=0;e1<NBinsRecAngle;e1++){//loop over effect 1
-	  vPosteriorEvents[c0][c1]+=vUnfolding[c0][c1][e0][e1]*DataReconstructedEvents_Signal[e0][e1];
-	}
-      }
-      if(vPosteriorEvents[c0][c1]<0) vPosteriorEvents[c0][c1]=0;
-      //(Reconstructed) Signal-only region, for providing the final result
-      for(int e0=0;e0<NBinsRecMomSignal;e0++){//loop over effect 0
-	for(int e1=0;e1<NBinsRecAngleSignal;e1++){//loop over effect 1
-	  vPosteriorEvents_SignalOnly[c0][c1]+=vUnfolding[c0][c1][e0][e1]*DataReconstructedEvents_Signal[e0][e1];
-	}
-      }
-      if(vPosteriorEvents_SignalOnly[c0][c1]<0) vPosteriorEvents_SignalOnly[c0][c1]=0;
-    }
-  }
-
-  for(int c0=0;c0<NBinsTrueMom;c0++){//loop over cause 0
-    delete DataReconstructedEvents_Signal[c0];
-  }
-  delete DataReconstructedEvents_Signal;
-
-}
-
 //Generate statistical fluctuation in the DataReconstructedDistribution assuming Poissonian distribution in each reconstructed bin. If needed,
 void Xsec::GenerateStatisticalFluctuations(double ** DataReconstructedEvents){
 
-  r = new TRandom3();
+  TRandom3 * r = new TRandom3();
   r->SetSeed(0);
 
   for(int e0=0;e0<NBinsRecMom;e0++){//loop over effect 0
@@ -1126,7 +874,7 @@ void Xsec::GenerateStatisticalFluctuations(double ** DataReconstructedEvents){
 //Generate fluctuations of the MC in each bin that will affect the prior mc, the likelihood (and though the unfolding) and the background estimation (+the efficiency). The user should give a tensor of relative sigma errors one wants.
 void Xsec::GenerateMCFluctuations(double **** MCReconstructedEvents_TrueSignal,double **** RelativeSigma){
 
- r = new TRandom3();
+ TRandom3 * r = new TRandom3();
   r->SetSeed(0);
 
   for(int c0=0;c0<NBinsTrueMom;c0++){//loop over cause 0

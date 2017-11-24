@@ -47,8 +47,10 @@ using namespace std;
 #include <TBox.h>
 #include "setup.h"
 //#include "Reconstruction.cc"
-//#include "Xsec.cc"
-#define DEBUG
+#include "Xsec.cc"
+//#define DEBUG
+bool SideBand = true;
+int NBinsIteration=100;
 
 int main(int argc, char ** argv){
 
@@ -57,6 +59,25 @@ int main(int argc, char ** argv){
   //  Xsec * XS = new Xsec();
   //XS->Xsec::Initialize();
   InitializeGlobal();
+#ifdef DEBUG
+  cout<<"Initialized"<<endl;
+#endif
+  //To modify the bining if we have a side band
+  ReinitializeUnfoldingBinning(SideBand);
+#ifdef DEBUG
+  cout<<"ReInitialized"<<endl;
+#endif
+  int NBinsTrueMomPlots, NBinsTrueAnglePlots;
+  if(SideBand){//We do not care to watch both trash bin of signal, the CC1pi and the Other interaction result.
+    NBinsTrueMomPlots = NBinsTrueMom-2;
+    NBinsTrueAnglePlots = NBinsTrueAngle-2;
+  }
+  else{
+    NBinsTrueMomPlots = NBinsTrueMom-1;
+    NBinsTrueAnglePlots = NBinsTrueAngle-1;
+  }
+
+  Xsec * XS = new Xsec();
   gStyle->SetPaintTextFormat("2.2f");
   
   double vLikelihood[NBinsTrueMom][NBinsTrueAngle][NBinsRecMom][NBinsRecAngle];
@@ -94,21 +115,22 @@ int main(int argc, char ** argv){
   TFile * ofile = new TFile("plots/UnfoldingPlots.root","recreate");
   
   //0. Preparation for covariance estimation
-  int NBins=(NBinsTrueMom-1)*(NBinsTrueAngle-1);
-  TH2D * Covariance = new TH2D("Covariance","Covariance matrix",(NBinsTrueMom-1)*(NBinsTrueAngle-1),0,(NBinsTrueMom-1)*(NBinsTrueAngle-1),(NBinsTrueMom-1)*(NBinsTrueAngle-1),0,(NBinsTrueMom-1)*(NBinsTrueAngle-1));
-  TH2D * Correlation = new TH2D("Correlation","Correlation matrix",(NBinsTrueMom-1)*(NBinsTrueAngle-1),0,(NBinsTrueMom-1)*(NBinsTrueAngle-1),(NBinsTrueMom-1)*(NBinsTrueAngle-1),0,(NBinsTrueMom-1)*(NBinsTrueAngle-1));
-  TH2D * NVariations = new TH2D("NVariations","",(NBinsTrueMom-1)*(NBinsTrueAngle-1),0,(NBinsTrueMom-1)*(NBinsTrueAngle-1),(NBinsTrueMom-1)*(NBinsTrueAngle-1),0,(NBinsTrueMom-1)*(NBinsTrueAngle-1));
+  int NBins=(NBinsTrueMomPlots)*(NBinsTrueAnglePlots);
+  TH2D * Covariance = new TH2D("Covariance","Covariance matrix",(NBinsTrueMomPlots)*(NBinsTrueAnglePlots),0,(NBinsTrueMomPlots)*(NBinsTrueAnglePlots),(NBinsTrueMomPlots)*(NBinsTrueAnglePlots),0,(NBinsTrueMomPlots)*(NBinsTrueAnglePlots));
+  TH2D * Correlation = new TH2D("Correlation","Correlation matrix",(NBinsTrueMomPlots)*(NBinsTrueAnglePlots),0,(NBinsTrueMomPlots)*(NBinsTrueAnglePlots),(NBinsTrueMomPlots)*(NBinsTrueAnglePlots),0,(NBinsTrueMomPlots)*(NBinsTrueAnglePlots));
+  TH2D * NVariations = new TH2D("NVariations","",(NBinsTrueMomPlots)*(NBinsTrueAnglePlots),0,(NBinsTrueMomPlots)*(NBinsTrueAnglePlots),(NBinsTrueMomPlots)*(NBinsTrueAnglePlots),0,(NBinsTrueMomPlots)*(NBinsTrueAnglePlots));
 
-  TH2D * NumberOfEvents = new TH2D("NumberOfEvents","Number of events (true MC information) for each true bin",NBinsTrueMom,0,NBinsTrueMom,NBinsTrueAngle,0,NBinsTrueAngle);
-  TH2D * NumberOfEvents_TrueRec = new TH2D("NumberOfEvents_TrueRec","Number of events (true MC information) for each true & reconstructed bin",NBinsRecMom*NBinsRecAngle,0,NBinsRecMom*NBinsRecAngle,(NBinsTrueMom-1)*(NBinsTrueAngle-1),0,(NBinsTrueMom-1)*(NBinsTrueAngle-1));
+  TH2D * NumberOfEvents = new TH2D("NumberOfEvents","Number of events (true MC information) for each true bin",NBinsTrueMomPlots,0,NBinsTrueMomPlots,NBinsTrueAngle,0,NBinsTrueAngle);
+  TH2D * NumberOfEvents_TrueRec = new TH2D("NumberOfEvents_TrueRec","Number of events (true MC information) for each true & reconstructed bin",NBinsRecMom*NBinsRecAngle,0,NBinsRecMom*NBinsRecAngle,(NBinsTrueMomPlots)*(NBinsTrueAnglePlots),0,(NBinsTrueMomPlots)*(NBinsTrueAnglePlots));
 
-  for(int c0=0;c0<NBinsTrueMom-1;c0++){//loop over cause 0
-    for(int c1=0;c1<NBinsTrueAngle-1;c1++){//loop over cause 1
+				   
+  for(int c0=0;c0<NBinsTrueMomPlots;c0++){//loop over cause 0
+    for(int c1=0;c1<NBinsTrueAnglePlots;c1++){//loop over cause 1
       NumberOfEvents->SetBinContent(c0+1,c1+1,0);
-      for(int d0=0;d0<NBinsTrueMom-1;d0++){//loop over cause 0
-	for(int d1=0;d1<NBinsTrueAngle-1;d1++){//loop over cause 1
-	  int BinX=c0*(NBinsTrueAngle-1)+c1+1;
-	  int BinY=d0*(NBinsTrueAngle-1)+d1+1;
+      for(int d0=0;d0<NBinsTrueMomPlots;d0++){//loop over cause 0
+	for(int d1=0;d1<NBinsTrueAnglePlots;d1++){//loop over cause 1
+	  int BinX=c0*(NBinsTrueAnglePlots)+c1+1;
+	  int BinY=d0*(NBinsTrueAnglePlots)+d1+1;
 	  Covariance->SetBinContent(BinX,BinY,0);
 	  Correlation->SetBinContent(BinX,BinY,0);
 	  NVariations->SetBinContent(BinX,BinY,0);
@@ -142,6 +164,41 @@ int main(int argc, char ** argv){
   TFile * file = new TFile(InputNameMC,"read");
   //TFile * file = new TFile(".root","recreate");
   file->cd();
+  TChain * wtree = new TChain("wtree");
+  wtree->Add(InputNameMC);
+  cout<<"opening file "<<InputNameMC<<" for data input"<<endl;
+
+  int Iterations, Systematics, Statistics;
+  double Events[NBinsTrueMom][NBinsTrueAngle];
+  double EventsAll[NBinsTrueMom][NBinsTrueAngle][NBinsRecMom][NBinsRecAngle];
+  double TrueEvents[NBinsTrueMom][NBinsTrueAngle];
+  double XSection[NBinsTrueMom][NBinsTrueAngle];
+
+  TBranch* Br_Iterations = wtree->GetBranch("Iterations");
+  Br_Iterations->SetAddress(&Iterations);
+  wtree->SetBranchAddress("Iterations",&Iterations);
+
+  TBranch* Br_Systematics = wtree->GetBranch("Systematics");
+  Br_Systematics->SetAddress(&Systematics);
+  wtree->SetBranchAddress("Systematics",&Systematics);
+
+  TBranch* Br_Statistics = wtree->GetBranch("Statistics");
+  Br_Statistics->SetAddress(&Statistics);
+  wtree->SetBranchAddress("Statistics",&Statistics);
+
+  TBranch* Br_Events = wtree->GetBranch("Events");
+  Br_Events->SetAddress(Events);
+  wtree->SetBranchAddress("Events",Events);
+
+  TBranch* Br_EventsAll = wtree->GetBranch("EventsAll");
+  Br_EventsAll->SetAddress(EventsAll);
+  wtree->SetBranchAddress("EventsAll",EventsAll);
+
+  TBranch* Br_TrueEvents = wtree->GetBranch("TrueEvents");
+  Br_TrueEvents->SetAddress(TrueEvents);
+  wtree->SetBranchAddress("TrueEvents",TrueEvents);
+
+  /*
   TTree*              wtree    = (TTree*) file->Get("wtree");
   int Iterations, Systematics, Statistics;
   double Events[NBinsTrueMom][NBinsTrueAngle];
@@ -160,23 +217,31 @@ int main(int argc, char ** argv){
   Br_Statistics->SetAddress(&Statistics);
   wtree->SetBranchAddress("Statistics",&Statistics);
 
-  TBranch* Br_Events = wtree->GetBranch("Events");
-  Br_Events->SetAddress(Events);
-  wtree->SetBranchAddress("Events",Events);  
+  TBranch* Br_Events = wtree->GetBranch(Form("Events[%d][%d]",NBinsTrueMom,NBinsTrueAngle));
+  Br_Events->SetAddress(&Events);
+  wtree->SetBranchAddress(Form("Events[%d][%d]",NBinsTrueMom,NBinsTrueAngle),&Events);  
 
+  TBranch* Br_EventsAll = wtree->GetBranch(Form("EventsAll[%d][%d][%d][%d]",NBinsTrueMom,NBinsTrueAngle,NBinsRecMom,NBinsRecAngle));
+  Br_EventsAll->SetAddress(&EventsAll);
+  wtree->SetBranchAddress(Form("EventsAll[%d][%d][%d][%d]",NBinsTrueMom,NBinsTrueAngle,NBinsRecMom,NBinsRecAngle),&EventsAll);  
+  TBranch* Br_TrueEvents = wtree->GetBranch(Form("TrueEvents[%d][%d]",NBinsTrueMom,NBinsTrueAngle));
+  Br_TrueEvents->SetAddress(&TrueEvents);
+  wtree->SetBranchAddress(Form("TrueEvents[%d][%d]",NBinsTrueMom,NBinsTrueAngle),&TrueEvents);  
+  
   TBranch* Br_EventsAll = wtree->GetBranch("EventsAll");
   Br_EventsAll->SetAddress(EventsAll);
   wtree->SetBranchAddress("EventsAll",EventsAll);  
 
   TBranch* Br_TrueEvents = wtree->GetBranch("TrueEvents");
   Br_TrueEvents->SetAddress(TrueEvents);
-  wtree->SetBranchAddress("TrueEvents",TrueEvents);  
+  wtree->SetBranchAddress("TrueEvents",TrueEvents); */ 
 ////////////////////////////////////////////////////////////////////////////////
   
   int nevt=wtree->GetEntries();
 
   TCanvas * canEvents[NBinsTrueMom][NBinsTrueAngle];
-  TCanvas * canEventsXIterations[NBinsTrueMom][NBinsTrueAngle];
+  TCanvas * canstatEventsXIterations[NBinsTrueMom][NBinsTrueAngle];
+  TCanvas * cansystEventsXIterations[NBinsTrueMom][NBinsTrueAngle];
 
   //2D true variable distributions
   TH2D * UnfoldedDistribution = new TH2D("UnfoldedDistribution","Events distribution in true binning after unfolding applied",NBinsTrueMom,0,NBinsTrueMom,NBinsTrueAngle,0,NBinsTrueAngle);
@@ -211,6 +276,12 @@ int main(int argc, char ** argv){
     aY_BiasDistribution->SetBinLabel(ibin,Form("%2.0f#circ-%2.0f#circ",BinningTrueAngle[ibin-1],BinningTrueAngle[ibin]));
     aY_ErrorDistribution->SetBinLabel(ibin,Form("%2.0f#circ-%2.0f#circ",BinningTrueAngle[ibin-1],BinningTrueAngle[ibin]));
   }
+
+  //
+  TH2D * BiasDistribution_BrokenPerIteration[NBinsIteration];
+  for(int i=0;i<NBinsIteration;i++) BiasDistribution_BrokenPerIteration[i] = new TH2D(Form("BiasDistribution_BrokenPerIteration[%d]",i),"Bias=Mean of the gaussian we used to fit the pull distribution, given in true variables",NBinsTrueMom,0,NBinsTrueMom,NBinsTrueAngle,0,NBinsTrueAngle);
+  TH1D * BiasXIterations_Default[NBinsTrueMom][NBinsTrueAngle];
+
   
   //Events pull distributions, only for stat variations!!!!.
   TH1D * pullEvents[NBinsTrueMom][NBinsTrueAngle];
@@ -237,52 +308,67 @@ int main(int argc, char ** argv){
 
   
   TH1D * hTemp; TF1 * gausTemp = new TF1("gausTemp","gaus",-3,3);
-  int NBinsIteration=10;
   
-  for(int c0=0;c0<NBinsTrueMom;c0++){//loop over cause 0
+  for(int c0=0;c0<NBinsTrueMomPlots;c0++){//loop over cause 0
     for(int c1=0;c1<NBinsTrueAngle;c1++){//loop over cause 1
-      pullEvents[c0][c1] = new TH1D(Form("pullEvents[%d][%d]",c0,c1),"",100,-2,2);
+      BiasXIterations_Default[c0][c1] = new TH1D(Form("BiasXIterations[%d][%d]",c0,c1),"",NBinsIteration,0,NBinsIteration);
+	
+      pullEvents[c0][c1] = new TH1D(Form("pullEvents[%d][%d]",c0,c1),"",400,-2,2);
 
-      pullEventsXIterations[c0][c1] = new TH2D(Form("pullEventsXIterations[%d][%d]",c0,c1),"Pull distribution X unfolding iterations, for true binning",NBinsIteration,0,NBinsIteration,100,-2,2);
+      pullEventsXIterations[c0][c1] = new TH2D(Form("pullEventsXIterations[%d][%d]",c0,c1),"Pull distribution X unfolding iterations, for true binning",NBinsIteration,0,NBinsIteration,400,-2,2);
       pullEventsmeanXIterations[c0][c1] = new TH1D(Form("pullEventsmeanXIterations[%d][%d]",c0,c1),"Mean (gaussian fit) pull distribution X unfolding iterations, for true binning",NBinsIteration,0,NBinsIteration);
       pullEventssigmaXIterations[c0][c1] = new TH1D(Form("pullEventssigmaXIterations[%d][%d]",c0,c1),"Error (gaussian fit) pull distribution X unfolding iterations, for true binning",NBinsIteration,0,NBinsIteration);
 
-      pullstatEventsXIterations[c0][c1] = new TH2D(Form("pullstatEventsXIterations[%d][%d]",c0,c1),"Pull distribution X unfolding iterations, for true binning (Stat. error variations only between toy experiment to build pull)",NBinsIteration,0,NBinsIteration,100,-2,2);
+      pullstatEventsXIterations[c0][c1] = new TH2D(Form("pullstatEventsXIterations[%d][%d]",c0,c1),"Pull distribution X unfolding iterations, for true binning (Stat. error variations only between toy experiment to build pull)",NBinsIteration,0,NBinsIteration,400,-2,2);
       pullstatEventsmeanXIterations[c0][c1] = new TH1D(Form("pullstatEventsmeanXIterations[%d][%d]",c0,c1),"Mean (gaussian fit) pull distribution X unfolding iterations, for true binning (Stat. error variations only between toy experiment to build pull)",NBinsIteration,0,NBinsIteration);
       pullstatEventssigmaXIterations[c0][c1] = new TH1D(Form("pullstatEventssigmaXIterations[%d][%d]",c0,c1),"Error (gaussian fit) pull distribution X unfolding iterations, for true binning (Stat. error variations only between toy experiment to build pull)",NBinsIteration,0,NBinsIteration);
 
-      pullsystEventsXIterations[c0][c1] = new TH2D(Form("pullsystEventsXIterations[%d][%d]",c0,c1),"Pull distribution X unfolding iterations, for true binning (Syst. error variations only between toy experiment to build pull)",NBinsIteration,0,NBinsIteration,100,-2,2);
+      pullsystEventsXIterations[c0][c1] = new TH2D(Form("pullsystEventsXIterations[%d][%d]",c0,c1),"Pull distribution X unfolding iterations, for true binning (Syst. error variations only between toy experiment to build pull)",NBinsIteration,0,NBinsIteration,400,-2,2);
       pullsystEventsmeanXIterations[c0][c1] = new TH1D(Form("pullsystEventsmeanXIterations[%d][%d]",c0,c1),"Mean (gaussian fit) pull distribution X unfolding iterations, for true binning (Syst. error variations only between toy experiment to build pull)",NBinsIteration,0,NBinsIteration);
       pullsystEventssigmaXIterations[c0][c1] = new TH1D(Form("pullsystEventssigmaXIterations[%d][%d]",c0,c1),"Error (gaussian fit) pull distribution X unfolding iterations, for true binning (Syst. error variations only between toy experiment to build pull)",NBinsIteration,0,NBinsIteration);      
 
 
-      pullstatEventsXsystEvents[c0][c1] = new TH2D(Form("pullstatEventsXsystEvents[%d][%d]",c0,c1),"Pull distribution X systematically varied toy experiment, for true binning (Stat. error variations only between toy experiment to build pull)",100,0,100,100,-2,2);
+      pullstatEventsXsystEvents[c0][c1] = new TH2D(Form("pullstatEventsXsystEvents[%d][%d]",c0,c1),"Pull distribution X systematically varied toy experiment, for true binning (Stat. error variations only between toy experiment to build pull)",100,0,100,400,-2,2);
       pullstatEventsmeanXsystEvents[c0][c1] = new TH1D(Form("pullstatEventsmeanXsystEvents[%d][%d]",c0,c1),"Mean (gaussian fit) pull distribution X systematically varied toy experiment, for true binning (Stat. error variations only between toy experiment to build pull)",100,0,100);
       pullstatEventssigmaXsystEvents[c0][c1] = new TH1D(Form("pullstatEventssigmaXsystEvents[%d][%d]",c0,c1),"Error (gaussian fit) pull distribution X systematically varied toy experiment, for true binning (Stat. error variations only between toy experiment to build pull)",100,0,100);
 																								   
     }
   }
-  
+	
+#ifdef DEBUG
+    cout<<"Statistics="<<Statistics<<endl;
+#endif
   for(int ievt=0;ievt<nevt;ievt++){
     wtree->GetEntry(ievt);
-    //cout<<"Statistics="<<Statistics<<endl;
-    for(int c0=0;c0<NBinsTrueMom-1;c0++){//loop over cause 0
-      for(int c1=0;c1<NBinsTrueAngle-1;c1++){//loop over cause 1
+    if(ievt%100 == 0) cout<<ievt<<"/"<<nevt<<endl;
+#ifdef DEBUG
+    cout<<"Number of iteration="<<Iterations<<", number of mom bins="<<NBinsTrueMom<<", angle bins="<<NBinsTrueAngle<<endl;
+#endif
+    for(int c0=0;c0<NBinsTrueMomPlots;c0++){//loop over cause 0
+      for(int c1=0;c1<NBinsTrueAnglePlots;c1++){//loop over cause 1
+#ifdef DEBUG
+	cout<<setprecision(4)<<"Mom bin="<<c0<<", ang bin="<<c1<<", Number of Events="<<Events[c0][c1]<<", True events="<<TrueEvents[c0][c1]<<endl;
+#endif
 	UnfoldedDistribution->SetBinContent(c0+1,c1+1,Events[c0][c1]);
 	TrueDistribution->SetBinContent(c0+1,c1+1,TrueEvents[c0][c1]);
 	double Value=Events[c0][c1]-TrueEvents[c0][c1];
 	if(TrueEvents[c0][c1]!=0) Value/=TrueEvents[c0][c1];
 	pullEventsXIterations[c0][c1]->Fill(Iterations,Value);
 	pullstatEventsXsystEvents[c0][c1]->Fill(Systematics,Value);
+	BiasDistribution_BrokenPerIteration[Iterations]->SetBinContent(c0+1,c1+1,Value);
 	
-	if(Statistics==0) pullsystEventsXIterations[c0][c1]->Fill(Iterations,Value);
+	if(Statistics==0){
+	  //cout<<"Iteration = "<<Iterations+1<<", bin = "<<c0<<","<<c1<<", Value = "<<Value<<endl;
+	  BiasXIterations_Default[c0][c1]->SetBinContent(Iterations+1,Value); 
+	  pullsystEventsXIterations[c0][c1]->Fill(Iterations,Value);
+	}
 	if(Systematics==0){
 	  pullstatEventsXIterations[c0][c1]->Fill(Iterations,Value);
 	  pullEvents[c0][c1]->Fill(Value);
-	  for(int d0=0;d0<NBinsTrueMom-1;d0++){//loop over dause 0
-	    for(int d1=0;d1<NBinsTrueAngle-1;d1++){//loop over cause 1
-	      int BinX=c0*(NBinsTrueAngle-1)+c1+1;
-	      int BinY=d0*(NBinsTrueAngle-1)+d1+1;
+	  for(int d0=0;d0<NBinsTrueMomPlots;d0++){//loop over dause 0
+	    for(int d1=0;d1<NBinsTrueAnglePlots;d1++){//loop over cause 1
+	      int BinX=c0*(NBinsTrueAnglePlots)+c1+1;
+	      int BinY=d0*(NBinsTrueAnglePlots)+d1+1;
 	      double Cova=Covariance->GetBinContent(BinX,BinY);
 	      Cova+=(Events[c0][c1]-TrueEvents[c0][c1])*(Events[d0][d1]-TrueEvents[d0][d1]);
 	      Covariance->SetBinContent(BinX,BinY,Cova);
@@ -297,14 +383,14 @@ int main(int argc, char ** argv){
 	    for(int e0=0;e0<NBinsRecMom-1;e0++){//loop over effect 0
 	      for(int e1=0;e1<NBinsRecAngle-1;e1++){//loop over effect 1
 		int BinX=e0*(NBinsRecAngle-1)+e1+1;
-		int BinY=c0*(NBinsTrueAngle-1)+c1+1;
+		int BinY=c0*(NBinsTrueAnglePlots)+c1+1;
 		double nEvts_TrueRec=NumberOfEvents_TrueRec->GetBinContent(BinX,BinY);
 		nEvts_TrueRec+=EventsAll[c0][c1][e0][e1];
 		nEvts+=EventsAll[c0][c1][e0][e1];
 		NumberOfEvents_TrueRec->SetBinContent(BinX,BinY,nEvts_TrueRec);
 	      }
 	    }
-	    cout<<"nevts="<<nEvts<<endl;
+ 	    cout<<"nevts="<<nEvts<<endl;
 	    NumberOfEvents->SetBinContent(c0+1,c1+1,nEvts);
 	  }
 	}
@@ -314,12 +400,12 @@ int main(int argc, char ** argv){
 
   //4. For the total error, build the correlation matrix from the covariant one
   Covariance->Divide(NVariations);
-  for(int c0=0;c0<NBinsTrueMom-1;c0++){//loop over cause 0
-    for(int c1=0;c1<NBinsTrueAngle-1;c1++){//loop over cause 1
-      for(int d0=0;d0<NBinsTrueMom-1;d0++){//loop over cause 0
-	for(int d1=0;d1<NBinsTrueAngle-1;d1++){//loop over cause 1
-	  int BinX=c0*(NBinsTrueAngle-1)+c1+1;
-	  int BinY=d0*(NBinsTrueAngle-1)+d1+1;
+  for(int c0=0;c0<NBinsTrueMomPlots;c0++){//loop over cause 0
+    for(int c1=0;c1<NBinsTrueAnglePlots;c1++){//loop over cause 1
+      for(int d0=0;d0<NBinsTrueMomPlots;d0++){//loop over cause 0
+	for(int d1=0;d1<NBinsTrueAnglePlots;d1++){//loop over cause 1
+	  int BinX=c0*(NBinsTrueAnglePlots)+c1+1;
+	  int BinY=d0*(NBinsTrueAnglePlots)+d1+1;
 	  double Corr=Covariance->GetBinContent(BinX,BinY);
 	  double NormCorr=TMath::Sqrt(Covariance->GetBinContent(BinX,BinX)*Covariance->GetBinContent(BinY,BinY));
 	  if(NormCorr) Corr/=NormCorr;
@@ -350,18 +436,18 @@ int main(int argc, char ** argv){
   gStyle->SetOptStat(kFALSE);
   Correlation->Draw("colztext");
   
-  TLine * lBins[NBinsTrueMom-1][2];
-  TLatex * tBins[NBinsTrueMom-1][2];
+  TLine * lBins[NBinsTrueMomPlots][2];
+  TLatex * tBins[NBinsTrueMomPlots][2];
   cout.precision(2);
   cout.setf(ios::fixed);
   
-  for(int imom=0;imom<NBinsTrueMom-1;imom++){
+  for(int imom=0;imom<NBinsTrueMomPlots;imom++){
     cout<<"imom="<<imom<<endl;
-    lBins[imom][0] = new TLine(imom*(NBinsTrueAngle-1),0,imom*(NBinsTrueAngle-1),(NBinsTrueMom-1)*(NBinsTrueAngle-1));
-    lBins[imom][1] = new TLine(0,imom*(NBinsTrueAngle-1),(NBinsTrueMom-1)*(NBinsTrueAngle-1),imom*(NBinsTrueAngle-1));
+    lBins[imom][0] = new TLine(imom*(NBinsTrueAnglePlots),0,imom*(NBinsTrueAnglePlots),(NBinsTrueMomPlots)*(NBinsTrueAnglePlots));
+    lBins[imom][1] = new TLine(0,imom*(NBinsTrueAnglePlots),(NBinsTrueMomPlots)*(NBinsTrueAnglePlots),imom*(NBinsTrueAnglePlots));
 
-    tBins[imom][0] = new TLatex(imom*(NBinsTrueAngle-1)+NBinsTrueAngle/4,-1,Form("Bin%d p_{#mu}",imom+1));
-    tBins[imom][1] = new TLatex(-1,imom*(NBinsTrueAngle-1)+NBinsTrueAngle/4,Form("Bin%d p_{#mu}",imom+1));
+    tBins[imom][0] = new TLatex(imom*(NBinsTrueAnglePlots)+NBinsTrueAngle/4,-1,Form("Bin%d p_{#mu}",imom+1));
+    tBins[imom][1] = new TLatex(-1,imom*(NBinsTrueAnglePlots)+NBinsTrueAngle/4,Form("Bin%d p_{#mu}",imom+1));
     tBins[imom][1]->SetTextAngle(90);
     tBins[imom][0]->SetTextSize(0.04);
     tBins[imom][1]->SetTextSize(0.04);
@@ -384,8 +470,8 @@ int main(int argc, char ** argv){
   TF1 * fPoisson[NBinsTrueMom][NBinsTrueAngle];
   //TF1 * fPoisson = new TF1("fPoisson","[0]*TMath::Power(([1]/[2]),(x/[2]))*(TMath::Exp(-([1]/[2])))/TMath::Gamma((x/[2])+1)",-2,2);
   
-    for(int c0=0;c0<NBinsTrueMom-1;c0++){//loop over cause 0
-      for(int c1=0;c1<NBinsTrueAngle-1;c1++){//loop over cause 1
+    for(int c0=0;c0<NBinsTrueMomPlots;c0++){//loop over cause 0
+      for(int c1=0;c1<NBinsTrueAnglePlots;c1++){//loop over cause 1
 	fPoisson[c0][c1] = new TF1(Form("fPoisson[%d][%d]",c0,c1),"[0]*(TMath::Poisson((x*[1]+[1]),[1]))",-2,2);
 	fPoisson[c0][c1]->SetParameter(1,TrueDistribution->GetBinContent(c0+1,c1+1));
 	fPoisson[c0][c1]->SetParameter(0,pullEvents[c0][c1]->Integral());
@@ -402,84 +488,95 @@ int main(int argc, char ** argv){
 
 	//Draw the pull distribution with iterations & behaviour of the mean/error of the pull, for all the variations in the input file
        
-	canEventsXIterations[c0][c1] = new TCanvas(Form("cPullXIterations%d_%d",c0,c1),Form("Pull maximum and 1#sigma error of events after unfolding in the bin %d_%d",c0,c1));
 	pullEventsXIterations[c0][c1]->GetXaxis()->SetTitle("Unfolding iterations");
 	pullEventsXIterations[c0][c1]->GetYaxis()->SetTitle("Pull");
-	for(int ibinx=1;ibinx<=pullEventsXIterations[c0][c1]->GetNbinsX();ibinx++){
-	  gausTemp->SetParameter(0,1.);gausTemp->SetParameter(0,0.);gausTemp->SetParameter(0,1.);
-	  pullEventsXIterations[c0][c1]->FitSlicesY(gausTemp,ibinx,ibinx,0,"RQ0");
-	  pullEventsmeanXIterations[c0][c1]->SetBinContent(ibinx,gausTemp->GetParameter(1));
-	  pullEventsmeanXIterations[c0][c1]->SetBinError(ibinx,gausTemp->GetParError(1));
-	  pullEventssigmaXIterations[c0][c1]->SetBinContent(ibinx,gausTemp->GetParameter(2));
-	  pullEventssigmaXIterations[c0][c1]->SetBinError(ibinx,gausTemp->GetParError(2));
-	}
-	pullEventsmeanXIterations[c0][c1]->SetLineColor(1);
-	pullEventssigmaXIterations[c0][c1]->SetLineColor(kGray);
-	pullEventsmeanXIterations[c0][c1]->GetXaxis()->SetTitle("Unfolding Iterations");
-	//pullEventsmeanXIterations[c0][c1]->Draw("E1");
-	//pullEventssigmaXIterations[c0][c1]->Draw("E1same");
-	
-	//Draw the pull distribution with iterations & behaviour of the mean/error of the pull, BUT ONLY FOR STATISTICAL VARIATIONS in the input file	
-	pullstatEventsXIterations[c0][c1]->GetXaxis()->SetTitle("Unfolding iterations");
-	pullstatEventsXIterations[c0][c1]->GetYaxis()->SetTitle("Pullstat");
-	for(int ibinx=1;ibinx<=pullstatEventsXIterations[c0][c1]->GetNbinsX();ibinx++){
-	  gausTemp->SetParameter(0,1.);gausTemp->SetParameter(0,0.);gausTemp->SetParameter(0,1.);
-	  pullstatEventsXIterations[c0][c1]->FitSlicesY(gausTemp,ibinx,ibinx,0,"RQ0");
-	  pullstatEventsmeanXIterations[c0][c1]->SetBinContent(ibinx,gausTemp->GetParameter(1));
-	  pullstatEventsmeanXIterations[c0][c1]->SetBinError(ibinx,gausTemp->GetParError(1));
-	  pullstatEventssigmaXIterations[c0][c1]->SetBinContent(ibinx,gausTemp->GetParameter(2));
-	  pullstatEventssigmaXIterations[c0][c1]->SetBinError(ibinx,gausTemp->GetParError(2));
-	  //cout<<"center="<<gausTemp->GetParameter(1)<<", error"<<gausTemp->GetParameter(2)<<endl;
-
-	  if(ibinx==pullsystEventsXIterations[c0][c1]->GetNbinsX()){//only for the last bin of the number of iteration. In the case that there is no variations on the number of iterations, this is equal to the number of iteration set.
-	    BiasDistribution->SetBinContent(c0+1,c1+1,gausTemp->GetParameter(1));
-	    ErrorDistribution->SetBinContent(c0+1,c1+1,gausTemp->GetParameter(2));
+	if(NBinsIteration<1e3){
+	  for(int ibinx=1;ibinx<=pullEventsXIterations[c0][c1]->GetNbinsX();ibinx++){
+	    gausTemp->SetParameter(0,1.);gausTemp->SetParameter(0,0.);gausTemp->SetParameter(0,1.);
+	    pullEventsXIterations[c0][c1]->FitSlicesY(gausTemp,ibinx,ibinx,0,"RQ0");
+	    pullEventsmeanXIterations[c0][c1]->SetBinContent(ibinx,gausTemp->GetParameter(1));
+	    pullEventsmeanXIterations[c0][c1]->SetBinError(ibinx,gausTemp->GetParError(1));
+	    pullEventssigmaXIterations[c0][c1]->SetBinContent(ibinx,gausTemp->GetParameter(2));
+	    pullEventssigmaXIterations[c0][c1]->SetBinError(ibinx,gausTemp->GetParError(2));
 	  }
-	}
-	pullstatEventsmeanXIterations[c0][c1]->SetLineColor(kRed);
-	pullstatEventssigmaXIterations[c0][c1]->SetLineColor(kOrange);
-	pullstatEventsmeanXIterations[c0][c1]->GetXaxis()->SetTitle("Unfolding Iterations");
-	pullstatEventsmeanXIterations[c0][c1]->Draw("E1");
-	pullstatEventssigmaXIterations[c0][c1]->Draw("E1same");
-	
-	//Draw the pull distribution with iterations & behaviour of the mean/error of the pull, BUT ONLY FOR SYSTEMATICS VARIATIONS in the input file	
-	pullsystEventsXIterations[c0][c1]->GetXaxis()->SetTitle("Unfolding iterations");
-	pullsystEventsXIterations[c0][c1]->GetYaxis()->SetTitle("Pullsyst");
-	for(int ibinx=1;ibinx<=pullsystEventsXIterations[c0][c1]->GetNbinsX();ibinx++){
-	  gausTemp->SetParameter(0,1.);gausTemp->SetParameter(0,0.);gausTemp->SetParameter(0,1.);
-	  pullsystEventsXIterations[c0][c1]->FitSlicesY(gausTemp,ibinx,ibinx,0,"RQ0");
-	  pullsystEventsmeanXIterations[c0][c1]->SetBinContent(ibinx,gausTemp->GetParameter(1));
-	  pullsystEventsmeanXIterations[c0][c1]->SetBinError(ibinx,gausTemp->GetParError(1));
-	  pullsystEventssigmaXIterations[c0][c1]->SetBinContent(ibinx,gausTemp->GetParameter(2));
-	  pullsystEventssigmaXIterations[c0][c1]->SetBinError(ibinx,gausTemp->GetParError(2));
-
-	}
-	pullsystEventsmeanXIterations[c0][c1]->SetLineColor(kBlue);
-	pullsystEventssigmaXIterations[c0][c1]->SetLineColor(kCyan);
-	pullsystEventsmeanXIterations[c0][c1]->GetXaxis()->SetTitle("Unfolding Iterations");
-	//pullsystEventsmeanXIterations[c0][c1]->Draw("E1same");
-	//pullsystEventssigmaXIterations[c0][c1]->Draw("E1same");
+	  pullEventsmeanXIterations[c0][c1]->SetLineColor(1);
+	  pullEventssigmaXIterations[c0][c1]->SetLineColor(kGray);
+	  pullEventsmeanXIterations[c0][c1]->GetXaxis()->SetTitle("Unfolding Iterations");
+	  //pullEventsmeanXIterations[c0][c1]->Draw("E1");
+	  //pullEventssigmaXIterations[c0][c1]->Draw("E1same");
+	  pullEventsXIterations[c0][c1]->Write();
 
 
+	  
+	  //Statistical variations
+	  //Draw the pull distribution with iterations & behaviour of the mean/error of the pull, BUT ONLY FOR STATISTICAL VARIATIONS in the input file	
+	  canstatEventsXIterations[c0][c1] = new TCanvas(Form("cstatPullXIterations%d_%d",c0,c1),Form("Pull maximum and 1#sigma error of events after unfolding in the bin %d_%d",c0,c1));
+	  pullstatEventsXIterations[c0][c1]->GetXaxis()->SetTitle("Unfolding iterations");
+	  pullstatEventsXIterations[c0][c1]->GetYaxis()->SetTitle("Pullstat");
+	  for(int ibinx=1;ibinx<=pullstatEventsXIterations[c0][c1]->GetNbinsX();ibinx++){
+	    gausTemp->SetParameter(0,1.);gausTemp->SetParameter(0,0.);gausTemp->SetParameter(0,1.);
+	    pullstatEventsXIterations[c0][c1]->FitSlicesY(gausTemp,ibinx,ibinx,0,"RQ0");
+	    pullstatEventsmeanXIterations[c0][c1]->SetBinContent(ibinx,gausTemp->GetParameter(1));
+	    pullstatEventsmeanXIterations[c0][c1]->SetBinError(ibinx,gausTemp->GetParError(1));
+	    pullstatEventssigmaXIterations[c0][c1]->SetBinContent(ibinx,gausTemp->GetParameter(2));
+	    pullstatEventssigmaXIterations[c0][c1]->SetBinError(ibinx,gausTemp->GetParError(2));
+	    //cout<<"center="<<gausTemp->GetParameter(1)<<", error"<<gausTemp->GetParameter(2)<<endl;
+	    
+	    if(ibinx==pullsystEventsXIterations[c0][c1]->GetNbinsX()){//only for the last bin of the number of iteration. In the case that there is no variations on the number of iterations, this is equal to the number of iteration set.
+	      BiasDistribution->SetBinContent(c0+1,c1+1,gausTemp->GetParameter(1));
+	      ErrorDistribution->SetBinContent(c0+1,c1+1,gausTemp->GetParameter(2));
+	    }
+	  }
+	  pullstatEventsmeanXIterations[c0][c1]->SetLineColor(kRed);
+	  pullstatEventssigmaXIterations[c0][c1]->SetLineColor(kOrange);
+	  pullstatEventsmeanXIterations[c0][c1]->GetXaxis()->SetTitle("Unfolding Iterations");
+	  pullstatEventsmeanXIterations[c0][c1]->Draw("E1");
+	  pullstatEventssigmaXIterations[c0][c1]->Draw("E1same");
+	  pullstatEventsmeanXIterations[c0][c1]->GetYaxis()->SetRangeUser(-0.2,0.2);
+	  canstatEventsXIterations[c0][c1]->Write();
+
+	  //Systematic variation
+	  //Draw the pull distribution with iterations & behaviour of the mean/error of the pull, BUT ONLY FOR SYSTEMATICS VARIATIONS in the input file	
+	  cansystEventsXIterations[c0][c1] = new TCanvas(Form("csystPullXIterations%d_%d",c0,c1),Form("Pull maximum and 1#sigma error of events after unfolding in the bin %d_%d",c0,c1));
+	  pullsystEventsXIterations[c0][c1]->GetXaxis()->SetTitle("Unfolding iterations");
+	  pullsystEventsXIterations[c0][c1]->GetYaxis()->SetTitle("Pullsyst");
+	  for(int ibinx=1;ibinx<=pullsystEventsXIterations[c0][c1]->GetNbinsX();ibinx++){
+	    gausTemp->SetParameter(0,1.);gausTemp->SetParameter(0,0.);gausTemp->SetParameter(0,1.);
+	    pullsystEventsXIterations[c0][c1]->FitSlicesY(gausTemp,ibinx,ibinx,0,"RQ0");
+	    pullsystEventsmeanXIterations[c0][c1]->SetBinContent(ibinx,gausTemp->GetParameter(1));
+	    pullsystEventsmeanXIterations[c0][c1]->SetBinError(ibinx,gausTemp->GetParError(1));
+	    pullsystEventssigmaXIterations[c0][c1]->SetBinContent(ibinx,gausTemp->GetParameter(2));
+	    pullsystEventssigmaXIterations[c0][c1]->SetBinError(ibinx,gausTemp->GetParError(2));
+	    
+	  }
+	  pullsystEventsmeanXIterations[c0][c1]->SetLineColor(kRed);
+	  pullsystEventssigmaXIterations[c0][c1]->SetLineColor(kOrange);
+	  pullsystEventsmeanXIterations[c0][c1]->GetXaxis()->SetTitle("Unfolding Iterations");
+	  pullsystEventsmeanXIterations[c0][c1]->Write();
+	  pullsystEventsmeanXIterations[c0][c1]->Draw("E1same");
+	  pullsystEventssigmaXIterations[c0][c1]->Draw("E1same");
+	  pullsystEventsmeanXIterations[c0][c1]->GetYaxis()->SetRangeUser(-0.05,0.08);
+	  cansystEventsXIterations[c0][c1]->Write();
+	  
+	  
 	  //Draw the pull distribution with systematic bias & behaviour of the mean/error of the pull. PUll is only done FOR STATISTICAL VARIATIONS in the input file, but x axis is the systematic variation!!	
-	pullstatEventsXsystEvents[c0][c1]->GetXaxis()->SetTitle("Systematically varied exp.");
-	pullstatEventsXsystEvents[c0][c1]->GetYaxis()->SetTitle("Pullstat");
-	for(int ibinx=1;ibinx<=pullstatEventsXsystEvents[c0][c1]->GetNbinsX();ibinx++){
-	  gausTemp->SetParameter(0,1.);gausTemp->SetParameter(0,0.);gausTemp->SetParameter(0,1.);
-	  pullstatEventsXsystEvents[c0][c1]->FitSlicesY(gausTemp,ibinx,ibinx,0,"RQ0");
-	  pullstatEventsmeanXsystEvents[c0][c1]->SetBinContent(ibinx,gausTemp->GetParameter(1));
-	  pullstatEventsmeanXsystEvents[c0][c1]->SetBinError(ibinx,gausTemp->GetParError(1));
-	  pullstatEventssigmaXsystEvents[c0][c1]->SetBinContent(ibinx,gausTemp->GetParameter(2));
-	  pullstatEventssigmaXsystEvents[c0][c1]->SetBinError(ibinx,gausTemp->GetParError(2));
+	  pullstatEventsXsystEvents[c0][c1]->GetXaxis()->SetTitle("Systematically varied exp.");
+	  pullstatEventsXsystEvents[c0][c1]->GetYaxis()->SetTitle("Pullstat");
+	  for(int ibinx=1;ibinx<=pullstatEventsXsystEvents[c0][c1]->GetNbinsX();ibinx++){
+	    gausTemp->SetParameter(0,1.);gausTemp->SetParameter(0,0.);gausTemp->SetParameter(0,1.);
+	    pullstatEventsXsystEvents[c0][c1]->FitSlicesY(gausTemp,ibinx,ibinx,0,"RQ0");
+	    pullstatEventsmeanXsystEvents[c0][c1]->SetBinContent(ibinx,gausTemp->GetParameter(1));
+	    pullstatEventsmeanXsystEvents[c0][c1]->SetBinError(ibinx,gausTemp->GetParError(1));
+	    pullstatEventssigmaXsystEvents[c0][c1]->SetBinContent(ibinx,gausTemp->GetParameter(2));
+	    pullstatEventssigmaXsystEvents[c0][c1]->SetBinError(ibinx,gausTemp->GetParError(2));
 	  //cout<<"center="<<gausTemp->GetParameter(1)<<", error"<<gausTemp->GetParameter(2)<<endl;
-	}
+	  }
 	//leg->Draw("lsame");
-	canEventsXIterations[c0][c1]->Write();
-	pullEventsXIterations[c0][c1]->Write();
+	}
       }
     }
-    for(int c0=0;c0<NBinsTrueMom-1;c0++){//loop over cause 0
-      for(int c1=0;c1<NBinsTrueAngle-1;c1++){//loop over cause 1  
+      for(int c0=0;c0<NBinsTrueMomPlots;c0++){//loop over cause 0
+      for(int c1=0;c1<NBinsTrueAnglePlots;c1++){//loop over cause 1  
 	pullstatEventsXsystEvents[c0][c1]->Write();
 	pullstatEventsmeanXsystEvents[c0][c1]->Write();	
 	pullstatEventssigmaXsystEvents[c0][c1]->Write();	
@@ -501,15 +598,29 @@ int main(int argc, char ** argv){
     gStyle->SetOptStat(kFALSE);
     ErrorDistribution->Draw("colztext");
     canError->Write();
-
+    TCanvas * canBinConvergence = new TCanvas("cBinConvergence_NoStatFluctuation");
+    TLegend * l = new TLegend(0.5,0.1,0.9,0.9);
+    for(int c0=0;c0<NBinsTrueMomPlots;c0++){//loop over cause 0
+      for(int c1=0;c1<NBinsTrueAnglePlots;c1++){//loop over cause 1
+	int BinY=c0*(NBinsTrueAnglePlots)+c1+1;
+	BiasXIterations_Default[c0][c1]->SetLineColor(BinY);
+	BiasXIterations_Default[c0][c1]->SetLineWidth(2);
+	if(c0==0 && c1==0) BiasXIterations_Default[c0][c1]->Draw();
+	else BiasXIterations_Default[c0][c1]->Draw("same");
+	l->AddEntry( BiasXIterations_Default[c0][c1] , Form("Mom %d, Angle %d",c0,c1));
+      }
+    }
+    l->Draw("same");
+    canBinConvergence->Write();
     
-
+    ///////////////////////////////////////////////////////////////////////////////////////
+    for(int i=0;i<NBinsIteration;i++) BiasDistribution_BrokenPerIteration[i]->Write();
     /////////////////Here we treat the optimisation of the true binning////////////////////
     TMatrixD * MUnfolding = (TMatrixD*) file->Get("MUnfolding");
     TMatrixD * MLikelihood = (TMatrixD*) file->Get("MLikelihood");
     TVectorD * VReconstructedEvents = (TVectorD*) file->Get("VReconstructedEvents");
     /*
-    for(int c0=0;c0<NBinsTrueMom;c0++){//loop over cause 0
+    for(int c0=0;c0<NBinsTrueMomPlots;c0++){//loop over cause 0
       for(int c1=0;c1<NBinsTrueAngle;c1++){//loop over cause 1
 	for(int e0=0;e0<NBinsRecMom;e0++){//loop over effect 0
 	  for(int e1=0;e1<NBinsRecAngle;e1++){//loop over effect 1

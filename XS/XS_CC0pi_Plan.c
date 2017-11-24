@@ -297,6 +297,7 @@ int NViewsPerPlaneEnergyDeposition[LimitTracks][LimitHits];
 int NViewsPerPlaneEnergyDepositionNonIsolated[LimitTracks][LimitHits];
 float TransverseWidthNonIsolated[LimitTracks][LimitHits];
 float TransverseWidth[LimitTracks][LimitHits];
+float ProportionMuonHits[LimitTracks];
 
 float ReWeight[NDials];
 bool IsReconstructed[LimitTracks];
@@ -342,6 +343,7 @@ void ResetInputVariables(){
     CriteriaHalfWayY[itrk]=-1;
     CriteriaAngleX[itrk]=-1;
     CriteriaAngleY[itrk]=-1;
+    ProportionMuonHits[itrk]=-1;
     for(int ihit=0;ihit<LimitHits;ihit++){
       EnergyDeposition[itrk][ihit]=0;
       EnergyDepositionSpline[itrk][ihit]=0;
@@ -900,7 +902,7 @@ int main(int argc, char **argv)
 	  RecVertexPosition[1]=(recon->y)[itrk]/10;
 	  RecVertexPosition[2]=VecTrk.front().z;
 
-	  HitV.clear(); 
+	  HitV.clear();
 	  vector <Hit3D> Vec;
 	  vector <Hit3D> Vec2;
 	  vector <Hit3D> VecAll;

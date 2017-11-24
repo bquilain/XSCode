@@ -74,17 +74,17 @@ const float Mmu=105.66/1000.;
 const float Mp=938.272/1000.;
 const float Mn=939.5659/1000.;
 #endif
-const int StartRun=14000;
-const int EndRun=14000;//15999;
+const int StartRun=13000;//14000;
+const int EndRun=15999;//17218;
 const int StartSubRun=0;
-const int EndSubRun=0;//300
+const int EndSubRun=300;
 const int StartRunList=14;//Which list will be read (14=>14000.txt). Necessary to use only run processed
-const int EndRunList=15;//Which list will be read (14=>14000.txt). Necessary to use only run processed
+const int EndRunList=17;//Which list will be read (14=>14000.txt). Necessary to use only run processed
 double NMCfiles=1000; // up to now only 1000 are available with NEUT 5.3.6
 
 double DataPOT=0.58;//In units of 10^21 POT
 const int StartError=0;
-const int EndError=34;//17;//34;//34;//41 for 2012 ;//17
+const int EndError=34;//41 for 2012 ;//17
 int NFluxFiles;
 int StartXsec=0;int EndXsec=24;int NXsecVariations=7;
 int CenterXsecVariations=(int) (NXsecVariations-1-((double) (NXsecVariations-1)/2));
@@ -112,7 +112,6 @@ const int NDials=175;
 const int npdg=4;
 int pdgValues[npdg]={13,211,-211,2212};
 
-
 const int NBinsEnergyFlux=20;
 double BinningEnergyFlux[NBinsEnergyFlux+1];
 const int NBinsTrueEnergy=6;
@@ -120,14 +119,58 @@ const int NBinsRecEnergy=6;
 double BinningTrueEnergy[NBinsTrueEnergy+1];
 double BinningRecEnergy[NBinsRecEnergy+1];
 const int NFSIs=13;//cc0pi+0p,cc0pi+1p,cc0pi+morep,cc1pi,cc1pi0,ccother,nc,+all bkg
-const int NBinsTrueMom=5;
-const int NBinsTrueAngle=5;
-const int NBinsRecMom=17;
-const int NBinsRecAngle=30;
-double BinningTrueMom[NBinsTrueMom+1];
-double BinningTrueAngle[NBinsTrueAngle+1];
-double BinningRecMom[NBinsRecMom+1];
-double BinningRecAngle[NBinsRecAngle+1];
+
+//For Signal
+int NBinsRecMomSignal=17;
+int NBinsRecAngleSignal=30;
+int NBinsTrueMomSignal=5;
+int NBinsTrueAngleSignal=5;
+//int NBinsTrueMomSignal=1;
+//int NBinsTrueAngleSignal=1;
+
+//For SideBand
+//int NBinsRecMomSB=17;
+//int NBinsRecAngleSB=30;
+//int NBinsTrueMomSB=3;
+//int NBinsTrueAngleSB=1;
+int NBinsRecMomSB=17;
+int NBinsRecAngleSB=30;
+//int NBinsRecMomSB=1;
+//int NBinsRecAngleSB=1;
+//int NBinsTrueMomSB=1;
+//int NBinsTrueAngleSB=1;
+int NBinsTrueMomSB=5;
+int NBinsTrueAngleSB=5;
+//
+int NBinsTrueMomTrash=1;
+int NBinsTrueAngleTrash=1;
+//For Total
+int NBinsRecMom;
+int NBinsRecAngle;
+int NBinsTrueMom;
+int NBinsTrueAngle;
+
+double * BinningTrueMom;
+double * BinningTrueAngle;
+double * BinningRecMom;
+double * BinningRecAngle;
+//Signal
+double * BinningTrueMomSignal;
+double * BinningTrueAngleSignal;
+double * BinningRecMomSignal;
+double * BinningRecAngleSignal;
+//SB
+double * BinningTrueMomSB;
+double * BinningTrueAngleSB;
+double * BinningRecMomSB;
+double * BinningRecAngleSB;
+//Trash
+double * BinningTrueMomTrash;
+double * BinningTrueAngleTrash;
+double * BinningRecMomTrash;
+double * BinningRecAngleTrash;
+
+
 
 /////////////////// INITIALIZE ERRORS NOW ////////////////////////    
 //0. No Error, nominal case
@@ -149,7 +192,7 @@ double BinningRecAngle[NBinsRecAngle+1];
 //16:Flux
 //17: Xsec
 
-void InitializeGlobal(bool PM=true){
+void InitializeGlobal(bool PM=true, int Selection=1){
 
   if(!PM)  Initialize_INGRID_Dimension();
 
@@ -166,22 +209,84 @@ void InitializeGlobal(bool PM=true){
     BinningEnergyFlux[42]=10; BinningEnergyFlux[NBinsEnergyFlux]=30;*/
   }
 
+  //Signal//
+  BinningTrueMomSignal = new double[NBinsTrueMomSignal+1];
+  BinningTrueAngleSignal = new double[NBinsTrueAngleSignal+1];
+  
+  BinningTrueMomSignal[0]=0;
+  BinningTrueMomSignal[1]=0.5;
+  BinningTrueMomSignal[2]=0.7;
+  BinningTrueMomSignal[3]=1.0;
+  BinningTrueMomSignal[4]=5.0;
+  BinningTrueMomSignal[5]=30.0;
+  //
+  BinningTrueAngleSignal[0]=0;
+  BinningTrueAngleSignal[1]=10;
+  BinningTrueAngleSignal[2]=20;
+  BinningTrueAngleSignal[3]=30;
+  BinningTrueAngleSignal[4]=60;
+  BinningTrueAngleSignal[5]=180;
+  
+  //BinningTrueMomSignal[0]=0;
+  //BinningTrueMomSignal[1]=30;
+  //
+  //BinningTrueAngleSignal[0]=0;
+  //BinningTrueAngleSignal[1]=180;
 
-  for(int i=0;i<NBinsTrueMom+1;i++){
-    BinningTrueMom[0]=0;
-    BinningTrueMom[1]=0.5;
-    BinningTrueMom[2]=0.7;
-    BinningTrueMom[3]=1.0;
-    BinningTrueMom[4]=5.0;
-    BinningTrueMom[5]=30.0;
-  }
+  //SB//
+  BinningTrueMomSB = new double[NBinsTrueMomSB+1];
+  BinningTrueAngleSB = new double[NBinsTrueAngleSB+1];
+  /*
+  BinningTrueMomSB[0]=0;
+  BinningTrueMomSB[1]=30.0;
+  BinningTrueAngleSB[0]=0;
+  BinningTrueAngleSB[1]=180;
+  */
+  BinningTrueMomSB[0]=0;
+  BinningTrueMomSB[1]=0.5;
+  BinningTrueMomSB[2]=0.7;
+  BinningTrueMomSB[3]=1.0;
+  BinningTrueMomSB[4]=5.0;
+  BinningTrueMomSB[5]=30.0;
+  //
+  BinningTrueAngleSB[0]=0;
+  BinningTrueAngleSB[1]=10;
+  BinningTrueAngleSB[2]=20;
+  BinningTrueAngleSB[3]=30;
+  BinningTrueAngleSB[4]=60;
+  BinningTrueAngleSB[5]=180;
+  //
+  //SB//
+  BinningTrueMomTrash = new double[NBinsTrueMomTrash+1];
+  BinningTrueAngleTrash = new double[NBinsTrueAngleTrash+1];
+  BinningTrueMomTrash[0]=0;
+  BinningTrueMomTrash[1]=30.0;
+  BinningTrueAngleTrash[0]=0;
+  BinningTrueAngleTrash[1]=180;
+  ////
 
-  for(int i=0;i<NBinsRecMom+1;i++){
-    BinningRecMom[0]=0;
-    BinningRecMom[1]=10;    
-    if(i>1 && i<NBinsRecMom) BinningRecMom[i]=10+5*(i-1);
-    if(i==NBinsRecMom) BinningRecMom[i]=150;
-  }
+  //
+  NBinsTrueMom = NBinsTrueMomSignal + NBinsTrueMomSB + NBinsTrueMomTrash;
+  NBinsTrueAngle = NBinsTrueAngleSignal + NBinsTrueAngleSB + NBinsTrueAngleTrash;
+  BinningTrueMom = new double[NBinsTrueMom+1];
+  BinningTrueAngle = new double[NBinsTrueAngle+1];
+
+  for(int i=0;i<=NBinsTrueMomSignal;i++) BinningTrueMom[i] = BinningTrueMomSignal[i];
+  for(int i=1;i<=NBinsTrueMomSB;i++) BinningTrueMom[i+NBinsTrueMomSignal] = BinningTrueMomSB[i];//skip i=0, since i=0 is botht the higher bin limit for signal and lower for SB
+  for(int i=1;i<=NBinsTrueMomTrash;i++) BinningTrueMom[i+NBinsTrueMomSignal+NBinsTrueMomSB] = BinningTrueMomTrash[i];
+
+  for(int i=0;i<=NBinsTrueAngleSignal;i++) BinningTrueAngle[i] = BinningTrueAngleSignal[i];
+  for(int i=1;i<=NBinsTrueAngleSB;i++) BinningTrueAngle[i+NBinsTrueAngleSignal] = BinningTrueAngleSB[i];//skip i=0, since i=0 is botht the higher bin limit for signal and lower for SB
+  for(int i=1;i<=NBinsTrueAngleTrash;i++) BinningTrueAngle[i+NBinsTrueAngleSignal+NBinsTrueAngleSB] = BinningTrueAngleTrash[i];
+
+  /*
+  //Signal
+  BinningTrueMom[0]=0;
+  BinningTrueMom[1]=0.5;
+  BinningTrueMom[2]=0.7;
+  BinningTrueMom[3]=1.0;
+  BinningTrueMom[4]=5.0;
+  BinningTrueMom[5]=30.0;
 
   BinningTrueAngle[0]=0;
   BinningTrueAngle[1]=10;
@@ -189,12 +294,79 @@ void InitializeGlobal(bool PM=true){
   BinningTrueAngle[3]=30;
   BinningTrueAngle[4]=60;
   BinningTrueAngle[5]=180;
+  //Side band
+  BinningTrueMom[6]=BinningTrueMom[NBinsTrueMomSignal]+30.0;
 
-  for(int i=0;i<NBinsRecAngle+1;i++){
-    BinningRecAngle[i]=3*i;
-  }
+  BinningTrueAngle[6]=BinningTrueAngle[NBinsTrueAngleSignal]+180;
+  //Trash
+  BinningTrueMom[7]=BinningTrueMom[NBinsTrueMomSignal+NBinsTrueMomSB]+30.0;
+
+  BinningTrueAngle[7]=BinningTrueAngle[NBinsTrueAngleSignal+NBinsTrueAngleSB]+180;
+  //  
+  */    
+  if(Selection==1 || Selection==0){
+    NBinsRecMom = NBinsRecMomSignal;
+    NBinsRecAngle = NBinsRecAngleSignal;
     
+    BinningRecMom = new double[NBinsRecMom+1];
+    BinningRecAngle = new double[NBinsRecAngle+1];
+    /* 
+    //Signal
+    BinningTrueMom[0]=0;
+    BinningTrueMom[1]=0.5;
+    BinningTrueMom[2]=0.7;
+    BinningTrueMom[3]=1.0;
+    BinningTrueMom[4]=5.0;
+    BinningTrueMom[5]=30.0;
+    
+    //Signal
+    BinningTrueAngle[0]=0;
+    BinningTrueAngle[1]=10;
+    BinningTrueAngle[2]=20;
+    BinningTrueAngle[3]=30;
+    BinningTrueAngle[4]=60;
+    BinningTrueAngle[5]=180;
+  */  
+    //Signal
+    for(int i=0;i<NBinsRecMom+1;i++){
+      BinningRecMom[0]=0;
+      BinningRecMom[1]=10;    
+      if(i>1 && i<NBinsRecMom) BinningRecMom[i]=10+5*(i-1);
+      if(i==NBinsRecMom) BinningRecMom[i]=150;
+    }
+    
+    //Signal
+    for(int i=0;i<NBinsRecAngle+1;i++){
+      BinningRecAngle[i]=3*i;
+    }
+  }
+  else if(Selection == 2){
+    NBinsRecMom = NBinsRecMomSB;
+    NBinsRecAngle = NBinsRecAngleSB;
+    
+    BinningRecMom = new double[NBinsRecMom+1];
+    BinningRecAngle = new double[NBinsRecAngle+1];
 
+    //Rec Momentum
+    for(int i=0;i<NBinsRecMomSB+1;i++){
+      BinningRecMom[0]=0;
+      BinningRecMom[1]=10;    
+      if(i>1 && i<NBinsRecMomSB) BinningRecMom[i]=10+5*(i-1);
+      if(i==NBinsRecMomSB) BinningRecMom[i]=150;
+    }
+    
+    //Rec Angle
+    for(int i=0;i<NBinsRecAngleSB+1;i++){
+      BinningRecAngle[i]=3*i;
+    }
+    /*    BinningRecMom[0]=0;
+    BinningRecMom[1]=150;
+    BinningRecAngle[0]=0;
+    BinningRecAngle[1]=180;*/
+  }
+
+  cout<<"Number of bins in: true pmu="<<NBinsTrueMom<<", true thetamu="<<NBinsTrueAngle<<", rec pmu="<<NBinsRecMom<<", rec thetamu="<<NBinsRecAngle<<endl;
+  
   for(int n=StartError;n<=EndError;n++){
     NE[n]=1;
     Start[n]=1;
@@ -345,6 +517,106 @@ void InitializeGlobal(bool PM=true){
     }
     End[n]=Start[n]+(NE[n]+1)*Step[n];
   }
+}
+
+
+void ReinitializeUnfoldingBinning(bool SideBand=false){
+
+  if(SideBand){
+    
+    cout<<"Old number of bins in: true pmu="<<NBinsTrueMom<<", true thetamu="<<NBinsTrueAngle<<", rec pmu="<<NBinsRecMom<<", rec thetamu="<<NBinsRecAngle<<endl;
+
+    //NBinsTrueMom = NBinsTrueMomSignal + NBinsTrueMomSB + NBinsTrueMomTrash;
+    //NBinsTrueAngle = NBinsTrueAngleSignal + NBinsTrueAngleSB + NBinsTrueAngleTrash;
+    NBinsRecMom = NBinsRecMomSignal + NBinsRecMomSB;
+    NBinsRecAngle = NBinsRecAngleSignal + NBinsRecAngleSB;
+    
+    delete BinningRecMom;
+    delete BinningRecAngle;
+    BinningRecMom = new double[NBinsRecMom+1];
+    BinningRecAngle = new double[NBinsRecAngle+1];
+
+    /*
+    delete BinningTrueMom;
+    delete BinningTrueAngle;
+  BinningTrueMom = new double[NBinsTrueMom+1];
+    BinningTrueAngle = new double[NBinsTrueAngle+1];
+    //Signal
+  BinningTrueMom[0]=0;
+  BinningTrueMom[1]=0.5;
+  BinningTrueMom[2]=0.7;
+  BinningTrueMom[3]=1.0;
+  BinningTrueMom[4]=5.0;
+  BinningTrueMom[5]=30.0;
+
+  BinningTrueAngle[0]=0;
+  BinningTrueAngle[1]=10;
+  BinningTrueAngle[2]=20;
+  BinningTrueAngle[3]=30;
+  BinningTrueAngle[4]=60;
+  BinningTrueAngle[5]=180;
+  //Side band
+  BinningTrueMom[6]=BinningTrueMom[NBinsTrueMomSignal]+30.0;
+
+  BinningTrueAngle[6]=BinningTrueAngle[NBinsTrueAngleSignal]+180;
+  //Trash
+  BinningTrueMom[7]=BinningTrueMom[NBinsTrueMomSignal+NBinsTrueMomSB]+30.0;
+
+  BinningTrueAngle[7]=BinningTrueAngle[NBinsTrueAngleSignal+NBinsTrueAngleSB]+180;
+  //  
+*/
+    //Rec Momentum
+    //Signal
+    for(int i=0;i<NBinsRecMomSignal+1;i++){
+      BinningRecMom[0]=0;
+      BinningRecMom[1]=10;    
+      if(i>1 && i<NBinsRecMomSignal) BinningRecMom[i]=10+5*(i-1);
+      if(i==NBinsRecMomSignal) BinningRecMom[i]=150;
+    }
+    //Side bandxs
+    for(int i=0;i<NBinsRecMomSB+1;i++){
+      int j=NBinsRecMomSignal;
+      BinningRecMom[j]=0;
+      BinningRecMom[1+j]=10;    
+      if(i>1 && i<NBinsRecMomSB) BinningRecMom[i+j]=10+5*(i-1);
+      if(i==NBinsRecMomSB) BinningRecMom[i+j]=150;
+    }
+    //BinningRecMom[NBinsRecMomSignal+1]=150+BinningRecMom[NBinsRecMomSignal];
+    
+
+    //Rec Angle
+    //Signal
+    for(int i=0;i<NBinsRecAngleSignal+1;i++){
+      BinningRecAngle[i]=3*i;
+    }
+    //Side band
+    for(int i=0;i<NBinsRecAngleSB+1;i++){
+      int j=NBinsRecAngleSignal;
+      BinningRecAngle[i+j]=3*i;
+    }
+    
+    //BinningRecAngle[NBinsRecAngleSignal+1]=180+BinningRecAngle[NBinsRecAngleSignal];
+  }
+ 
+  cout<<"New number of bins in: true pmu="<<NBinsTrueMom<<", true thetamu="<<NBinsTrueAngle<<", rec pmu="<<NBinsRecMom<<", rec thetamu="<<NBinsRecAngle<<endl;
+
+  cout<<"Bins true pmu: ";
+  for(int i=0;i<NBinsTrueMom+1;i++){
+    cout<<BinningTrueMom[i]<<", ";
+  }
+  cout<<endl<<"Bins true thetamu: ";
+  for(int i=0;i<NBinsTrueAngle+1;i++){
+    cout<<BinningTrueAngle[i]<<", ";
+  }
+  cout<<endl<<"Bins rec pmu: ";
+  for(int i=0;i<NBinsRecMom+1;i++){
+    cout<<BinningRecMom[i]<<", ";
+  }
+  cout<<endl<<"Bins rec thetamu: ";
+  for(int i=0;i<NBinsRecAngle+1;i++){
+    cout<<BinningRecAngle[i]<<", ";
+  }
+  cout<<endl;
 }
 
 /*
