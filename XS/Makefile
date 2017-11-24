@@ -27,7 +27,7 @@ SRC= src
 
 CXXFLAGS += -I$(LIB) -I$(SRC) -I$(INC)
 
-TARGET=XSFileGenerator FinalMCOutputMaker CC0piPlots CC0piSelection CC0piSelection_Likelihood Draw_CompareCalibrationsPM DrawXSPlots DrawXSPlots_Toys GeneratePEAngleDistributions SandSelection_Plan SequentialSand XS_CC0pi_Plan
+TARGET=XSFileGenerator FinalMCOutputMaker CC0piPlots CC0piSelection CC0piSelection_Likelihood Draw_CompareCalibrationsPM DrawXSPlots DrawXSPlots_Toys GeneratePEAngleDistributions SandSelection_Plan SequentialSand XS_CC0pi_Plan DrawReconstructedEventsPlots_Dvt UnfoldingOptimisation_Dvt
 
 all: $(TARGET)
 
@@ -44,6 +44,8 @@ XSFileGenerator: XSFileGenerator.o
 FinalMCOutputMaker: FinalMCOutputMaker.o
 SequentialSand: SequentialSand.o
 XS_CC0pi_Plan: XS_CC0pi_Plan.o
+DrawReconstructedEventsPlots_Dvt: DrawReconstructedEventsPlots_Dvt.o
+UnfoldingOptimisation_Dvt: UnfoldingOptimisation_Dvt.o
 
 %: %.o
 	@echo "Now make $@"

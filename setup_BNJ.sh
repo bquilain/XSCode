@@ -1,12 +1,10 @@
-export INSTALLREPOSITORY=/home/mlicciardi/T2K/work/XSCode
-export MCINPUTSTORAGE_WM=/export/scraid4/data2/taichiro/neut
-export MCINPUTSTORAGE=${MCINPUTSTORAGE_WM}
+export INSTALLREPOSITORY=/home/bquilain/CC0pi_XS/NewXSCode/V2/XSCode
 export DATAINPUTSTORAGE=/export/scraid2/data/bquilain
-# need DATAINPUTSTORAGE_WM
-export MCOUTPUTSTORAGE=/export/scraid4/data2/mlicciardi/XSFiles/Prod0/PM
-export MCOUTPUTSTORAGE_WM=/export/scraid4/data2/mlicciardi/XSFiles/Prod0/WM
-export MCOUTPUTSTORAGE_dev=/export/scraid4/data2/mlicciardi/XSFiles/dev/PM
-export MCOUTPUTSTORAGE_dev_WM=/export/scraid4/data2/mlicciardi/XSFiles/dev/WM
+#export MCINPUTSTORAGE_WM=/export/scraid4/data2/taichiro/neut
+export MCINPUTSTORAGE_WM=/export/scraid3/data/taichiro/neut/watermodule/ingbg_5.3.3
+export MCINPUTSTORAGE=${MCINPUTSTORAGE_WM}
+export MCOUTPUTSTORAGE=/export/scraid2/data/bquilain/MCfiles
+export MCOUTPUTSTORAGE_WM=/export/scraid2/data/bquilain/MCfiles
 export DATAOUTPUTSTORAGE=/export/scraid2/data/bquilain
 export INGRIDSOFTWARE=/home/bquilain/T2KSoftware2
 #export INGRIDSOFTWARE=/home/mlicciardi/T2K/work/basesoft
@@ -29,8 +27,6 @@ export DATAOUTPUTSTORAGE_ROOT=$DATAOUTPUTSTORAGE/PM
 source $ND280GEANT/cmt/setup.sh
 #source $ND280ROOT/cmt/setup.sh  commented out to keep ROOTSYS at root5.34 while using MC (see GNUmakefile)
 source $ND280CLHEP/cmt/setup.sh
-
-export TMVASYS=/home/mlicciardi/T2K/work/basesoft/TMVA-v4.2.0
 
 #Set MY Env
 #export G4WORKDIR=$INSTALLREPOSITORY/MC/ingmc_IngridRevReWeightFinal
