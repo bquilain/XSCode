@@ -89,23 +89,23 @@ double DataPOTPM=0.58;//In units of 10^21 POT -- runs 234
 //double DataPOTPM=0.76;//In units of 10^21 POT -- runs 234  (+56)
 double DataPOTWM=0.72;//In units of 10^21 POT -- run 8
 double DataPOT;
-const int StartError=17;
-const int EndError=37;//15 for det, 16 for det+flux, 36 for det+flux+xs, 37 to add NEUT tunings
-const int MaxError=37;
+const int StartError=0;
+const int EndError=37;//15 for det, 17 for det+flux, 37 for det+flux+xs, 38 to add NEUT tunings
+const int MaxError=38;
 int NFluxFiles;
 int StartXsec=0;const int EndXsec=19;int NXsecVariations=7; int NXsecTunings=7;
 int CenterXsecVariations=(int) (NXsecVariations-1-((double) (NXsecVariations-1)/2));
 
 int NE[MaxError+1];
-double Step[EndError+1];
-double Start[EndError+1];
-double End[EndError+1];
+double Step[MaxError+1];
+double Start[MaxError+1];
+double End[MaxError+1];
 double Nominal; double Err;
 const int Systematics_Detector_Start=2;
 const int Systematics_Detector_End=15;
 const int Systematics_Flux_Start=16;
-const int Systematics_Flux_End=16;
-const int Systematics_Xsec_Start=17;
+const int Systematics_Flux_End=17;
+const int Systematics_Xsec_Start=18;
 const int Systematics_Xsec_End=Systematics_Xsec_Start+EndXsec;
 bool EStatistics=true;//if true, estimate stat. error after unfolding
 const int NStatisticalVariations=1000;//number of stat. varied toy experiments to evaluate the stat. error.
@@ -130,11 +130,15 @@ const int NFSIs=13;//cc0pi+0p,cc0pi+1p,cc0pi+morep,cc1pi,cc1pi0,ccother,nc,+all 
 const int NIntTypes=6;//ccqe,ccmec,ccres,cccoh,ccres,other
 const int NBinsTrueMom=5;
 const int NBinsTrueAngle=5;
+bool IsTrueMomTrashBin[5]={true,false,false,false,true};
+bool IsTrueAngleTrashBin[5]={false,false,false,false,true};
 const int NBinsRecMom=11;// was 17 -- ML 2017/08/03
 const int NBinsRecAngle=15;// was 30 -- ML 2017/08/03
+const int NBinsPiRecMom=13;// ML 2017/12/08
 double BinningTrueMom[NBinsTrueMom+1];
 double BinningTrueAngle[NBinsTrueAngle+1];
 double BinningRecMom[NBinsRecMom+1];
+double BinningPiRecMom[NBinsPiRecMom+1];
 double BinningRecAngle[NBinsRecAngle+1];
 
 /////////////////// INITIALIZE ERRORS NOW ////////////////////////    
@@ -154,8 +158,10 @@ double BinningRecAngle[NBinsRecAngle+1];
 //13: Track matching, plane tolerance: nominal=4, vary 3->5 per 1 plane steps
 //14: INGRID/PM tracks angle matching: nominal=35°, vary 30°->40° per 5° steps
 //15: INGRID/PM tracks transverse position matching: nominal=8.5cm, vary 7.5cm->9.5 per 1cm steps
-//16:Flux
-//17: Xsec
+//16: Beam contamination (Antinu,Nue background)
+
+//17:Flux
+//18-: Xsec
 
 void InitializeGlobal(bool PM=true){
 
@@ -176,22 +182,30 @@ void InitializeGlobal(bool PM=true){
   }
 
 
-  for(int i=0;i<NBinsTrueMom+1;i++){
+  /*  for(int i=0;i<NBinsTrueMom+1;i++){
     BinningTrueMom[0]=0;
     BinningTrueMom[1]=0.5;
     BinningTrueMom[2]=0.7;
     BinningTrueMom[3]=1.0;
     BinningTrueMom[4]=5.0;
     BinningTrueMom[5]=30.0;
+    }*/
+  for(int i=0;i<NBinsTrueMom+1;i++){
+    BinningTrueMom[0]=0;
+    BinningTrueMom[1]=0.5;
+    BinningTrueMom[2]=0.75;
+    BinningTrueMom[3]=1.0;
+    BinningTrueMom[4]=5.0;
+    BinningTrueMom[5]=30.0;
   }
-
+  
   for(int i=0;i<NBinsRecMom+1;i++){
     /* BinningRecMom[0]=0;
     BinningRecMom[1]=10;    
     if(i>1 && i<NBinsRecMom) BinningRecMom[i]=10+5*(i-1);
     if(i==NBinsRecMom) BinningRecMom[i]=150;*/
-    if(i<=6) BinningRecMom[i]=10*i;
-    else if(i<=9) BinningRecMom[i]=60+5*(i-6);
+    if(i<=3) BinningRecMom[i]=10*i;
+    else if(i<=9) BinningRecMom[i]=30+7*(i-3);
   }
   BinningRecMom[10]=85;
   BinningRecMom[11]=150;
@@ -200,29 +214,35 @@ void InitializeGlobal(bool PM=true){
   BinningTrueAngle[1]=10;
   BinningTrueAngle[2]=20;
   BinningTrueAngle[3]=30;
-  BinningTrueAngle[4]=60;
+  BinningTrueAngle[4]=50;
   BinningTrueAngle[5]=180;
 
   for(int i=0;i<NBinsRecAngle+1;i++){
     //BinningRecAngle[i]=3*i;
     BinningRecAngle[i]=6*i;
   }
-    
 
-  for(int n=0;n<=37;n++){
+  for(int i=0;i<NBinsPiRecMom+1;i++){
+    //BinningRecAngle[i]=3*i;
+    if(i<=5)  BinningPiRecMom[i]=2*i;
+    else if(i<=7)  BinningPiRecMom[i]=10+5*(i-5);
+    else BinningPiRecMom[i]=20+10*(i-7);
+  }
+
+    
+  for(int n=0;n<=MaxError;n++){
     NE[n]=1;
     Start[n]=1;
     Step[n]=1;
-
     if(Systematics_Detector_End>=Systematics_Flux_Start || Systematics_Flux_Start>=Systematics_Xsec_Start) cout<<"################################################################################################################### STOP THE PROCESS, THERE IS A PROBLEM IN THE NUMBERING OF YOUR SYST. ERROR SOURCES. CHECK SYSTEMATICS_DETECTOR_START/END...###########################################################################"<<endl;
-	 
-    if(n>=Systematics_Detector_Start && n<=Systematics_Detector_End){
-      if(n==1){//1: Stat
-	Start[n]=0;
-	NE[n]=1000;
-	Step[n]=1;
-      }
-      else if(n==2){//2: DN
+    
+    if(n==1){//1: Stat
+      Start[n]=0;
+      NE[n]=1000;
+      Step[n]=1;
+    }
+    else if(n>=Systematics_Detector_Start && n<=Systematics_Detector_End){
+      if(n==2){//2: DN
 	Start[n]=0;
 	NE[n]=10;
 	if(PM)Step[n]=1;
@@ -346,22 +366,31 @@ void InitializeGlobal(bool PM=true){
 	NE[n]=3;
       }
     }
-    else if(n>=Systematics_Flux_Start && n<=Systematics_Flux_End){//16: flux error
-      Nominal=0;
-      Err=1;
-      Start[n]=Nominal;
-      Step[n]=Err;
-      NE[n]=500;
-      NFluxFiles=NE[n];
+    else if(n>=Systematics_Flux_Start && n<=Systematics_Flux_End){
+      if(n==16){//16: flux error
+	Nominal=0;
+	Err=1;
+	Start[n]=Nominal;
+	Step[n]=Err;
+	NE[n]=1000;
+	NFluxFiles=NE[n];
+      }
+      else if(n==17){//17: Beam contamination (Antinu,Nue) 
+	Nominal=0.0;
+	Err=0.1;
+	Start[n]=Nominal-Err;
+	Step[n]=Err;
+	NE[n]=3;
+      }
     }
-    else if(n>=Systematics_Xsec_Start && n<=Systematics_Xsec_End){//17: cross section error
+    else if(n>=Systematics_Xsec_Start && n<=Systematics_Xsec_End){//18-: cross section error
       //one should separate the place in the reweight vector, and the real starts of the Xsection.
       //Real start=0. Place in the Xsection vector is (StartXsec+n)*NXsecVariations.
       Start[n]=(StartXsec+(n-Systematics_Xsec_Start))*NXsecVariations;
       Step[n]=1;
       NE[n]=NXsecVariations;
     }
-    else if(n==Systematics_Xsec_End+1){ // tunings
+    else if(n==Systematics_Xsec_End+1){ //38:tunings
       Start[n]=(StartXsec+(n-Systematics_Xsec_Start))*NXsecVariations;
       Step[n]=1;
       NE[n]=NXsecTunings;
@@ -401,8 +430,10 @@ double _DistTrueAngleBin[_NBinsAngle+1];
 // ML for Production 2 -- files NEUT 5.3.3 from Koga-san -- 2017/08/02
 const int NBadMCFilesPM=40;
 const int NBadMCFilesWM=28;
+const int NBadMCFilesMerged=3;
 const int BadMCFilesPM[NBadMCFilesPM]={0,1,15,34,74,141,150,190,189,257,277,278,284,292,318,324,335,386,416,462,594,626,639,751,792,833,851,852,880,886,909,93,174,293,436,518,785,861,903,992};
 const int BadMCFilesWM[NBadMCFilesWM]={0,14,19,80,176,189,190,284,415,462,594,655,666,673,743,792,814,988,93,174,293,436,518,544,785,861,903,992};
+const int BadMCFilesMerged[NBadMCFilesMerged]={237,327,983};
 
 bool isBadFile(int ifile, bool PM){
   if(PM){
@@ -416,13 +447,82 @@ bool isBadFile(int ifile, bool PM){
   return false;
 }
 
+bool isBadMergedFile(int ifile){ // files with h2o and ch vertices
+  if(ifile ==1) return false;
+  else if (isBadFile(ifile,true) || isBadFile(ifile,false)) return true;
+  else {
+    for(int i=0;i<NBadMCFilesMerged;i++)
+      if(BadMCFilesMerged[i]==ifile) return true;
+  }
+}
+
+
 // number of good files in the range [ifile,ffile-1]
-int NGoodFiles(int ifile,int ffile,bool PM){
+int NGoodFiles(int ifile,int ffile,bool PM,bool merge){
   int good=ffile-ifile;
-  for(int i=ifile;i<ffile;i++)
-    if(isBadFile(i,PM)) good--;
+  if(!merge || PM){
+    for(int i=ifile;i<ffile;i++)
+      if(isBadFile(i,PM)) good--;
+  }
+  else {
+    for(int i=ifile;i<ffile;i++)
+      if(isBadMergedFile(i)) good--;
+  }
   return good;
 }
 
+
+const int NBadMCFilesWallPM=40;
+const int NBadMCFilesWallWM=35;
+const int BadMCFilesWallPM[NBadMCFilesWallPM]={0,82,86,342,413,424,443,538,626,738,53,58,77,93,115,118,240,261,317,366,395,403,485,520,613,630,635,657,711,749,783,848,881,890,952,960,981,128,253,678};
+const int BadMCFilesWallWM[NBadMCFilesWallWM]={0,82,86,342,413,424,443,538,626,738,53,58,77,93,118,240,261,317,403,485,613,630,635,657,711,749,783,848,881,890,952,960,128,253,678};
+
+bool isBadWallFile(int ifile, bool PM){
+  if(PM){
+    for(int i=0;i<NBadMCFilesWallPM;i++)
+      if(BadMCFilesWallPM[i]==ifile) return true;
+  }
+  else{
+    for(int i=0;i<NBadMCFilesWallWM;i++)
+      if(BadMCFilesWallWM[i]==ifile) return true;
+  }
+  return false;
+}
+
+
+const int NBadMCFilesBeamPM=26;
+const int NBadMCFilesBeamWM=21;
+const int BadMCFilesBeamPM[NBadMCFilesBeamPM]={0,189,190,284,462,3,23,40,50,55,59,93,171,174,293,310,356,380,418,424,426,429,436,445,446,470};
+const int BadMCFilesBeamWM[NBadMCFilesBeamWM]={0,189,190,284,462,59,93,171,172,174,210,213,226,290,293,294,388,421,436,459,465};
+
+bool isBadBeamFile(int ifile, bool PM){
+  if(PM){
+    for(int i=0;i<NBadMCFilesBeamPM;i++)
+      if(BadMCFilesBeamPM[i]==ifile) return true;
+  }
+  else{
+    for(int i=0;i<NBadMCFilesBeamWM;i++)
+      if(BadMCFilesBeamWM[i]==ifile) return true;
+  }
+  return false;
+}
+
+
+const int NBadMCFilesIngridPM=78;
+const int NBadMCFilesIngridWM=70;
+const int BadMCFilesIngridPM[NBadMCFilesIngridPM]={0,189,190,284,462,594,792,54,59,65,101,112,145,171,218,242,252,255,274,278,289,290,312,332,346,347,375,380,414,444,449,455,471,474,488,495,504,519,526,531,564,574,595,608,610,616,617,632,638,664,670,671,674,681,714,715,727,770,773,781,784,785,789,816,830,833,847,853,874,915,929,931,941,951,952,970,980,999};
+const int BadMCFilesIngridWM[NBadMCFilesIngridWM]={0,189,190,284,462,594,792,54,59,101,112,145,171,174,218,242,252,255,268,278,289,292,312,346,347,380,414,426,444,449,450,455,471,495,504,519,521,526,531,564,608,610,616,617,632,638,664,674,681,714,715,727,770,781,784,789,816,830,833,847,874,915,929,931,951,952,970,980,982,999};
+
+bool isBadIngridFile(int ifile, bool PM){
+  if(PM){
+    for(int i=0;i<NBadMCFilesIngridPM;i++)
+      if(BadMCFilesIngridPM[i]==ifile) return true;
+  }
+  else{
+    for(int i=0;i<NBadMCFilesIngridWM;i++)
+      if(BadMCFilesIngridWM[i]==ifile) return true;
+  }
+  return false;
+}
 
 #endif

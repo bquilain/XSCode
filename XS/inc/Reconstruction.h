@@ -40,6 +40,7 @@ class Reconstruction{
   vector <double> GetVertex(vector <Hit3D> Vec);
   vector <int> TrackComposition(vector <Hit3D> Vec, double Vx, double Vy, double Vz);
   vector <double> GetKinematic(double ang1, double thetax1, double thetay1,double ang2, double thetax2, double thetay2);
+  double Get2TrackAngle(double thetax1, double thetay1,double thetax2, double thetay2);
   double GetBeamAngle(double ang1, double thetax1, double thetay1);
   double NormalAngle(double angle3D, double thetax,double thetay,int view, bool grid);
   vector <Hit3D> CountSharedHits(vector <Hit3D> Vec, vector< vector<Hit3D> > VecDouble, int Trk);
