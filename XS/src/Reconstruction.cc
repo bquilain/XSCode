@@ -2857,11 +2857,11 @@ bool Reconstruction::IsFV(int mod, double posx, double posy, double posz){
   bool IsFV=false;
   //if((mod==16) && (fabs(posx)<=50) && (fabs(posy)<=50) && posz>-152 && (posz<-87.5)) IsFV=true;
   if((_isPM && mod==16) && (fabs(posx)<=50) && (fabs(posy)<=50) && (posz>=-156.4) && (posz<-92)) IsFV=true;// was -85
-  else if((!_isPM && mod==17) && (fabs(posx)<=40) && (fabs(posy)<=40) && (posz>=-139.55) && (posz<-113.15)) IsFV=true; // was -101.3 
+  else if((!_isPM && mod==17) && (fabs(posx)<=40) && (fabs(posy)<=40) && (posz>=-139.55) && (posz<-107.25)) IsFV=true; // was -101.3 
   // ML: computation of z-fiducial limits done in Notebook1, p55
   //   for the WM: excludes first XgY and last XgYg
   // ML 2017/05/05 computation redone with the measured position of scintis
-  // ML 2018/01/10: redone to exclude PM: 3X3Y and WM:3(XgYg)
+  // ML 2018/01/10: redone to exclude PM: 3X3Y and WM:2(XgYg)
 
   //  *** should be redefined as soon as we change the FV def in the Syst studies ***
 
@@ -3309,14 +3309,36 @@ vector <double> Reconstruction::GetLastINGRIDChannel(vector <Hit3D> Vec, double 
 
 void Reconstruction::GetSelectionPM(bool * SelectionFV, bool * SelectionOV, PMAnaSummary * recon, bool MC){
   *SelectionFV=false;*SelectionOV=false;
+
+  int vertex=35;
+  int track_vertex_x, track_vertex_y, track_vertex;
+  for(int itrk=0;itrk<recon->Ntrack;itrk++){
+    if(_isPM){
+      track_vertex_x=recon->startxpln[itrk]*2;
+      track_vertex_y=recon->startypln[itrk]*2+1;
+    }
+    else{
+      track_vertex_x=recon->startxpln[itrk]+((int)(recon->startxpln[itrk]+1))/3; // from 0 to 31
+      track_vertex_y=recon->startypln[itrk]+((int) recon->startypln[itrk])/3 +1; // from 0 to 35
+    }
+    track_vertex=min(track_vertex_x,track_vertex_y);
+    //cout<<itrk<<" "<<recon->startxpln[itrk]<<" "<<recon->startypln[itrk]<<" "<<track_vertex_x<<" "<<track_vertex_y<<endl;
+  }
+  vertex=min(vertex,track_vertex);
+
+  int FV_downstr_limit=(_isPM?30:24); // last possible plane in the FV
+
   if(MC){
-    *SelectionFV=!(recon->vetowtracking) && !(recon->edgewtracking);
+    *SelectionFV=!(recon->vetowtracking) && !(recon->edgewtracking) && (vertex<FV_downstr_limit);
     *SelectionOV=(recon->vetowtracking);
   }
   else{
-    *SelectionFV=!(recon->vetowtracking) && !(recon->edgewtracking) && recon->ontime;
+    *SelectionFV=!(recon->vetowtracking) && !(recon->edgewtracking) && recon->ontime && (vertex<FV_downstr_limit);
     *SelectionOV=(recon->vetowtracking) && recon->ontime;
   }
+
+
+
 }
 
 					 
