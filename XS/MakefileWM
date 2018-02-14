@@ -1,0 +1,64 @@
+CPP 		= g++
+CXXFLAGS	= -g -O3 -Wall -fPIC -D_REENTRANT -Wno-deprecated
+
+ROOTCFLAGS	:= $(shell root-config --cflags)
+ROOTLIBS     	:= $(shell root-config --libs)
+ROOTGLIBS    	:= $(shell root-config --glibs)
+CXXFLAGS	+= $(ROOTCFLAGS)
+
+LIB = $(INSTALLREPOSITORY)/libs/libsWM
+LIBSO = $(LIB)/lib_5.34
+
+LIBS 		= $(ROOTGLIBS) \
+          -lm $(LIBSO)/INGRIDEVENTSUMMARY.so $(LIBSO)/IngridHitSummary.so \
+          $(LIBSO)/IngridSimHitSummary.so $(LIBSO)/IngridSimVertexSummary.so \
+          $(LIBSO)/IngridSimParticleSummary.so $(LIBSO)/BeamInfoSummary.so \
+          $(LIBSO)/IngridBasicReconSummary.so $(LIBSO)/Ingrid1stReducSummary.so \
+          $(LIBSO)/IngridTrackSummary.so $(LIBSO)/NeutInfoSummary.so \
+          $(LIBSO)/PMReconSummary.so $(LIBSO)/PMAnaSummary.so \
+
+INC = inc
+SRC= src
+
+
+CXXFLAGS += -I$(LIB)/src -I$(SRC) -I$(INC) 
+
+TARGET= CompareCalibrationsPM_WM DrawReconstructedEventsPlots_Dvt_WM DrawReconstructedEventsPlots_WM GenerateHitEfficiencyMask_WM GeneratePDFMuCL_Likelihood_WM GeneratePDFMuCL_Plan_WM HitEfficiency_WM Systematics_HitEfficiency_WM UnfoldingOptimisation_Dvt_WM XS_CC0pi_Plan_WM MergeSciBkgWM CreateRecoErrorFiles_WM RecoEfficiency_WM
+# Unfolding_WM Save_WM DrawTrueEventsPlots_Dvt_WM don't compile
+
+all: $(TARGET)
+
+CreateRecoErrorFiles_WM:CreateRecoErrorFiles_WM.o
+Save_WM: Save_WM.o
+XS_CC0pi_Plan_WM: XS_CC0pi_Plan_WM.o
+UnfoldingOptimisation_WM: UnfoldingOptimisation_WM.o
+GeneratePDFMuCL_Plan_WM: GeneratePDFMuCL_Plan_WM.o
+GeneratePDFMuCL_Likelihood_WM: GeneratePDFMuCL_Likelihood_WM.o
+CompareCalibrationsPM_WM: CompareCalibrationsPM_WM.o
+HitEfficiency_WM: HitEfficiency_WM.o
+GenerateHitEfficiencyMask_WM: GenerateHitEfficiencyMask_WM.o
+UnfoldingOptimisation_Dvt_WM: UnfoldingOptimisation_Dvt_WM.o
+Unfolding_WM: Unfolding_WM.o
+DrawReconstructedEventsPlots_Dvt_WM: DrawReconstructedEventsPlots_Dvt_WM.o
+DrawReconstructedEventsPlots_WM: DrawReconstructedEventsPlots_WM.o	
+DrawTrueEventsPlots_Dvt_WM: DrawTrueEventsPlots_Dvt_WM.o
+Systematics_HitEfficiency_WM: Systematics_HitEfficiency_WM.o
+MergeSciBkgWM: MergeSciBkgWM.o
+RecoEfficiency_WM: RecoEfficiency_WM.o
+
+%: %.o
+	@echo "Now make $@"
+	@$(CPP) -o $@ $< $(CXXFLAGS) $(LIBS) 
+	@echo "..Compile done! "
+
+%_WM.o: %.c
+	@echo "$<"
+	@echo "Start Compiling $<"
+	@$(CPP) $(CXXFLAGS) -c $< -o $@
+	@echo ".. Compiling Object Files $<   --> done"
+	@echo ""
+
+
+clean: 
+	@echo "Now Clean Up"
+	rm -f $(TARGET) *~ *.o *.o~ core

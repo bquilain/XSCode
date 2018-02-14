@@ -1,4 +1,4 @@
-#include<iostream> 
+#include<iostream>
 #include<sstream>
 #include<fstream> 
 using namespace std;
@@ -203,10 +203,13 @@ Double_t Likelihood_Ing_NotPion(Double_t *pe, Double_t *par){
 }
 #endif
 
-void LoadMuCLDistributions_Likelihood(bool PM=true){
+void LoadMuCLDistributions_Likelihood(bool PM=true,int ErrorType=0, int ErrorValue=0, bool BirksRescaled=false){
   /********************************Load MuCL************************************/
+  TFile * file_Likelihood;
 #ifdef MUPI_LIKELIHOOD
-  TFile * file_Likelihood = new TFile(Form("$INSTALLREPOSITORY/XS/src/PDFMuPiCL_Likelihood%s.root",(PM?"":"_WM")));
+  if(ErrorType==0) file_Likelihood = new TFile(Form("$INSTALLREPOSITORY/XS/src/PDFMuPiCL_Likelihood%s.root",(PM?"":"_WM")));
+  else if(ErrorType==5 && BirksRescaled) file_Likelihood = new TFile(Form("$INSTALLREPOSITORY/XS/src/PDFMuPiCL_Likelihood_Birks%d%s.root",ErrorValue,(PM?"":"_WM")));
+  else file_Likelihood = new TFile(Form("$INSTALLREPOSITORY/XS/src/PDFMuPiCL_Likelihood%s_Systematics%d_%d.root",(PM?"":"_WM"),ErrorType,ErrorValue));
 #else
   TFile * file_Likelihood = new TFile(Form("$INSTALLREPOSITORY/XS/src/PDFMuCL_Likelihood%s.root",(PM?"":"_WM")));
 #endif
@@ -567,7 +570,7 @@ int main(int argc, char **argv)
   //char * OutputFileName = new char[256];
   string InputFileName;string OutputFileName;
   
-  int ErrorType;string ErrorValue;char cErrorValue[256];
+  int ErrorType=0;string ErrorValue;char cErrorValue[256];
 
   int nbad=0;//for checking  
    
@@ -587,8 +590,10 @@ int main(int argc, char **argv)
 
   int XSEC=false;string xsec_file;
   int retuned=false;
-  
-  while ((c = getopt(argc, argv, "i:o:f:dmr:x:e:v:wt:")) != -1) {
+  bool BirksRescaled=false;
+  bool PIDSyst=false;
+
+  while ((c = getopt(argc, argv, "i:o:f:dmrPx:e:v:wt:")) != -1) {
     switch(c){
     case 'i':
       InputFileName=optarg;
@@ -622,6 +627,12 @@ int main(int argc, char **argv)
     case 'v':
       ErrorValue=optarg;
       break;
+    case 'r':
+      BirksRescaled=true;
+      break;
+    case 'P':
+      PIDSyst=true;
+      break;
     }
   }
 
@@ -630,11 +641,10 @@ int main(int argc, char **argv)
   bool PM=!WM;
   cout<<"Detector is "<<(PM?"PM":"WM")<<endl;
 
-  InitializeGlobal();
   Reconstruction * Rec = new Reconstruction(PM);
   Corrections * Cor = new Corrections(PM);
   Xsec * XS = new Xsec(PM);
-
+  XS->Initialize();
 
   if(ErrorType==4){
     fPEAngle = new TFile((ErrorValue).c_str());
@@ -658,6 +668,11 @@ int main(int argc, char **argv)
     }
   }  
 
+  int birksindex=0;
+  double CBIRKS_values[3]={0.0185,0.0208,0.0231};
+  if(ErrorType==5) birksindex=atoi(ErrorValue.c_str())*2;
+
+
   double Nu_E;
   double TrueParticleNRJ=0;
   IngridEventSummary* evt = new IngridEventSummary();
@@ -669,7 +684,11 @@ int main(int argc, char **argv)
 
   //////////////////////////////////////
   LoadMuCLDistributions_Plan();
-  LoadMuCLDistributions_Likelihood(PM);
+  if(PIDSyst){  
+    if(ErrorType==5)  LoadMuCLDistributions_Likelihood(PM,5,birksindex,BirksRescaled);
+    else if(ErrorType==4)  LoadMuCLDistributions_Likelihood(PM,4);
+  }
+  else  LoadMuCLDistributions_Likelihood(PM);
   
   /*
     TCanvas * alo = new TCanvas();
@@ -861,8 +880,8 @@ int main(int argc, char **argv)
     NewEvent=true;
       
     if(XSEC){
-      if(reweight->GetSize()!=NDials && ievt==0) cout<<"Problem: change NDials="<<NDials<<" into "<<reweight->GetSize()<<" in the CC0pi code"<<endl;
       weightstree->GetEntry(ievt);
+      if(reweight->GetSize()!=NDials && ievt==0) cout<<"Problem: change NDials="<<NDials<<" into "<<reweight->GetSize()<<" in the CC0pi code"<<endl;
       if(ievt%100==0) cout<<endl<<"*************************************************************************************************"<<endl;
       for(int i=0;i<reweight->GetSize();i++){
 	ReWeight[i]=reweight->GetAt(i);
@@ -916,8 +935,8 @@ int main(int argc, char **argv)
       }
 
       weight = 1;
-      if(IsBkgH || IsBkgV) weight=norm*totcrsne*pow(10.,-38.)*6.02*pow(10.,23.)*7.87*58.5;
-      else if(IsSand) weight=norm*totcrsne*pow(10.,-38.)*6.02*pow(10.,23.)*(2.2*470);
+      if(IsBkgH || IsBkgV) weight=norm*totcrsne*pow(10.,-38.)*6.02*pow(10.,23.)*(7.87*58.5+22);// ML small contribution from scinti added
+      else if(IsSand) weight=norm*totcrsne*pow(10.,-38.)*6.02*pow(10.,23.)*(2.2*300); // ML 2017/11/27 in fact the vertex is drawn only in a 3 meters shell (not 4.7m)
       else  if(PM) weight=norm*totcrsne*pow(10.,-38.)*6.02*pow(10.,23.)*46.2;
       else weight=norm*totcrsne*pow(10.,-38.)*6.02*pow(10.,23.)*50.;//for WM - ML 2017/05/05 the water tank is 50cm deep
     }
@@ -1152,6 +1171,7 @@ int main(int argc, char **argv)
 	  int SimPartNumber=Rec->Reconstruction::GetTrackParticle(evt, recon, itrk, TrkLength);
 	  SimPart=(IngridSimParticleSummary*) evt->GetSimParticle(SimPartNumber);
 	  Particle =SimPart->pdg;
+	  //	  if(Particle==2112) cout<<"event "<<ievt<<" reco "<<irec<<" track="<<itrk<<" is associated to neutron"<<endl; 
 	  TrueParticleNRJ=TMath::Sqrt(SimPart->momentum[0]*SimPart->momentum[0]+SimPart->momentum[1]*SimPart->momentum[1]+SimPart->momentum[2]*SimPart->momentum[2]);
 	}
 
@@ -1329,12 +1349,19 @@ int main(int argc, char **argv)
 	    else PlaneNonIsolated[2][Vec[i].pln][Vec[i].view]++;
 
 
-	      
+	    double dedz,MEV2PE=46.,MEV2PE_PM=40.;
+	    double BirksCorr=1.;
 	    //Isolated hits
 	    if(NCLHits>2 && Vec[i].used>1) continue;
 	    //	    cout<<recon->angle[itrk]<<" "<<Vec[i].pecorr<<" ";
 	    if(Vec[i].mod==16 && Reco->Reconstruction::IsINGRID(Vec[i].mod,Vec[i].pln,Vec[i].ch)){
 	      PECorrected=Vec[i].pecorr;
+	      dedz=Vec[i].pecorr/MEV2PE_PM/(1.+.09)/.275;// already dz-corrected
+	      if(BirksRescaled) {
+		BirksCorr=1-dedz*(CBIRKS_values[birksindex]-CBIRKS_values[1])/(1.+dedz*CBIRKS_values[birksindex]);
+		PECorrected*=BirksCorr;
+		cout<<"de/dz="<<dedz<<" (Mev/cm), Delta CB="<<CBIRKS_values[birksindex]-CBIRKS_values[1]<<" BirksCorr="<<BirksCorr<<endl;
+	      }
 	      if(ErrorType==4) PECorrected=PECorrected+PECorrected*SystematicsPECorrected_PMIng;
 	      PEPlane[1][Vec[i].pln][Vec[i].view]+=PECorrected;
 	      Plane[1][Vec[i].pln][Vec[i].view]++;
@@ -1344,6 +1371,11 @@ int main(int argc, char **argv)
 	    }
 	    else if(Vec[i].mod==16 && !(Reco->Reconstruction::IsINGRID(Vec[i].mod,Vec[i].pln,Vec[i].ch))){
 	      PECorrected=Vec[i].pecorr;
+	      dedz=Vec[i].pecorr/MEV2PE_PM/(1.+.09)/.275/1.88;
+	      if(BirksRescaled) {
+		BirksCorr=1-dedz*(CBIRKS_values[birksindex]-CBIRKS_values[1])/(1.+dedz*CBIRKS_values[birksindex]);
+		PECorrected*=BirksCorr;
+	      }
 	      if(ErrorType==4) PECorrected=PECorrected+PECorrected*SystematicsPECorrected_PMSci;
 	      PEPlane[0][Vec[i].pln][Vec[i].view]+=PECorrected;
 	      Plane[0][Vec[i].pln][Vec[i].view]++;
@@ -1353,6 +1385,11 @@ int main(int argc, char **argv)
 	    }
 	    else{
 	      PECorrected=Vec[i].pecorr;
+	      dedz=Vec[i].pecorr/MEV2PE/(1.+.09)/.275;
+	      if(BirksRescaled) {
+		BirksCorr=1-dedz*(CBIRKS_values[birksindex]-CBIRKS_values[1])/(1.+dedz*CBIRKS_values[birksindex]);
+		PECorrected*=BirksCorr;
+	      }
 	      if(ErrorType==4) PECorrected=PECorrected+PECorrected*SystematicsPECorrected_Ing;
 	      PEPlane[2][Vec[i].pln][Vec[i].view]+=PECorrected;
 	      Plane[2][Vec[i].pln][Vec[i].view]++;
@@ -1567,6 +1604,14 @@ int main(int argc, char **argv)
 		PECorrected=PECorrected+PECorrected*SystematicsPECorrected_WM;
 	      }	      
 
+	      double BirksCorr=1.;double MEV2PE_WM=28.; 
+	      double dedz=Vec[i].pecorr/.3/MEV2PE_WM/(1.+.18);
+	      if(BirksRescaled){
+		BirksCorr=1-dedz*(CBIRKS_values[birksindex]-CBIRKS_values[1])/(1.+dedz*CBIRKS_values[birksindex]);
+		PECorrected*=BirksCorr;
+		cout<<"de/dz="<<dedz<<" (Mev/cm), Delta CB="<<CBIRKS_values[birksindex]-CBIRKS_values[1]<<" BirksCorr="<<BirksCorr<<endl;
+	      }
+
 	      cllikelihood_muon=CL_WM_Muon->Eval(PECorrected,normalAngleSlice);
 	      cllikelihood_notmuon=CL_WM_NotMuon->Eval(PECorrected,normalAngleSlice);
 	      CLLikelihood_Muon*=cllikelihood_muon;
@@ -1582,7 +1627,13 @@ int main(int argc, char **argv)
 	      if(Vec[i].pecorr<7) continue; // avoid hits with de/dz < 7 pe/cm
 
 	      double PECorrected=Vec[i].pecorr;
+	      double BirksCorr=1.;double MEV2PE=46.; 
+	      double dedz=Vec[i].pecorr/MEV2PE/(1.+.09)/1.08;
 	      if(ErrorType==4) PECorrected=PECorrected+PECorrected*SystematicsPECorrected_Ing;
+	      if(BirksRescaled){
+		BirksCorr=1-dedz*(CBIRKS_values[birksindex]-CBIRKS_values[1])/(1.+dedz*CBIRKS_values[birksindex]);
+		PECorrected*=BirksCorr;
+	      }
 
 	      cllikelihood_muon=CL_Ing_Muon->Eval(PECorrected);
 	      cllikelihood_notmuon=CL_Ing_NotMuon->Eval(PECorrected);
@@ -1620,14 +1671,17 @@ int main(int argc, char **argv)
 	  //}
 	}
 
+
+	//if(Particle==2112) cout<<"event "<<ievt<<" reco "<<irec<<" track="<<itrk<<" is associated to neutron -- mucl="<<CL_Likelihood<<endl; 
 	    
 	vector <double> LastChan;
 	LastChan=Rec->Reconstruction::GetLastINGRIDChannel(Vec,TrackSample);
 	LastChannelINGRIDY[itrk]=LastChan[0];
 	LastChannelINGRIDX[itrk]=LastChan[1];
-	TrackAngle[itrk]=(recon->angle)[itrk];
+	TrackAngle[itrk]=Rec->GetBeamAngle(DegRad(recon->angle[itrk]),DegRad(recon->thetay[itrk]),DegRad(recon->thetax[itrk]));
 	TrackThetaX[itrk]=(recon->thetax)[itrk];
 	TrackThetaY[itrk]=(recon->thetay)[itrk];
+	// ML: TrackAngle is wrt beam direction; ThetaX,ThetaY are wrt z axis (horizontal)
 	TrackWidth[itrk]=Rec->Reconstruction::GetINGRIDTrackWidth(Vec);
 	GT[itrk]=Geom;
 	IsReconstructed[itrk]=true;
