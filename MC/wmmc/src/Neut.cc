@@ -94,7 +94,8 @@ int Neut::NtupleReadEvent(SecondaryVector &Secondary, float* direction)
   std::cout << "Energy: " << Vector.Neutrino.Energy << "\n";
   
   // In this programme, neutrino-ID = 0 (mother-particle), so there is no data for Parent Decay and Parent Production
-  
+
+    
   std::cout << "Parent Decay:\n ";
   //std::cout << "absMomentum: " << Vector.Neutrino.ParentDecay.AbsMomentum << "\n";
   std::cout << "vertex: ";
@@ -103,7 +104,7 @@ int Neut::NtupleReadEvent(SecondaryVector &Secondary, float* direction)
   std::cout << "\ndirection: ";
   for (int k=0;k<3;k++)
 		std::cout << Vector.Neutrino.ParentDecay.Direction[k] << " ";
-  std::cout << "\ncosBeam: " << Vector.Neutrino.ParentDecay.CosBeam << "\n";
+		std::cout << "\ncosBeam: " << Vector.Neutrino.ParentDecay.CosBeam << "\n";
   std::cout << "Parent Production:\n ";
   std::cout << "absMomentum: " << Vector.Neutrino.ParentProduction.AbsMomentum << "\n"; 
   std::cout << "vertex: ";
@@ -113,13 +114,28 @@ int Neut::NtupleReadEvent(SecondaryVector &Secondary, float* direction)
   for (int k=0;k<3;k++)
 		std::cout << Vector.Neutrino.ParentProduction.Direction[k] << " ";
   std::cout << "\ncosBeam: " << Vector.Neutrino.ParentProduction.CosBeam << "\n";
-
+  
 
   std::cout << "r: " << Vector.Neutrino.r << " x: " << Vector.Neutrino.x << " y: " << Vector.Neutrino.y << "\n";
   std::cout << "Neutrino direction: ";
   for (int k=0;k<3;k++)
 			std::cout << Vector.Neutrino.Direction[k] << " ";
   std::cout << "\n\n";
+
+  // ML new 2017/07/25
+  /*  std::cout << "Ancestor info:\n" << std::endl;
+  std::cout << "ng: " << Vector.Neutrino.ancestor.ng << std::endl;
+  for(int i=0;i<NG;i++)  std::cout << "gpx: " << Vector.Neutrino.ancestor.gpx[i] << " " << std::endl;
+  for(int i=0;i<NG;i++)  std::cout << "gpy: " << Vector.Neutrino.ancestor.gpy[i] << " " << std::endl;
+  for(int i=0;i<NG;i++)  std::cout << "gpz: " << Vector.Neutrino.ancestor.gpz[i] << " " << std::endl;
+  for(int i=0;i<NG;i++)  std::cout << "gcosbm: " << Vector.Neutrino.ancestor.gcosbm[i] << " " << std::endl;
+  for(int i=0;i<NG;i++)  std::cout << "gvx: " << Vector.Neutrino.ancestor.gvx[i] << " " << std::endl;
+  for(int i=0;i<NG;i++)  std::cout << "gvy: " << Vector.Neutrino.ancestor.gvy[i] << " " << std::endl;
+  for(int i=0;i<NG;i++)  std::cout << "gvz: " << Vector.Neutrino.ancestor.gvz[i] << " " << std::endl;
+  for(int i=0;i<NG;i++)  std::cout << "gpid: " << Vector.Neutrino.ancestor.gpid[i] << " " << std::endl;
+  for(int i=0;i<NG;i++)  std::cout << "gmec: " << Vector.Neutrino.ancestor.gmec[i] << " " << std::endl;
+  */
+  // ML end
 
 	std::cout << "Secondary Infomation:\n";
   std::cout << "Number of secondary particles: " << Vector.Secondary.NumParticle << "\n";

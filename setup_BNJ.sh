@@ -1,11 +1,18 @@
 export INSTALLREPOSITORY=/home/bquilain/CC0pi_XS/NewXSCode/V2/XSCode
+
 export DATAINPUTSTORAGE=/export/scraid2/data/bquilain
+export DATAOUTPUTSTORAGE=/export/scraid2/data/bquilain
+export DATAOUTPUTSTORAGE_WM=/export/scraid4/data2/mlicciardi/WMData/00029000-00029999
+
 #export MCINPUTSTORAGE_WM=/export/scraid4/data2/taichiro/neut
 export MCINPUTSTORAGE_WM=/export/scraid3/data/taichiro/neut/watermodule/ingbg_5.3.3
 export MCINPUTSTORAGE=${MCINPUTSTORAGE_WM}
 export MCOUTPUTSTORAGE=/export/scraid2/data/bquilain/MCfiles
-export MCOUTPUTSTORAGE_WM=/export/scraid2/data/bquilain/MCfiles
-export DATAOUTPUTSTORAGE=/export/scraid2/data/bquilain
+#export MCOUTPUTSTORAGE_WM=/export/scraid2/data/bquilain/MCfiles
+export MCOUTPUTSTORAGE_WM=/export/scraid4/data2/mlicciardi/XSFiles/Prod2/WM
+export MCOUTPUTSTORAGE_dev=/export/scraid4/data2/mlicciardi/XSFiles/dev/PM
+export MCOUTPUTSTORAGE_dev_WM=/export/scraid4/data2/mlicciardi/XSFiles/dev/WM
+
 export INGRIDSOFTWARE=/home/bquilain/T2KSoftware2
 #export INGRIDSOFTWARE=/home/mlicciardi/T2K/work/basesoft
 

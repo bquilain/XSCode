@@ -4,7 +4,7 @@
 //#define USEBACKTRK
 //#define USEPARTRK
 //#define USESHORTTRK
-
+ 
 #include<iostream>
 #include<sstream>
 #include<fstream>
@@ -39,7 +39,6 @@ using namespace std;
 #include "INGRID_Dimension.hxx"
 #include "Lolirecon.hxx"
 #include "LoliAna.hxx" 
-
 
 #include "INGRIDEVENTSUMMARY.h"
 #include "IngridHitSummary.h"
@@ -108,7 +107,7 @@ int main(int argc,char *argv[]){
   Int_t Nini = 0;
   bool disp = false; 
   bool cosmic = false;
-  bool useINGRID_PID=false;
+  bool useINGRID_PID=true;
 
   // to evaluate systematics
   int VertexingPlane  =pln_th;//planes
@@ -119,7 +118,9 @@ int main(int argc,char *argv[]){
   int nINGRIDPlanes=2; // number of planes fIngridHitPMJoint is looking at
   bool Error=false;
   int ErrorType=0;
-  float ErrorValue=0.;
+  char ErrorValue[256];
+  TFile * peVsAngle;
+  TH1D * PEAngleData, * PEAngleMC;
 
   bool requireIngridTrack=true; //ML 2016/11/24 for new option -N
 
@@ -161,22 +162,27 @@ int main(int argc,char *argv[]){
       ErrorType=atoi(optarg);
       break;
     case 'v':
-      ErrorValue=atof(optarg);
+      sprintf(ErrorValue,optarg);
       break;
     case 'N':
       requireIngridTrack=false;
       break;
     case 'I':
-      useINGRID_PID=true;
+      useINGRID_PID=false;
       break;
     }
   }
   if(Error){
-    if(ErrorType==11) VertexingPlane = (int) ErrorValue;
-    else if(ErrorType==12) VertexingChannel = (double) ErrorValue;
-    else if(ErrorType==13) TrackMatching = (int) ErrorValue;
-    else if(ErrorType==14) AngleCut = (double) ErrorValue;
-    else if(ErrorType==15) TransverseCut = (double) ErrorValue;
+    if(ErrorType==4) {
+      peVsAngle=new TFile(ErrorValue,"open"); 
+      PEAngleData=(TH1D*) peVsAngle->Get("PEAngleData_WM");
+      PEAngleMC=(TH1D*) peVsAngle->Get("PEAngleMC_WM");
+    }
+    else if(ErrorType==11) VertexingPlane = (int) atoi(ErrorValue);
+    else if(ErrorType==12) VertexingChannel = (double) atof(ErrorValue);
+    else if(ErrorType==13) TrackMatching = (int) atoi(ErrorValue);
+    else if(ErrorType==14) AngleCut = (double) atof(ErrorValue);
+    else if(ErrorType==15) TransverseCut = (double) atof(ErrorValue);
   }
 
   // ML 2016/11/24
@@ -252,6 +258,8 @@ int main(int argc,char *argv[]){
   LoadMuCL_I("$(INSTALLREPOSITORY)/Reconstruction/inc/sandmuon_distributions_mc_cut4.5_MIP31.5_wINGRID.root");
   int biasedMuCL=0;
 
+  cout<<(useINGRID_PID?"USE INGRID HITS FOR PID":"ONLY WM HITS FOR PID")<<endl;
+
   Initialize_INGRID_Dimension();
 
   //  nevt=Nini+1;
@@ -307,8 +315,9 @@ int main(int argc,char *argv[]){
 	      hits.view  = inghitsum->view;
 	      hits.pln   = inghitsum->pln;
 	      hits.ch    = inghitsum->ch;
-	      hits.pe    = inghitsum->pe+inghitsum->pe_cross; //2017-01-17 to read calib info and 2017/03/21 to read crosstalk
-	      hits.lope  = inghitsum->lope;
+	      // 2017/07/06 WARNING: INGRID hits not calibrated in data 
+	      hits.pe    = inghitsum->pe; // no need to use pecorr since no Xtalk here.
+	      hits.lope  = inghitsum->lope; //not used
 	      hits.isohit= inghitsum->isohit;
 
 	      hits.recon_id=i;
@@ -368,12 +377,15 @@ int main(int argc,char *argv[]){
 	    hits.view  = inghitsum->view;
 	    hits.pln   = inghitsum->pln;
 	    hits.ch    = inghitsum->ch;
+
 	    // since I did not rerun calibration with the new switching point I use pe instead of pecorr. 
-	    hits.pe    = inghitsum->pe+inghitsum->pe_cross;
+	    hits.pe    = inghitsum->pe;
 	    hits.lope  = inghitsum->lope;
 	    // now I compute the switch
 	    if(evt->NIngridSimVertexes()==0) //ie data
 	      hits.pe=(0.5*(hits.pe+hits.lope)<43? hits.pe:hits.lope);
+	    else //ie MC
+	      hits.pe+=inghitsum->pe_cross;
 
 	    hits.isohit= inghitsum->isohit;
 
@@ -539,12 +551,14 @@ int main(int argc,char *argv[]){
 	  pmanasum -> pdg         .push_back(pmtrack[i].trk[t].pdg);
 	  pmanasum -> trkpe       .push_back(pmtrack[i].trk[t].trkpe);
 
-	  if(!calcMuCL(pmtrack[i].trk[t],isoHitCut,useINGRID_PID))  {
+	  if(!calcMuCL(pmtrack[i].trk[t],isoHitCut,useINGRID_PID,(ErrorType==4),PEAngleData,PEAngleMC))  {
 	    biasedMuCL++;
 	    pmanasum->mucl .push_back( -1);
 	  }
 	  else 
 	    pmanasum -> mucl        .push_back(pmtrack[i].trk[t].mucl);
+
+	  // if(pmtrack[i].trk[t].mucl!=pmtrack[i].trk[t].mucl) cout<<"******************"<<endl;
 
 
 	  //	  if(pmtrack[i].trk[t].pdg==13 && pmtrack[i].trk[t].ing_trk && pmtrack[i].trk[t].mucl<0.05) cout<<ievt<<" "<<i<<" "<<t<<" "<<pmtrack[i].trk[t].mucl<<endl;
@@ -850,6 +864,7 @@ void GetNonRecHits(IngridEventSummary* evt, int cyc){
   INGRID_Dimension *fdim_temp = new INGRID_Dimension();
   for(int ihit=0; ihit<ninghit; ihit++){
     inghitsum  = (IngridHitSummary*) (evt -> GetIngridModHit(ihit,15,cyc));
+    if(inghitsum->cyc==-2) continue; // this is killed hit  ML 2017/06/19
     if(Is_Bad_Channel( inghitsum ))continue;
     view = inghitsum->view;
     ch   = inghitsum->ch;
@@ -863,6 +878,7 @@ void GetNonRecHits(IngridEventSummary* evt, int cyc){
     pln= reconpln;
     ch = reconch;
 
+    // this pe may be uncorrect (Mc->pecorr; data->switch) but never used -- ML 2017/07/06
     nonrechits[view][pln][ch]=pe;
   }
   delete fdim_temp;
@@ -871,6 +887,7 @@ void GetNonRecHits(IngridEventSummary* evt, int cyc){
     ninghit = evt -> NIngridModHits(mod, cyc);
     for(int ihit=0; ihit<ninghit; ihit++){
       inghitsum  = (IngridHitSummary*) (evt -> GetIngridModHit(ihit,mod,cyc));
+      if(inghitsum->cyc==-2) continue; // this is killed hit ML 2017/06/19
       if(Is_Bad_Channel( inghitsum ))continue;
       view = inghitsum->view;
       ch   = inghitsum->ch;
@@ -882,6 +899,7 @@ void GetNonRecHits(IngridEventSummary* evt, int cyc){
       else pdg = 0;
       if(pln>=11) continue; // veto planes of INGRID modules
       ingnonrechits[mod][view][pln][ch]=pe;
+      // *** WARNING not calibrated yet for data *** 2017/07/06
       ingnonrechits_lope[mod][view][pln][ch]=lope;
       ingnonrechits_pdg [mod][view][pln][ch]=pdg;
       ingnonrechits_id [mod][view][pln][ch]=ihit;

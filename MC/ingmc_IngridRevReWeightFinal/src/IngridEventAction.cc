@@ -146,6 +146,7 @@ void IngridEventAction::EndOfEventAction(const G4Event* anEvent)
       inghit   -> time = time;
       inghit   -> pe   = pe; 
       inghit   -> lope   = lope; 
+      inghit   -> pecorr   = inghit->pe; 
       //
       ingsimhit-> Clear("C");
       ingsimhit-> edeposit = edep;
@@ -213,6 +214,7 @@ void IngridEventAction::EndOfEventAction(const G4Event* anEvent)
       inghit   -> time = time;//temporary
       inghit   -> pe   = pe; //temporary
       inghit   -> lope   = lope; //temporary
+      inghit   -> pecorr   = inghit->pe; 
       //
       ingsimhit-> Clear("C");
       ingsimhit-> edeposit = edep;
@@ -280,6 +282,7 @@ void IngridEventAction::EndOfEventAction(const G4Event* anEvent)
       inghit   -> time = time;//temporary
       inghit   -> pe   = pe ;//temporary
       inghit   -> lope   = lope ;//temporary
+      inghit   -> pecorr   = inghit->pe; 
       //
       ingsimhit-> Clear("C");
       ingsimhit-> edeposit = edep;

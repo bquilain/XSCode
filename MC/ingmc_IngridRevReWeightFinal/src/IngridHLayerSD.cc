@@ -192,8 +192,8 @@ void IngridHLayerSD::EndOfEvent(G4HCofThisEvent* HCTE)
     //convert edep -> p.e. &  p.e. statistic & cross-talk & after-pulse
     ingresp->ApplyMPPCResponse(edep_tmp,mod,&pe);
 
-    //apply ADC responce
-    ingresp->ApplyADCResponse(&pe,&lope,&adc,&loadc);
+    //apply ADC responce -- to correct for ADC non linearities -- not needed ML 2017/07/06
+    // ingresp->ApplyADCResponse(&pe,&lope,&adc,&loadc);
 
     //fill variable to hitcollection
     cHit->SetPE(pe);

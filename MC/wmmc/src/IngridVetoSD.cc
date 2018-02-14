@@ -9,11 +9,11 @@
 #include "IngridVetoSD.hh"
 
 #define DEBUG 0
-IngridVetoSD::IngridVetoSD(const G4String& name)
+IngridVetoSD::IngridVetoSD(const G4String& name, G4double cbirks)
   : G4VSensitiveDetector(name)
 {
   collectionName.insert("vetoHitCollection");
-  ingresp = new IngridResponse();
+  ingresp = new IngridResponse(cbirks);
 }
 
 IngridVetoSD::~IngridVetoSD()

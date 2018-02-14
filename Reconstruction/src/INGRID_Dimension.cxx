@@ -9,7 +9,9 @@
 using namespace std;
 
 void Initialize_INGRID_Dimension(){
-  TFile*  f = TFile::Open("/export/scbn25/data1/taichiro/T2K/work/basesoft/git/watermodule/wmmc/assembly_checklist.root","READ");
+  char * cINSTALLREPOSITORY = getenv("INSTALLREPOSITORY");
+
+  TFile* f = TFile::Open(Form("%s/MC/wmmc/src/assembly_checklist.root",cINSTALLREPOSITORY),"READ");
   TTree* t = (TTree*) f->Get("tree");
   double xy1,xy3,xy0;
   int view,pln,ch;
@@ -35,7 +37,7 @@ void Initialize_INGRID_Dimension(){
   f->Close();
   f->Delete();
 
-  f = TFile::Open("/export/scbn25/data1/taichiro/T2K/work/basesoft/git/watermodule/wmmc/position_module_z.root","READ");
+  f = TFile::Open(Form("%s/MC/wmmc/src/position_module_z.root",cINSTALLREPOSITORY),"READ");
   t = (TTree*) f->Get("tree");
   double z;
   double z0;
@@ -93,39 +95,38 @@ bool INGRID_Dimension::get_pos(int mod, int pln, int ch, bool tpl, bool veto, do
 }
 
 bool INGRID_Dimension::get_posXY(int mod, int view, int pln, int ch, double *posxy, double *posz){
+  // modified ML 2017/06/27 to have position at the center of the bars for PM/INGRID
 
   if(mod!=16){
-    *posxy   = (ScintiWidth)*ch;
+    *posxy   = (ScintiWidth)*(ch+.5);//ML
     if( pln <= 10 ){
-      if(view == 1)
-        *posz = ( PlnThick + IronThick ) * pln;
+      if(view == 1) 
+	*posz    = ( PlnThick + IronThick ) * pln + ScintiThick/2.;//ML
       else if(view == 0)
-        *posz = ( PlnThick + IronThick ) * pln + ScintiThick;
+	*posz    = ( PlnThick + IronThick ) * pln + ScintiThick + ScintiThick/2.;//ML
       return true;
     }
     else if(pln >= 11){
       this -> get_posVeto( mod, view, pln, ch, posxy, posz );
     }
-    return true;
   }
   else{
     if(pln==0){
-      *posxy = (ScintiWidth)*ch;
-      if(view==0) *posz = 0;
-      else *posz=PlnDist_PM;
+      *posxy   = (ScintiWidth)*(ch+.5);//ML
+      if(view==0) *posz = ScintiThick/2.;//ML
+      else *posz=PlnDist_PM+ScintiThick/2.;//ML
     }
     else if( pln <= 17 ){
-      if(ch<8) *posxy = (ScintiWidth)*ch;
-      else if(ch<24)*posxy = (ScintiWidth)*8+(ScibarWidth)*(ch-8);
-      else *posxy = (ScintiWidth)*(ch-8);
-      if(view == 0) *posz = (PlnThick_PM)*(pln-1)+PlnThick_front_PM;
-      else *posz = (PlnThick_PM)*(pln-1)+PlnThick_front_PM+PlnDist_PM;
+      if(ch<8) *posxy = (ScintiWidth)*(ch+0.5);//ML
+      else if(ch<24)*posxy = (ScintiWidth)*8+(ScibarWidth)*(ch-8+.5);//ML
+      else *posxy = (ScintiWidth)*(ch-8+.5);//ML
+      if(view == 0) *posz = (PlnThick_PM)*(pln-1)+PlnThick_front_PM+ScintiThick/2.;//ML
+      else *posz = (PlnThick_PM)*(pln-1)+PlnThick_front_PM+PlnDist_PM+ScintiThick/2.;//ML
       return true;
     }
     else if(pln >= 18){
       this -> get_posVeto( mod, view, pln, ch, posxy, posz );
     }
-    return true;
   }
 }
 

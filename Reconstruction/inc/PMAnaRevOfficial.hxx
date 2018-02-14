@@ -391,7 +391,7 @@ bool fIngPMJoint(vector<TrackIng> &itrk, vector<TrackPM> &ptrk, bool vertical, d
 	  ptrk[i].ing_trk    = true;
 	  ptrk[i].ing_stop   = itrk[j].stop;
 	  
-	  if(hingtrack[j].fpln==10)
+	  if(itrk[j].fpln==10)
 	    ptrk[i].iron_pene  = itrk[j].fpln - itrk[j].ipln-1;
 	  else
 	    ptrk[i].iron_pene  = itrk[j].fpln - itrk[j].ipln;
@@ -405,7 +405,7 @@ bool fIngPMJoint(vector<TrackIng> &itrk, vector<TrackPM> &ptrk, bool vertical, d
 	  ptrk[i].ing_fpln   = itrk[j].fpln;
 	  ptrk[i].ing_stop   = itrk[j].stop;
 	  
-	  if(hingtrack[j].fpln==10)
+	  if(itrk[j].fpln==10)
 	    ptrk[i].iron_pene  += itrk[j].fpln - itrk[j].ipln-1;
 	  else
 	    ptrk[i].iron_pene  += itrk[j].fpln - itrk[j].ipln;

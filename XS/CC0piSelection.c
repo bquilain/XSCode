@@ -69,6 +69,7 @@ using namespace std;
 #define MVAREADING
 //#define TEMPORARY
 //#define DEBUGMVA
+//#define MOMENTUMSHIFT
 bool BkgSub=false;
 
 //If wish to cut part of the track for the MVA. This is the starting bin of the relative track length where to use the MVA.
@@ -81,8 +82,9 @@ char Name0[256];
 double ScalingMC;
 double DataEquivalent=1;
 double SandReweight=0.6;
-double MuonSample1=3;
-double MuonSample2=5;
+double MuonSample1=2;
+double MuonSample2=3;//Careful:sample 1 and 2 are ALWAYS THE RESTRAINED SAMPLE (See plot names).
+double MuonSample3=5;
 double MuonCut=0.9;
 double ProtonCut=0.9;
 double MuonMVACut;double ProtonMVACut;
@@ -98,12 +100,42 @@ double ProtonMVACut_CC1pi=0.0;
 double MuonMVACut_slope=0.0048;
 double MuonMVACut_origin=-0.10;
 const double Limit2DCut=45;
-//
-  
+
+//  
 double MuonCut_WM=0.3;// to be tuned
 double ProtonCut_WM=0.3;// to be tuned
+//
+
+//#define CCCOH_TUNING
+//#define PI_LIKELIHOOD
 
 //
+// ML added 2017/10/16 -- input/output in degrees
+double Get2TrackAngle(double ang1, double thetax1, double thetay1,double ang2, double thetax2, double thetay2){
+  double * Track1 = new double[3];
+  double * Track2 = new double[3];
+
+  Track1[0]=TMath::Tan(TMath::Pi()/180.*thetax1)*TMath::Cos(TMath::Pi()/180.*ang1);
+  Track1[1]=TMath::Tan(TMath::Pi()/180.*thetay1)*TMath::Cos(TMath::Pi()/180.*ang1);
+  Track1[2]=TMath::Cos(TMath::Pi()/180.*ang1);
+  double NormTrack1=TMath::Sqrt(Track1[0]*Track1[0]+Track1[1]*Track1[1]+Track1[2]*Track1[2]);
+
+  Track2[0]=TMath::Tan(TMath::Pi()/180.*thetax2)*TMath::Cos(TMath::Pi()/180.*ang2);
+  Track2[1]=TMath::Tan(TMath::Pi()/180.*thetay2)*TMath::Cos(TMath::Pi()/180.*ang2);
+  Track2[2]=TMath::Cos(TMath::Pi()/180.*ang2);
+  double NormTrack2=TMath::Sqrt(Track2[0]*Track2[0]+Track2[1]*Track2[1]+Track2[2]*Track2[2]);
+
+  for(int i=0;i<3;i++){
+    Track1[i]/=NormTrack1;
+    Track2[i]/=NormTrack2;
+  }
+
+  double AngleInTracks=180/TMath::Pi()*TMath::ACos(Track1[0]*Track2[0]+Track1[1]*Track2[1]+Track1[2]*Track2[2]);
+  return AngleInTracks;
+
+}
+
+
 const int NSimplifiedPDG=4;
 int DetermineSimplifiedPDG(int track_pdg){
   if(TMath::Abs(track_pdg)==13) return 0;
@@ -804,7 +836,10 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
   
   TH1D * TrueParticleType_1track[NFSIs];
   TH2D * TrueParticleType_2tracks[NFSIs];
-    
+
+  TH2D * hMVA_MuonVsProtonDiscriminant_TrueMuon;
+  TH2D * hMVA_MuonVsProtonDiscriminant_TruePion;
+  TH2D * hMVA_MuonVsProtonDiscriminant_TrueProton;
   TH1D * hMuCL_TrueMuon;
   TH1D * hMuCL_TruePion;
   TH1D * hMuCL_TrueProton;
@@ -843,6 +878,8 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
   TH1D * hOpeningAngle[NFSIs];
   TH1D * hCoplanarityAngle[NFSIs];
 
+  TH2D * hRecCC0pi_MomentumResolution;
+  TH2D * hRecCC0pi_AngleResolution;
   
   //Energy Deposition
   TH3D * EnergyDepositionLength_Muon[NSamples];
@@ -924,8 +961,37 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
   
   TH2D * PE_Lowest_CC0pi;
   TH2D * PE_Lowest_Other;
+
+  TH2D * MCEfficiency_PTheta_ThinBinning;
+  TH2D * TotalCC0piEvent_PTheta_ThinBinning;
+  TH2D * TotalCC1piEvent_PTheta_ThinBinning;
+  TH1D * MCEfficiency_Momentum_ThinBinning;
+  TH1D * TotalEvent_Momentum_ThinBinning;
+  TH1D * MCEfficiency_Angle_ThinBinning;
+  TH1D * TotalEvent_Angle_ThinBinning;
+
+  TH2D * MCReconstructionEfficiency_PTheta_ThinBinning;
+  TH1D * MCReconstructionEfficiency_Momentum_ThinBinning;
+  TH1D * MCReconstructionEfficiency_Angle_ThinBinning;
+
+  TH2D * MCReconstructionAndTopologyEfficiency_PTheta_ThinBinning;
+  TH1D * MCReconstructionAndTopologyEfficiency_Momentum_ThinBinning;
+  TH1D * MCReconstructionAndTopologyEfficiency_Angle_ThinBinning;
+
+  /*
+    TH1D * MCEfficiency_Momentum_ThinBinning_Relative;
+    TH1D * MCEfficiency_Angle_ThinBinning_Relative;
+    TH1D * MCReconstructionEfficiency_Momentum_ThinBinning_Relative;
+    TH1D * MCReconstructionEfficiency_Angle_ThinBinning_Relative;
+    TH1D * MCReconstructionAndTopologyEfficiency_Momentum_ThinBinning_Relative;
+    TH1D * MCReconstructionAndTopologyEfficiency_Angle_ThinBinning_Relative;
+  */
   
   TH2D * MCEfficiency;
+  TH2D * MCEfficiency_PTheta;
+  TH1D * MCEfficiency_PTheta_Momentum;
+  TH1D * MCEfficiency_PTheta_Angle;
+
   TH1D * MCEfficiency_Energy;
   TH1D * TotalCC0piEvent_Energy;
   TH1D * TotalCC1piEvent_Energy;
@@ -944,6 +1010,10 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
     
   if(Plots){
     if(_isPM){
+      hMVA_MuonVsProtonDiscriminant_TrueMuon = new TH2D("hMVA_MuonVsProtonDiscriminant_TrueMuon","Muon vs Proton discriminant for the true muons",100,-.5,.5,100,-.5,.5);//ML tmp 500bins->100bins
+      hMVA_MuonVsProtonDiscriminant_TruePion = new TH2D("hMVA_MuonVsProtonDiscriminant_TruePion","Muon vs Proton discriminant for the true pions",100,-.5,.5,100,-.5,.5);//ML tmp 500bins->100bins
+      hMVA_MuonVsProtonDiscriminant_TrueProton = new TH2D("hMVA_MuonVsProtonDiscriminant_TrueProton","Muon vs Proton discriminant for the true protons",100,-.5,.5,100,-.5,.5);//ML tmp 500bins->100bins
+      
       hMuCL_TrueMuon = new TH1D("hMuCL_TrueMuon","Muon confidence level for the sand muons",50,0,1);//ML tmp 500bins->100bins
       hMuCL_TruePion = new TH1D("hMuCL_TruePion","Muon confidence level for the true muons",50,0,1);//ML tmp 500bins->100bins
       hMuCL_TrueProton = new TH1D("hMuCL_TrueProton","Muon confidence level for the true protons",50,0,1);//ML tmp 500bins->100bins
@@ -951,6 +1021,10 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
       MuCL_vs_IronDist=new TH2D("MuCL_vs_IronDist","highest #mu_{CL} track",50,0,100,20,MuonCut,0);
     }
     else {
+      hMVA_MuonVsProtonDiscriminant_TrueMuon = new TH2D("hMVA_MuonVsProtonDiscriminant_TrueMuon","Muon vs Proton discriminant for the sand muons",100,-.5,.5,100,-.5,.5);//ML tmp 500bins->100bins
+      hMVA_MuonVsProtonDiscriminant_TruePion = new TH2D("hMVA_MuonVsProtonDiscriminant_TruePion","Muon vs Proton discriminant for the sand muons",100,-.5,.5,100,-.5,.5);//ML tmp 500bins->100bins
+      hMVA_MuonVsProtonDiscriminant_TrueProton = new TH2D("hMVA_MuonVsProtonDiscriminant_TrueProton","Muon vs Proton discriminant for the sand muons",100,-.5,.5,100,-.5,.5);//ML tmp 500bins->100bins
+
       hMuCL_TrueMuon = new TH1D("hMuCL_TrueMuon","Muon confidence level for the sand muons",50,0,1);
       hMuCL_TruePion = new TH1D("hMuCL_TruePion","Muon confidence level for the true muons",50,0,1);
       hMuCL_TrueProton = new TH1D("hMuCL_TrueProton","Muon confidence level for the true protons",50,0,1);
@@ -1054,10 +1128,38 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
 
     }
     
-    MCEfficiency = new TH2D("MCEfficiency","",NBinsTrueMom,0,NBinsTrueMom,NBinsTrueAngle,0,NBinsTrueAngle);
+    MCEfficiency_PTheta_ThinBinning = new TH2D("MCEfficiency_PTheta_ThinBinning","",200,0,10,60,0,180);
+    MCEfficiency_PTheta_ThinBinning->GetXaxis()->SetTitle("p_{#mu} (GeV/c)");
+    MCEfficiency_PTheta_ThinBinning->GetYaxis()->SetTitle("#theta_{#mu} (#circ)");
+    TotalCC0piEvent_PTheta_ThinBinning = new TH2D("TotalCC0piEvent_PTheta_ThinBinning","",200,0,10,60,0,180);
+    TotalCC0piEvent_PTheta_ThinBinning->GetXaxis()->SetTitle("p_{#mu} (GeV/c)");
+    TotalCC0piEvent_PTheta_ThinBinning->GetYaxis()->SetTitle("#theta_{#mu} (#circ)");
+    TotalCC1piEvent_PTheta_ThinBinning = new TH2D("TotalCC1piEvent_PTheta_ThinBinning","",200,0,10,60,0,180);
+    TotalCC1piEvent_PTheta_ThinBinning->GetXaxis()->SetTitle("p_{#mu} (GeV/c)");
+    TotalCC1piEvent_PTheta_ThinBinning->GetYaxis()->SetTitle("#theta_{#mu} (#circ)");
+    MCEfficiency_PTheta_ThinBinning->Sumw2();TotalCC0piEvent_PTheta_ThinBinning->Sumw2();TotalCC1piEvent_PTheta_ThinBinning->Sumw2();
+    
+    MCReconstructionEfficiency_PTheta_ThinBinning = new TH2D("MCReconstructionEfficiency_PTheta_ThinBinning","",200,0,10,60,0,180);
+    MCReconstructionEfficiency_PTheta_ThinBinning->GetXaxis()->SetTitle("p_{#mu} (GeV/c)");
+    MCReconstructionEfficiency_PTheta_ThinBinning->GetYaxis()->SetTitle("#theta_{#mu} (#circ)");
+    MCReconstructionEfficiency_PTheta_ThinBinning->Sumw2();TotalCC0piEvent_PTheta_ThinBinning->Sumw2();TotalCC1piEvent_PTheta_ThinBinning->Sumw2();
+    
+    MCReconstructionAndTopologyEfficiency_PTheta_ThinBinning = new TH2D("MCReconstructionAndTopologyEfficiency_PTheta_ThinBinning","",200,0,10,60,0,180);
+    MCReconstructionAndTopologyEfficiency_PTheta_ThinBinning->GetXaxis()->SetTitle("p_{#mu} (GeV/c)");
+    MCReconstructionAndTopologyEfficiency_PTheta_ThinBinning->GetYaxis()->SetTitle("#theta_{#mu} (#circ)");
+    MCReconstructionAndTopologyEfficiency_PTheta_ThinBinning->Sumw2();TotalCC0piEvent_PTheta_ThinBinning->Sumw2();TotalCC1piEvent_PTheta_ThinBinning->Sumw2();
+    
+    MCEfficiency = new TH2D("MCEfficiency","",NBinsTrueMomSignal,0,NBinsTrueMomSignal,NBinsTrueAngleSignal,0,NBinsTrueAngleSignal);
+    MCEfficiency_PTheta = new TH2D("MCEfficiency","",NBinsTrueMomSignal,BinningTrueMomSignal,NBinsTrueAngleSignal,BinningTrueAngleSignal);
+    MCEfficiency_PTheta_Momentum = new TH1D("MCEfficiency_PTheta_Momentum","",NBinsTrueMomSignal,BinningTrueMomSignal);
+    MCEfficiency_PTheta_Angle = new TH1D("MCEfficiency_PTheta_Angle","",NBinsTrueAngleSignal,BinningTrueAngleSignal);
+
     MCEfficiency_Energy = new TH1D("MCEfficiency_Energy","",100,0,10);
+    MCEfficiency_Energy->GetXaxis()->SetTitle("E_{#nu} (GeV)");
     TotalCC0piEvent_Energy = new TH1D("TotalCC0piEvent_Energy","",100,0,10);
+    TotalCC0piEvent_Energy->GetXaxis()->SetTitle("E_{#nu} (GeV)");
     TotalCC1piEvent_Energy = new TH1D("TotalCC1piEvent_Energy","",100,0,10);
+    TotalCC1piEvent_Energy->GetXaxis()->SetTitle("E_{#nu} (GeV)");
     MCEfficiency_Energy->Sumw2();TotalCC0piEvent_Energy->Sumw2();TotalCC1piEvent_Energy->Sumw2();
     
     
@@ -1133,7 +1235,7 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
 	
       sprintf(Name,"hRecMom_CC0pi_restr%d",i);
       sprintf(Title,"Distance in iron for the %dth-fsi",i);
-      hRecMom_CC0pi_restr[i] = new TH1D(Name,Title,14,0,100);
+      hRecMom_CC0pi_restr[i] = new TH1D(Name,Title,20,0,100);
       //hRecMom_CC0pi_restr->Sumw2();
       hRecMom_CC0pi_restr[i]->GetXaxis()->SetTitle("Equivalent length in iron (cm)");
       hRecMom_CC0pi_restr[i]->GetYaxis()->SetTitle("Number of events");
@@ -1337,6 +1439,10 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
       
 
     }
+
+    hRecCC0pi_MomentumResolution = new TH2D("hRecCC0pi_MomentumResolution","",50,0,100,150,0,5);
+    hRecCC0pi_AngleResolution = new TH2D("hRecCC0pi_MomentumResolution","",30,0,90,30,0,90);
+
     for(int i=0;i<NSimplifiedPDG;i++){
       sprintf(Name,"hMVAMuondiscriminantVSDistance_TrueParticle%d",i);
       sprintf(Title,"Associated true particle to the 1 track sample for the %dth-particle",i);
@@ -1375,7 +1481,11 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
 
 
 
-
+#ifdef MOMENTUMSHIFT
+  TF1 * Shift = new TF1("Shift","[0]+[1]*x",TotalCC0piEvent_PTheta_ThinBinning->GetXaxis()->GetXmin(),TotalCC0piEvent_PTheta_ThinBinning->GetXaxis()->GetXmax());
+  Shift->SetParameter(0,0.);
+  Shift->SetParameter(1,1./2.);//So it reach a weight y=1 at x=2 GeV
+#endif
   
   //##################################################################
   //##################################################################
@@ -1393,6 +1503,12 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
     //##################################################################
 
     wtree->GetEntry(ievt);
+#ifdef MOMENTUMSHIFT
+    if(TrueMomentumMuon<=2){
+      weight *= Shift->Eval(TrueMomentumMuon);
+      if(ievt%5000==0) cout<<"pmu="<<TrueMomentumMuon<<", weight is scaled by "<<Shift->Eval(TrueMomentumMuon)<<endl;
+    }
+#endif
 
     if(ievt%50000==0){
       cout<<"Event "<<ievt<<"/"<<nevt<<" processed"<<endl;
@@ -1497,10 +1613,10 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
 
 	if(FSIInt<3){
 	  for(int i=0;i<NBinsTrueMomSignal;i++){
-	    if(TrueMomentumMuon<BinningTrueMom[i+1]){BinTrueMom=i;break;}
+	    if(TrueMomentumMuon<BinningTrueMomSignal[i+1]){BinTrueMom=i;break;}
 	  }
 	  for(int i=0;i<NBinsTrueAngleSignal;i++){
-	    if(TrueAngleMuon<BinningTrueAngle[i+1]){BinTrueAngle=i;break;}
+	    if(TrueAngleMuon<BinningTrueAngleSignal[i+1]){BinTrueAngle=i;break;}
 	  }
 	}//
 	else if(FSIInt==3){
@@ -1513,7 +1629,7 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
 	}
 	else{
 	  for(int i=0;i<NBinsTrueMomTrash;i++){
-	    if(TrueMomentumMuon<BinningTrueMomTrash[i+1]){BinTrueMom=i+NBinsTrueAngleSignal+NBinsTrueMomSB;break;}
+	    if(TrueMomentumMuon<BinningTrueMomTrash[i+1]){BinTrueMom=i+NBinsTrueMomSignal+NBinsTrueMomSB;break;}
 	  }
 	  for(int i=0;i<NBinsTrueAngleTrash;i++){
 	    if(TrueAngleMuon<BinningTrueAngleTrash[i+1]){BinTrueAngle=i+NBinsTrueAngleSignal+NBinsTrueAngleSB;break;}
@@ -1533,13 +1649,19 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
 	    nEventsInter[0][FSIInt]+=weight;
 	    if(FSIInt<3 && Selection==1){
 	      TotalCC0piEvent[BinTrueMom][BinTrueAngle]+=weight;
-	      if(Plots) TotalCC0piEvent_Energy->Fill(Enu,weight);
+	      if(Plots){
+		TotalCC0piEvent_Energy->Fill(Enu,weight);
+		TotalCC0piEvent_PTheta_ThinBinning->Fill(TrueMomentumMuon,TrueAngleMuon,weight);
+	      }
 	      MCTrueEvents->Fill(BinTrueMom+1,BinTrueAngle+1,weight);
 	    }
 	    else if(FSIInt==3 && Selection==2){
 	      TotalCC1pi+=weight;
 	      TotalCC1piEvent[BinTrueMom][BinTrueAngle]+=weight;
-	      if(Plots) TotalCC1piEvent_Energy->Fill(Enu,weight);
+	      if(Plots){
+		TotalCC1piEvent_Energy->Fill(Enu,weight);
+		TotalCC1piEvent_PTheta_ThinBinning->Fill(TrueMomentumMuon,TrueAngleMuon,weight);
+	      }
 	      MCTrueEvents->Fill(BinTrueMom+1,BinTrueAngle+1,weight);
 	    }
 	  }
@@ -1639,10 +1761,17 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
 	    if(MVAdiscriminant2[itrk]>LargestMVAdiscriminant2_2tracks) LargestMVAdiscriminant2_2tracks=MVAdiscriminant2[itrk];
 	  }
 
-	  if((Sample[itrk]==MuonSample1) || (Sample[itrk]==MuonSample2)){
+	  double eqdist=IronDistance[itrk]+(PlasticDistance[itrk]/IronCarbonRatio);
+	  if((Sample[itrk]==MuonSample1) || (Sample[itrk]==MuonSample2) ||(Sample[itrk]==MuonSample3)){
 	    int SimplifiedPDG=DetermineSimplifiedPDG(TypeOfTrack[itrk]);
-	    double eqdist=IronDistance[itrk]+(PlasticDistance[itrk]/IronCarbonRatio);
 	    hMVAMuondiscriminantVSDistance_TrueParticle[SimplifiedPDG]->Fill(eqdist,MVAdiscriminant[itrk],weight);
+	  }
+	  if(Sample[itrk] == 2){
+	    if(eqdist >= 10){
+	      if(TMath::Abs(TypeOfTrack[itrk])==13) hMVA_MuonVsProtonDiscriminant_TrueMuon->Fill(MVAdiscriminant[itrk],MVAdiscriminant2[itrk],weight);
+	      else if(TMath::Abs(TypeOfTrack[itrk])==211) hMVA_MuonVsProtonDiscriminant_TruePion->Fill(MVAdiscriminant[itrk],MVAdiscriminant2[itrk],weight);
+	      else if(TMath::Abs(TypeOfTrack[itrk])==2212) hMVA_MuonVsProtonDiscriminant_TrueProton->Fill(MVAdiscriminant[itrk],MVAdiscriminant2[itrk],weight);
+	    }
 	  }
 #else
 	  
@@ -1660,7 +1789,7 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
 	      else if(TMath::Abs(TypeOfTrack[itrk])==211) hMuCL_TruePion->Fill(ChosenCL[itrk],weight);
 	      else if(TMath::Abs(TypeOfTrack[itrk])==2212) hMuCL_TrueProton->Fill(ChosenCL[itrk],weight);
 	      else hMuCL_TrueOthers->Fill(ChosenCL[itrk],weight);
-	      //cout<<"hello, particle is="<<TMath::Abs(TypeOfTrack[irec][itrk])<<endl;
+		//cout<<"hello, particle is="<<TMath::Abs(TypeOfTrack[irec][itrk])<<endl;
 	    }
 	  }
 
@@ -1763,12 +1892,19 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
 #ifdef MVA2DCut
 	if(eqdist<Limit2DCut) CutValue=MuonMVACut_slope*eqdist+MuonMVACut_origin;
 #endif
+	//TEMP//
+	if(Sample[itrk]==2) CutValue=-0.05;
 	
 	//if(MVAdiscriminant[itrk]>MuonMVACut) MuonLike++;
-	if(MVAdiscriminant[itrk]>CutValue) MuonLike++;
-	else if(MVAdiscriminant2[itrk]>ProtonMVACut) ProtonLike++;
+	if(MVAdiscriminant[itrk]>CutValue){
+	  if(MVAdiscriminant2[itrk]<=ProtonMVACut) MuonLike++;
+	  else Undetermined++;
+	}
+	else{
+	  if(MVAdiscriminant2[itrk]>ProtonMVACut) ProtonLike++;
+	  else Undetermined++;
+	}
 	// for WM, mucl=-1 corresponds to undetremined tracks (to few isohits)
-	else Undetermined++;
 	//cout<<"This track has mumva="<<MVAdiscriminant[itrk]<<", pmva="<<MVAdiscriminant2[itrk]<<", number of mu-like="<<MuonLike<<", "<<ProtonLike<<", "<<Undetermined<<endl;
 
 #else	    
@@ -1790,27 +1926,35 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
       int BinRecMom=0;
       int BinRecAngle=0;
       bool old=true;
+      double MuonSample=Sample[MuonRec];//Used only in the line just below to separate through-going vs stopping Reconstructed Bin
       double EquivalentIronDistance=IronDistance[MuonRec]+(PlasticDistance[MuonRec]/IronCarbonRatio);
-      
-      for(int i=0;i<=NBinsRecMom;i++){
+      if(MuonSample>=4) EquivalentIronDistance = BinningRecMom[NBinsRecMom-1] + (BinningRecMom[NBinsRecMom] - BinningRecMom[NBinsRecMom-1])/2.;
+      else if (EquivalentIronDistance>=BinningRecMom[NBinsRecMom-1]){
+	EquivalentIronDistance = BinningRecMom[NBinsRecMom-2];//To create a trash bins for stopped sampl;e
+      cout<<"A trash bin for the stopped sample has been created at "<<BinningRecMom[NBinsRecMom-2]<<" cm"<<endl;
+      } 
+      for(int i=0;i<NBinsRecMom;i++){
 	if((EquivalentIronDistance)<BinningRecMom[i+1]){BinRecMom=i;break;}
       }
-      for(int i=0;i<=NBinsRecAngle;i++){
+      for(int i=0;i<NBinsRecAngle;i++){
 	if(TrackAngle[MuonRec]<BinningRecAngle[i+1]){BinRecAngle=i;break;}
       }
       
+      if(EquivalentIronDistance >= BinningRecMom[NBinsRecMom]) cout<<"You are loosing some events due to limits in your reconstruction binning. Please check. value = "<<EquivalentIronDistance<<" vs "<<BinningRecMom[NBinsRecMom]<<endl;
       
       
       ///////////////////THE ACTUAL SELECTION///////////////////////////////////////
       if(MuonTrue==MuonRec) MuonID->Fill(TrueMomentumMuon,TrueAngleMuon,weight);
       if(MuonTrueMVA==MuonRec) MuonIDMVA->Fill(TrueMomentumMuon,TrueAngleMuon,weight);
       MuonIDTotal->Fill(TrueMomentumMuon,TrueAngleMuon,weight);
-      
+      //if(Sample[MuonTrueMVA] == 2){
+      //if(MuonTrueMVA==MuonRec) pMisID->Fill(0,,weight);
+      //}
       
       int nRecTracks=nTracks-nBadRecTracks;
 
     
-      if((Sample[MuonRec]==MuonSample1) || (Sample[MuonRec]==MuonSample2)){
+      if((Sample[MuonRec]==MuonSample1) || (Sample[MuonRec]==MuonSample2) || (Sample[MuonRec]==MuonSample3)){
 	if(Plots){
 	  // for CC1pi MuonSample2 is set to 5
 	  if(nRecTracks==1){
@@ -1863,8 +2007,26 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
 	hRecMom[FSIInt]->Fill(EquivalentIronDistance,weight);
 	hRecAngle[FSIInt]->Fill(TrackAngle[MuonRec],weight);
       }
+      if(Selection == 1 && FSIInt<3 && IsNuMu){
+	MCReconstructionEfficiency_PTheta_ThinBinning->Fill(TrueMomentumMuon,TrueAngleMuon,weight);
+	//if((Sample[MuonTrueMVA]==MuonSample1)||(Sample[MuonTrueMVA]==MuonSample2)) MCReconstructionAndTopologyEfficiency_PTheta_ThinBinning->Fill(TrueMomentumMuon,TrueAngleMuon,weight);
+	if(Sample[MuonTrueMVA]>=2 && Sample[MuonTrueMVA]!=4) MCReconstructionAndTopologyEfficiency_PTheta_ThinBinning->Fill(TrueMomentumMuon,TrueAngleMuon,weight);
+      }
+      if(Selection == 2 && FSIInt==3 && IsNuMu){
+	MCReconstructionEfficiency_PTheta_ThinBinning->Fill(TrueMomentumMuon,TrueAngleMuon,weight);
+	//if((Sample[MuonTrueMVA]==MuonSample1)||(Sample[MuonTrueMVA]==MuonSample2)) MCReconstructionAndTopologyEfficiency_PTheta_ThinBinning->Fill(TrueMomentumMuon,TrueAngleMuon,weight);
+	if(Sample[MuonTrueMVA]>=2 && Sample[MuonTrueMVA]!=4) MCReconstructionAndTopologyEfficiency_PTheta_ThinBinning->Fill(TrueMomentumMuon,TrueAngleMuon,weight);
+	
+      }
+
+
+
+
+
+
       
-      if(MuonLike==1 && Undetermined==0/*&& nRecTracks<=2*/){//CC0pi
+      ///////////////////////////////////////////
+      if(MuonLike==1 && Undetermined==0 /*&& nRecTracks<=2*/){//CC0pi
 	//cout<<"Interaction value="<<FSIInt<<", Ion distance="<<IronDistance[MuonRec]+(PlasticDistance[MuonRec]/IronCarbonRatio)<<endl;
 	//cout<<"passed the cut"<<endl;
 	//TEMPORARY
@@ -1917,14 +2079,13 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
 	    else if(FSIInt<3 && IsNuMu) MCSelected_full[BinTrueMom][BinTrueAngle][BinRecMom][BinRecAngle]+=weight;
 	    
 	    if(FSIInt<3 && IsNuMu){
-	      if(Plots) MCEfficiency_Energy->Fill(Enu,weight);
 	      Efficiency_full[BinTrueMom][BinTrueAngle]+=weight;
 	    }
 	    else{
 	      BkgSelected_full[BinRecMom][BinRecAngle]+=weight;
 	    }
 	  }
-	  if((Sample[MuonRec]!=MuonSample1)&&(Sample[MuonRec]!=MuonSample2)) continue;
+	  if((Sample[MuonRec]!=MuonSample1)&&(Sample[MuonRec]!=MuonSample2)&&(Sample[MuonRec]!=MuonSample3)) continue;
 	  nEvents[5]+=weight;
 	  nEventsInter[5][FSIInt]+=weight;
 	  hRecMom_CC0pi[FSIInt]->Fill(EquivalentIronDistance,weight);
@@ -1932,20 +2093,27 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
 				
 	  DataSelected[BinRecMom][BinRecAngle]+=weight;
 	  hNTracks_CC0pi[FSIInt]->Fill(nRecTracks,weight);
-	  
+
 	  if(!IsData){
 	    //cout<<FSIInt<<", "<<Num_Int<<", bin true mom="<<BinTrueMom<<", bin true angle="<<BinTrueAngle<<endl;
 	    if(!BkgSub){MCSelected[BinTrueMom][BinTrueAngle][BinRecMom][BinRecAngle]+=weight;/*cout<<"filled"<<endl;*/}//New: likelihood without background substraction case.
 	    else if(FSIInt<3 && IsNuMu) MCSelected[BinTrueMom][BinTrueAngle][BinRecMom][BinRecAngle]+=weight;
 	    if(FSIInt<3 && IsNuMu){
-	      if(Plots) MCEfficiency_Energy->Fill(Enu,weight);
+	      if(Plots){
+		MCEfficiency_Energy->Fill(Enu,weight);
+		MCEfficiency_PTheta_ThinBinning->Fill(TrueMomentumMuon,TrueAngleMuon,weight);
+	      }
 	      Efficiency[BinTrueMom][BinTrueAngle]+=weight;
 	    }
 	    else{
 	      BkgSelected[BinRecMom][BinRecAngle]+=weight;
 	    }
+
+	    hRecCC0pi_MomentumResolution->Fill(EquivalentIronDistance,TrueMomentumMuon,weight);
+	    hRecCC0pi_AngleResolution->Fill(TrackAngle[MuonRec],TrueAngleMuon,weight);
+
 	  }
-	  if(Sample[MuonRec]==MuonSample1){
+	  if(Sample[MuonRec]==MuonSample1 || Sample[MuonRec]==MuonSample2){
 	    nEvents[6]+=weight;
 	    nEventsInter[6][FSIInt]+=weight;
 	    double leq=EquivalentIronDistance;
@@ -1977,7 +2145,7 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
 	    if(!BkgSub) MCSelected_full[BinTrueMom][BinTrueAngle][BinRecMom][BinRecAngle]+=weight;//New: likelihood without background substraction case.
 	    else if(FSIInt==3 && IsNuMu) MCSelected_full[BinTrueMom][BinTrueAngle][BinRecMom][BinRecAngle]+=weight;
 	    if(FSIInt==3 && IsNuMu){
-	      if(Plots) MCEfficiency_Energy->Fill(Enu,weight);
+	      //if(Plots) MCEfficiency_Energy->Fill(Enu,weight);
 	      //MCSelected_full[BinTrueMom][BinTrueAngle][BinRecMom][BinRecAngle]+=weight;
 	      Efficiency_full[BinTrueMom][BinTrueAngle]+=weight;
 	    }
@@ -1987,7 +2155,7 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
 	  }
 		
 
-	  if((Sample[MuonRec]!=MuonSample1)&&(Sample[MuonRec]!=MuonSample2)) continue;
+	  if((Sample[MuonRec]!=MuonSample1)&&(Sample[MuonRec]!=MuonSample2)&&(Sample[MuonRec]!=MuonSample3)) continue;
 	  nEvents[5]+=weight;
 	  nEventsInter[5][FSIInt]+=weight;
 	  hRecMom_CC1pi[FSIInt]->Fill(EquivalentIronDistance,weight);
@@ -1998,7 +2166,10 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
 	    if(!BkgSub) MCSelected[BinTrueMom][BinTrueAngle][BinRecMom][BinRecAngle]+=weight;//New: likelihood without background substraction case.
 	    else if(FSIInt==3 && IsNuMu) MCSelected[BinTrueMom][BinTrueAngle][BinRecMom][BinRecAngle]+=weight;
 	    if(FSIInt==3 && IsNuMu){
-	      if(Plots) MCEfficiency_Energy->Fill(Enu,weight);
+	      if(Plots){
+		MCEfficiency_Energy->Fill(Enu,weight);
+		MCEfficiency_PTheta_ThinBinning->Fill(TrueMomentumMuon,TrueAngleMuon,weight);
+	      }
 	      //MCSelected[BinTrueMom][BinTrueAngle][BinRecMom][BinRecAngle]+=weight;
 	      Efficiency[BinTrueMom][BinTrueAngle]+=weight;
 	    }
@@ -2006,7 +2177,7 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
 	      BkgSelected[BinRecMom][BinRecAngle]+=weight;
 	    }
 	  }
-	  if(Sample[MuonRec]==MuonSample1){
+	  if(Sample[MuonRec]==MuonSample1 || Sample[MuonRec]==MuonSample2){
 	    nEvents[6]+=weight;
 	    nEventsInter[6][FSIInt]+=weight;
 	    double leq=EquivalentIronDistance;
@@ -2032,7 +2203,7 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
 	  }
 	  */	
 
-	  if((Sample[MuonRec]!=MuonSample1)&&(Sample[MuonRec]!=MuonSample2)) continue;
+	  if((Sample[MuonRec]!=MuonSample1)&&(Sample[MuonRec]!=MuonSample2)&&(Sample[MuonRec]!=MuonSample3)) continue;
 	  //nEvents[5]+=weight;
 	  //nEventsInter[5][FSIInt]+=weight;
 	  hRecMom_CC1pi[FSIInt]->Fill(EquivalentIronDistance,weight);
@@ -2070,7 +2241,35 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
   cout<<"End of event loop"<<endl;
 #endif
 
+  if(Plots){//Should be done before Efficiency[c0][c1] becomes the real efficiency. Should be done when it is still the number of selected events.
+    if(!IsData ){
+      for(int c0=0;c0<NBinsTrueMom;c0++){//loop over cause 0
+	double TotalSelectedMomentum=0,TotalTrue0Momentum=0;
+	for(int c1=0;c1<NBinsTrueAngle;c1++){//loop over cause 1
+	  if(Selection==1) TotalTrue0Momentum += TotalCC0piEvent[c0][c1];
+	  else if(Selection==2) TotalTrue0Momentum += TotalCC1piEvent[c0][c1];
+	  TotalSelectedMomentum += Efficiency[c0][c1];
+	}
+	double EfficiencyMomentum = TotalSelectedMomentum;
+	if(TotalTrue0Momentum!=0) EfficiencyMomentum /= TotalTrue0Momentum;
+	if(Plots) MCEfficiency_PTheta_Momentum->SetBinContent(c0+1,EfficiencyMomentum);
+      }
 
+      for(int c1=0;c1<NBinsTrueAngle;c1++){//loop over cause 1
+	double TotalSelectedAngle=0,TotalTrue0Angle=0;
+	for(int c0=0;c0<NBinsTrueMom;c0++){//loop over cause 0
+	  if(Selection==1) TotalTrue0Angle += TotalCC0piEvent[c0][c1];
+	  else if(Selection==2) TotalTrue0Angle += TotalCC1piEvent[c0][c1];
+	  TotalSelectedAngle += Efficiency[c0][c1];
+	}
+	double EfficiencyAngle = TotalSelectedAngle;
+	if(TotalTrue0Angle!=0) EfficiencyAngle /= TotalTrue0Angle;
+	if(Plots) MCEfficiency_PTheta_Angle->SetBinContent(c1+1,EfficiencyAngle);
+      }
+    }
+  }
+
+  
   double TotalSelected=0,TotalTrue0=0,TotalTrueSelected=0;
   for(int c0=0;c0<NBinsTrueMom;c0++){//loop over cause 0
     for(int c1=0;c1<NBinsTrueAngle;c1++){//loop over cause 1
@@ -2087,10 +2286,14 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
 	}
 
 	//	cout<<"Efficiency in true pmu bin "<<c0<<" and true thetamu bin "<<c1<<" is: "<<Efficiency[c0][c1]<<endl;
-	if(Plots) MCEfficiency->SetBinContent(c0+1,c1+1,Efficiency[c0][c1]);
+	if(Plots){
+	  MCEfficiency->SetBinContent(c0+1,c1+1,Efficiency[c0][c1]);
+	  MCEfficiency_PTheta->SetBinContent(c0+1,c1+1,Efficiency[c0][c1]);
+	}
       }
     }
   }
+
 
   cout<<"OVERALL EFFICIENCY="<<TotalTrueSelected/TotalTrue0*100.<<"%"<<endl;
   for(int e0=0;e0<NBinsRecMom;e0++){//loop over effect 0
@@ -2167,8 +2370,73 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
   }
   
   if(Plots){
-    if(Selection==1) MCEfficiency_Energy->Divide(TotalCC0piEvent_Energy);
-    else if(Selection==2) MCEfficiency_Energy->Divide(TotalCC1piEvent_Energy);
+    
+    //Efficiency
+    MCEfficiency_Momentum_ThinBinning = (TH1D*) MCEfficiency_PTheta_ThinBinning->ProjectionX("MCEfficiency_Momentum_ThinBinning",0,MCEfficiency_PTheta_ThinBinning->GetNbinsX());
+    MCEfficiency_Angle_ThinBinning = (TH1D*) MCEfficiency_PTheta_ThinBinning->ProjectionY("MCEfficiency_Angle_ThinBinning",0,MCEfficiency_PTheta_ThinBinning->GetNbinsY());
+
+    MCReconstructionEfficiency_Momentum_ThinBinning = (TH1D*) MCReconstructionEfficiency_PTheta_ThinBinning->ProjectionX("MCReconstructionEfficiency_Momentum_ThinBinning",0,MCReconstructionEfficiency_PTheta_ThinBinning->GetNbinsX());
+    MCReconstructionEfficiency_Angle_ThinBinning = (TH1D*) MCReconstructionEfficiency_PTheta_ThinBinning->ProjectionY("MCReconstructionEfficiency_Angle_ThinBinning",0,MCReconstructionEfficiency_PTheta_ThinBinning->GetNbinsY());
+
+    MCReconstructionAndTopologyEfficiency_Momentum_ThinBinning = (TH1D*) MCReconstructionAndTopologyEfficiency_PTheta_ThinBinning->ProjectionX("MCReconstructionAndTopologyEfficiency_Momentum_ThinBinning",0,MCReconstructionAndTopologyEfficiency_PTheta_ThinBinning->GetNbinsX());
+    MCReconstructionAndTopologyEfficiency_Angle_ThinBinning = (TH1D*) MCReconstructionAndTopologyEfficiency_PTheta_ThinBinning->ProjectionY("MCReconstructionAndTopologyEfficiency_Angle_ThinBinning",0,MCReconstructionAndTopologyEfficiency_PTheta_ThinBinning->GetNbinsY());
+
+    
+    if(Selection==1){
+      MCEfficiency_Energy->Divide(TotalCC0piEvent_Energy);
+
+      TotalEvent_Momentum_ThinBinning = (TH1D*) TotalCC0piEvent_PTheta_ThinBinning->ProjectionX("TotalEvent_Momentum_ThinBinning",0,TotalCC0piEvent_PTheta_ThinBinning->GetNbinsX());
+      TotalEvent_Angle_ThinBinning = (TH1D*) TotalCC0piEvent_PTheta_ThinBinning->ProjectionY("TotalEvent_Angle_ThinBinning",0,TotalCC0piEvent_PTheta_ThinBinning->GetNbinsY());
+
+      MCEfficiency_PTheta_ThinBinning->Divide(TotalCC0piEvent_PTheta_ThinBinning);
+
+      MCReconstructionEfficiency_PTheta_ThinBinning->Divide(TotalCC0piEvent_PTheta_ThinBinning);
+
+      MCReconstructionAndTopologyEfficiency_PTheta_ThinBinning->Divide(TotalCC0piEvent_PTheta_ThinBinning);
+    }
+    else if(Selection==2){
+      MCEfficiency_Energy->Divide(TotalCC1piEvent_Energy);
+
+      TotalEvent_Momentum_ThinBinning = (TH1D*) TotalCC1piEvent_PTheta_ThinBinning->ProjectionX("TotalEvent_Momentum_ThinBinning",0,TotalCC1piEvent_PTheta_ThinBinning->GetNbinsX());
+      TotalEvent_Angle_ThinBinning = (TH1D*) TotalCC1piEvent_PTheta_ThinBinning->ProjectionY("TotalEvent_Angle_ThinBinning",0,TotalCC1piEvent_PTheta_ThinBinning->GetNbinsY());
+
+      MCEfficiency_PTheta_ThinBinning->Divide(TotalCC1piEvent_PTheta_ThinBinning);
+
+      MCReconstructionEfficiency_PTheta_ThinBinning->Divide(TotalCC1piEvent_PTheta_ThinBinning);
+
+      MCReconstructionAndTopologyEfficiency_PTheta_ThinBinning->Divide(TotalCC1piEvent_PTheta_ThinBinning);
+    }
+    MCEfficiency_Momentum_ThinBinning->Divide(TotalEvent_Momentum_ThinBinning);
+    MCEfficiency_Angle_ThinBinning->Divide(TotalEvent_Angle_ThinBinning);
+
+    MCReconstructionEfficiency_Momentum_ThinBinning->Divide(TotalEvent_Momentum_ThinBinning);
+    MCReconstructionEfficiency_Angle_ThinBinning->Divide(TotalEvent_Angle_ThinBinning);
+
+    MCReconstructionAndTopologyEfficiency_Momentum_ThinBinning->Divide(TotalEvent_Momentum_ThinBinning);
+    MCReconstructionAndTopologyEfficiency_Angle_ThinBinning->Divide(TotalEvent_Angle_ThinBinning);
+
+    /*
+    //This is to calculate the relative variation of the efficiency
+    MCEfficiency_Momentum_ThinBinning_Relative = (TH1D*) MCEfficiency_Momentum_ThinBinning->Clone("MCEfficiency_Momentum_ThinBinning");
+    MCEfficiency_Angle_ThinBinning_Relative = (TH1D*) MCEfficiency_Angle_ThinBinning->Clone("MCEfficiency_Angle_ThinBinning");
+    for(int ibinx=1;ibinx<=MCEfficiency_Momentum_ThinBinning->GetNbinsX();ibinx++){
+      double previousBin=MCEfficiency_Momentum_ThinBinning->GetBinContent(ibinx-1);
+      double currentBin=MCEfficiency_Momentum_ThinBinning->GetBinContent(ibinx);
+      double relative=currentBin-previousBin;
+      if((currentBin+previousBin) !=0) relative /= (currentBin+previousBin);
+      else relative = 0;
+      MCEfficiency_Momentum_ThinBinning_Relative->SetBinContent(ibinx,relative);
+    }
+    for(int ibinx=1;ibinx<=MCEfficiency_Angle_ThinBinning->GetNbinsX();ibinx++){
+      double previousBin=MCEfficiency_Angle_ThinBinning->GetBinContent(ibinx-1);
+      double currentBin=MCEfficiency_Angle_ThinBinning->GetBinContent(ibinx);
+      double relative=currentBin-previousBin;
+      if((currentBin+previousBin) !=0) relative /= (currentBin+previousBin);
+      else relative = 0;
+      MCEfficiency_Angle_ThinBinning_Relative->SetBinContent(ibinx,relative);
+    }*/
+    //End efficiency
+
     int colors[4]={kBlue,kGreen+3,kRed,kGray};
     MuonRec_TruePDG=new TPie("MuonRecTruePDG","MuonRec true PDG",4,MuonRec_TruePDG_val,colors);
     MuonRec_TruePDG_switch=new TPie("MuonRecTruePDGswitch","MuonRec true PDG",4,MuonRec_TruePDG_switch_val,colors);
@@ -2380,7 +2648,9 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
       Stack_RecMom_CC0pi_full->Write();
       Stack_RecAngle_CC0pi_full->Write();
       Stack_NTracks_CC0pi->Write();
-
+      hRecCC0pi_MomentumResolution->Write();
+      hRecCC0pi_AngleResolution->Write();
+      
       Stack_RecMom_CC1pi_restr->Write();
       Stack_RecAngle_CC1pi_restr->Write();
       Stack_RecMom_CC1pi->Write();
@@ -2403,9 +2673,30 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
       Stack_MVAMuondiscriminant_1track->Write();
       Stack_MVAProtondiscriminant_2tracks->Write();
       MCEfficiency->Write();
+      MCEfficiency_PTheta->Write();
+      MCEfficiency_PTheta_Momentum->Write();
+      MCEfficiency_PTheta_Angle->Write();
       MCEfficiency_Energy->Write();
+
+      MCEfficiency_PTheta_ThinBinning->Write();
+      MCEfficiency_Momentum_ThinBinning->Write(); 
+      MCEfficiency_Angle_ThinBinning->Write();
+
+      MCReconstructionEfficiency_PTheta_ThinBinning->Write();
+      MCReconstructionEfficiency_Momentum_ThinBinning->Write(); 
+      MCReconstructionEfficiency_Angle_ThinBinning->Write();
+
+      MCReconstructionAndTopologyEfficiency_PTheta_ThinBinning->Write();
+      MCReconstructionAndTopologyEfficiency_Momentum_ThinBinning->Write(); 
+      MCReconstructionAndTopologyEfficiency_Angle_ThinBinning->Write();
+
+      //MCEfficiency_Momentum_ThinBinning_Relative->Write();
+      //MCEfficiency_Angle_ThinBinning_Relative->Write();
+    
       TotalCC0piEvent_Energy->Write();
       TotalCC1piEvent_Energy->Write();
+      TotalCC0piEvent_PTheta_ThinBinning->Write();
+      TotalCC1piEvent_PTheta_ThinBinning->Write();
       leg->Write();
       MuonID->Divide(MuonIDTotal);
       MuonID->Write();
@@ -2434,6 +2725,10 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
  	//hSampleSecondTrack[fsi]->Write();
       }
       for(int i=0;i<NSimplifiedPDG;i++) hMVAMuondiscriminantVSDistance_TrueParticle[i]->Write();
+      hMVA_MuonVsProtonDiscriminant_TrueMuon->Write();
+      hMVA_MuonVsProtonDiscriminant_TruePion->Write();
+      hMVA_MuonVsProtonDiscriminant_TrueProton->Write();
+      
       hMuCL_TrueMuon->Write();
       hMuCL_TruePion->Write();
       hMuCL_TrueProton->Write();
@@ -2742,14 +3037,29 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
   cout<<"End of deleting table of pointers."<<endl;
 #endif
 
-    delete hMuCL_TrueMuon;
-    delete hMuCL_TruePion;
-    delete hMuCL_TrueProton;
-    delete PE_Lowest_CC0pi;
-    delete PE_Lowest_Other;
-    delete MCEfficiency;
-    delete MCEfficiency_Energy;
-    delete TotalCC0piEvent_Energy;
+  delete hMVA_MuonVsProtonDiscriminant_TrueMuon;
+  delete hMVA_MuonVsProtonDiscriminant_TruePion;
+  delete hMVA_MuonVsProtonDiscriminant_TrueProton;
+  
+  delete hMuCL_TrueMuon;
+  delete hMuCL_TruePion;
+  delete hMuCL_TrueProton;
+  
+  delete PE_Lowest_CC0pi;
+  delete PE_Lowest_Other;
+  delete MCEfficiency;
+  delete MCEfficiency_PTheta;
+  delete MCEfficiency_PTheta_Momentum;
+  delete MCEfficiency_PTheta_Angle;
+  delete MCEfficiency_Energy;
+  delete TotalCC0piEvent_Energy;
+  delete TotalCC1piEvent_Energy;
+  delete MCEfficiency_PTheta_ThinBinning;
+  delete TotalCC0piEvent_PTheta_ThinBinning;
+  delete TotalCC1piEvent_PTheta_ThinBinning;
+  delete hRecCC0pi_MomentumResolution;
+  delete hRecCC0pi_AngleResolution;
+
 #ifdef DEBUG2
   cout<<"End of deleting pointers."<<endl;
 #endif
@@ -2795,6 +3105,10 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
   delete MCSelected_full;
 
   delete rand;
+
+#ifdef MOMENTUMSHIFT
+delete Shift;
+#endif
 }
 
 int main(int argc, char ** argv){

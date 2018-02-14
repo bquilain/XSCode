@@ -54,7 +54,7 @@ public:
   G4double dist_first,dist;
 
 
-
+  G4double CBIRKS;
   IngridVetoSD* avetoSD;
   IngridHLayerSD* ahlayerSD;  
   IngridVLayerSD* avlayerSD; 
@@ -62,7 +62,7 @@ public:
   int flag;
   int mode;
 
-  IngridDetectorConstruction(int);
+  IngridDetectorConstruction(int, double=0.0208);
   //IngridDetectorConstruction();
   ~IngridDetectorConstruction();
   

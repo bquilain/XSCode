@@ -76,6 +76,15 @@ bool Reconstruction::GetDetector(){
 }
 
 
+// ML new 2017/08
+double Reconstruction::GetNormalAngleRad(bool grid,double angle3D, double angle2D){
+  // input/output in radians
+  if(grid){
+    return acos(tan(angle2D)*cos(angle3D));
+  }
+  else return angle3D;
+}
+
 vector <Hit3D> Reconstruction::ApplyPEError(vector <Hit3D> Vec, double angle){
   int BinAngle= (int) (angle/3);
   char FileName[32]; char HistName[32];
@@ -341,7 +350,7 @@ vector <HitTemp> Reconstruction::EraseDoubleHitsPM(PMAnaSummary * recon, int itr
       if(HitV[ihit2]==Coord) {
         ndouble++;
         HitV.pop_back();
-	//	cout<<"hit erased"<<endl;
+	//cout<<"hit erased"<<endl;
       }
     }
   }  
@@ -595,7 +604,7 @@ vector <Hit3D> Reconstruction::Hit2DMatchingPM( IngridEventSummary* evt, PMAnaSu
       hit3d.z += 40.95;
     }
     else hit3d.z=zposi(hit->mod,hit->view,hit->pln)/10.; //cm;  defined in Lolirecon
-    // zposi==0 is the upstream surface of PM
+    // zposi==0 is the upstream surface of PM, the upstream surface of the WM is at ~15cm
 
 #ifdef DEBUG2
     cout<<"**************************************************"<<endl;
@@ -603,17 +612,28 @@ vector <Hit3D> Reconstruction::Hit2DMatchingPM( IngridEventSummary* evt, PMAnaSu
     cout<<"Gradient x="<<gradx<<", intcpt="<<intcptx/10.<<", thetax="<<thetax<<endl;
     cout<<"Gradient y="<<grady<<", intcpt="<<intcpty/10.<<", thetay="<<thetay<<endl;
     cout<<"Hit pln="<<hit->pln<<", z position="<<zposi(hit->mod,hit->view,hit->pln)/10.<<", hit view="<<hit->view<<endl;
-  cout<<"**************************************************"<<endl;
+    cout<<"**************************************************"<<endl;
 #endif
 
     
-    if(MC) hit3d.pe=hit->pe;
+    if(MC){
+      if(_isPM) hit3d.pe=hit->pe;
+      else hit3d.pe=hit->pecorr/*+hit->pe_cross*/;
+      // For the WM MC,  pecorr=pe+pe_cross
+    }
     else{
       if(_isPM){
 	if((hit->pe + hit->lope)/2.<39) hit3d.pe=hit->pe;
 	else hit3d.pe=hit->lope;
       }
-      else hit3d.pe=hit->pecorr;
+      else{
+	if(hit->mod==15){// pecorr is done with the old switch (27), now 43.
+	  if((hit->pe + hit->lope)/2.<43) hit3d.pe=hit->pe;
+	  else hit3d.pe=hit->lope;
+	}
+	// *** WARNING *** for the WM data, INGRID hits are not calibrated !!!
+	else hit3d.pe=hit->pe; 
+      }
     }
     hit3d.view=hit->view;
     hit3d.pln=hit->pln;
@@ -724,14 +744,27 @@ vector <Hit3D> Reconstruction::Hit2DMatchingAllTracksPM(PMAnaSummary * recon, bo
     }
     else hit3d.z=zposi(hit->mod,hit->view,hit->pln)/10.; //cm;  defined in Lolirecon
         
-    if(MC) hit3d.pe=hit->pe;
+    if(MC){
+      if(_isPM) hit3d.pe=hit->pe;
+      else hit3d.pe=hit->pecorr/*+hit->pe_cross*/;
+      // For the WM MC,  pecorr=pe+pe_cross
+    }
     else{
       if(_isPM){
 	if((hit->pe + hit->lope)/2.<39) hit3d.pe=hit->pe;
 	else hit3d.pe=hit->lope;
       }
-      else hit3d.pe=hit->pecorr;
+      else{
+	if(hit->mod==15){// pecorr is done with the old switch (27), now 43.
+	  if((hit->pe + hit->lope)/2.<43) hit3d.pe=hit->pe;
+	  else hit3d.pe=hit->lope;
+	}
+	// *** WARNING *** for the WM data, INGRID hits are not calibrated !!!
+	else hit3d.pe=hit->pe; 
+      }
     }
+
+
     hit3d.view=hit->view;
     hit3d.pln=hit->pln;
     hit3d.mod=hit->mod;
@@ -1311,7 +1344,7 @@ vector <Hit3D> Reconstruction::SeveralHitsPlanePM(PMAnaSummary * recon,vector <H
 */
 
 
-vector <Hit3D> Reconstruction::Hit2DMatchingClusterPM(IngridEventSummary* evt, PMAnaSummary * recon){
+vector <Hit3D> Reconstruction::Hit2DMatchingClusterPM(IngridEventSummary* evt, PMAnaSummary * recon, bool MC){
   //cout<<"Change Z and X/Y of hits in Hit2DMatchingClusterPM before to use"<<endl;
   IngridHitSummary * hit =new IngridHitSummary();
   IngridHitSummary * hit2 =new IngridHitSummary();
@@ -1362,11 +1395,26 @@ vector <Hit3D> Reconstruction::Hit2DMatchingClusterPM(IngridEventSummary* evt, P
       else if(!_isPM && hit2->mod==15) hit3d.z=hit->z + 40.95;
       else hit3d.z=hit->z+107.45;
 
-      if(_isPM){
-	if((hit->pe + hit->lope)/2.<39) hit3d.pe=hit->pe;
-	else hit3d.pe=hit->lope;     
+      if(MC){
+	if(_isPM) hit3d.pe=hit->pe;
+	else hit3d.pe=hit->pecorr/*+hit->pe_cross*/;
+	// For the WM MC,  pecorr=pe+pe_cross
       }
-      else hit3d.pe=hit->pecorr;
+      else{
+	if(_isPM){
+	  if((hit->pe + hit->lope)/2.<39) hit3d.pe=hit->pe;
+	  else hit3d.pe=hit->lope;
+	}
+	else{
+	  if(hit->mod==15){// pecorr is done with the old switch (27), now 43.
+	    if((hit->pe + hit->lope)/2.<43) hit3d.pe=hit->pe;
+	    else hit3d.pe=hit->lope;
+	  }
+	  // *** WARNING *** for the WM data, INGRID hits are not calibrated !!!
+	  else hit3d.pe=hit->pe; 
+	}
+      }
+
 
       hit3d.view=hit->view;
       hit3d.pln=hit->pln;
@@ -1378,11 +1426,22 @@ vector <Hit3D> Reconstruction::Hit2DMatchingClusterPM(IngridEventSummary* evt, P
       else if(!_isPM && hit2->mod==15) hit3d2.z=hit2->z + 40.95;
       else hit3d2.z=hit2->z+107.45;
 
-      if(_isPM){
-	if((hit2->pe + hit2->lope)/2.<39) hit3d2.pe=hit2->pe;
-	else hit3d2.pe=hit2->lope;
+      if(MC) hit3d2.pe=hit2->pecorr/*+hit2->pe_cross*/;
+      // For the WM MC,  pecorr=pe+pe_cross
+      else{
+	if(_isPM){
+	  if((hit2->pe + hit2->lope)/2.<39) hit3d2.pe=hit2->pe;
+	  else hit3d2.pe=hit2->lope;
+	}
+	else{
+	  if(hit2->mod==15){// pecorr is done with the old switch (27), now 43.
+	    if((hit2->pe + hit2->lope)/2.<43) hit3d2.pe=hit2->pe;
+	    else hit3d2.pe=hit2->lope;
+	  }
+	  // *** WARNING *** for the WM data, INGRID hits are not calibrated !!!
+	  else hit3d2.pe=hit2->pe; 
+	}
       }
-      else hit3d2.pe=hit2->pecorr;
 
       hit3d2.pln=hit2->pln;
       hit3d2.view=hit2->view;
@@ -2354,7 +2413,8 @@ vector <double> Reconstruction::TrackPenetrationPM(int pln_iniX, double ch_iniX,
   int xch,ych;
   double DistCarbon=0;
   vector <double> Dist;
-  ////cout<<"Pln Ini="<<pln_iniX<<", Pln final="<<pln_finX<<endl;
+  //  cout<<"Pln Ini="<<pln_iniX<<", Pln final="<<pln_finX<<endl;
+
   if(_isPM){
     // ML: when calling the fcn, use ch=0. the transverse coord is given by ch_iniX/Y.
     bool done1=IngDimRec->INGRID_Dimension::get_posXY(16,0,pln_iniX,0,x_ini,z_iniX);
@@ -2411,16 +2471,24 @@ vector <double> Reconstruction::TrackPenetrationPM(int pln_iniX, double ch_iniX,
     // I consider that water and carbon have same density
     // DistCarbon is then only the distance in the detector
     // 40.95 is to have center of WM at same z than center of PM
+
+    //ML tmp - the filling of startpln and endpln is sometimes strange
+    //  --> I will take z_ini and z_fin as the z of the first and last hit in Vec
+
+
     if(dx_Ing<3){ // corresponds to 70°
       IngDimRec->get_posi_lolirecon(15,0,pln_iniX,0,0,x_ini,z_iniX);
       IngDimRec->get_posi_lolirecon(15,1,pln_iniY,0,0,y_ini,z_iniY);
       double z_ini=fmin(*z_iniX,*z_iniY)+40.95;
+      //z_ini=(*Vec.begin()).z;
       
       double z_finX,z_finY,z_fin,xy;
       IngDimRec->get_posi_lolirecon(15,0,pln_finX,0,0,&xy,&z_finX);
       IngDimRec->get_posi_lolirecon(15,1,pln_finY,0,0,&xy,&z_finY);
       z_fin=fmax(z_finX,z_finY)+40.95;
+      //z_fin=(*Vec.end()-1).z;
       
+      //      cout<<z_ini<<" "<<z_fin<<endl;
       if(TrackSample>=3) z_fin=40.95-loli_watersurface_z; // force the track to reach the end of the WM.
       DistCarbon=(z_fin-z_ini)*dx_Ing;
       
@@ -2809,7 +2877,7 @@ int Reconstruction::GetTrackParticle(IngridEventSummary *evt, PMAnaSummary * rec
   for(int is=0;is<evt->NIngridSimParticles();is++){
     SimPart2=(IngridSimParticleSummary*) evt->GetSimParticle(is);
     if(SimPart2->length<8.6) continue;
-    if(SimPart2->pdg==2112) continue;
+    if(SimPart2->pdg==2112 || SimPart2->pdg==22) continue;
     double thetaX=(TMath::ATan((SimPart2->fpos[0]-SimPart2->ipos[0])/(SimPart2->fpos[2]-SimPart2->ipos[2])))*TMath::Pi()/180.;
     double thetaY=(TMath::ATan((SimPart2->fpos[1]-SimPart2->ipos[1])/(SimPart2->fpos[2]-SimPart2->ipos[2])))*TMath::Pi()/180.;
     
@@ -2839,7 +2907,7 @@ int Reconstruction::GetTrackParticle(IngridEventSummary *evt, PMAnaSummary * rec
       for(int itrk2=0;itrk2<recon->Ntrack;itrk2++){
 	if(itrk2==itrk) continue;
 	if(SimPart2->length<8.6) continue;
-	if(SimPart2->pdg==2112) continue;
+	if(SimPart2->pdg==2112 || SimPart2->pdg==22) continue;
 	double Tx2=thetaY-(recon->thetax)[itrk];
 	double Ty2=thetaX-(recon->thetay)[itrk];
 	//double dx_Temp2=1+pow(TMath::Tan(180*(Tx2)/TMath::Pi()),2)+pow(TMath::Tan(180*(Ty2)/TMath::Pi()),2);
@@ -2861,13 +2929,12 @@ int Reconstruction::GetTrackParticle(IngridEventSummary *evt, PMAnaSummary * rec
       
     }
     else if(Min==180 && TMath::Abs(Ang3D)<Min && SimPart2->length>8.6){
-
       
       bool Change=false;
       for(int itrk2=0;itrk2<recon->Ntrack;itrk2++){
 	if(itrk2==itrk) continue;
 	if(SimPart2->length<8.6) continue;
-	if(SimPart2->pdg==2112) continue;
+	if(SimPart2->pdg==2112 || SimPart2->pdg==22) continue;
 	double Tx2=thetaY-(recon->thetax)[itrk];
 	double Ty2=thetaX-(recon->thetay)[itrk];
 	Scalar=(SimPart2->fpos[2]-SimPart2->ipos[2])*1;
@@ -2904,6 +2971,7 @@ int Reconstruction::GetTrackParticle(IngridEventSummary *evt, PMAnaSummary * rec
     for(int is=0;is<NSimPart;is++){
       SimPart2=(IngridSimParticleSummary*) evt->GetSimParticle(is);
       if(SimPart2->length<8.6) continue;
+      if(SimPart2->pdg==22) continue;
       double thetaX=(TMath::ATan((SimPart2->fpos[0]-SimPart2->ipos[0])/(SimPart2->fpos[2]-SimPart2->ipos[2])))*TMath::Pi()/180;
       double thetaY=(TMath::ATan((SimPart2->fpos[1]-SimPart2->ipos[1])/(SimPart2->fpos[2]-SimPart2->ipos[2])))*TMath::Pi()/180;
       
@@ -2951,6 +3019,15 @@ bool Reconstruction::IsINGRID(int mod,int pln,int ch){
   }
   else Ing=true;
   return Ing;
+}
+
+double Reconstruction::NormalAngle(double angle3D, double thetax,double thetay,int view, bool grid){
+  //input: degrees   output: degrees
+  if(!grid) return angle3D;
+  else{
+    double theta2D=(view==0? thetax:thetay);
+    return RadDeg(acos( tan(fabs(DegRad(theta2D))) * cos(DegRad(angle3D)) ));
+  }
 }
 
 vector <double> Reconstruction::GetMatchingPMINGRID(vector <Hit3D> Vec){

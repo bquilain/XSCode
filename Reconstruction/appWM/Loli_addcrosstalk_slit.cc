@@ -268,8 +268,11 @@ int main(int argc,char *argv[]){
             double posxy[3];
             fdim_temp->get_pos_loli(mod,view,pln_s,ch,&posxy[0],&posxy[1],&posxy[2]);//cm
 	    //	    cout<<ch<<" view_s="<<view_s<<" posxy_s="<<posxy_s[view_s]<<" posxy="<<posxy[view_s]<<endl;
-	    cout<<posxy_s[view_s]<<" "<<posxy[view_s]<<" "<<fabs(posxy_s[view_s]-posxy[view_s])<<endl;
-            if( fabs(posxy_s[view_s]-posxy[view_s]) <5. && pln_s<2){ pe_cross[view][pln_s][ch]+= r.Poisson(pe_s * crossrate_submod0);cout<<pe_cross[view][pln_s][ch]<<endl;}//poisson
+	    //cout<<posxy_s[view_s]<<" "<<posxy[view_s]<<" "<<fabs(posxy_s[view_s]-posxy[view_s])<<endl;
+            if( fabs(posxy_s[view_s]-posxy[view_s]) <5. && pln_s<2){ 
+	      pe_cross[view][pln_s][ch]+= r.Poisson(pe_s * crossrate_submod0);//poisson
+	      //cout<<pe_cross[view][pln_s][ch]<<endl;
+	    }
             if( fabs(posxy_s[view_s]-posxy[view_s]) <5. && pln_s>=2)pe_cross[view][pln_s][ch]+= r.Poisson(pe_s * crossrate_submod123);//poisson
           }
         }
@@ -282,6 +285,7 @@ int main(int argc,char *argv[]){
 	      for(int ch  =0;ch<CH    ;ch++){
 		if( inghitsum->mod == mod && inghitsum->view == view && inghitsum->pln == pln && inghitsum->ch == ch && pe_cross[view][pln][ch]>0){
 		  inghitsum->pe_cross += pe_cross[view][pln][ch];
+		  inghitsum->pecorr += pe_cross[view][pln][ch]; // ML 2017/07/06
 		  //cout<<"\ncross-talk added to hit (view,pln,ch)="<<view<<" "<<pln<<" "<<ch<<", pe_cross="<<pe_cross[view][pln][ch]<<endl;
 		  pe_cross[view][pln][ch]=0;
 		}
@@ -302,12 +306,12 @@ int main(int argc,char *argv[]){
 		hit->time = inghitsum->time;	
 		hit->timecorr=inghitsum->timecorr;
 		hit->pe = 0;
-		hit->pecorr=0;
+		hit->pecorr= pe_cross[view][pln][ch];// ML 2017/07/06
 		hit->pe_cross = pe_cross[view][pln][ch];
 		double xy, z;
 		fdim_temp-> get_pos_loli_xy( mod, view, pln, ch, &xy, &z);
-		inghitsum -> xy    = xy;
-		inghitsum ->  z    =  z;
+		hit -> xy    = xy; // ML corrected 2017/06/26
+		hit ->  z    =  z; // ML corrected 2017/06/26
 
 		if(Is_Bad_Channel( hit ))continue;
 		evt->AddIngridModHit(hit, mod, cyc);

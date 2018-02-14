@@ -96,9 +96,9 @@ int main(int argc,char *argv[]){
   bool Error=false;
   int ErrorType;
   double ErrorValue=0;
-  int ActivePlaneCriteria=0; // ?? tbd
-  int VetoUpstreamCriteria=0;// ?? tbd
-  double VetoEdgeCriteria=0; // ?? tbd
+  int ActivePlaneCriteria=0; // nominal
+  int VetoUpstreamCriteria=0;// nominal
+  double VetoEdgeCriteria=0; // not used for WM
   double FVCriteria=80;//cm, size of FV, always centered
 
   while ((c = getopt(argc, argv, "r:s:f:cado:i:e:v:")) != -1) {
@@ -149,12 +149,13 @@ int main(int argc,char *argv[]){
     else if(ErrorType==9) VetoEdgeCriteria=(double) ErrorValue;
     else if(ErrorType==10) FVCriteria=(double) ErrorValue;
   }
+  else cout<<"***Warning: the default ActivePlaneCriteria is badly set***"<<endl;
   
   FVCriteria=(1200.-10.*FVCriteria)/2.; 
   // WM center is (600,600)mm in transverse plane (same as PM)
   // 80cm means 100mm margin on the edge of the WM and 200mm margin wrt PM dimensions
 
-  cout<<"VetoCriteria="<<VetoUpstreamCriteria<<", EdgeCriteria="<<VetoEdgeCriteria<<", FV exclusion="<<FVCriteria<<"mm"<<endl;
+  cout<<"ActivePlaneCriteria="<<ActivePlaneCriteria<<", VetoCriteria="<<VetoUpstreamCriteria<<", EdgeCriteria="<<VetoEdgeCriteria<<", FV exclusion="<<FVCriteria<<"mm"<<endl;
 
   FileStat_t fs;
   // ifstream timing;
@@ -219,13 +220,15 @@ int main(int argc,char *argv[]){
 
   for(int ievt=Nini; ievt<nevt; ievt++){
 
-    if(ievt%100==0)cout << "analyze event# " << ievt<<endl;
+    if(ievt%10==0)cout << "analyze event# " << ievt<<endl;
     wsummary -> Clear();
     evt      -> Clear();
     tree     -> GetEntry(ievt);
 
     for( int cyc=Scyc; cyc<Ncyc; cyc++ ){  //### Cycle Loop
       for( int mod=0; mod<Nmod; mod++ ){   //### Module Loop
+
+	if(mod>6 && mod<15) continue; // ML to speed up a bit
 
         allhit.clear();
 	int ninghit = evt -> NIngridModHits(mod, cyc);
@@ -240,23 +243,33 @@ int main(int argc,char *argv[]){
 		//if(inghitsum -> pe < 1.5) continue;
 		//if(inghitsum -> pe < -1) continue;
 		//if(inghitsum -> pe < 0) inghitsum -> pe=0;
-		if(inghitsum -> pecorr +  inghitsum -> pe_cross < 1.5) continue;
+	    //if(inghitsum -> pecorr +  inghitsum -> pe_cross < 1.5) continue;
+	    // ML 2017/07/06 -- pecorr is the sum of all contributions (pe+pe_cross for MC)
+	    // *** WARNING: old switch is used for WM data (27 -> 43) so pecorr is obsolete
+	    //  but for the following condition it is the same and we don't use the value of pe in this code ***
+	    if(inghitsum->pecorr < 1.5) continue; 
 	  }
 	  else{
-		if(inghitsum -> pecorr < 2.5) continue;
+	    // ML don't use pecorr because it's -1e5 for INGRID data hits
+	    if(inghitsum -> pe < 2.5) continue;
 	  }
 
 	  inghitsum -> addbasicrecon = false;
 
 	  hit.mod   = mod;
 	  hit.id    = i;
-	  hit.pe    = inghitsum -> pecorr;
+
+	  // the value of the charge is not always the correct one but the precise value is not needed
+	  // ML 2017/07/06
+	  hit.pe    = inghitsum -> pe;
 	  hit.lope  = inghitsum -> lope;
+	  //	  hit.pe_cross    = inghitsum -> pe_cross; // ML 2017/07/06 never used
+
 	  hit.time  = (Long_t)inghitsum -> timecorr;
 	  hit.view  = inghitsum -> view;
 	  hit.pln   = inghitsum -> pln;
 	  hit.ch    = inghitsum -> ch;
-	  hit.pe_cross    = inghitsum -> pe_cross;
+
 
 	  /*
 	  if((inghitsum -> NSimHits()) > 0)
@@ -272,10 +285,12 @@ int main(int argc,char *argv[]){
 	  allhit_for_disp.push_back(hit);
 	}
 
-	if(allhit.size()<2)continue;
+	//cout<<"evt="<<ievt<<" cyc="<<cyc<<" mod="<<mod<<" #hits="<<allhit.size()<<endl;
+	if(allhit.size()<6)continue; // 3h + 3v required 
 	fSortTime(allhit);
 	while(fFindTimeClster(allhit, hitcls, fcTime)){
 
+	  if(hitcls.size()<6) continue; // 3h + 3v required
 	  int nactnum;
 	  recon->nactpln = fNactpln(mod);
 	  nactnum = fNactpln(mod);
@@ -390,6 +405,7 @@ int main(int argc,char *argv[]){
   }//Event Loop
 
   //######## Write and Close ####################
+  wfile->cd();
   wtree  -> Write();
   wfile  -> Write();
   wfile  -> Close();

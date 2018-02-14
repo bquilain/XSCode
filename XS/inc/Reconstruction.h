@@ -16,7 +16,7 @@ class Reconstruction{
   ~Reconstruction();
   void SetDetector(bool);
   bool GetDetector();
-
+  double GetNormalAngleRad(bool grid,double angle3D, double angle3D);
   vector <Hit3D> ApplyPEError(vector <Hit3D> Vec, double angle);
   vector <Hit3D> SearchIngridHit(vector <Hit3D> Vec, vector <Hit3D> VecAll, double thetaX, double thetaY, double TrackSample);
   //vector <HitTemp> EraseDoubleHits(IngridBasicReconSummary * recon, int itrk, vector <HitTemp> HitV);
@@ -30,7 +30,7 @@ class Reconstruction{
   vector <Hit3D> Hit2DMatchingPM(IngridEventSummary* evt, PMAnaSummary * recon,vector <HitTemp> HitV,vector <Hit3D> Vec, bool MC);
   vector <double> GetTrackAnglePM(vector <Hit3D> Vec, double anglex, double angley, int TrackSample);
   vector <Hit3D> SeveralHitsPlanePM(PMAnaSummary * recon,vector <HitTemp> HitV,vector <Hit3D> Vec);
-  vector <Hit3D> Hit2DMatchingClusterPM(IngridEventSummary* evt, PMAnaSummary * recon);
+  vector <Hit3D> Hit2DMatchingClusterPM(IngridEventSummary* evt, PMAnaSummary * recon, bool MC); // ML 2017/07/06
   vector <Hit3D> ClusterPM(IngridEventSummary* evt, PMAnaSummary * recon, int nTracks);
   vector <HitTemp> EraseDoubleHitsAllTracksPM(PMAnaSummary * recon, vector <HitTemp> HitV);
   vector <Hit3D> Hit2DMatchingAllTracksPM(PMAnaSummary * recon, bool MC);
@@ -41,6 +41,7 @@ class Reconstruction{
   vector <int> TrackComposition(vector <Hit3D> Vec, double Vx, double Vy, double Vz);
   vector <double> GetKinematic(double ang1, double thetax1, double thetay1,double ang2, double thetax2, double thetay2);
   double GetBeamAngle(double ang1, double thetax1, double thetay1);
+  double NormalAngle(double angle3D, double thetax,double thetay,int view, bool grid);
   vector <Hit3D> CountSharedHits(vector <Hit3D> Vec, vector< vector<Hit3D> > VecDouble, int Trk);
   vector <Hit3D> IsInTrk(vector <Hit3D> VecCluster, vector<Hit3D> VecAllTracks);
   vector <double> TrackRelativeLength(double posx, double posy, double posz, double tx, double ty, double TrkLength);

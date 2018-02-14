@@ -1,6 +1,7 @@
 {
   char Name[256];
-  TFile * _flux = new TFile("ErrorVarFinal.root");
+  //TFile * _flux = new TFile("ErrorVarFinal.root");
+  TFile * _flux = new TFile("ErrorVarFinal_mod3.root");
   int NErrors=400;
   int NBinsMod=20;
   TH1D * Flux = new TH1D("Flux","",100,-5,5);

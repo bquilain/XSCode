@@ -40,22 +40,41 @@ using namespace std;
 #include "setup.h"
 #include "Reconstruction.cc"
 
-INGRID_Dimension * IngDimCor = new INGRID_Dimension();
+Corrections::Corrections(bool PM){
+  _isPM=PM;
+  IngDimCor = new INGRID_Dimension();
+}
+
+Corrections::~Corrections(){
+  delete IngDimCor;
+}
+
+void Corrections::SetDetector(bool PM){
+  _isPM=PM;
+}
+bool Corrections::GetDetector(){
+  return _isPM;
+}
+
 
 double Corrections::GetMCCorrections(double Nsel, int mod){//lui donner a manger C[mod]
+  // this correction is non-zero only for INGRID modules so WM and PM are treated the same
   double Ncorr=Nsel/(1+C[mod]/100);
   return Ncorr;
 }
 
 vector <Hit3D> Corrections::GetFiberAttenuation(vector <Hit3D> Vec){
-  const double LAtt=241.7;
+  const double LAtt=(_isPM? 241.7: 497.); // WM: based on measured value by ML
+  double Lmax=120., offset=(_isPM?0.:10.);
+
   for(int ihit=0;ihit<Vec.size();ihit++){
-    double L;
-    //if(Vec[ihit].view==0) L=(120-Vec[ihit].y);
-    //else L=(Vec[ihit].x);//changer pour le PM...
-    if(Vec[ihit].view==0) L=(Vec[ihit].y);
-    else L=(120.-Vec[ihit].x);//changer pour le PM...
-    Vec[ihit].pecorr=Vec[ihit].pe/TMath::Exp(-L/LAtt);
+    double Lfiber;
+    if(Vec[ihit].view==0) Lfiber=(Vec[ihit].x-offset); // ML 2017/06/13 swap x<->y
+    else Lfiber=(Lmax-Vec[ihit].y-offset); // WM:transverse coord are in [10,110]
+
+    if(!_isPM) Lfiber+=20.; // in wmmc the distance scinti-bundle was added for the attenuation
+
+    Vec[ihit].pecorr=Vec[ihit].pe/TMath::Exp(-Lfiber/LAtt);
 #ifdef DEBUG2
     cout<<"**************************************************"<<endl;
     cout<<"Test of Correction::GetFiberAttenuation"<<endl;
@@ -66,24 +85,50 @@ vector <Hit3D> Corrections::GetFiberAttenuation(vector <Hit3D> Vec){
   }
   return Vec;
 }
-vector <Hit3D> Corrections::GetDXCorrection(vector <Hit3D> Vec,double dx){
 
-  Reconstruction * Reco = new Reconstruction();
-  
+double Corrections::dzWM(double angle, double theta, bool grid){
+  double L=(grid?25.:3.);
+  double tanThetaLim=(grid ? 3./25. : 25./3.);
+  return L/cos(angle)/(1+fabs(tan(theta))/tanThetaLim);
+}
+
+void Corrections::GetDXCorrectionWM(vector <Hit3D> & Vec, double angle3D, double thetax, double thetay){
   for(int i=0;i<Vec.size();i++){
-    if(Vec[i].mod==16 && Reco->Reconstruction::IsINGRID(Vec[i].mod,Vec[i].pln,Vec[i].ch)){
-      Vec[i].pecorr=Vec[i].pecorr/dx;
-    }
-    else if(Vec[i].mod==16 && !(Reco->Reconstruction::IsINGRID(Vec[i].mod,Vec[i].pln,Vec[i].ch))){
-      Vec[i].pecorr=(Vec[i].pecorr/(1.3*dx))/INGRIDSCIBAR;
-    }
-    else{
-      Vec[i].pecorr=Vec[i].pecorr/(dx);
+    if(Vec[i].mod==15){//WM
+      int view=Vec[i].view;
+      bool grid=Vec[i].ch>=40;
+      Vec[i].pecorr=Vec[i].pecorr/Corrections::dzWM(angle3D,(view==0?thetax:thetay),grid)*3; // output is pe/3mm
     }
   }
+}
+
+vector <Hit3D> Corrections::GetDXCorrection(vector <Hit3D> Vec,double dx){
+
+  Reconstruction * Reco = new Reconstruction(_isPM);
   
+  for(int i=0;i<Vec.size();i++){
+    if(Vec[i].mod==16){//PM
+      if(Reco->Reconstruction::IsINGRID(Vec[i].mod,Vec[i].pln,Vec[i].ch)){
+	Vec[i].pecorr=Vec[i].pecorr/dx;
+      }
+      else {
+	Vec[i].pecorr=(Vec[i].pecorr/(1.3*dx))/INGRIDSCIBAR;
+	// INGRIDSCIBAR factor: just for comparison with INGRID light yield. 
+	// in PM-MuCL-likelihood computation sometimes we add the pe of adjacents hits in a plane
+	//   and it may happen that 1 is Ingrid and 1 is Scibar: the factors impacts this sum.
+	//   So the factor scales the relative weight of the two hits. 
+	//   Its value should have been chosen on purpose.
+      }
+    }
+    else if(Vec[i].mod<14){//INGRID
+      Vec[i].pecorr=Vec[i].pecorr/dx;
+    }
+  }
+
+  delete Reco;  
   return Vec;
 }
+
 
 void Corrections::GetHitPlaneCorrection(vector <Hit3D> Vec){
 

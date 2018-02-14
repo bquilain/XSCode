@@ -14,7 +14,7 @@
   int NRand=1e4;
   int NBinsMod=20;//Number of energy bins.
   TMatrixDSym Cov2(NBinsMod);
-  int Module=0;  
+  int Module=3;  
 
   //1. Fill the erro vector and the correlation matrix
   for(int k1=0;k1<NBins;k1++){//Run over all the bins: INGRID module and energy.
@@ -62,7 +62,7 @@
   TVectorD * Var = new TVectorD(NBinsMod);
   int NMods=(int) NBins/NBinsMod;
   char Name[256];
-  TFile *fwr = new TFile("ErrorVarFinal.root","RECREATE");
+  TFile *fwr = new TFile("ErrorVarFinal_mod3.root","RECREATE");
 
   
   //////////////////////////////////////////////////////////

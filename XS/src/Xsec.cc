@@ -192,7 +192,7 @@ int Xsec::DetermineFSI(int IsSand,int IsAnti,int IsNuE,int IsBkgH,int IsBkgV,int
   else if(IsBkgV) FSIInt=9;
   else if(IsAnti) FSIInt=10;
   else if(IsNuE) FSIInt=11;
-  else if(IsSciBkg) FSIInt=12;
+  else if(FSIInt==3 && IsSciBkg) FSIInt=12;
 
   return FSIInt;
 }

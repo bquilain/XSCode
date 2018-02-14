@@ -321,6 +321,14 @@ int main(int argc, char ** argv){
   double ErrorTotalStatistics_RecAngle_Plus[NBinsAngle];
   double ErrorTotalStatistics_RecAngle_Minus[NBinsAngle];
 
+    //ML 2017/07/18 added
+  double ErrorTotalDetector_Plus[NBinsMom][NBinsAngle];
+  double ErrorTotalDetector_Minus[NBinsMom][NBinsAngle];
+  double ErrorTotalDetector_RecMom_Plus[NBinsMom];
+  double ErrorTotalDetector_RecMom_Minus[NBinsMom];
+  double ErrorTotalDetector_RecAngle_Plus[NBinsAngle];
+  double ErrorTotalDetector_RecAngle_Minus[NBinsAngle];
+
   double ErrorTotalXS_Plus[NBinsMom][NBinsAngle];
   double ErrorTotalXS_Minus[NBinsMom][NBinsAngle];
   double ErrorTotalXS_RecMom_Plus[NBinsMom];
@@ -374,7 +382,7 @@ int main(int argc, char ** argv){
   TAxis * aY_NominalSelectedMC_RecAngle = (TAxis*) NominalSelectedMC_RecAngle->GetYaxis();
 
 
-
+  double TotalValue=0;
 
 
 
@@ -412,6 +420,10 @@ int main(int argc, char ** argv){
     //if(!(ErrorType==0 || (ErrorType>=17))) continue;//TEMP
     //if(! (ErrorType==0 || ErrorType==1 || ErrorType>=16)) continue;//TEMP
     cout<<"The error currently tested is number "<<ErrorType<<endl;
+
+#ifndef DETECTORSYST
+    if(ErrorType>=Systematics_Detector_Start && ErrorType<=Systematics_Detector_End) continue;
+#endif
 
        
     //##############################HISTOGRAM INITIALIZATION#########################################
@@ -504,9 +516,10 @@ int main(int argc, char ** argv){
 
 
     //##############################LOADING: FILL THE HISTOGRAMS#########################################
-    for(int n=0;n<NE[ErrorType];n++){
+    cout<<"Error tested="<<ErrorType<<", number of variations of the error="<<NE[ErrorType]<<endl;
+
+      for(int n=0;n<NE[ErrorType];n++){
       double ErrorValue=Start[ErrorType]+n*Step[ErrorType];
-      
       if(Reconstructed){
 	sprintf(txtMCName,"%s/XS/files/MCSelected_%s_Systematics%d_%d.txt",cINSTALLREPOSITORY,DetName,ErrorType,n);
 	if(SideBand){
@@ -594,6 +607,8 @@ int main(int argc, char ** argv){
 	    NominalTrueMC->SetBinContent(e0+1,e1+1,MCTrueEvents[e0][e1]);
 	    NominalSelectedData->SetBinContent(e0+1,e1+1,DataReconstructedEvents[e0][e1]);
 	    NominalMCBkg->SetBinContent(e0+1,e1+1,MCReconstructedBkgEvents[e0][e1]);
+	    
+	    TotalValue+=NominalSelectedMC->GetBinContent(e0+1,e1+1);
 	  }
 	  
 	  //if( (MODE==1) && ErrorType>1){
@@ -889,6 +904,8 @@ int main(int argc, char ** argv){
 
  
   //#########################SPECIAL TREATMENT FOR XSECTION SOURCE: THE CORRELATION IS ALSO CHECKED BETWEEN THE ERROR SOUCRES (NOT ONLY THE BINS)
+  double TotalRelxsError[EndXsec+1];
+  
     if(EndError>=Systematics_Xsec_Start){
     //cout<<"hello"<<endl;
   //Starts the toy experiments:
@@ -959,6 +976,7 @@ int main(int argc, char ** argv){
 	
 	  for(int f0=0;f0<NBinsMom;f0++){//loop over effect 0
 	    for(int f1=0;f1<NBinsAngle;f1++){//loop over effect 1
+	      TotalRelxsError[s1]+=CovarianceReduced[Systematics_Xsec_Start+s1][e0][e1][f0][f1];
 	      double Diagonal=CovarianceXS[e0][e1][e0][e1]*CovarianceXS[f0][f1][f0][f1];
 	      if(Diagonal!=0) CorrelationXS[e0][e1][f0][f1]/=pow(Diagonal,1/2);
 	      //double Diagonal=Covariance[Systematics_Xsec_Start+s1][Systematics_Xsec_Start+s1][e0][e1][e0][e1]*Covariance[Systematics_Xsec_Start+s1][Systematics_Xsec_Start+s1][f0][f1][f0][f1];
@@ -970,6 +988,8 @@ int main(int argc, char ** argv){
 	  }
       }
     }
+    if(TotalValue!=0) TotalRelxsError[s1]=TMath::Sqrt(TotalRelxsError[s1])/TotalValue;
+    
     file->cd();
     Error_Minus[Systematics_Xsec_Start+s1]->Write();
     Error_Plus[Systematics_Xsec_Start+s1]->Write();
@@ -1080,9 +1100,16 @@ int main(int argc, char ** argv){
   //#########################################STAT ERROR################################
   cout<<"Statistical error:"<<endl;
 
+  double TotalErrorStatSquared=0,TotalRelErrorStat=0.;
   
   for(int e0=0;e0<NBinsMom;e0++){//loop over effect 0
     for(int e1=0;e1<NBinsAngle;e1++){//loop over effect 1
+      for(int f0=0;f0<NBinsMom;f0++){
+	for(int f1=0;f1<NBinsAngle;f1++){
+	  TotalErrorStatSquared+=CovarianceStatistics[e0][e1][f0][f1];
+	}
+      }
+      
       double Value=0;double Error=0;double ErrorSquared=0;
       Value=NominalSelectedMC->GetBinContent(e0+1,e1+1);
 
@@ -1177,18 +1204,164 @@ int main(int argc, char ** argv){
 
     boxErrorStat_RecAngle[e1] = new TBox(NominalSelectedMC_RecAngle->GetXaxis()->GetBinLowEdge(e1+1),Value-Error,NominalSelectedMC_RecAngle->GetXaxis()->GetBinUpEdge(e1+1),Value+Error);
     boxErrorStat_RecAngle[e1]->SetFillColor(kRed);
+    
+    if(TotalValue!=0) TotalRelErrorStat=TMath::Sqrt(TotalErrorStatSquared)/TotalValue;
   }
   //#########################################END OF STAT ERROR################################
 
+  //################# ML newly added 2017/07/18  DETECTOR ERROR  #############################
+  double TotalErrorDetSquared=0,TotalRelErrorDet=0.;
+#ifdef DETECTORSYST
+  cout<<"Detector error:"<<endl;
+    
+  for(int e0=0;e0<NBinsMom;e0++){//loop over effect 0
+    for(int e1=0;e1<NBinsAngle;e1++){//loop over effect 1
+      double Value=NominalSelectedMC->GetBinError(e0+1,e1+1);
+
+      double total_error_plus=0,total_error_minus=0;
+      double total_error=0;
+      for(int ErrorType=StartError;ErrorType<=EndError;ErrorType++){
+	if(ErrorType>Systematics_Detector_End || ErrorType<Systematics_Detector_Start) continue;
+	if(ErrorType!=5) continue;
+	// I assume uncorrelated error sources 
+	total_error_plus+=pow(Error_Plus[ErrorType]->GetBinContent(e0+1,e1+1),2);
+	total_error_minus+=pow(Error_Minus[ErrorType]->GetBinContent(e0+1,e1+1),2);
+	total_error+=CovarianceReduced[ErrorType][e0][e1][e0][e1];
+      }
+      ErrorTotalDetector_Plus[e0][e1]=TMath::Sqrt(total_error_plus);// relative error
+      ErrorTotalDetector_Minus[e0][e1]=TMath::Sqrt(total_error_minus); // relative error	
+      //	cout<<e0<<" "<<e1<<" "<<Value<<" "<<total_error_plus<<" "<<total_error_minus<<" "<<total_error/Value/Value<<endl;
+
+      double ErrorSquared=NominalSelectedMC->GetBinError(e0+1,e1+1);
+	
+      /*double ErrorPlus=TMath::Sqrt(ErrorSquared+total_error_plus*Value*Value);// absolute error
+	double ErrorMinus=TMath::Sqrt(ErrorSquared+total_error_minus*Value*Value);//absolute error
+	double Error=(ErrorPlus+ErrorMinus)/2;// I can only store symmetric errors in the TH1
+	ErrorSquared=pow(Error,2.);
+      */
+      ErrorSquared+=total_error;
+      double Error=TMath::Sqrt(ErrorSquared);
+
+      sliceNominalSelectedMC_RecMom[e1]->SetBinError(e0+1,ErrorSquared);
+      sliceNominalSelectedMC_RecAngle[e0]->SetBinError(e1+1,ErrorSquared);
+      
+      boxsliceErrorDet_RecMom[e0][e1] = new TBox(NominalSelectedMC->GetXaxis()->GetBinLowEdge(e0+1),Value-Error,NominalSelectedMC->GetXaxis()->GetBinUpEdge(e0+1),Value+Error);
+      boxsliceErrorDet_RecMom[e0][e1]->SetFillColor(kOrange);
+
+      boxsliceErrorDet_RecAngle[e0][e1] = new TBox(NominalSelectedMC->GetYaxis()->GetBinLowEdge(e1+1),Value-Error,NominalSelectedMC->GetYaxis()->GetBinUpEdge(e1+1),Value+Error);
+      boxsliceErrorDet_RecAngle[e0][e1]->SetFillColor(kOrange);
+    }
+  }
+
+
+  for(int e0=0;e0<NBinsMom;e0++){//loop over effect 0
+    
+    double Value=0;double total_error_plus=0,total_error_minus=0,total_error=0;
+    for(int e1=0;e1<NBinsAngle;e1++){//loop over effect 1
+      Value=NominalSelectedMC->GetBinContent(e0+1,e1+1);
+      // total_error_plus / _minus are wrong (need the bin-to-bin correlations)
+      total_error_plus+=pow(Value*ErrorTotalDetector_Plus[e0][e1],2); // abs squared error
+      total_error_minus+=pow(Value*ErrorTotalDetector_Minus[e0][e1],2); // abs squared error
+      for(int f1=0;f1<NBinsAngle;f1++){//loop over effect 1
+	for(int ErrorType=StartError;ErrorType<=EndError;ErrorType++){
+	  if(ErrorType>Systematics_Detector_End || ErrorType<Systematics_Detector_Start) continue;
+	  if(ErrorType!=5) continue;
+	  total_error+=CovarianceReduced[ErrorType][e0][e1][e0][f1];
+	}
+      }
+    }
+    double ErrorSquared=NominalSelectedMC_RecMom->GetBinError(e0+1);
+    /*      double ErrorPlus=TMath::Sqrt(ErrorSquared+total_error_plus);// absolute error 
+	    double ErrorMinus=TMath::Sqrt(ErrorSquared+total_error_minus);//absolute error
+	    double Error=(ErrorPlus+ErrorMinus)/2;// I can only store symmetric errors in the TH1
+	    ErrorSquared=pow(Error,2.);
+    */
+    ErrorSquared+=total_error;
+    double Error=TMath::Sqrt(ErrorSquared);
+
+    Value=NominalSelectedMC_RecMom->GetBinContent(e0+1);
+    //cout<<e0<<" "<<Value<<" "<<total_error_plus/Value/Value<<" "<<total_error_minus/Value/Value<<" "<<total_error/Value/Value<<endl;
+
+    ErrorTotalDetector_RecMom_Plus[e0]=(Value>0?TMath::Sqrt(total_error)/Value:0);// relative error
+    ErrorTotalDetector_RecMom_Minus[e0]=(Value>0?TMath::Sqrt(total_error)/Value:0); // relative error	
+      
+    cout<<"Mom="<<BinningRecMom[e0]<<", value="<<Value<<", +-"<<TMath::Sqrt(total_error)<<endl;
+    NominalSelectedMC_RecMom->SetBinError(e0+1,ErrorSquared);
+
+    boxErrorDet_RecMom[e0] = new TBox(NominalSelectedMC_RecMom->GetXaxis()->GetBinLowEdge(e0+1),Value-Error,NominalSelectedMC_RecMom->GetXaxis()->GetBinUpEdge(e0+1),Value+Error);
+    boxErrorDet_RecMom[e0]->SetFillColor(kOrange);
+  }
+
+  for(int e1=0;e1<NBinsAngle;e1++){//loop over effect 1
+    
+    double Value=0;double total_error_plus=0,total_error_minus=0,total_error=0;
+    for(int e0=0;e0<NBinsMom;e0++){//loop over effect 0
+      Value=NominalSelectedMC->GetBinContent(e0+1,e1+1);
+      total_error_plus+=pow(Value*ErrorTotalDetector_Plus[e0][e1],2); // abs squared error
+      total_error_minus+=pow(Value*ErrorTotalDetector_Minus[e0][e1],2); // abs squared error
+      for(int f0=0;f0<NBinsMom;f0++){//loop over effect 1
+	for(int ErrorType=StartError;ErrorType<=EndError;ErrorType++){
+	  if(ErrorType>Systematics_Detector_End || ErrorType<Systematics_Detector_Start) continue;
+	  if(ErrorType!=5) continue;
+	  total_error+=CovarianceReduced[ErrorType][e0][e1][f0][e1];
+	}
+      }
+    }
+    double ErrorSquared=NominalSelectedMC_RecAngle->GetBinError(e1+1);
+
+    /*      double ErrorPlus=TMath::Sqrt(ErrorSquared+total_error_plus);// absolute error 
+	    double ErrorMinus=TMath::Sqrt(ErrorSquared+total_error_minus);//absolute error
+	    double Error=(ErrorPlus+ErrorMinus)/2;// I can only store symmetric errors in the TH1
+	    ErrorSquared=pow(Error,2.);
+    */
+    ErrorSquared+=total_error;
+    double Error=TMath::Sqrt(ErrorSquared);
+      
+    Value=NominalSelectedMC_RecAngle->GetBinContent(e1+1);
+    ErrorTotalDetector_RecAngle_Plus[e1]=(Value>0?TMath::Sqrt(total_error)/Value:0);// relative error
+    ErrorTotalDetector_RecAngle_Minus[e1]=(Value>0?TMath::Sqrt(total_error)/Value:0); // relative error	
+
+    cout<<"Angle="<<BinningRecAngle[e1]<<", value="<<Value<<", +"<<total_error_plus<<", -"<<total_error_minus<<endl;
+    NominalSelectedMC_RecAngle->SetBinError(e1+1,ErrorSquared);
+
+    boxErrorDet_RecAngle[e1] = new TBox(NominalSelectedMC_RecAngle->GetXaxis()->GetBinLowEdge(e1+1),Value-Error,NominalSelectedMC_RecAngle->GetXaxis()->GetBinUpEdge(e1+1),Value+Error);
+    boxErrorDet_RecAngle[e1]->SetFillColor(kOrange);
+  }
+
+  for(int ErrorType=StartError;ErrorType<=EndError;ErrorType++){
+    if(ErrorType>Systematics_Detector_End || ErrorType<Systematics_Detector_Start) continue;
+    if(ErrorType!=5) continue;
+    for(int e0=0;e0<NBinsMom;e0++){
+      for(int e1=0;e1<NBinsAngle;e1++){
+	for(int f0=0;f0<NBinsMom;f0++){
+	  for(int f1=0;f1<NBinsAngle;f1++){
+	    TotalErrorDetSquared+=CovarianceReduced[ErrorType][e0][e1][f0][f1];
+	  }
+	}
+      }
+    }
+  }
+  if(TotalValue!=0) TotalRelErrorDet=TMath::Sqrt(TotalErrorDetSquared)/TotalValue;
+  
+  //#########################################END OF DETECTOR ERROR################################
+#endif
 
   
 
   //#########################################XS ERROR################################
+  double TotalErrorXSSquared=0,TotalRelErrorXS=0.;
+  
   if(EndError>=Systematics_Xsec_Start){
     cout<<"Xsec error:"<<endl;
 
     for(int e0=0;e0<NBinsMom;e0++){//loop over effect 0
       for(int e1=0;e1<NBinsAngle;e1++){//loop over effect 1
+	for(int f0=0;f0<NBinsMom;f0++){
+	  for(int f1=0;f1<NBinsAngle;f1++){
+	    TotalErrorXSSquared+=CovarianceXS[e0][e1][f0][f1];
+	  }
+	}
+	
 	double Value=0;double Error=0;double ErrorSquared=0;
 	Value=NominalSelectedMC->GetBinContent(e0+1,e1+1);
 	ErrorSquared=CovarianceXS[e0][e1][e0][e1];
@@ -1298,16 +1471,25 @@ int main(int argc, char ** argv){
     boxErrorXS_RecAngle[e1] = new TBox(NominalSelectedMC_RecAngle->GetXaxis()->GetBinLowEdge(e1+1),NominalSelectedMC_RecAngle->GetBinContent(e1+1)-Error,NominalSelectedMC_RecAngle->GetXaxis()->GetBinUpEdge(e1+1),NominalSelectedMC_RecAngle->GetBinContent(e1+1)+Error);
     boxErrorXS_RecAngle[e1]->SetFillColor(kGreen);
   }
+  if(TotalValue!=0) TotalRelErrorXS=TMath::Sqrt(TotalErrorXSSquared)/TotalValue;
   }
   //#########################################END OF XS ERROR################################
 
   //#########################################FLUX ERROR################################
+  double TotalErrorFluxSquared=0,TotalRelErrorFlux=0.;
+  
   if(EndError>=Systematics_Flux_Start){
     cout<<"Flux error:"<<endl;
     //int ErrorType=ErrorType>=Systematics_Flux_Start;
 
     for(int e0=0;e0<NBinsMom;e0++){//loop over effect 0
       for(int e1=0;e1<NBinsAngle;e1++){//loop over effect 1
+	for(int f0=0;f0<NBinsMom;f0++){
+	  for(int f1=0;f1<NBinsAngle;f1++){
+	    TotalErrorFluxSquared+=CovarianceFlux[e0][e1][f0][f1];
+	  }
+	}
+	
 	double Value=0;double Error=0;double ErrorSquared=0;
 	Value=NominalSelectedMC->GetBinContent(e0+1,e1+1);
 	ErrorSquared=CovarianceFlux[e0][e1][e0][e1];
@@ -1391,6 +1573,7 @@ int main(int argc, char ** argv){
       NominalSelectedMC_RecAngle->SetBinError(e1+1,ErrorSquared);
     }
     
+    if(TotalValue!=0) TotalRelErrorFlux=TMath::Sqrt(TotalErrorFluxSquared)/TotalValue;
   }
 
   //#########################################END FLUX ERROR################################
@@ -1488,7 +1671,33 @@ int main(int argc, char ** argv){
   cRecAngle->Write("Canvas_Nominal_RecAngle");
   //#####################################END OF DRAWING################################
 
-  //#########################################END OF DRAWING PART################################
+  //#########################################ERROR TABLE####################################
+  cout<<"2D error table"<<endl;  
+  for(int e0=0;e0<NBinsMom;e0++){//loop over effect 0
+    for(int e1=0;e1<NBinsAngle;e1++){//loop over effect 1
+      cout<<setprecision(2)<<std::fixed<<NominalSelectedMC->GetBinContent(e0+1,e1+1)<<"+-"<<TMath::Abs(ErrorTotalFlux_Plus[e0][e1])<<"(Flux)+-"<<TMath::Abs(ErrorTotalXS_Plus[e0][e1])<<"(XS)+-"<<TMath::Abs(ErrorTotalDetector_Plus[e0][e1])<<"(Det)+-"<<TMath::Abs(ErrorTotalStatistics_Plus[e0][e1])<<"(stat),   ";
+    }
+    cout<<endl;
+  }
+  cout<<endl<<"1D Momentum error table"<<endl;  
+  for(int e0=0;e0<NBinsMom;e0++){//loop over effect 0
+    cout<<setprecision(2)<<std::fixed<<NominalSelectedMC_RecMom->GetBinContent(e0+1)<<"+-"<<TMath::Abs(ErrorTotalFlux_RecMom_Plus[e0])<<"(Flux)+-"<<TMath::Abs(ErrorTotalXS_RecMom_Plus[e0])<<"(XS)+-"<<TMath::Abs(ErrorTotalDetector_RecMom_Plus[e0])<<"(Det)+-"<<TMath::Abs(ErrorTotalStatistics_RecMom_Plus[e0])<<"(stat)"<<endl;
+  }
+  
+  cout<<endl<<"1D Angle error table"<<endl;  
+  for(int e0=0;e0<NBinsAngle;e0++){//loop over effect 0
+    cout<<setprecision(2)<<std::fixed<<NominalSelectedMC_RecAngle->GetBinContent(e0+1)<<"+-"<<TMath::Abs(ErrorTotalFlux_RecAngle_Plus[e0])<<"(Flux)+-"<<TMath::Abs(ErrorTotalXS_RecAngle_Plus[e0])<<"(XS)+-"<<TMath::Abs(ErrorTotalDetector_RecAngle_Plus[e0])<<"(Det)+-"<<TMath::Abs(ErrorTotalStatistics_RecAngle_Plus[e0])<<"(stat)"<<endl;
+  }
+
+  cout<<endl<<"1bin result"<<endl;
+  cout<<setprecision(2)<<std::fixed<<TotalValue<<"+-"<<100*TMath::Abs(TotalRelErrorFlux)<<"%(Flux)+-"<<100*TMath::Abs(TotalRelErrorXS)<<"%(XS)+-"<<100*TMath::Abs(TotalRelErrorDet)<<"%(Det)+-"<<100*TMath::Abs(TotalRelErrorStat)<<"%(stat)"<<endl;
+
+  if(EndError>=Systematics_Xsec_Start){
+    cout<<"xscn systematics breakdown:"<<endl; 
+    for(int i=StartXsec;i<=EndXsec;i++)
+      cout<<setprecision(2)<<"param "<<i<<" +-"<<100*TMath::Abs(TotalRelxsError[i])<<"%"<<endl;
+  }
+  //#########################################END ERROR TABLE####################################
 
 
   //#########################################ERROR TABLE####################################

@@ -1,6 +1,0 @@
-#!/bin/bash +x
-if [ -f /export/scraid2/data/bquilain/calib_root_file/ingrid_00014337_0000_Calib00.root ]
-then
-/home/bquilain/Ingrid_Process/ingrid_format/app/IngAddBSD -r 14337 -s 0 -f /export/scraid2/data/bquilain/ingrid_00014337_0000_pmmergedKSINGRIDana_woXTalk.root -o /export/scraid2/data/bquilain/ingrid_00014337_0000_pmmergedKSINGRIDanabsd_woXTalk.root -v
-/home/bquilain/Ingrid_Process/ingrid_format/app/IngAddBSD -r 00014337 -s 0000 -f /export/scraid2/data/bquilain/ingrid_00014337_0000_pmmergedKSPMana_woXTalk.root -o /export/scraid2/data/bquilain/ingrid_00014337_0000_pmmergedKSPManabsd_woXTalk.root -v -p
-fi

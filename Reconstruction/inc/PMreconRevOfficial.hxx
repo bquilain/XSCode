@@ -160,10 +160,10 @@ int zposi(int mod,int view,int pln){
   }
   else{
     if(view==0){
-      posiz=5+105*pln+1074.5;
+      posiz=5+105*pln+1074.5+10;// ML 2017/06/27 -  INGRID modules start with vertical bars
     }
     else{
-      posiz=5+105*pln+1074.5+10;
+      posiz=5+105*pln+1074.5;// ML 2017/06/27
     }
   }  
   return posiz;
@@ -820,11 +820,14 @@ bool fTracking(int mod, int VetoUpstreamCriteria, double VetoEdgeCriteria, doubl
 	      if(ntracell[VIEW][ntrack[VIEW]]==1)continue;
 	      ntracl[VIEW][ntrack[VIEW]]=ntracell[VIEW][ntrack[VIEW]]+1;
 	      ntrack[VIEW]++;
+	      if(ntrack[VIEW]==500) break;//ML 2017/05/27
 	    }
 	  }
-	}
-      }
-    }
+	}// for Cell
+	if(ntrack[VIEW]==500) break;//ML 2017/05/27
+      }// for Dist
+      if(ntrack[VIEW]==500) break;//ML 2017/05/27
+    }//for Pln
 
 
     
@@ -853,7 +856,7 @@ bool fTracking(int mod, int VetoUpstreamCriteria, double VetoEdgeCriteria, doubl
       }
     }
     
-
+    //cout<<mod<<" "<<ntrack2[VIEW]<<endl;
 
     //*****True track selection*****
     memset(ttrack[VIEW],true,sizeof(ttrack[VIEW]));
@@ -864,6 +867,7 @@ bool fTracking(int mod, int VetoUpstreamCriteria, double VetoEdgeCriteria, doubl
     for(TRA=0;TRA<ntrack[VIEW];TRA++){
       TRA2=rank[VIEW][TRA];
       for(TRACL=0;TRACL<ntracl[VIEW][TRA2];TRACL++){
+	//cout<<allhit.size()<<" "<<VIEW<<" "<<TRA2<<" "<<TRACL<<" "<<plane[VIEW][TRA2][TRACL]<<" "<<clus[VIEW][TRA2][TRACL]<<endl;
 	if(!hitcl[VIEW][plane[VIEW][TRA2][TRACL]][clus[VIEW][TRA2][TRACL]]
 	   &&clpe[VIEW][plane[VIEW][TRA2][TRACL]][clus[VIEW][TRA2][TRACL]]>4.5){
 	  ntracl2[VIEW][TRA2]++;

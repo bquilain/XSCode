@@ -27,3 +27,13 @@ and QGSP_BIC 3.3 in WM)
 Ready for Production 1 : May 2017
 
 -------------------------------------------------
+
+Production 2: some bugs fixed + NEUT 5.3.3
+Started July 2017
+
+- I only have numu events (no nue, numubar, INGRID)
+- Wall events are from 5.3.6 file
+
+- MIP retuned for WM
+- Bayesian PID build for WM as a (mu+pi)CL, also (mu+pi)CL for PM
+- Retuning of NEUT nominal available with option -t

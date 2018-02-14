@@ -74,6 +74,9 @@ const float Mmu=105.66/1000.;
 const float Mp=938.272/1000.;
 const float Mn=939.5659/1000.;
 #endif
+const float Mpi=139.57/1000.;
+float EpiBins[5]={0,0.25,0.50,0.75,1};
+float EpiReWeight[5]={0.135,0.4,0.294,1.206,1};
 const int StartRun=13000;//14000;
 const int EndRun=15999;//17218;
 const int StartSubRun=0;
@@ -82,11 +85,15 @@ const int StartRunList=14;//Which list will be read (14=>14000.txt). Necessary t
 const int EndRunList=17;//Which list will be read (14=>14000.txt). Necessary to use only run processed
 double NMCfiles=1000; // up to now only 1000 are available with NEUT 5.3.6
 
+double DataPOTPM=0.58;//In units of 10^21 POT -- runs 234
+//double DataPOTPM=0.76;//In units of 10^21 POT -- runs 234  (+56)
+double DataPOTWM=0.72;//In units of 10^21 POT -- run 8
 double DataPOT=0.58;//In units of 10^21 POT
 const int StartError=0;
 const int EndError=34;//41 for 2012 ;//17
+
 int NFluxFiles;
-int StartXsec=0;int EndXsec=24;int NXsecVariations=7;
+int StartXsec=0;const int EndXsec=19;int NXsecVariations=7; int NXsecTunings=7;
 int CenterXsecVariations=(int) (NXsecVariations-1-((double) (NXsecVariations-1)/2));
 
 int NE[EndError+1];
@@ -94,12 +101,12 @@ double Step[EndError+1];
 double Start[EndError+1];
 double End[EndError+1];
 double Nominal; double Err;
-const int Systematics_Detector_Start=1;
+const int Systematics_Detector_Start=2;
 const int Systematics_Detector_End=15;
 const int Systematics_Flux_Start=16;
 const int Systematics_Flux_End=16;
 const int Systematics_Xsec_Start=17;
-const int Systematics_Xsec_End=Systematics_Xsec_Start+24;
+const int Systematics_Xsec_End=Systematics_Xsec_Start+EndXsec;
 bool EStatistics=true;//if true, estimate stat. error after unfolding
 const int NStatisticalVariations=1000;//number of stat. varied toy experiments to evaluate the stat. error.
     
@@ -107,7 +114,7 @@ const int NSamples = 6;//number of track samples, see Reconstruction.cc
 const int LimitTracks = 5;
 const int LimitHits = 25;
 double RangeRelativeDistance = 1.;
-const int NDials=175;
+const int NDials=175; //NXsecVariations*(EndXsec+1) + NXsecTunings
 //For particle gun
 const int npdg=4;
 int pdgValues[npdg]={13,211,-211,2212};
@@ -118,13 +125,15 @@ const int NBinsTrueEnergy=6;
 const int NBinsRecEnergy=6;
 double BinningTrueEnergy[NBinsTrueEnergy+1];
 double BinningRecEnergy[NBinsRecEnergy+1];
+
 const int NFSIs=13;//cc0pi+0p,cc0pi+1p,cc0pi+morep,cc1pi,cc1pi0,ccother,nc,+all bkg
+const int NIntTypes=6;//FOR PLOTS //ccqe,ccmec,ccres,cccoh,ccres,other
 
 //For Signal
-int NBinsRecMomSignal=17;
+int NBinsRecMomSignal=17+1;//+1 is the through going bin
 int NBinsRecAngleSignal=30;
-int NBinsTrueMomSignal=5;
-int NBinsTrueAngleSignal=5;
+int NBinsTrueMomSignal=6;
+int NBinsTrueAngleSignal=4;
 //int NBinsTrueMomSignal=1;
 //int NBinsTrueAngleSignal=1;
 
@@ -133,14 +142,14 @@ int NBinsTrueAngleSignal=5;
 //int NBinsRecAngleSB=30;
 //int NBinsTrueMomSB=3;
 //int NBinsTrueAngleSB=1;
-int NBinsRecMomSB=17;
+int NBinsRecMomSB=17+1;//+1 is the through going bin
 int NBinsRecAngleSB=30;
 //int NBinsRecMomSB=1;
 //int NBinsRecAngleSB=1;
 //int NBinsTrueMomSB=1;
 //int NBinsTrueAngleSB=1;
-int NBinsTrueMomSB=5;
-int NBinsTrueAngleSB=5;
+int NBinsTrueMomSB=1;//5;
+int NBinsTrueAngleSB=1;//5;
 //
 int NBinsTrueMomTrash=1;
 int NBinsTrueAngleTrash=1;
@@ -195,11 +204,12 @@ double * BinningRecAngleTrash;
 void InitializeGlobal(bool PM=true, int Selection=1){
 
   if(!PM)  Initialize_INGRID_Dimension();
+  DataPOT=(PM?DataPOTPM:DataPOTWM);
 
   for(int i=0;i<=NBinsEnergyFlux;i++){
     if(i<=15) BinningEnergyFlux[i]=i*0.2;//in GeV
     else if(i<=16) BinningEnergyFlux[i]=BinningEnergyFlux[15]+(i-15)*1;
-    else if(i<=19) BinningEnergyFlux[i]=BinningEnergyFlux[16]+(i-17)*2;
+    else if(i<=19) BinningEnergyFlux[i]=BinningEnergyFlux[16]+(i-16)*2; // ML corr 2017/10
     else if(i<=20) BinningEnergyFlux[i]=30.;
     else cout<<"Error in binning the flux in energy. Please look at setup.h"<<endl;
     /*
@@ -212,20 +222,29 @@ void InitializeGlobal(bool PM=true, int Selection=1){
   //Signal//
   BinningTrueMomSignal = new double[NBinsTrueMomSignal+1];
   BinningTrueAngleSignal = new double[NBinsTrueAngleSignal+1];
-  
+
+  /*
   BinningTrueMomSignal[0]=0;
-  BinningTrueMomSignal[1]=0.5;
-  BinningTrueMomSignal[2]=0.7;
-  BinningTrueMomSignal[3]=1.0;
-  BinningTrueMomSignal[4]=5.0;
-  BinningTrueMomSignal[5]=30.0;
+  BinningTrueMomSignal[1]=1.;
+  BinningTrueMomSignal[2]=5.;
+  BinningTrueMomSignal[3]=30.0;
+  */
+  BinningTrueMomSignal[0]=0;
+  BinningTrueMomSignal[1]=0.35;
+  BinningTrueMomSignal[2]=0.5;
+  BinningTrueMomSignal[3]=0.7;
+  BinningTrueMomSignal[4]=1.0;
+  BinningTrueMomSignal[5]=5.0;
+  BinningTrueMomSignal[6]=30.0;
   //
+  //BinningTrueAngleSignal[0]=0;
+  //BinningTrueAngleSignal[1]=180;
+  
   BinningTrueAngleSignal[0]=0;
-  BinningTrueAngleSignal[1]=10;
-  BinningTrueAngleSignal[2]=20;
-  BinningTrueAngleSignal[3]=30;
-  BinningTrueAngleSignal[4]=60;
-  BinningTrueAngleSignal[5]=180;
+  BinningTrueAngleSignal[1]=20;
+  BinningTrueAngleSignal[2]=35;
+  BinningTrueAngleSignal[3]=60;
+  BinningTrueAngleSignal[4]=180;
   
   //BinningTrueMomSignal[0]=0;
   //BinningTrueMomSignal[1]=30;
@@ -236,12 +255,13 @@ void InitializeGlobal(bool PM=true, int Selection=1){
   //SB//
   BinningTrueMomSB = new double[NBinsTrueMomSB+1];
   BinningTrueAngleSB = new double[NBinsTrueAngleSB+1];
-  /*
+  
   BinningTrueMomSB[0]=0;
   BinningTrueMomSB[1]=30.0;
   BinningTrueAngleSB[0]=0;
   BinningTrueAngleSB[1]=180;
-  */
+  
+  /*
   BinningTrueMomSB[0]=0;
   BinningTrueMomSB[1]=0.5;
   BinningTrueMomSB[2]=0.7;
@@ -254,7 +274,7 @@ void InitializeGlobal(bool PM=true, int Selection=1){
   BinningTrueAngleSB[2]=20;
   BinningTrueAngleSB[3]=30;
   BinningTrueAngleSB[4]=60;
-  BinningTrueAngleSB[5]=180;
+  BinningTrueAngleSB[5]=180;*/
   //
   //SB//
   BinningTrueMomTrash = new double[NBinsTrueMomTrash+1];
@@ -331,8 +351,9 @@ void InitializeGlobal(bool PM=true, int Selection=1){
     for(int i=0;i<NBinsRecMom+1;i++){
       BinningRecMom[0]=0;
       BinningRecMom[1]=10;    
-      if(i>1 && i<NBinsRecMom) BinningRecMom[i]=10+5*(i-1);
-      if(i==NBinsRecMom) BinningRecMom[i]=150;
+      if(i>1 && i<(NBinsRecMom-1)) BinningRecMom[i]=10+5*(i-1);
+      if(i==NBinsRecMom-1) BinningRecMom[i]=90;
+      if(i==NBinsRecMom) BinningRecMom[i]=100;//This is the through-going bin.
     }
     
     //Signal
@@ -351,8 +372,9 @@ void InitializeGlobal(bool PM=true, int Selection=1){
     for(int i=0;i<NBinsRecMomSB+1;i++){
       BinningRecMom[0]=0;
       BinningRecMom[1]=10;    
-      if(i>1 && i<NBinsRecMomSB) BinningRecMom[i]=10+5*(i-1);
-      if(i==NBinsRecMomSB) BinningRecMom[i]=150;
+      if(i>1 && i<(NBinsRecMomSB-1)) BinningRecMom[i]=10+5*(i-1);
+      if(i==NBinsRecMomSB-1) BinningRecMom[i]=90;
+      if(i==NBinsRecMomSB) BinningRecMom[i]=100;//This is the through-going bin.
     }
     
     //Rec Angle
@@ -372,15 +394,18 @@ void InitializeGlobal(bool PM=true, int Selection=1){
     Start[n]=1;
     Step[n]=1;
 
+    if(n==1){//1: Stat
+      Start[n]=0;
+      NE[n]=1000;
+      Step[n]=1;
+      cout<<"yeah, "<<NE[1]<<endl;
+    }
+    
+    
     if(Systematics_Detector_End>=Systematics_Flux_Start || Systematics_Flux_Start>=Systematics_Xsec_Start) cout<<"################################################################################################################### STOP THE PROCESS, THERE IS A PROBLEM IN THE NUMBERING OF YOUR SYST. ERROR SOURCES. CHECK SYSTEMATICS_DETECTOR_START/END...###########################################################################"<<endl;
 	 
     if(n>=Systematics_Detector_Start && n<=Systematics_Detector_End){
-      if(n==1){//1: Stat
-	Start[n]=0;
-	NE[n]=1000;
-	Step[n]=1;
-      }
-      else if(n==2){//2: DN
+      if(n==2){//2: DN
 	Start[n]=0;
 	NE[n]=10;
 	if(PM)Step[n]=1;
@@ -393,7 +418,11 @@ void InitializeGlobal(bool PM=true, int Selection=1){
       else if(n==4){//4: absolute difference MC/data light yield with track angle
 	NE[n]=1;
       }
-      else if(n==5) NE[n]=2;//Birks constant variations
+      else if(n==5){
+	NE[n]=2;//Birks constant variations; 0 is BirksMinus, 1 is BirksPlus
+	Start[n]=0;
+	Step[n]=1;
+      }
       else if(n==6){//6: Beam related background (in fact, this mainly evaluate sand muons)
 	Nominal=0.6;
 	Err=TMath::Sqrt(Nominal*Nominal+0.2*0.2+0.2*0.2);
@@ -515,6 +544,11 @@ void InitializeGlobal(bool PM=true, int Selection=1){
       Step[n]=1;
       NE[n]=NXsecVariations;
     }
+    else if(n==Systematics_Xsec_End+1){ // tunings
+      Start[n]=(StartXsec+(n-Systematics_Xsec_Start))*NXsecVariations;
+      Step[n]=1;
+      NE[n]=NXsecTunings;
+    }
     End[n]=Start[n]+(NE[n]+1)*Step[n];
   }
 }
@@ -570,16 +604,18 @@ void ReinitializeUnfoldingBinning(bool SideBand=false){
     for(int i=0;i<NBinsRecMomSignal+1;i++){
       BinningRecMom[0]=0;
       BinningRecMom[1]=10;    
-      if(i>1 && i<NBinsRecMomSignal) BinningRecMom[i]=10+5*(i-1);
-      if(i==NBinsRecMomSignal) BinningRecMom[i]=150;
+      if(i>1 && i<(NBinsRecMomSignal-1)) BinningRecMom[i]=10+5*(i-1);
+      if(i==NBinsRecMomSignal-1) BinningRecMom[i]=90;
+      if(i==NBinsRecMomSignal) BinningRecMom[i]=100;
     }
-    //Side bandxs
+    //Side bands
     for(int i=0;i<NBinsRecMomSB+1;i++){
       int j=NBinsRecMomSignal;
       BinningRecMom[j]=0;
       BinningRecMom[1+j]=10;    
-      if(i>1 && i<NBinsRecMomSB) BinningRecMom[i+j]=10+5*(i-1);
-      if(i==NBinsRecMomSB) BinningRecMom[i+j]=150;
+      if(i>1 && i<(NBinsRecMomSB-1)) BinningRecMom[i+j]=10+5*(i-1);
+      if(i==NBinsRecMomSB-1) BinningRecMom[i+j]=90;
+      if(i==NBinsRecMomSB) BinningRecMom[i+j]=100;
     }
     //BinningRecMom[NBinsRecMomSignal+1]=150+BinningRecMom[NBinsRecMomSignal];
     
@@ -645,5 +681,33 @@ double _DistAngleBin[_NBinsAngle+1];
 const int _NBinsTrueAngle=10;
 double _DistTrueAngleBin[_NBinsAngle+1];
 */
+
+
+// ML for Production 2 -- files NEUT 5.3.3 from Koga-san -- 2017/08/02
+const int NBadMCFilesPM=40;
+const int NBadMCFilesWM=28;
+const int BadMCFilesPM[NBadMCFilesPM]={0,1,15,34,74,141,150,190,189,257,277,278,284,292,318,324,335,386,416,462,594,626,639,751,792,833,851,852,880,886,909,93,174,293,436,518,785,861,903,992};
+const int BadMCFilesWM[NBadMCFilesWM]={0,14,19,80,176,189,190,284,415,462,594,655,666,673,743,792,814,988,93,174,293,436,518,544,785,861,903,992};
+
+bool isBadFile(int ifile, bool PM){
+  if(PM){
+    for(int i=0;i<NBadMCFilesPM;i++)
+      if(BadMCFilesPM[i]==ifile) return true;
+  }
+  else{
+    for(int i=0;i<NBadMCFilesWM;i++)
+      if(BadMCFilesWM[i]==ifile) return true;
+  }
+  return false;
+}
+
+// number of good files in the range [ifile,ffile-1]
+int NGoodFiles(int ifile,int ffile,bool PM){
+  int good=ffile-ifile;
+  for(int i=ifile;i<ffile;i++)
+    if(isBadFile(i,PM)) good--;
+  return good;
+}
+
 
 #endif
