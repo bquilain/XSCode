@@ -64,11 +64,16 @@ void MVAOptimizer(){
   //TFile * rfile = new TFile("../src/MVAparticle.root");
   //TFile * rfile = new TFile("../src/MVAparticle_multiclassMVAmuonpion_10000trees.root");
   //TFile * rfile = new TFile("../src/MVAparticle_MVAmuonpion_bdtg.root");
-  TFile * rfile = new TFile("../src/MVAparticleMuon_1000trees.root");
+ 
+  //TFile * rfile = new TFile("../src/MVAparticleMuon_1000trees_BugTrueParticleSolved.root");
+  //TFile * rfile = new TFile("../src/MVAparticleMuon_1000trees.root");
+  TFile * rfile = new TFile("../src/MVAWMparticleMuon_1000trees.root");
+
   //TFile * rfile = new TFile("../src/MVAparticleMuon_Forest1000trees_Input1000trees.root");
   //TFile * rfile = new TFile("../src/MVAparticleProton_1000trees.root");
   
   TTree * rtree = (TTree*) rfile->Get("TrainTree");
+  //TTree * rtree = (TTree*) rfile->Get("TestTree");
 
   float  FSIInt;//Final state true information
   float  Num_Int;//Interaction number
@@ -514,10 +519,15 @@ void MVAOptimizer(){
   
 
   if(MVAProton){
-    TFile * rfile_MVAProton = new TFile("../src/MVAparticleProton_1000trees.root");
+    //TFile * rfile_MVAProton = new TFile("../src/MVAparticleProton_1000trees.root");
+    TFile * rfile_MVAProton = new TFile("../src/MVAWMparticleProton_1000trees.root");
+    //TFile * rfile_MVAProton = new TFile("../src/MVAparticleProton_1000trees_BugTrueParticleSolved.root");
+    //TFile * rfile_MVAProton = new TFile("../src/MVAparticleProton_500trees_BugTrueParticleSolved_90PerCentEventsUsedForTraining.root");
+
     //TFile * rfile_MVAProton = new TFile("../src/MVAparticleProton_Forest1000trees_Input500trees.root");
 
-  TTree * rtree_MVAProton = (TTree*) rfile_MVAProton->Get("TrainTree");
+    TTree * rtree_MVAProton = (TTree*) rfile_MVAProton->Get("TrainTree");
+    //TTree * rtree_MVAProton = (TTree*) rfile_MVAProton->Get("TestTree");
 
   float  FSIInt;//Final state true information
   float  Num_Int;//Interaction number

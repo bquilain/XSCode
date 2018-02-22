@@ -1,3 +1,4 @@
+
 #include<iostream>
 #include<sstream>
 #include<fstream>
@@ -76,8 +77,9 @@ int main(int argc, char ** argv){
   int NTarget=8.299e28;
   bool SideBand=false; bool SideBandData=false; bool SideBandMC=false;
   bool FakeData=false;
+  bool BkgSub=false;
   
-  while ((c = getopt(argc, argv, "d:m:n:a:s:y:io:b:c:pf")) != -1) {
+  while ((c = getopt(argc, argv, "d:m:n:a:s:y:io:b:c:pfB")) != -1) {
     switch(c){
     case 'd':
       fDataName=optarg;
@@ -121,6 +123,10 @@ int main(int argc, char ** argv){
     case 'f':
       FakeData=true;
       cout<<"You are using fake data set, not real data"<<endl;
+      break;
+    case 'B':
+      BkgSub=true;
+      cout<<"You are using a background substraction method"<<endl;
       break;
     }
   }
@@ -190,11 +196,14 @@ int main(int argc, char ** argv){
   double ** vPriorNormalised = new double*[NBinsTrueMom];
   double ** vPosterior = new double*[NBinsTrueMom];
   double ** vPosterior_SignalOnly = new double*[NBinsTrueMom];
+  double ** DataEfficiency = new double*[NBinsTrueMom];
+  double ** MCEfficiency_Default = new double*[NBinsTrueMom];
   double ** MCEfficiency = new double*[NBinsTrueMom];
   double ** UnfoldedData_SignalOnly = new double*[NBinsTrueMom];
   double ** TrueEventsDistribution_SignalOnly = new double*[NBinsTrueMom];
   double ** table_TrueEventsDistribution_SignalOnly = new double*[NBinsTrueMom];
   double ** XSection_SignalOnly = new double*[NBinsTrueMom];
+  double ** TrueXSection_SignalOnly = new double*[NBinsTrueMom];//not used
   for(int i=0;i<NBinsTrueMom;i++){
     vInitialPriorMC[i] = new double[NBinsTrueAngle];
     vInitialPrior[i] = new double[NBinsTrueAngle];
@@ -202,11 +211,14 @@ int main(int argc, char ** argv){
     vPriorNormalised[i] = new double[NBinsTrueAngle];
     vPosterior[i] = new double[NBinsTrueAngle];
     vPosterior_SignalOnly[i] = new double[NBinsTrueAngle];
+    DataEfficiency[i] = new double [NBinsTrueAngle];
+    MCEfficiency_Default[i] = new double [NBinsTrueAngle];
     MCEfficiency[i] = new double [NBinsTrueAngle];
     UnfoldedData_SignalOnly[i] = new double [NBinsTrueAngle];
     TrueEventsDistribution_SignalOnly[i] = new double [NBinsTrueAngle];
     table_TrueEventsDistribution_SignalOnly[i] = new double [NBinsTrueAngle];
     XSection_SignalOnly[i] = new double [NBinsTrueAngle];
+    TrueXSection_SignalOnly[i] = new double [NBinsTrueAngle];//not used
   }
 
   double ** DataReconstructedEvents = new double*[NBinsRecMom];
@@ -225,7 +237,10 @@ int main(int argc, char ** argv){
 
   TMatrixD * MUnfolding = new TMatrixD(NBinsTrueMom*NBinsTrueAngle,NBinsRecMom*NBinsRecAngle);
   TMatrixD * MLikelihood = new TMatrixD(NBinsTrueMom*NBinsTrueAngle,NBinsRecMom*NBinsRecAngle);
-  TH2D * hPrior = new TH2D("hPrior","",NBinsTrueMom,BinningTrueMom,NBinsTrueAngle,BinningTrueAngle);
+  TH2D * hPrior[NToys[0]];
+  for(int it=0;it<NToys[0];it++){
+    hPrior[it]= new TH2D(Form("hPrior%d",it),"",NBinsTrueMom,BinningTrueMom,NBinsTrueAngle,BinningTrueAngle);
+  }
   TVectorD * VReconstructedEvents = new TVectorD(NBinsRecMom*NBinsRecAngle);
 
   //cout<<NToys[0]<<", "<<NToys[1]<<", "<<NToys[2]<<endl;
@@ -272,8 +287,10 @@ int main(int argc, char ** argv){
   */
   double UnfoldedData_SignalOnly_Fill[NBinsTrueMom][NBinsTrueAngle];
   double XSection_SignalOnly_Fill[NBinsTrueMom][NBinsTrueAngle];
+  double TrueXSection_SignalOnly_Fill[NBinsTrueMom][NBinsTrueAngle];
   double table_TrueEventsDistribution_SignalOnly_Fill[NBinsTrueMom][NBinsTrueAngle];
   double DataReconstructedEvents_TrueSignal_Fill[NBinsTrueMom][NBinsTrueAngle][NBinsRecMom][NBinsRecAngle];
+  double DataReconstructedEvents_Fill[NBinsRecMom][NBinsRecAngle];
   
   TTree*              wtree    = new TTree("wtree","wtree");
   wtree->SetDirectory(file);
@@ -301,17 +318,27 @@ int main(int argc, char ** argv){
   wtree              -> Branch   ("EventsAll",DataReconstructedEvents_TrueSignal_Fill,Form("EventsAll[%d][%d][%d][%d]/D",NBinsTrueMom,NBinsTrueAngle,NBinsRecMom,NBinsRecAngle));
   wtree              -> Branch   ("TrueEvents",table_TrueEventsDistribution_SignalOnly_Fill,Form("TrueEvents[%d][%d]/D",NBinsTrueMom,NBinsTrueAngle));
   wtree              -> Branch   ("XSection",XSection_SignalOnly_Fill,Form("XSection[%d][%d]/D",NBinsTrueMom,NBinsTrueAngle));
+  wtree              -> Branch   ("TrueXSection",TrueXSection_SignalOnly_Fill,Form("TrueXSection[%d][%d]/D",NBinsTrueMom,NBinsTrueAngle));
+  wtree              -> Branch   ("EventsRec",DataReconstructedEvents_Fill,Form("EventsRec[%d][%d]/D",NBinsRecMom,NBinsRecAngle));
 
   //00. IF FLAT PRIOR
+  double Norm = 0;
   for(int c0=0;c0<NBinsTrueMom;c0++){//loop over cause 0
     for(int c1=0;c1<NBinsTrueAngle;c1++){//loop over cause 1
-      vInitialPrior[c0][c1]=1/(NBinsTrueMom*NBinsTrueAngle);
+      vInitialPrior[c0][c1]=1;
+      Norm += vInitialPrior[c0][c1];
+      ///(NBinsTrueMom*NBinsTrueAngle);
+    }
+  }
+  for(int c0=0;c0<NBinsTrueMom;c0++){//loop over cause 0
+    for(int c1=0;c1<NBinsTrueAngle;c1++){//loop over cause 1
+      vInitialPrior[c0][c1] /= Norm;
     }
   }
 
   //0. Load the input distributions
-  if(SideBand) XS->Xsec::LoadInputFilesSB(txtDataName,txtMCName,txtDataNameSB,txtMCNameSB,MCReconstructedEvents_TrueSignal,DataReconstructedEvents,MCReconstructedEvents,MCReconstructedBkgEvents,MCEfficiency,NumberOfNeutrino,DataReconstructedEvents_TrueSignal,FakeData);
-  else XS->Xsec::LoadInputFiles(txtDataName,txtMCName,MCReconstructedEvents_TrueSignal,DataReconstructedEvents,MCReconstructedEvents,MCReconstructedBkgEvents,MCEfficiency,NumberOfNeutrino,DataReconstructedEvents_TrueSignal,FakeData);
+  if(SideBand) XS->Xsec::LoadInputFilesSB(txtDataName,txtMCName,txtDataNameSB,txtMCNameSB,MCReconstructedEvents_TrueSignal,DataReconstructedEvents,MCReconstructedEvents,MCReconstructedBkgEvents,MCEfficiency,NumberOfNeutrino,DataReconstructedEvents_TrueSignal,DataEfficiency,FakeData);
+  else XS->Xsec::LoadInputFiles(txtDataName,txtMCName,MCReconstructedEvents_TrueSignal,DataReconstructedEvents,MCReconstructedEvents,MCReconstructedBkgEvents,MCEfficiency,NumberOfNeutrino,DataReconstructedEvents_TrueSignal,DataEfficiency,FakeData);
   
 #ifdef DEBUG2
     cout<<"DEBUG, LOAD FILES/////////////////////////////////////////////////////////////////////////////////////////"<<endl;
@@ -380,72 +407,123 @@ int main(int argc, char ** argv){
 #endif
     for(nt1=0;nt1<NToys[1];nt1++){//loop on MC variations (syst)
       cout<<nt1<<endl;
-      for(nt2=0;nt2<NToys[2];nt2++){//loop on data variations (stat)
-	if(nt2%10 == 0) cout<<"Number of statistical toys = "<<nt2<<endl;
-	  
-	if(nt1==0 && nt2==0){//for each change of MC variations, we reset the Default to the original one.
-	  for(int e0=0;e0<NBinsRecMom;e0++){//loop over effect 0
-	    for(int e1=0;e1<NBinsRecAngle;e1++){//loop over effect 1
-	      DataReconstructedEvents_Default[e0][e1]=DataReconstructedEvents[e0][e1];
-	      for(int c0=0;c0<NBinsTrueMom;c0++){//loop over cause 0
-		for(int c1=0;c1<NBinsTrueAngle;c1++){//loop over cause 1
-		  MCReconstructedEvents_TrueSignal_Default[c0][c1][e0][e1]=MCReconstructedEvents_TrueSignal[c0][c1][e0][e1];
-		  DataReconstructedEvents_TrueSignal_Default[c0][c1][e0][e1]=DataReconstructedEvents_TrueSignal[c0][c1][e0][e1];
-		}
-	      }
-	    }
-	  }
-	}
-	else{//after each stat variation, we reset the values to default. Then, we apply variations.
-	  for(int e0=0;e0<NBinsRecMom;e0++){//loop over effect 0
-	    for(int e1=0;e1<NBinsRecAngle;e1++){//loop over effect 1
-	      DataReconstructedEvents[e0][e1]=DataReconstructedEvents_Default[e0][e1];
-	    }
-	  }
-	}
-	if(nt1!=0){//after each syst variation, we reset the values to default. Then, we apply variations.
-	  for(int e0=0;e0<NBinsRecMom;e0++){//loop over effect 0
-	    for(int e1=0;e1<NBinsRecAngle;e1++){//loop over effect 1
-	      for(int c0=0;c0<NBinsTrueMom;c0++){//loop over cause 0
-		for(int c1=0;c1<NBinsTrueAngle;c1++){//loop over cause 1
-		  MCReconstructedEvents_TrueSignal[c0][c1][e0][e1]=MCReconstructedEvents_TrueSignal_Default[c0][c1][e0][e1];
-		  DataReconstructedEvents_TrueSignal[c0][c1][e0][e1]=DataReconstructedEvents_TrueSignal_Default[c0][c1][e0][e1];
-		}
-	      }
-	    }
-	  }
-	}
 
-	
-	if(StatisticalFluctuations){
-	  //Toy0. Statistically vary the DataReconstructedEvents distribution.
-	  XS->Xsec::GenerateStatisticalFluctuations(DataReconstructedEvents);
+#ifdef DEBUG
+      cout<<"######################################################################"<<endl;
+      cout<<"#################### Systematic toy #"<<nt1<<" ###############################"<<endl;
+      cout<<"######################################################################"<<endl;
+#endif
+      
+      if(nt1==0){//for each change of MC variations, we reset the Default to the original one.
+	for(int e0=0;e0<NBinsRecMom;e0++){//loop over effect 0
+	  for(int e1=0;e1<NBinsRecAngle;e1++){//loop over effect 1
+	    DataReconstructedEvents_Default[e0][e1]=DataReconstructedEvents[e0][e1];
+	    for(int c0=0;c0<NBinsTrueMom;c0++){//loop over cause 0
+	      for(int c1=0;c1<NBinsTrueAngle;c1++){//loop over cause 1
+		MCReconstructedEvents_TrueSignal_Default[c0][c1][e0][e1]=MCReconstructedEvents_TrueSignal[c0][c1][e0][e1];
+		DataReconstructedEvents_TrueSignal_Default[c0][c1][e0][e1]=DataReconstructedEvents_TrueSignal[c0][c1][e0][e1];
+	      }
+	    }
+	  }
 	}
-	
-    if(SystematicFluctuations){
-      //Toy1. Fluctuation of the MCpart: prior, bkg, unfolding matrix (through likelihood) -> Looks systematics detector variation
-      //Step 1: the user should specify variation he wants:
-      for(int c0=0;c0<NBinsTrueMom;c0++){//loop over cause 0
-	for(int c1=0;c1<NBinsTrueAngle;c1++){//loop over cause 1
-	  for(int e0=0;e0<NBinsRecMom;e0++){//loop over effect 0
-	    for(int e1=0;e1<NBinsRecAngle;e1++){//loop over effect 1
-	      RelativeSigma[c0][c1][e0][e1]=0.3;
+	for(int c0=0;c0<NBinsTrueMom;c0++){//loop over cause 0
+	  for(int c1=0;c1<NBinsTrueAngle;c1++){//loop over cause 1
+	    MCEfficiency_Default[c0][c1] = MCEfficiency[c0][c1];
+	  }
+	}
+      }
+      else{//after each syst variation, we reset the values to default. Then, we apply variations.
+	for(int e0=0;e0<NBinsRecMom;e0++){//loop over effect 0
+	  for(int e1=0;e1<NBinsRecAngle;e1++){//loop over effect 1
+	    for(int c0=0;c0<NBinsTrueMom;c0++){//loop over cause 0
+	      for(int c1=0;c1<NBinsTrueAngle;c1++){//loop over cause 1
+		MCReconstructedEvents_TrueSignal[c0][c1][e0][e1]=MCReconstructedEvents_TrueSignal_Default[c0][c1][e0][e1];
+		/*if(!FakeData)*/ DataReconstructedEvents_TrueSignal[c0][c1][e0][e1]=DataReconstructedEvents_TrueSignal_Default[c0][c1][e0][e1];
+	      }
+	    }
+	  }
+	}
+	for(int c0=0;c0<NBinsTrueMom;c0++){//loop over cause 0
+	  for(int c1=0;c1<NBinsTrueAngle;c1++){//loop over cause 1
+	    MCEfficiency[c0][c1] = MCEfficiency_Default[c0][c1];
+	  }
+	}	  
+
+	//Toy1. Fluctuation of the MCpart: prior, bkg, unfolding matrix (through likelihood) -> Looks systematics detector variation
+	//Step 1: the user should specify variation he wants:
+	for(int c0=0;c0<NBinsTrueMom;c0++){//loop over cause 0
+	  for(int c1=0;c1<NBinsTrueAngle;c1++){//loop over cause 1
+	    for(int e0=0;e0<NBinsRecMom;e0++){//loop over effect 0
+	      for(int e1=0;e1<NBinsRecAngle;e1++){//loop over effect 1
+		RelativeSigma[c0][c1][e0][e1]=.2;
+	      }
 	    }
 	  }
 	}
       }
-    //Step 2: deduce the variation
-      XS->Xsec::GenerateMCFluctuations(MCReconstructedEvents_TrueSignal,RelativeSigma);
-    }
 
 
-    //1. Build the likelihood matrix & intial prior from the MC
-    XS->Xsec::BuildLikelihood(vLikelihood, vInitialPriorMC, MCReconstructedEvents_TrueSignal);
-    //Provide the true signal distribution projected only on true bins. The important point is that we only sum over the reconstructed bins of the SIGNAL REGION
-    XS->Xsec::ProjectOnTruePhaseSpace_OnlySignal(TrueEventsDistribution_SignalOnly, DataReconstructedEvents_TrueSignal);
-    
+	
+      for(nt2=0;nt2<NToys[2];nt2++){//loop on data variations (stat)
+	if(nt2%10 == 0) cout<<"Number of statistical toys = "<<nt2<<endl;
+#ifdef DEBUG
+      cout<<"#################### Statistics toy #"<<nt2<<" ###############################"<<endl;
+#endif
+      
+	  
+      //after each stat variation, we reset the values to default. Then, we apply variations.
+      for(int e0=0;e0<NBinsRecMom;e0++){//loop over effect 0
+	for(int e1=0;e1<NBinsRecAngle;e1++){//loop over effect 1
+	  /*if(!FakeData)*/ DataReconstructedEvents[e0][e1]=DataReconstructedEvents_Default[e0][e1];
+	  //MCReconstructedEvents[e0][e1]=MCReconstructedEvents_Default[e0][e1];
+	}
+      }
+      
+	if(SystematicFluctuations && nt2==0){
+	  //Step 2: deduce the variation
+	  /*if(FakeData){
+	    XS->Xsec::GenerateDataFluctuations(DataReconstructedEvents,DataReconstructedEvents_TrueSignal,RelativeSigma);
+	    cout<<"variation applied"<<endl;
+	    }
+	    else*/
+	  //XS->Xsec::GenerateDetectorMCFluctuations(MCReconstructedEvents_TrueSignal,RelativeSigma);
+	  XS->Xsec::GenerateXSModelMCFluctuations(MCEfficiency,MCReconstructedEvents_TrueSignal,RelativeSigma);
+	}
+	if(StatisticalFluctuations && nt2!=0){
+	  //Toy0. Statistically vary the DataReconstructedEvents distribution.
+	  XS->Xsec::GenerateStatisticalFluctuations(DataReconstructedEvents);
+	}
+	
+	//1. Build the likelihood matrix & intial prior from the MC
+	//TO UNCOMMENT INSTEAD OF BELOW
+	XS->Xsec::BuildLikelihood(vLikelihood, vInitialPriorMC, MCReconstructedEvents_TrueSignal);
+	//TEMP
+	//XS->Xsec::BuildLikelihood(vLikelihood, vInitialPriorMC, DataReconstructedEvents_TrueSignal);
+	//Provide the true signal distribution projected only on true bins. The important point is that we only sum over the reconstructed bins of the SIGNAL REGION
+	XS->Xsec::ProjectOnTruePhaseSpace_OnlySignal(TrueEventsDistribution_SignalOnly, DataReconstructedEvents_TrueSignal);
+
+	//TEMP
+	/*	
+	double TotalMCContent=0;
+	for(int c0=0;c0<NBinsTrueMom;c0++){//loop over cause 0
+	  for(int c1=0;c1<NBinsTrueAngle;c1++){//loop over cause 1
+	    double TrueMCContent=0;
+	    for(int e0=0;e0<NBinsRecMom;e0++){//loop over effect 0
+	      for(int e1=0;e1<NBinsRecAngle;e1++){//loop over effect 1 
+		TrueMCContent += DataReconstructedEvents_TrueSignal[c0][c1][e0][e1];
+		TotalMCContent += DataReconstructedEvents_TrueSignal[c0][c1][e0][e1];
+	      }
+	    }
+	    vInitialPriorMC[c0][c1] = TrueMCContent;
+	  }
+	}
+	for(int c0=0;c0<NBinsTrueMom;c0++){//loop over cause 0
+	  for(int c1=0;c1<NBinsTrueAngle;c1++){//loop over cause 1
+	    if(TotalMCContent != 0) vInitialPriorMC[c0][c1] /= TotalMCContent;
+	  }
+	  }*/
 #ifdef DEBUG2
-    
+	
     cout<<endl<<"Likelihood matrix (pmu, thetamu, ironmu,recthetamu):"<<endl;
     for(int c0=0;c0<NBinsTrueMom;c0++){//loop over cause 0
       for(int c1=0;c1<NBinsTrueAngle;c1++){//loop over cause 1
@@ -476,10 +554,10 @@ int main(int argc, char ** argv){
       
       //2. Build the prior used in the unfolding
       XS->Xsec::SetPrior(vPriorNormalised,vPrior,vInitialPriorMC,vInitialPrior,vPosterior,PriorMC,nt0);
-      if(nt0==0){
+      if(nt1==0 && nt2==0){
 	for(int ibinx=0;ibinx<NBinsTrueMom;ibinx++){
 	  for(int ibiny=0;ibiny<NBinsTrueAngle;ibiny++){
-	    hPrior->SetBinContent(ibinx+1,ibiny+1,vPriorNormalised[ibinx][ibiny]);
+	    hPrior[nt0]->SetBinContent(ibinx+1,ibiny+1,vPriorNormalised[ibinx][ibiny]);
 	  }
 	}
       }
@@ -494,8 +572,8 @@ int main(int argc, char ** argv){
       if(nt0%10 == 0) cout<<"Unfolding matrix is built"<<endl;
 #endif
       //4. Apply the unfolding on data
-      //XS->Xsec::ApplyUnfoldingBkgSubstraction(vPosterior, vUnfolding, DataReconstructedEvents, MCReconstructedBkgEvents);
-      XS->Xsec::ApplyUnfolding(vPosterior, vPosterior_SignalOnly, vUnfolding, DataReconstructedEvents);
+      if(BkgSub) XS->Xsec::ApplyUnfoldingBkgSubstraction(vPosterior, vUnfolding, DataReconstructedEvents, MCReconstructedBkgEvents);
+      else XS->Xsec::ApplyUnfolding(vPosterior, vPosterior_SignalOnly, vUnfolding, DataReconstructedEvents);
     
 #ifdef DEBUG2
       cout<<"Iteration Step #"<<nt0+1<<" ////////////////////////////////////////////////////////////////////////"<<endl;
@@ -549,6 +627,14 @@ int main(int argc, char ** argv){
 	double Efficiency=MCEfficiency[c0][c1];
 	double Correction=Flux*BinningWidth*Efficiency*NTarget;
 	XSection_SignalOnly[c0][c1]=UnfoldedData_SignalOnly[c0][c1]/ ( Correction == 0 ? 1 : Correction );
+	if(FakeData){//In this case, the true XS is given by correcting with the true data efficiency
+	  double dataEfficiency=DataEfficiency[c0][c1];
+	  Correction=Flux*BinningWidth*dataEfficiency*NTarget;
+	  TrueXSection_SignalOnly[c0][c1]=TrueEventsDistribution_SignalOnly[c0][c1]/ ( Correction == 0 ? 1 : Correction );
+	}
+	else{
+	  TrueXSection_SignalOnly[c0][c1]=TrueEventsDistribution_SignalOnly[c0][c1]/ ( Correction == 0 ? 1 : Correction );
+	}
 	//cout<<"bin ("<<c0<<","<<c1<<"), benji says efficiency="<<Efficiency<<", correction="<<Correction<<", Nev="<<XSection_SignalOnly[c0][c1]<<", XS="<<XSection_SignalOnly[c0][c1]<<endl;
 	//cout<<"("<<c0<<","<<c1<<")     Correction="<<Correction<<", XS="<<XSection_SignalOnly[c0][c1]<<endl;
 	//XSection_SignalOnly[c0][c1]=UnfoldedData_SignalOnly[c0][c1]/Correction;
@@ -567,19 +653,31 @@ int main(int argc, char ** argv){
 	}
       }
     }
-
+    
+    //cout<<endl<<endl;
     for(int c0=0;c0<NBinsTrueMom;c0++){//loop over cause 0
       for(int c1=0;c1<NBinsTrueAngle;c1++){//loop over cause 1
 	XSection_SignalOnly_Fill[c0][c1]=XSection_SignalOnly[c0][c1];
+	TrueXSection_SignalOnly_Fill[c0][c1]=TrueXSection_SignalOnly[c0][c1];
 	UnfoldedData_SignalOnly_Fill[c0][c1]=UnfoldedData_SignalOnly[c0][c1];
 	table_TrueEventsDistribution_SignalOnly_Fill[c0][c1]=table_TrueEventsDistribution_SignalOnly[c0][c1];
+	//cout<<setprecision(3)<<table_TrueEventsDistribution_SignalOnly[c0][c1]<<"X"<<UnfoldedData_SignalOnly[c0][c1]<<" ";
+	 
 	for(int e0=0;e0<NBinsRecMom;e0++){//loop over effect 0
 	  for(int e1=0;e1<NBinsRecAngle;e1++){//loop over effect 1
 	    DataReconstructedEvents_TrueSignal_Fill[c0][c1][e0][e1]=DataReconstructedEvents_TrueSignal[c0][c1][e0][e1];
 	  }
 	}
       }
+      //cout<<endl;
     }
+    
+    for(int e0=0;e0<NBinsRecMom;e0++){//loop over effect 0
+      for(int e1=0;e1<NBinsRecAngle;e1++){//loop over effect 1
+	DataReconstructedEvents_Fill[e0][e1] = DataReconstructedEvents[e0][e1];
+      }
+    }
+    
     if(NIterationFluctuations) wtree->Fill();//In the case of check of the unfolding behaviour w/ number of iterations, the number of events is saved for each iterations
     }
     if(!(NIterationFluctuations)) wtree->Fill();//In the normal case, the number of events is saved only at the end (after all iterations has been applied)
@@ -589,8 +687,12 @@ int main(int argc, char ** argv){
       for(int c1=0;c1<NBinsTrueAngle;c1++){//loop over cause 1
 	double Ratio = UnfoldedData_SignalOnly[c0][c1]-TrueEventsDistribution_SignalOnly[c0][c1];
 	Ratio = Ratio/ ( TrueEventsDistribution_SignalOnly[c0][c1] == 0 ? 1 : TrueEventsDistribution_SignalOnly[c0][c1] );
+	double RatioXS = XSection_SignalOnly[c0][c1]-TrueXSection_SignalOnly[c0][c1];
+	RatioXS = RatioXS/ ( TrueXSection_SignalOnly[c0][c1] == 0 ? 1 : TrueXSection_SignalOnly[c0][c1] );
 	
-	cout<<UnfoldedData_SignalOnly[c0][c1]<<", true="<<TrueEventsDistribution_SignalOnly[c0][c1]<<", post/true="<<Ratio*100<<"%"<<endl;
+	cout<<"Events:"<<UnfoldedData_SignalOnly[c0][c1]<<", true="<<TrueEventsDistribution_SignalOnly[c0][c1]<<", post/true="<<Ratio*100<<"%"<<endl;
+	cout<<"Efficiency: data="<<MCEfficiency[c0][c1]<<", mc="<<DataEfficiency[c0][c1]<<endl;
+	cout<<"XS:"<<XSection_SignalOnly[c0][c1]<<", true="<<TrueXSection_SignalOnly[c0][c1]<<", post/true="<<RatioXS*100<<"%"<<endl;
       }
       cout<<endl;
     }
@@ -599,6 +701,7 @@ int main(int argc, char ** argv){
     }//end of loop on toys 1: statistical variations
 
 #ifdef DEBUG
+    /*
   TMatrixD LMom(NBinsTrueMom,NBinsRecMom);
   TMatrixD UMom(NBinsTrueMom,NBinsRecMom);
   TH1D * PriorMom = new TH1D("PriorMom","Prior of the 1D momentum",NBinsTrueMom,BinningTrueMom);
@@ -626,7 +729,7 @@ int main(int argc, char ** argv){
   UMom.Draw("colz");
   TCanvas * cPriorMom = new TCanvas("cPriorMom","Prior for 1D momentumXdistance");
   PriorMom->Draw();
-  
+    */
 #endif
   /*
   TCanvas * canEvents[NBinsTrueMom][NBinsTrueAngle];
@@ -718,7 +821,7 @@ int main(int argc, char ** argv){
   MUnfolding->Write("MUnfolding");
   MLikelihood->Write("MLikelihood");
   VReconstructedEvents->Write("VReconstructedEvents");
-  hPrior->Write("Prior");
+  for(int it=0;it<NToys[0];it++) hPrior[it]->Write(Form("Prior%d",it));
   
   wtree->Write();
   file->Write();
@@ -772,11 +875,13 @@ int main(int argc, char ** argv){
     delete vPriorNormalised[i];
     delete vPosterior[i];
     delete vPosterior_SignalOnly[i];
+    delete DataEfficiency[i];
     delete MCEfficiency[i];
     delete TrueEventsDistribution_SignalOnly[i];
     delete UnfoldedData_SignalOnly[i];
     delete table_TrueEventsDistribution_SignalOnly[i];
     delete XSection_SignalOnly[i];
+    delete TrueXSection_SignalOnly[i];
   }  
   delete vInitialPriorMC;
   delete vInitialPrior;
@@ -784,11 +889,13 @@ int main(int argc, char ** argv){
   delete vPriorNormalised;
   delete vPosterior;
   delete vPosterior_SignalOnly;
+  delete DataEfficiency;
   delete MCEfficiency;
   delete TrueEventsDistribution_SignalOnly;
   delete UnfoldedData_SignalOnly;
   delete table_TrueEventsDistribution_SignalOnly;
   delete XSection_SignalOnly;
+  delete TrueXSection_SignalOnly;
 
  
   for(int i=0;i<NBinsRecMom;i++){

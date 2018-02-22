@@ -34,9 +34,9 @@ class Xsec{
 
   void LoadInputFiles_OnlySelectedDataSB(char * fDataName,char * fDataNameSB,double ** DataReconstructedEvents);
     
-  void LoadInputFiles(char * fDataName,char * fMCName, double **** MCReconstructedEvents_TrueSignal, double ** DataReconstructedEvents,double ** MCReconstructedEvents, double ** MCReconstructedBkgEvents, double ** Efficiency, double *NumberOfPOT,double **** MCReconstructedEvents_TrueSignal=NULL,bool FakeData=false);
+  void LoadInputFiles(char * fDataName,char * fMCName, double **** MCReconstructedEvents_TrueSignal, double ** DataReconstructedEvents,double ** MCReconstructedEvents, double ** MCReconstructedBkgEvents, double ** Efficiency, double *NumberOfPOT,double **** MCReconstructedEvents_TrueSignal=NULL,double ** DataEfficiency=NULL,bool FakeData=false);
 
-  void LoadInputFilesSB(char * fDataName,char * fMCName, char * fDataNameSB,char * fMCNameSB, double **** MCReconstructedEvents_TrueSignal, double ** DataReconstructedEvents,double ** MCReconstructedEvents, double ** MCReconstructedBkgEvents, double ** Efficiency, double *NumberOfPOT,double **** MCReconstructedEvents_TrueSignal=NULL,bool FakeData=false);
+  void LoadInputFilesSB(char * fDataName,char * fMCName, char * fDataNameSB,char * fMCNameSB, double **** MCReconstructedEvents_TrueSignal, double ** DataReconstructedEvents,double ** MCReconstructedEvents, double ** MCReconstructedBkgEvents, double ** Efficiency, double *NumberOfPOT,double **** MCReconstructedEvents_TrueSignal=NULL,double ** DataEfficiency=NULL,bool FakeData=false);
   //void LoadInputFilesSB(char * fDataName,char * fMCName, char * fDataNameSB,char * fMCNameSB, double **** MCReconstructedEvents_TrueSignal, double ** DataReconstructedEvents,double ** MCReconstructedEvents, double ** MCReconstructedBkgEvents, double ** Efficiency, double *NumberOfPOT);
 
   void LoadNeutrinoFlux(TH1D * NeutrinoFlux);
@@ -55,8 +55,11 @@ class Xsec{
 
   void GenerateStatisticalFluctuations(double ** DataReconstructedEvents);
 
-  void GenerateMCFluctuations(double **** MCReconstructedEvents_TrueSignal,double **** RelativeSigma);
+  void GenerateDetectorMCFluctuations(double **** MCReconstructedEvents_TrueSignal,double **** RelativeSigma);
+  void GenerateXSModelMCFluctuations(double ** Efficiency, double **** MCReconstructedEvents_TrueSignal, double **** RelativeSigma);
 
+  void GenerateDataFluctuations(double ** DataReconstructedEvents, double **** DataReconstructedEvents_TrueSignal,double **** RelativeSigma);
+    
  private:
   bool _isPM;
 };

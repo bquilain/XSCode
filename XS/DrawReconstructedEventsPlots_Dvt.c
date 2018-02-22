@@ -62,8 +62,8 @@ const int MODE=1;
 void Evaluate1DError(TH2D * NominalMC, double **** CovarianceMatrix, TH1D * NominalMC_RecMom, TH1D * NominalMC_RecAngle){
 
   int NBinsMom = NominalMC->GetNbinsX();
-  int NBinsAngle = NominalMC->GetNbinsX();
-  
+  int NBinsAngle = NominalMC->GetNbinsY();
+  cout<<NBinsMom<<", "<<NBinsAngle<<endl;  
   //First, create the momentum histogram value and error
   for(int e0=0;e0<NBinsMom;e0++){
     double Value=0;
@@ -114,7 +114,7 @@ int main(int argc, char ** argv){
   bool MC=false;
   bool Reconstructed=false;
   bool SideBand=false;
-  
+
   int c=-1;
   while ((c = getopt(argc, argv, "o:wpmrb")) != -1) {
     switch(c){
@@ -413,7 +413,7 @@ int main(int argc, char ** argv){
   // Step 2. Loop over all the errors to determine the variation of number of events for: each error source & bin
   for(int ErrorType=StartError;ErrorType<=EndError;ErrorType++){
     //Allow to fill the nominal distribution even if there is no detector systematics (and we wish to start error evaluation at 17, where XS starts)
-    if(ErrorType>1 && ErrorType<Systematics_Flux_Start) continue;
+    if(ErrorType>=1 && ErrorType<Systematics_Flux_Start) continue;
     
     //if(!(ErrorType==0 || ErrorType==2 || ErrorType==16 || ErrorType>=17 || (ErrorType>=4 && ErrorType<=7))) continue;//TEMP
     //if(!(ErrorType==0 || (ErrorType==3)  /*|| ErrorType==5*/)) continue;//TEMP
@@ -556,10 +556,10 @@ int main(int argc, char ** argv){
       else{
 	if(SideBand) sprintf(txtMCName,"%s/XS/files/SB/MCUnfolded_%s_Systematics%d_%d.root",cINSTALLREPOSITORY,DetName,ErrorType,n);
 	else sprintf(txtMCName,"%s/XS/files/MCUnfolded_%s_Systematics%d_%d.root",cINSTALLREPOSITORY,DetName,ErrorType,n);
-	XS->Xsec::LoadInputFiles_OnlyUnfoldedData(txtMCName,MCReconstructedEvents,MCTrueEvents);
+	//XS->Xsec::LoadInputFiles_OnlyUnfoldedData(txtMCName,MCReconstructedEvents,MCTrueEvents);
 	
-	if(ErrorType>=7 && ErrorType<=Systematics_Detector_End) sprintf(txtDataName,"/home/bquilain/CC0pi_XS/XS/files/DataUnfolded_%s_Systematics%d_%d.txt",cINSTALLREPOSITORY,DetName,ErrorType,n);
-	else if(ErrorType==0 && EndError>=7 && StartError<=Systematics_Detector_End) sprintf(txtDataName,"/home/bquilain/CC0pi_XS/XS/files/DataUnfolded_%s_Systematics%d_%d%s.txt",cINSTALLREPOSITORY,DetName,ErrorType,n);
+	if(ErrorType>=7 && ErrorType<=Systematics_Detector_End) sprintf(txtDataName,"%s/XS/files/DataUnfolded_%s_Systematics%d_%d.txt",cINSTALLREPOSITORY,DetName,ErrorType,n);
+	else if(ErrorType==0 && EndError>=7 && StartError<=Systematics_Detector_End) sprintf(txtDataName,"%s/XS/files/DataUnfolded_%s_Systematics%d_%d%s.txt",cINSTALLREPOSITORY,DetName,ErrorType,n);
 	else sprintf(txtDataName,"%s/XS/files/DataUnfolded_%s_Systematics%d_%d.txt",cINSTALLREPOSITORY,DetName,ErrorType,n);
 	
 	//else sprintf(txtDataName,"%s/XS/Selection1000_cutBkg%s.txt",cINSTALLREPOSITORY,cINSTALLREPOSITORY,DetName);
@@ -570,6 +570,7 @@ int main(int argc, char ** argv){
 	}
 	else{
 	  XS->Xsec::LoadInputFiles_OnlyUnfoldedData(txtDataName,DataReconstructedEvents,MCTrueEvents);
+	  cout<<"Yo"<<endl;
 	  //if(ErrorType==0) XS->Xsec::LoadInputFiles(txtDataName,txtMCName,MCReconstructedEvents_TrueSignal,DataReconstructedEvents,MCReconstructedEvents,MCReconstructedBkgEvents,Efficiency,NumberOfPOT);
 	}
       }
@@ -872,6 +873,7 @@ int main(int argc, char ** argv){
 	  gErrorXS[ErrorType-Systematics_Xsec_Start][e0][e1] = new TGraph(NXsecVariations,xXS[ErrorType-Systematics_Xsec_Start][e0][e1],yXS[ErrorType-Systematics_Xsec_Start][e0][e1]);
 	  gErrorXS[ErrorType-Systematics_Xsec_Start][e0][e1]->Write(Form("gErrorXS[%d][%d][%d]",ErrorType-Systematics_Xsec_Start,e0,e1));
 	  sErrorXS[ErrorType-Systematics_Xsec_Start][e0][e1] = new TSpline3(Form("sErrorXS[%d][%d][%d]",ErrorType-Systematics_Xsec_Start,e0,e1),gErrorXS[ErrorType-Systematics_Xsec_Start][e0][e1]);
+	  if(e0 == 0 && e1 == 0) cout<<"###################################################"<<endl<<ErrorType-Systematics_Xsec_Start<<endl<<endl;
 	  sErrorXS[ErrorType-Systematics_Xsec_Start][e0][e1]->Write(Form("sErrorXS_%d_%d_%d",ErrorType-Systematics_Xsec_Start,e0,e1)); 
 	}
       }
@@ -930,10 +932,9 @@ int main(int argc, char ** argv){
 	for(int e0=0;e0<NBinsMom;e0++){//loop over effect 0
 	  for(int e1=0;e1<NBinsAngle;e1++){//loop over effect 1
 	    int bin1=NBinsAngle*e0+e1;
+	    cout<<NominalSelectedMC->GetBinContent(e0+1,e1+1)<<endl;
+	    cout<<sErrorXS[s1][e0][e1]->Eval(Error)<<endl;
 	    NEventsXS[bin1]=NominalSelectedMC->GetBinContent(e0+1,e1+1)*sErrorXS[s1][e0][e1]->Eval(Error);
-	    
-	    
-	    
 	    
 	    //if(e0==4 && e1==4) cout<<"Error="<<Error<<", "<<NEventsXS[bin1]-NominalSelectedMC->GetBinContent(e0+1,e1+1)<<", value="<<sErrorXS[2][4][4]->Eval(Error)<<endl;
 	    for(int f0=0;f0<NBinsMom;f0++){//loop over effect 0

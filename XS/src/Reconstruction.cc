@@ -1149,7 +1149,7 @@ double Reconstruction::GetBeamAngle(double ang1, double thetax1, double thetay1)
     Track1[i]/=NormTrack1;
   }
 
-  AngleBeamTrack=TMath::ACos(Track1[0]*Beam[0]+Track1[1]*Beam[1]+Track1[2]*Beam[2]);
+  AngleBeamTrack=TMath::ACos(Track1[0]*Beam[0]+Track1[1]*Beam[1]+Track1[2]*Beam[2])*180/TMath::Pi();
 
   return AngleBeamTrack;
 }
@@ -2914,8 +2914,8 @@ int Reconstruction::GetTrackParticle(IngridEventSummary *evt, PMAnaSummary * rec
     SimPart2=(IngridSimParticleSummary*) evt->GetSimParticle(is);
     if(SimPart2->length<LengthCut) continue;
     if(SimPart2->pdg==2112 || SimPart2->pdg==22) continue;
-    double thetaX=(TMath::ATan((SimPart2->fpos[0]-SimPart2->ipos[0])/(SimPart2->fpos[2]-SimPart2->ipos[2])))/TMath::Pi()*180.;
-    double thetaY=(TMath::ATan((SimPart2->fpos[1]-SimPart2->ipos[1])/(SimPart2->fpos[2]-SimPart2->ipos[2])))/TMath::Pi()*180.;
+    double thetaX=(TMath::ATan((SimPart2->fpos[0]-SimPart2->ipos[0])/(SimPart2->fpos[2]-SimPart2->ipos[2])))*180./TMath::Pi();
+    double thetaY=(TMath::ATan((SimPart2->fpos[1]-SimPart2->ipos[1])/(SimPart2->fpos[2]-SimPart2->ipos[2])))*180./TMath::Pi();
     
     bool Used=false;
     for(int i=0;i<SimList.size();i++){
@@ -2992,8 +2992,8 @@ int Reconstruction::GetTrackParticle(IngridEventSummary *evt, PMAnaSummary * rec
       SimPart2=(IngridSimParticleSummary*) evt->GetSimParticle(is);
       if(SimPart2->length<LengthCut) continue;
       if(SimPart2->pdg==22) continue;
-      double thetaX=(TMath::ATan((SimPart2->fpos[0]-SimPart2->ipos[0])/(SimPart2->fpos[2]-SimPart2->ipos[2])))/TMath::Pi()*180;
-      double thetaY=(TMath::ATan((SimPart2->fpos[1]-SimPart2->ipos[1])/(SimPart2->fpos[2]-SimPart2->ipos[2])))/TMath::Pi()*180;
+      double thetaX=(TMath::ATan((SimPart2->fpos[0]-SimPart2->ipos[0])/(SimPart2->fpos[2]-SimPart2->ipos[2])))*180/TMath::Pi();
+      double thetaY=(TMath::ATan((SimPart2->fpos[1]-SimPart2->ipos[1])/(SimPart2->fpos[2]-SimPart2->ipos[2])))*180/TMath::Pi();
       
       double Ang3D=Get2TrackAngle(recon->thetay[itrk],recon->thetax[itrk],thetaX,thetaY);
       
@@ -3008,6 +3008,152 @@ int Reconstruction::GetTrackParticle(IngridEventSummary *evt, PMAnaSummary * rec
 	PartNum=is;
 	Min=TMath::Abs(Ang3D);
 	Particle=SimPart2->pdg;
+	
+      }
+      else continue;
+    }
+  }
+  return PartNum;
+}
+
+int Reconstruction::GetTrackParticleBugged(IngridEventSummary *evt, PMAnaSummary * recon, int itrk, double TrkLength){
+  int PartNum=0;
+  int NSimPart=evt->NIngridSimParticles();
+  double Min=180;
+  int Particle=0;
+  vector <int> SimList;
+  SimList.clear();
+  IngridSimParticleSummary * SimPart2;
+
+  double LengthCut=(_isPM? 8.6:11.7);
+  // 11.7 = 5.7*2 + 0.3 ie what is required to have 3 hits in WM
+  
+  for(int is=0;is<evt->NIngridSimParticles();is++){
+    SimPart2=(IngridSimParticleSummary*) evt->GetSimParticle(is);
+    if(SimPart2->length<8.6) continue;
+    if(SimPart2->pdg==2112) continue;
+    double thetaX=(TMath::ATan((SimPart2->fpos[0]-SimPart2->ipos[0])/(SimPart2->fpos[2]-SimPart2->ipos[2])))*TMath::Pi()/180.;
+    double thetaY=(TMath::ATan((SimPart2->fpos[1]-SimPart2->ipos[1])/(SimPart2->fpos[2]-SimPart2->ipos[2])))*TMath::Pi()/180.;
+    
+    bool Used=false;
+    for(int i=0;i<SimList.size();i++){
+      if(is==SimList[i]) Used=true;
+    }
+    if(Used) continue;
+    
+    double Tx=thetaY-(recon->thetax)[itrk];
+    double Ty=thetaX-(recon->thetay)[itrk];
+    //double dx_Temp=1+pow(TMath::Tan(180*(Tx)/TMath::Pi()),2)+pow(TMath::Tan(180*(Ty)/TMath::Pi()),2);
+    double Scalar=(SimPart2->fpos[2]-SimPart2->ipos[2])*1;
+    double Norm=TMath::Sqrt((SimPart2->fpos[0]-SimPart2->ipos[0])*(SimPart2->fpos[0]-SimPart2->ipos[0])+(SimPart2->fpos[1]-SimPart2->ipos[1])*(SimPart2->fpos[1]-SimPart2->ipos[1])+(SimPart2->fpos[2]-SimPart2->ipos[2])*(SimPart2->fpos[2]-SimPart2->ipos[2]));
+    double Ang3D=TMath::ACos(Scalar/Norm)*180/TMath::Pi()-(recon->angle)[itrk];
+    //double Ang3D=TMath::ACos(1/dx_Temp);
+    if(TMath::Abs(Ang3D)<Min && TrkLength<2*SimPart2->length){
+      
+
+#ifdef DEBUG
+      cout<<"Is selected: Particle="<<SimPart2->pdg<<"       :";
+      cout<<"here is the rec thetax, thetay="<<(recon->thetay)[itrk]<<", "<<(recon->thetax)[itrk]<<", Angle 3D="<<(recon->angle)[itrk]<<", And here are the angles="<<thetaX<<", "<<thetaY<<", 3D="<<TMath::ACos(Scalar/Norm)*180/TMath::Pi()<<endl;
+      cout<<"rec trk length="<<TrkLength<<", Simpart length="<<SimPart2->length<<endl;
+#endif
+      
+      bool Change=false;
+      for(int itrk2=0;itrk2<recon->Ntrack;itrk2++){
+	if(itrk2==itrk) continue;
+	if(SimPart2->length<8.6) continue;
+	if(SimPart2->pdg==2112) continue;
+	double Tx2=thetaY-(recon->thetax)[itrk];
+	double Ty2=thetaX-(recon->thetay)[itrk];
+	//double dx_Temp2=1+pow(TMath::Tan(180*(Tx2)/TMath::Pi()),2)+pow(TMath::Tan(180*(Ty2)/TMath::Pi()),2);
+	Scalar=(SimPart2->fpos[2]-SimPart2->ipos[2])*1;
+	Norm=TMath::Sqrt((SimPart2->fpos[0]-SimPart2->ipos[0])*(SimPart2->fpos[0]-SimPart2->ipos[0])+(SimPart2->fpos[1]-SimPart2->ipos[1])*(SimPart2->fpos[1]-SimPart2->ipos[1])+(SimPart2->fpos[2]-SimPart2->ipos[2])*(SimPart2->fpos[2]-SimPart2->ipos[2]));
+	double Ang3D2=TMath::ACos(Scalar/Norm)*180/TMath::Pi()-(recon->angle)[itrk2];
+	
+    //double Ang3D2=TMath::ACos(1/dx_Temp2);
+	if(TMath::Abs(Ang3D2)<TMath::Abs(Ang3D)) Change=true;
+      }
+      
+      if(Change) continue;
+      
+      PartNum=is;
+      Min=TMath::Abs(Ang3D);
+      Particle=TMath::Abs(SimPart2->pdg);
+      //TrueParticleNRJ=SimPart2->momentum[3];
+      //TrueParticleNRJ=TMath::Sqrt(SimPart2->momentum[0]*SimPart2->momentum[0]+SimPart2->momentum[1]*SimPart2->momentum[1]+SimPart2->momentum[2]*SimPart2->momentum[2]);
+      
+    }
+    else if(Min==180 && TMath::Abs(Ang3D)<Min && SimPart2->length>8.6){
+
+      
+      bool Change=false;
+      for(int itrk2=0;itrk2<recon->Ntrack;itrk2++){
+	if(itrk2==itrk) continue;
+	if(SimPart2->length<8.6) continue;
+	if(SimPart2->pdg==2112) continue;
+	double Tx2=thetaY-(recon->thetax)[itrk];
+	double Ty2=thetaX-(recon->thetay)[itrk];
+	Scalar=(SimPart2->fpos[2]-SimPart2->ipos[2])*1;
+	Norm=TMath::Sqrt((SimPart2->fpos[0]-SimPart2->ipos[0])*(SimPart2->fpos[0]-SimPart2->ipos[0])+(SimPart2->fpos[1]-SimPart2->ipos[1])*(SimPart2->fpos[1]-SimPart2->ipos[1])+(SimPart2->fpos[2]-SimPart2->ipos[2])*(SimPart2->fpos[2]-SimPart2->ipos[2]));
+	double Ang3D2=TMath::ACos(Scalar/Norm)*180/TMath::Pi()-(recon->angle)[itrk2];
+	
+	//double dx_Temp2=1+pow(TMath::Tan(180*(Tx2)/TMath::Pi()),2)+pow(TMath::Tan(180*(Ty2)/TMath::Pi()),2);
+	//double Ang3D2=TMath::ACos(1/dx_Temp2);
+	if(TMath::Abs(Ang3D2)<TMath::Abs(Ang3D)) Change=true;
+      }
+      
+      if(Change) continue;
+      
+#ifdef DEBUG
+      cout<<"Is selected: Particle="<<SimPart2->pdg<<"       :";
+      cout<<"here is the rec thetax, thetay="<<(recon->thetay)[itrk]<<", "<<(recon->thetax)[itrk]<<", Angle 3D="<<(recon->angle)[itrk]<<", And here are the angles="<<thetaX<<", "<<thetaY<<", 3D="<<TMath::ACos(Scalar/Norm)*180/TMath::Pi()<<endl;
+      cout<<"rec trk length="<<TrkLength<<", Simpart length="<<SimPart2->length<<endl;
+#endif DEBUG
+      
+      
+      PartNum=is;
+      Min=TMath::Abs(Ang3D);
+      Particle=SimPart2->pdg;
+      //TrueParticleNRJ=SimPart2->momentum[3];
+      //TrueParticleNRJ=TMath::Sqrt(SimPart2->momentum[0]*SimPart2->momentum[0]+SimPart2->momentum[1]*SimPart2->momentum[1]+SimPart2->momentum[2]*SimPart2->momentum[2]);
+      
+    }
+    else continue;
+  }
+  
+  SimList.push_back(PartNum);
+  if(Particle==0){
+    
+    for(int is=0;is<NSimPart;is++){
+      SimPart2=(IngridSimParticleSummary*) evt->GetSimParticle(is);
+      if(SimPart2->length<8.6) continue;
+      double thetaX=(TMath::ATan((SimPart2->fpos[0]-SimPart2->ipos[0])/(SimPart2->fpos[2]-SimPart2->ipos[2])))*TMath::Pi()/180;
+      double thetaY=(TMath::ATan((SimPart2->fpos[1]-SimPart2->ipos[1])/(SimPart2->fpos[2]-SimPart2->ipos[2])))*TMath::Pi()/180;
+      
+    
+      double Tx=thetaY-(recon->thetax)[itrk];
+      double Ty=thetaX-(recon->thetay)[itrk];
+      //double dx_Temp=1+pow(TMath::Tan(180*(Tx)/TMath::Pi()),2)+pow(TMath::Tan(180*(Ty)/TMath::Pi()),2);
+      // double Ang3D=TMath::ACos(1/dx_Temp);
+      double Scalar=(SimPart2->fpos[2]-SimPart2->ipos[2])*1;
+    double Norm=TMath::Sqrt((SimPart2->fpos[0]-SimPart2->ipos[0])*(SimPart2->fpos[0]-SimPart2->ipos[0])+(SimPart2->fpos[1]-SimPart2->ipos[1])*(SimPart2->fpos[1]-SimPart2->ipos[1])+(SimPart2->fpos[2]-SimPart2->ipos[2])*(SimPart2->fpos[2]-SimPart2->ipos[2]));
+    double Ang3D=TMath::ACos(Scalar/Norm)*180/TMath::Pi()-(recon->angle)[itrk];
+
+      
+      if(TMath::Abs(Ang3D)<Min && TrkLength<2*SimPart2->length){
+	PartNum=is;
+	Min=TMath::Abs(Ang3D);
+	Particle=TMath::Abs(SimPart2->pdg);
+	//TrueParticleNRJ=SimPart2->momentum[3];
+	//TrueParticleNRJ=TMath::Sqrt(SimPart2->momentum[0]*SimPart2->momentum[0]+SimPart2->momentum[1]*SimPart2->momentum[1]+SimPart2->momentum[2]*SimPart2->momentum[2]);
+	
+      }
+      else if(Min==180 && TMath::Abs(Ang3D)<Min && SimPart2->length>8.6){
+	
+	PartNum=is;
+	Min=TMath::Abs(Ang3D);
+	Particle=SimPart2->pdg;
+	//TrueParticleNRJ=SimPart2->momentum[3];
+	//TrueParticleNRJ=TMath::Sqrt(SimPart2->momentum[0]*SimPart2->momentum[0]+SimPart2->momentum[1]*SimPart2->momentum[1]+SimPart2->momentum[2]*SimPart2->momentum[2]);
 	
       }
       else continue;

@@ -84,7 +84,7 @@ void ProduceStack(TH1D * h[NFSIs], THStack * hStack){
 
 }
 
-void InitialiseTable(double DataSelected[NBinsRecMom][NBinsRecAngle],double MCSelected[NBinsTrueMom][NBinsTrueAngle][NBinsRecMom][NBinsRecAngle],double BkgSelected[NBinsRecMom][NBinsRecAngle],double Efficiency[NBinsTrueMom][NBinsTrueAngle],double TotalCC0piEvent[NBinsTrueMom][NBinsTrueAngle]){
+void InitialiseTable(double ** DataSelected,double **** MCSelected,double ** BkgSelected, double ** Efficiency,double ** TotalCC0piEvent){
   for(int c0=0;c0<NBinsTrueMom;c0++){//loop over cause 0
     for(int c1=0;c1<NBinsTrueAngle;c1++){//loop over cause 1
       Efficiency[c0][c1]=0;
@@ -301,11 +301,28 @@ void CC0piDistributions(TChain * wtree,bool IsData,bool IsFlux,bool Plots,int Se
   int Counter3=0;
   double POTCount=0;
 
-  double DataSelected[NBinsRecMom][NBinsRecAngle];
-  double MCSelected[NBinsTrueMom][NBinsTrueAngle][NBinsRecMom][NBinsRecAngle];
-  double BkgSelected[NBinsRecMom][NBinsRecAngle];
-  double Efficiency[NBinsTrueMom][NBinsTrueAngle];
-  double TotalCC0piEvent[NBinsTrueMom][NBinsTrueAngle];
+  double ** DataSelected = new double*[NBinsRecMom];
+  double ** BkgSelected = new double*[NBinsRecMom];
+  for(int i=0;i<NBinsRecMom;i++){
+    DataSelected[i] = new double[NBinsRecAngle];
+    BkgSelected[i] = new double[NBinsRecAngle];
+  }
+
+  double **** MCSelected = new double***[NBinsTrueMom];
+  double ** Efficiency = new double*[NBinsTrueMom];
+  double ** TotalCC0piEvent = new double*[NBinsTrueMom];
+  for(int i=0;i<NBinsTrueMom;i++){
+    MCSelected[i] = new double**[NBinsTrueAngle];
+    Efficiency[i] = new double[NBinsTrueAngle];
+    TotalCC0piEvent[i] = new double[NBinsTrueAngle];
+    for(int j=0;j<NBinsTrueAngle;j++){
+      MCSelected[i][j] = new double*[NBinsRecMom];
+      for(int k=0;k<NBinsRecMom;k++){
+	MCSelected[i][j][k] = new double[NBinsRecAngle];
+      }
+    }
+  }
+
 
   InitialiseTable(DataSelected,MCSelected,BkgSelected,Efficiency,TotalCC0piEvent);
 
@@ -508,6 +525,28 @@ void CC0piDistributions(TChain * wtree,bool IsData,bool IsFlux,bool Plots,int Se
     //ProduceStack(hRecAngle,Stack_RecAngle);
 
   }
+
+  for(int i=0;i<NBinsRecMom;i++){
+    delete DataSelected[i];
+    delete BkgSelected[i];
+  }
+    delete DataSelected;
+  delete BkgSelected;
+  
+  for(int i=0;i<NBinsTrueMom;i++){
+    for(int j=0;j<NBinsTrueAngle;j++){
+      for(int k=0;k<NBinsRecMom;k++){
+	delete MCSelected[i][j][k];
+      }
+      delete MCSelected[i][j];
+    }
+    delete MCSelected[i];
+    delete Efficiency[i];
+    delete TotalCC0piEvent[i];
+  }
+  delete MCSelected;
+  delete Efficiency;
+  delete TotalCC0piEvent;
 
 }
 
@@ -725,5 +764,6 @@ int main(int argc, char ** argv){
 #ifdef DEBUG
   theApp.Run();
 #endif
+
    return 0;
 }

@@ -211,7 +211,7 @@ void LoadMuCLDistributions_Likelihood(bool PM=true,int ErrorType=0, int ErrorVal
   else if(ErrorType==5 && BirksRescaled) file_Likelihood = new TFile(Form("$INSTALLREPOSITORY/XS/src/PDFMuPiCL_Likelihood_Birks%d%s.root",ErrorValue,(PM?"":"_WM")));
   else file_Likelihood = new TFile(Form("$INSTALLREPOSITORY/XS/src/PDFMuPiCL_Likelihood%s_Systematics%d_%d.root",(PM?"":"_WM"),ErrorType,ErrorValue));
 #else
-  TFile * file_Likelihood = new TFile(Form("$INSTALLREPOSITORY/XS/src/PDFMuCL_Likelihood%s.root",(PM?"":"_WM")));
+  file_Likelihood = new TFile(Form("$INSTALLREPOSITORY/XS/src/PDFMuCL_Likelihood%s.root",(PM?"":"_WM")));
 #endif
   PDFParticle = (TH1D*) file_Likelihood->Get("PDFParticle");
   PDFParticle->Scale(1./PDFParticle->Integral());
@@ -644,7 +644,8 @@ int main(int argc, char **argv)
   Reconstruction * Rec = new Reconstruction(PM);
   Corrections * Cor = new Corrections(PM);
   Xsec * XS = new Xsec(PM);
-  XS->Initialize();
+  //XS->Initialize();
+  InitializeGlobal(PM);
 
   if(ErrorType==4){
     fPEAngle = new TFile((ErrorValue).c_str());
@@ -968,7 +969,6 @@ int main(int argc, char **argv)
 
     
     //////////////////////////////////START THE LOOP ON THE RECONSTRUCTION (RECONSTRUCTED VERTEXES////////////////
-    //cout<<NIngBasRec<<endl;
     NIngBasRec= evt->NPMAnas();
       
     if(NIngBasRec==0){//Case of no reconstruction!
@@ -1142,7 +1142,7 @@ int main(int argc, char **argv)
 	/****************************************Attenuation from the dx in the scintillator is applied*************************/
 	Vec=Cor->Corrections::GetFiberAttenuation(Vec);
 	sort(Vec.begin(),Vec.end());
-	    
+      
 	//4. Determine the distance crossed in Plastic and Iron by the track
 	vector <double> Dist;//
 	if(dx!=dx || dx==0) {cout<<"Problem in dx evaluation"<<endl;continue;}   
@@ -1168,9 +1168,14 @@ int main(int argc, char **argv)
 	TrueParticleNRJ=-1;
 	if(MC){
 	  //cout<<"Number of Sim particle in this event="<<evt->NIngridSimParticles()<<", type of the first ="<<evt->GetSimParticle(0)->pdg<<endl;;
-	  int SimPartNumber=Rec->Reconstruction::GetTrackParticle(evt, recon, itrk, TrkLength);
+	  //cout<<"pm stop="<<(recon->pm_stop)[itrk]<<", has ingrid track="<<(recon->ing_trk)[itrk]<<", is stopped in ingrid="<<(recon->ing_stop)[itrk]<<", ingrid plane starts="<<(recon->ing_startpln)[itrk]<<", ingrid plane stop="<<(recon->ing_endpln)[itrk]<<", "<<endl; 
+	  int SimPartNumber=Rec->Reconstruction::GetTrackParticleBugged(evt, recon, itrk, TrkLength);
+	  //SimPart=(IngridSimParticleSummary*) evt->GetSimParticle(SimPartNumberBugged);
+	  //int ParticleBugged =SimPart->pdg;
+	  //int SimPartNumber=Rec->Reconstruction::GetTrackParticle(evt, recon, itrk, TrkLength);
 	  SimPart=(IngridSimParticleSummary*) evt->GetSimParticle(SimPartNumber);
 	  Particle =SimPart->pdg;
+	  //cout<<"Old bugged pdg = "<<ParticleBugged<<", new = "<<Particle<<endl<<endl;
 	  //	  if(Particle==2112) cout<<"event "<<ievt<<" reco "<<irec<<" track="<<itrk<<" is associated to neutron"<<endl; 
 	  TrueParticleNRJ=TMath::Sqrt(SimPart->momentum[0]*SimPart->momentum[0]+SimPart->momentum[1]*SimPart->momentum[1]+SimPart->momentum[2]*SimPart->momentum[2]);
 	}
@@ -1294,10 +1299,12 @@ int main(int argc, char **argv)
 	//
 	sort(Vec.begin(),Vec.end());
 
+
 	if(PM){
 	  double CLPlan=1;
 	  double CLLikelihood_Muon=1;double CLLikelihood_NotMuon=1;
-	      
+
+	  //1. Count the number of hits that are "useable" for the CL (not too close from the vertex). The goal (later used) is that for events where the number of hits useable < 2, we will use hits near the vertex
 	  int NCLHits=0;//Number of hits in the vertex plane or the plane just after
 	  for(int i=0;i<Vec.size();i++){
 
@@ -1314,7 +1321,9 @@ int main(int argc, char **argv)
 	    }
 	    NCLHits++;
 	  }
-	  //cout<<"startx="<<(recon->startxpln)[itrk]<<", starty="<<(recon->startypln)[itrk]<<", hits essentials to this track only="<<NCLHits<<endl;
+
+
+	  //2. Real loop on the event:
 #ifdef DEBUG2
 	  cout<<"Number of hits="<<Vec.size()<<endl;
 #endif
@@ -1322,7 +1331,8 @@ int main(int argc, char **argv)
 	  double ControlTrkLength = TMath::Sqrt(pow(Vec.back().x-Vec.front().x,2)+pow(Vec.back().y-Vec.front().y,2)+pow(Vec.back().z-Vec.front().z,2));
 
 	  for(int i=0;i<Vec.size();i++){
-	      
+
+	    //2.a Remove hits near the vertex
 	    if(NCLHits<=2){
 	      if(Vec[i].mod==16){
 		if(Vec[i].view==0){ if(Vec[i].pln==(recon->startxpln)[itrk]) continue;}
@@ -1335,14 +1345,16 @@ int main(int argc, char **argv)
 		else{ if((Vec[i].pln==(recon->startypln)[itrk]) || (Vec[i].pln==((recon->startypln)[itrk]+1)) ) continue;}
 	      }
 	    }
-	      
+
+	    //2. b Estimate the distance of the hit from the track vertex
 	    double Distance = TMath::Sqrt(pow(Vec[i].x-Vec.front().x,2)+pow(Vec[i].y-Vec.front().y,2)+pow(Vec[i].z-Vec.front().z,2));
 	      
 #ifdef DEBUG2
 	    //if(DistanceBarycenter/Dist[2] > 1.) cout<<endl<<endl<<endl<<endl<<"CAREFUL: Track is too long, Track Length="<<Dist[2]<<endl<<endl<<endl;
 	    cout<<"Module="<<Vec[i].mod<<", plane="<<Vec[i].pln<<", channel="<<Vec[i].ch<<", view="<<Vec[i].view<<", pe="<<Vec[i].pe<<", corr="<<Vec[i].pecorr<<endl;
 #endif
-	      
+
+	    //2. c Count the number of hits per plane/view -> Check if we have neighbour hits on the same plane: used later for measuring transverse track width + Barycenter of the hit in one plane.
 	    //All hits
 	    if(Vec[i].mod==16 && Reco->Reconstruction::IsINGRID(Vec[i].mod,Vec[i].pln,Vec[i].ch)) PlaneNonIsolated[1][Vec[i].pln][Vec[i].view]++;
 	    else if(Vec[i].mod==16 && !(Reco->Reconstruction::IsINGRID(Vec[i].mod,Vec[i].pln,Vec[i].ch))) PlaneNonIsolated[0][Vec[i].pln][Vec[i].view]++;
@@ -1352,8 +1364,12 @@ int main(int argc, char **argv)
 	    double dedz,MEV2PE=46.,MEV2PE_PM=40.;
 	    double BirksCorr=1.;
 	    //Isolated hits
+
+	    //2.d Remove hits used in 2 tracks if we have more than 2 hits independent from other tracks
 	    if(NCLHits>2 && Vec[i].used>1) continue;
 	    //	    cout<<recon->angle[itrk]<<" "<<Vec[i].pecorr<<" ";
+
+	    //2.e Specific to PM: Classify the hits between INGRID PM, SciBar, and INGRID. Store the total PE per plane/view for each type
 	    if(Vec[i].mod==16 && Reco->Reconstruction::IsINGRID(Vec[i].mod,Vec[i].pln,Vec[i].ch)){
 	      PECorrected=Vec[i].pecorr;
 	      dedz=Vec[i].pecorr/MEV2PE_PM/(1.+.09)/.275;// already dz-corrected
@@ -1401,7 +1417,8 @@ int main(int argc, char **argv)
 	  }//End of loop over hits
 	  //cout<<"Now compare"<<endl;
 	    
-    	    
+
+	  //3. Estimate each plane barycenter for the MVA. It allows to store: position of the hit vs total charge in the plane
 	  double cl;
 	  double cllikelihood_muon;
 	  double cllikelihood_notmuon;
@@ -1435,6 +1452,7 @@ int main(int argc, char **argv)
 	      }
 #endif
 
+	  //4. Estimate the MuCL by going plane by plane. Compare to the expectation using charge deposition
 	      //Isolated
 	      if(Plane[0][ipln][iview]!=0 || Plane[1][ipln][iview]!=0){//case PM & active plane
 		if(Plane[0][ipln][iview]>=Plane[1][ipln][iview]){
@@ -1567,10 +1585,7 @@ int main(int argc, char **argv)
 	  CL_Likelihood=CLLikelihood_Muon*PMuon/(CLLikelihood_Muon*PMuon+CLLikelihood_NotMuon*P_NotMuon);
 	  //cout<<"Proportions of Max PE="<<ProportionHighPE[itrk]<<", Highest PE="<<HighestPE[itrk]<<", Mean High PE="<<MeanHighPE[itrk]<<endl;
 	  //cout<<"MuCL plan="<<MuCL<<", pdg="<<Particle<<endl<<", Likelihood Mucl="<<CL_Likelihood<<endl;
-
-	    
 #endif
-
 	}//if PM
 
 	else {
@@ -1585,6 +1600,9 @@ int main(int argc, char **argv)
 	  for(int i=0;i<Vec.size();i++){
 	    if(Vec[i].used>1) continue;
 
+#ifdef MVA
+	    double Distance = TMath::Sqrt(pow(Vec[i].x-Vec.front().x,2)+pow(Vec[i].y-Vec.front().y,2)+pow(Vec[i].z-Vec.front().z,2));
+#endif
 	    if(Vec[i].mod==15){
 	      bool grid=(Vec[i].ch>=40);
 	      double angle2D=(Vec[i].view==0?recon->thetax[itrk]:recon->thetay[itrk]);
@@ -1622,6 +1640,18 @@ int main(int argc, char **argv)
 	      CLLikelihood_Pion*=cllikelihood_pion;
 	      CLLikelihood_NotPion*=cllikelihood_notpion;
 #endif
+
+#ifdef MVA
+	      double RelativePosition = Distance/TrkLength;
+	      double bindistancesize = (1. / (LimitHits-1));//number of separation between intervals = number of intervals -1, as usual...
+	      int bindistance = ((int) (RelativePosition / bindistancesize));
+	      if(bindistance >= LimitHits) bindistance=LimitHits-1;
+	      EnergyDeposition[itrk][bindistance]+=PECorrected;
+	      NViewsPerPlaneEnergyDepositionNonIsolated[itrk][bindistance]++;
+#ifdef DEBUG_PID
+	      cout<<"WM, Track Length: "<< TrkLength <<", bin: "<< bindistance <<", Distance from the vertex: "<<Distance<<", Relative pos: "<<RelativePosition<<", Energy Dep: "<<PECorrected<<endl;
+#endif
+#endif
 	    }
 	    else{
 	      if(Vec[i].pecorr<7) continue; // avoid hits with de/dz < 7 pe/cm
@@ -1644,6 +1674,18 @@ int main(int argc, char **argv)
 	      cllikelihood_notpion=CL_Ing_NotPion->Eval(PECorrected);
 	      CLLikelihood_Pion*=cllikelihood_pion;
 	      CLLikelihood_NotPion*=cllikelihood_notpion;	      
+#endif
+#ifdef MVA
+	  double RelativePosition = Distance/TrkLength;
+	  double bindistancesize = (1. / (LimitHits-1));//number of separation between intervals = number of intervals -1, as usual...
+	  int bindistance = ((int) (RelativePosition / bindistancesize));
+	  if(bindistance >= LimitHits) bindistance=LimitHits-1;
+	  EnergyDeposition[itrk][bindistance]+=PECorrected;
+	  NViewsPerPlaneEnergyDepositionNonIsolated[itrk][bindistance]++;
+	  //cout<<"INGRID, Distance from the vertex: "<<Distance<<", Relative pos: "<<RelativePosition<<", Energy Dep: "<<PECorrected<<endl;
+#ifdef DEBUG_PID
+	  cout<<"INGRID, Track Length: "<< TrkLength <<", bin: "<< bindistance <<", Distance from the vertex: "<<Distance<<", Relative pos: "<<RelativePosition<<", Energy Dep: "<<PECorrected<<endl;
+#endif
 #endif
 	    }
 	  }
@@ -1769,6 +1811,22 @@ int main(int argc, char **argv)
 	}
 #endif
 
+
+#ifdef MVA
+	for(int ihit=0;ihit<LimitHits;ihit++){
+	  //For EnergyDeposition
+	  if(NViewsPerPlaneEnergyDeposition[itrk][ihit]!=0){
+	    EnergyDeposition[itrk][ihit]/=NViewsPerPlaneEnergyDeposition[itrk][ihit];
+	    TransverseWidth[itrk][ihit]/=NViewsPerPlaneEnergyDeposition[itrk][ihit];
+	    }
+	  if(NViewsPerPlaneEnergyDepositionNonIsolated[itrk][ihit]!=0) TransverseWidthNonIsolated[itrk][ihit]/=NViewsPerPlaneEnergyDepositionNonIsolated[itrk][ihit];
+	}
+
+#endif
+
+
+
+
 	if(PM){
 #ifdef MVA
 	  //new
@@ -1784,15 +1842,7 @@ int main(int argc, char **argv)
 	  double RelativePosition=0.;
 	  RangeRelativeDistance=*max_element(position[itrk].begin(), position[itrk].end())-0;
 	      
-	  for(int ihit=0;ihit<LimitHits;ihit++){
-	    //For EnergyDeposition
-	    if(NViewsPerPlaneEnergyDeposition[itrk][ihit]!=0){
-	      EnergyDeposition[itrk][ihit]/=NViewsPerPlaneEnergyDeposition[itrk][ihit];
-	      TransverseWidth[itrk][ihit]/=NViewsPerPlaneEnergyDeposition[itrk][ihit];
-	    }
-	    if(NViewsPerPlaneEnergyDepositionNonIsolated[itrk][ihit]!=0) TransverseWidthNonIsolated[itrk][ihit]/=NViewsPerPlaneEnergyDepositionNonIsolated[itrk][ihit];
-	  }
-
+	  
 	  bool Problem=false;	    
 	  for(int ihit=0;ihit<LimitHits;ihit++){
 	    /*
@@ -1843,7 +1893,7 @@ int main(int argc, char **argv)
 	    }
 	    RelativePosition += ((double) (RangeRelativeDistance/(LimitHits-1)));
 	  }
-
+	
 
 	    
 #ifdef DEBUG_PID_BDT
@@ -1907,7 +1957,7 @@ int main(int argc, char **argv)
 	Vec.clear();
 	Vec2.clear();
 	VecAll.clear();
-	    
+      	    
 #ifdef MVA
 	TrackAngleMVA=TrackAngle[itrk];
 	TrackWidthMVA=TrackWidth[itrk];
@@ -1924,6 +1974,7 @@ int main(int argc, char **argv)
 	IsReconstructedMVA=IsReconstructed[itrk];
 	GTMVA=GT[itrk];
 	for(int ihit=0;ihit<LimitHits;ihit++){
+	  // cout<<"hit: "<<ihit<<", Energy: "<<EnergyDeposition[itrk][ihit]<<endl;
 	  EnergyDepositionMVA[ihit]=EnergyDeposition[itrk][ihit];
 	  EnergyDepositionSplineMVA[ihit]=EnergyDepositionSpline[itrk][ihit];
 	  TransverseWidthMVA[ihit]=TransverseWidth[itrk][ihit];

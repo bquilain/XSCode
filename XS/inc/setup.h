@@ -77,13 +77,13 @@ const float Mn=939.5659/1000.;
 const float Mpi=139.57/1000.;
 float EpiBins[5]={0,0.25,0.50,0.75,1};
 float EpiReWeight[5]={0.135,0.4,0.294,1.206,1};
-const int StartRun=13000;//14000;
-const int EndRun=15999;//17218;
+const int StartRun=14510;//13000;
+const int EndRun=14510;//17218;
 const int StartSubRun=0;
 const int EndSubRun=300;
 const int StartRunList=14;//Which list will be read (14=>14000.txt). Necessary to use only run processed
 const int EndRunList=17;//Which list will be read (14=>14000.txt). Necessary to use only run processed
-double NMCfiles=1000; // up to now only 1000 are available with NEUT 5.3.6
+double NMCfiles=100; // up to now only 1000 are available with NEUT 5.3.6
 
 double DataPOTPM=0.58;//In units of 10^21 POT -- runs 234
 //double DataPOTPM=0.76;//In units of 10^21 POT -- runs 234  (+56)
@@ -91,8 +91,8 @@ double DataPOTWM=0.72;//In units of 10^21 POT -- run 8
 
 double DataPOT;
 const int StartError=0;
-const int EndError=37;//15 for det, 17 for det+flux, 37 for det+flux+xs, 38 to add NEUT tunings
-const int MaxError=38;
+const int EndError=0;//36;//15 for det, 17 for det+flux, 37 for det+flux+xs, 38 to add NEUT tunings
+const int MaxError=36;
 
 int NFluxFiles;
 int StartXsec=0;const int EndXsec=19;int NXsecVariations=7; int NXsecTunings=7;
@@ -106,7 +106,7 @@ double End[MaxError+1];
 double Nominal; double Err;
 const int Systematics_Detector_Start=2;
 const int Systematics_Detector_End=15;
-const int Systematics_Flux_Start=16;
+const int Systematics_Flux_Start=17;
 const int Systematics_Flux_End=17;
 const int Systematics_Xsec_Start=18;
 const int Systematics_Xsec_End=Systematics_Xsec_Start+EndXsec;
@@ -186,6 +186,7 @@ double * BinningRecAngleTrash;
 bool IsTrueMomTrashBin[5]={true,false,false,false,true};
 bool IsTrueAngleTrashBin[5]={false,false,false,false,true};
 const int NBinsPiRecMom=13;// ML 2017/12/08
+double * BinningPiRecMom;// ML 2017/12/08
 
 
 /////////////////// INITIALIZE ERRORS NOW ////////////////////////    
@@ -414,13 +415,14 @@ void InitializeGlobal(bool PM=true, int Selection=1){
     if(Systematics_Detector_End>=Systematics_Flux_Start || Systematics_Flux_Start>=Systematics_Xsec_Start) cout<<"################################################################################################################### STOP THE PROCESS, THERE IS A PROBLEM IN THE NUMBERING OF YOUR SYST. ERROR SOURCES. CHECK SYSTEMATICS_DETECTOR_START/END...###########################################################################"<<endl;
 	 
     if(n>=Systematics_Detector_Start && n<=Systematics_Detector_End){
-
+      /*
       for(int i=0;i<NBinsPiRecMom+1;i++){
 	//BinningRecAngle[i]=3*i;
 	if(i<=5)  BinningPiRecMom[i]=2*i;
 	else if(i<=7)  BinningPiRecMom[i]=10+5*(i-5);
 	else BinningPiRecMom[i]=20+10*(i-7);
       }
+      */
       if(n==2){//2: DN
 	Start[n]=0;
 	NE[n]=10;
@@ -551,7 +553,7 @@ void InitializeGlobal(bool PM=true, int Selection=1){
 	Err=1;
 	Start[n]=Nominal;
 	Step[n]=Err;
-	NE[n]=1000;
+	NE[n]=500;
 	NFluxFiles=NE[n];
       }
       else if(n==17){//17: Beam contamination (Antinu,Nue) 

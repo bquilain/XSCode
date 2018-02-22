@@ -59,6 +59,7 @@ class Reconstruction{
   vector <double> GetTruePionInformation(IngridEventSummary * evt);//ML
   bool IsFV(int mod, double posx, double posy, double posz);
   int GetTrackParticle(IngridEventSummary * evt, PMAnaSummary * recon, int itrk, double TrkLength);
+  int GetTrackParticleBugged(IngridEventSummary * evt, PMAnaSummary * recon, int itrk, double TrkLength);
   bool IsINGRID(int mod, int pln, int ch);
   vector <double> GetMatchingPMINGRID(vector <Hit3D> Vec);
   double GetINGRIDTrackWidth(vector <Hit3D> Vec);
