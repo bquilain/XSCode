@@ -883,6 +883,7 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
   TH1D * hRecMom[NFSIs];
   TH1D * hRecAngle[NFSIs];
   TH1D * hFCFVTrueEvents[NFSIs];
+  TH1D * hRecTrueEvents[NFSIs];
 
   TH1D * hNTracks_CC0pi[NFSIs];
   TH1D * hRecMom_CC0pi[NFSIs];
@@ -1005,6 +1006,17 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
   TH1D * MCReconstructionEfficiency_Momentum_ThinBinning;
   TH1D * MCReconstructionEfficiency_Angle_ThinBinning;
 
+  TH2D * MCReconstructionEfficiency_PTheta_ThinBinning_CC;
+  TH1D * MCReconstructionEfficiency_Momentum_ThinBinning_CC;
+  TH1D * MCReconstructionEfficiency_Angle_ThinBinning_CC;
+  TH2D * TotalCCEvent_PTheta_ThinBinning; TH1D * TotalCCEvent_Momentum_ThinBinning; TH1D * TotalCCEvent_Angle_ThinBinning;
+
+  TH2D * MCReconstructionEfficiency_PTheta_ThinBinning_NC;
+  TH1D * MCReconstructionEfficiency_Momentum_ThinBinning_NC;
+  TH1D * MCReconstructionEfficiency_Angle_ThinBinning_NC;
+  TH2D * TotalNCEvent_PTheta_ThinBinning; TH1D * TotalNCEvent_Momentum_ThinBinning; TH1D * TotalNCEvent_Angle_ThinBinning;
+
+  
   TH2D * MCReconstructionAndTopologyEfficiency_PTheta_ThinBinning;
   TH1D * MCReconstructionAndTopologyEfficiency_Momentum_ThinBinning;
   TH1D * MCReconstructionAndTopologyEfficiency_Angle_ThinBinning;
@@ -1026,6 +1038,15 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
   TH1D * MCEfficiency_Energy;
   TH1D * TotalCC0piEvent_Energy;
   TH1D * TotalCC1piEvent_Energy;
+
+  TH1D * MCReconstructionEfficiency_Energy;
+  TH1D * TotalReconstructionCC0piEvent_Energy;
+  TH1D * TotalReconstructionCC1piEvent_Energy;
+
+  TH1D * MCReconstructionEfficiency_Energy_CC;
+  TH1D * TotalCCEvent_Energy;
+  TH1D * MCReconstructionEfficiency_Energy_NC;
+  TH1D * TotalNCEvent_Energy;
 
   TPie * MuonRec_TruePDG;
   TPie * MuonRec_TruePDG_switch;
@@ -1173,12 +1194,28 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
     MCReconstructionEfficiency_PTheta_ThinBinning = new TH2D("MCReconstructionEfficiency_PTheta_ThinBinning","",200,0,10,60,0,180);
     MCReconstructionEfficiency_PTheta_ThinBinning->GetXaxis()->SetTitle("p_{#mu} (GeV/c)");
     MCReconstructionEfficiency_PTheta_ThinBinning->GetYaxis()->SetTitle("#theta_{#mu} (#circ)");
-    MCReconstructionEfficiency_PTheta_ThinBinning->Sumw2();TotalCC0piEvent_PTheta_ThinBinning->Sumw2();TotalCC1piEvent_PTheta_ThinBinning->Sumw2();
+    MCReconstructionEfficiency_PTheta_ThinBinning->Sumw2();
+
+    MCReconstructionEfficiency_PTheta_ThinBinning_CC = new TH2D("MCReconstructionEfficiency_PTheta_ThinBinning_CC","",200,0,10,60,0,180);
+    MCReconstructionEfficiency_PTheta_ThinBinning_CC->GetXaxis()->SetTitle("p_{#mu} (GeV/c)");
+    MCReconstructionEfficiency_PTheta_ThinBinning_CC->GetYaxis()->SetTitle("#theta_{#mu} (#circ)");
+    MCReconstructionEfficiency_PTheta_ThinBinning_CC->Sumw2();
+    TotalCCEvent_PTheta_ThinBinning = new TH2D("TotalCCEvent_PTheta_ThinBinning","",200,0,10,60,0,180);
+    TotalCCEvent_PTheta_ThinBinning->GetXaxis()->SetTitle("p_{#mu} (GeV/c)");
+    TotalCCEvent_PTheta_ThinBinning->GetYaxis()->SetTitle("#theta_{#mu} (#circ)");
+
+    MCReconstructionEfficiency_PTheta_ThinBinning_NC = new TH2D("MCReconstructionEfficiency_PTheta_ThinBinning_NC","",200,0,10,60,0,180);
+    MCReconstructionEfficiency_PTheta_ThinBinning_NC->GetXaxis()->SetTitle("p_{#mu} (GeV/c)");
+    MCReconstructionEfficiency_PTheta_ThinBinning_NC->GetYaxis()->SetTitle("#theta_{#mu} (#circ)");
+    MCReconstructionEfficiency_PTheta_ThinBinning_NC->Sumw2();
+    TotalNCEvent_PTheta_ThinBinning = new TH2D("TotalNCEvent_PTheta_ThinBinning","",200,0,10,60,0,180);
+    TotalNCEvent_PTheta_ThinBinning->GetXaxis()->SetTitle("p_{#mu} (GeV/c)");
+    TotalNCEvent_PTheta_ThinBinning->GetYaxis()->SetTitle("#theta_{#mu} (#circ)");
     
     MCReconstructionAndTopologyEfficiency_PTheta_ThinBinning = new TH2D("MCReconstructionAndTopologyEfficiency_PTheta_ThinBinning","",200,0,10,60,0,180);
     MCReconstructionAndTopologyEfficiency_PTheta_ThinBinning->GetXaxis()->SetTitle("p_{#mu} (GeV/c)");
     MCReconstructionAndTopologyEfficiency_PTheta_ThinBinning->GetYaxis()->SetTitle("#theta_{#mu} (#circ)");
-    MCReconstructionAndTopologyEfficiency_PTheta_ThinBinning->Sumw2();TotalCC0piEvent_PTheta_ThinBinning->Sumw2();TotalCC1piEvent_PTheta_ThinBinning->Sumw2();
+    MCReconstructionAndTopologyEfficiency_PTheta_ThinBinning->Sumw2();
     
     MCEfficiency = new TH2D("MCEfficiency","",NBinsTrueMomSignal,0,NBinsTrueMomSignal,NBinsTrueAngleSignal,0,NBinsTrueAngleSignal);
     MCEfficiency_PTheta = new TH2D("MCEfficiency","",NBinsTrueMomSignal,BinningTrueMomSignal,NBinsTrueAngleSignal,BinningTrueAngleSignal);
@@ -1192,6 +1229,18 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
     TotalCC1piEvent_Energy = new TH1D("TotalCC1piEvent_Energy","",100,0,10);
     TotalCC1piEvent_Energy->GetXaxis()->SetTitle("E_{#nu} (GeV)");
     MCEfficiency_Energy->Sumw2();TotalCC0piEvent_Energy->Sumw2();TotalCC1piEvent_Energy->Sumw2();
+
+    MCReconstructionEfficiency_Energy = new TH1D("MCReconstructionEfficiency_Energy","",100,0,10);
+    MCReconstructionEfficiency_Energy->GetXaxis()->SetTitle("E_{#nu} (GeV)");
+    MCReconstructionEfficiency_Energy_CC = new TH1D("MCReconstructionEfficiency_Energy_CC","",100,0,10);
+    MCReconstructionEfficiency_Energy_CC->GetXaxis()->SetTitle("E_{#nu} (GeV)");
+    MCReconstructionEfficiency_Energy_NC = new TH1D("MCReconstructionEfficiency_Energy_NC","",100,0,10);
+    MCReconstructionEfficiency_Energy_NC->GetXaxis()->SetTitle("E_{#nu} (GeV)");
+    TotalCCEvent_Energy = new TH1D("TotalNCEvent_Energy","",100,0,10);
+    TotalCCEvent_Energy->GetXaxis()->SetTitle("E_{#nu} (GeV)");
+    TotalNCEvent_Energy = new TH1D("TotalCCEvent_Energy","",100,0,10);
+    TotalNCEvent_Energy->GetXaxis()->SetTitle("E_{#nu} (GeV)");
+
     
     
     char Name[256];char Title[256];
@@ -1203,6 +1252,13 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
       //hMuCL->Sumw2();
       hFCFVTrueEvents[i]->GetXaxis()->SetTitle("E_{#nu} (GeV)");    
       hFCFVTrueEvents[i]->GetYaxis()->SetTitle("Number of events");
+
+      sprintf(Name,"hRecTrueEvents%d",i);
+      sprintf(Title,"",i);
+      hRecTrueEvents[i] = new TH1D(Name,Title,100,0,10);
+      //hMuCL->Sumw2();
+      hRecTrueEvents[i]->GetXaxis()->SetTitle("E_{#nu} (GeV)");    
+      hRecTrueEvents[i]->GetYaxis()->SetTitle("Number of events");
 
       sprintf(Name,"hMuCL%d",i);
       sprintf(Title,"Muon confidence level for the %dth-fsi",i);
@@ -1716,30 +1772,43 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
       
 	if(!IsData){
 
-	  if(IsNuMu /*&& IsFV*/){
+	  if(1/*&& IsFV*/){
 	    if(IsFV) hFCFVTrueEvents[FSIInt]->Fill(Enu,weight);
 	    nEvents[0]+=weight;
 	    nEventsInter[0][FSIInt]+=weight;
-	    
-	    if(FSIInt<3){
-	      if(Selection == 1) {
-		TotalCC0piEvent[BinTrueMom][BinTrueAngle]+=weight;
-		MCTrueEvents->Fill(BinTrueMom+1,BinTrueAngle+1,weight);
-	      }
+
+	    if(IsNuMu){
 	      if(Plots){
-		TotalCC0piEvent_Energy->Fill(Enu,weight);
-		TotalCC0piEvent_PTheta_ThinBinning->Fill(TrueMomentumMuon,TrueAngleMuon,weight);
+		if(FSIInt < 6){
+		  TotalCCEvent_PTheta_ThinBinning->Fill(TrueMomentumMuon,TrueAngleMuon,weight);
+		  TotalCCEvent_Energy->Fill(Enu,weight);
+		}
+		else{
+		  TotalNCEvent_PTheta_ThinBinning->Fill(TrueMomentumMuon,TrueAngleMuon,weight);
+		  TotalNCEvent_Energy->Fill(Enu,weight);
+		}
 	      }
-	    }
-	    else if(FSIInt == 3){
-	      if(Selection ==2){
-		TotalCC1pi+=weight;
-		TotalCC1piEvent[BinTrueMom][BinTrueAngle]+=weight;
-		MCTrueEvents->Fill(BinTrueMom+1,BinTrueAngle+1,weight);
+	      
+	      if(FSIInt<3){
+		if(Selection == 1) {
+		  TotalCC0piEvent[BinTrueMom][BinTrueAngle]+=weight;
+		  MCTrueEvents->Fill(BinTrueMom+1,BinTrueAngle+1,weight);
+		}
+		if(Plots){
+		  TotalCC0piEvent_Energy->Fill(Enu,weight);
+		  TotalCC0piEvent_PTheta_ThinBinning->Fill(TrueMomentumMuon,TrueAngleMuon,weight);
+		}
 	      }
-	      if(Plots){
-		TotalCC1piEvent_Energy->Fill(Enu,weight);
-		TotalCC1piEvent_PTheta_ThinBinning->Fill(TrueMomentumMuon,TrueAngleMuon,weight);
+	      else if(FSIInt == 3){
+		if(Selection ==2){
+		  TotalCC1pi+=weight;
+		  TotalCC1piEvent[BinTrueMom][BinTrueAngle]+=weight;
+		  MCTrueEvents->Fill(BinTrueMom+1,BinTrueAngle+1,weight);
+		}
+		if(Plots){
+		  TotalCC1piEvent_Energy->Fill(Enu,weight);
+		  TotalCC1piEvent_PTheta_ThinBinning->Fill(TrueMomentumMuon,TrueAngleMuon,weight);
+		}
 	      }
 	    }
 	  }
@@ -2106,16 +2175,28 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
 	hRecAngle[FSIInt]->Fill(TrackAngle[MuonRec],weight);
       }
     
-      if(Selection == 1 && FSIInt<3 && IsNuMu){
-	MCReconstructionEfficiency_PTheta_ThinBinning->Fill(TrueMomentumMuon,TrueAngleMuon,weight);
-	//if((Sample[MuonTrueMVA]==MuonSample1)||(Sample[MuonTrueMVA]==MuonSample2)) MCReconstructionAndTopologyEfficiency_PTheta_ThinBinning->Fill(TrueMomentumMuon,TrueAngleMuon,weight);
-	if(Sample[MuonTrueMVA]>=2 && Sample[MuonTrueMVA]!=4) MCReconstructionAndTopologyEfficiency_PTheta_ThinBinning->Fill(TrueMomentumMuon,TrueAngleMuon,weight);
-      }
-      if(Selection == 2 && FSIInt==3 && IsNuMu){
-	MCReconstructionEfficiency_PTheta_ThinBinning->Fill(TrueMomentumMuon,TrueAngleMuon,weight);
-	//if((Sample[MuonTrueMVA]==MuonSample1)||(Sample[MuonTrueMVA]==MuonSample2)) MCReconstructionAndTopologyEfficiency_PTheta_ThinBinning->Fill(TrueMomentumMuon,TrueAngleMuon,weight);
-	if(Sample[MuonTrueMVA]>=2 && Sample[MuonTrueMVA]!=4) MCReconstructionAndTopologyEfficiency_PTheta_ThinBinning->Fill(TrueMomentumMuon,TrueAngleMuon,weight);
-	
+      if(IsNuMu){
+
+	hRecTrueEvents[FSIInt]->Fill(Enu,weight);
+
+	if(FSIInt<6){
+	  MCReconstructionEfficiency_PTheta_ThinBinning_CC->Fill(TrueMomentumMuon,TrueAngleMuon,weight);
+	  MCReconstructionEfficiency_Energy_CC->Fill(Enu,weight);
+	}
+	else{
+	  MCReconstructionEfficiency_PTheta_ThinBinning_NC->Fill(TrueMomentumMuon,TrueAngleMuon,weight);
+	  MCReconstructionEfficiency_Energy_NC->Fill(Enu,weight);
+	}
+	if(Selection == 1 && FSIInt<3){
+	  MCReconstructionEfficiency_PTheta_ThinBinning->Fill(TrueMomentumMuon,TrueAngleMuon,weight);
+	  MCReconstructionEfficiency_Energy->Fill(Enu,weight);
+	  if(Sample[MuonTrueMVA]>=2 && Sample[MuonTrueMVA]!=4) MCReconstructionAndTopologyEfficiency_PTheta_ThinBinning->Fill(TrueMomentumMuon,TrueAngleMuon,weight);
+	}
+	if(Selection == 2 && FSIInt==3){
+	  MCReconstructionEfficiency_PTheta_ThinBinning->Fill(TrueMomentumMuon,TrueAngleMuon,weight);
+	  MCReconstructionEfficiency_Energy->Fill(Enu,weight);
+	  if(Sample[MuonTrueMVA]>=2 && Sample[MuonTrueMVA]!=4) MCReconstructionAndTopologyEfficiency_PTheta_ThinBinning->Fill(TrueMomentumMuon,TrueAngleMuon,weight);
+	}
       }
 
 
@@ -2415,15 +2496,15 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
       CutPurity->SetBinContent(i+1,nEventsInter[i][3]/nEvents[i]*100);
 
       cout<<"\\hline"<<endl;
-      cout << " & Total & Purity & Efficiency & CC0$\\pi$ & CC1$\\pi^{\\pm}$ & CC$\\pi^{0}$ & CCothers & NC \\\\"<<endl<<"\\hline"<<endl;
-      cout<<setprecision(0)<<std::fixed<<myCuts[i]<<" & "<<nEvents[i]<<" & "<< 100*(nEventsInter[i][3])/nEvents[i]<<" $\\%$ & "<< 100*(nEventsInter[i][3])/TotalTrue0 <<" $\\%$ & "<<(nEventsInter[i][0]+nEventsInter[i][1]+nEventsInter[i][2])<<" & "<<nEventsInter[i][3]<<" & "<<nEventsInter[i][4]<<" & "<<nEventsInter[i][5]<<" & "<<nEventsInter[i][6]<<" \\\\"<<endl; 
+      cout << " & Total & Purity & Efficiency & CC0$\\pi$ & CC1$\\pi^{\\pm}$ & CC$\\pi^{0}$ & CCothers & NC & Ext. Background & Other flavours & Scint. bkg\\\\"<<endl<<"\\hline"<<endl;
+      cout<<setprecision(0)<<std::fixed<<myCuts[i]<<" & "<<nEvents[i]<<" & "<< 100*(nEventsInter[i][3])/nEvents[i]<<" $\\%$ & "<< 100*(nEventsInter[i][3])/TotalTrue0 <<" $\\%$ & "<<(nEventsInter[i][0]+nEventsInter[i][1]+nEventsInter[i][2])<<" & "<<nEventsInter[i][3]<<" & "<<nEventsInter[i][4]<<" & "<<nEventsInter[i][5]<<" & "<<nEventsInter[i][6]<<" & "<<nEventsInter[i][7]+nEventsInter[i][8]+nEventsInter[i][9]<<" & "<<nEventsInter[i][10]+nEventsInter[i][11]<<" & "<<nEventsInter[i][12]<<" \\\\"<<endl; 
     }
   }
   else if(Selection==1){
     cout<<"\\hline"<<endl;
     cout << " & Total & Purity & Efficiency & CC0$\\pi$ & CC1$\\pi^{\\pm}$ & CC$\\pi^{0}$ & CCothers & NC \\\\"<<endl<<"\\hline"<<endl;
     for(int i=0;i<nCuts;i++){
-      cout<<setprecision(0)<<std::fixed<<myCuts[i]<<" & "<<nEvents[i]<<" & "<< 100*(nEventsInter[i][0]+nEventsInter[i][1]+nEventsInter[i][2])/nEvents[i]<<" $\\%$ & "<< 100*(nEventsInter[i][0]+nEventsInter[i][1]+nEventsInter[i][2])/TotalTrue0 <<" $\\%$ & "<<(nEventsInter[i][0]+nEventsInter[i][1]+nEventsInter[i][2])<<" & "<<nEventsInter[i][3]<<" & "<<nEventsInter[i][4]<<" & "<<nEventsInter[i][5]<<" & "<<nEventsInter[i][6]<<" \\\\"<<endl;
+      cout<<setprecision(0)<<std::fixed<<myCuts[i]<<" & "<<nEvents[i]<<" & "<< 100*(nEventsInter[i][0]+nEventsInter[i][1]+nEventsInter[i][2])/nEvents[i]<<" $\\%$ & "<< 100*(nEventsInter[i][0]+nEventsInter[i][1]+nEventsInter[i][2])/TotalTrue0 <<" $\\%$ & "<<(nEventsInter[i][0]+nEventsInter[i][1]+nEventsInter[i][2])<<" & "<<nEventsInter[i][3]<<" & "<<nEventsInter[i][4]<<" & "<<nEventsInter[i][5]<<" & "<<nEventsInter[i][6]<<" & "<<nEventsInter[i][7]+nEventsInter[i][8]+nEventsInter[i][9]<<" & "<<nEventsInter[i][10]+nEventsInter[i][11]<<" & "<<nEventsInter[i][12]<<" \\\\"<<endl;
       CutEfficiency->SetBinContent(i+1,(nEventsInter[i][0]+nEventsInter[i][1]+nEventsInter[i][2])/TotalTrue0);
       CutPurity->SetBinContent(i+1,100*(nEventsInter[i][0]+nEventsInter[i][1]+nEventsInter[i][2])/nEvents[i]);
     }
@@ -2480,6 +2561,16 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
     MCReconstructionEfficiency_Momentum_ThinBinning = (TH1D*) MCReconstructionEfficiency_PTheta_ThinBinning->ProjectionX("MCReconstructionEfficiency_Momentum_ThinBinning",0,MCReconstructionEfficiency_PTheta_ThinBinning->GetNbinsX());
     MCReconstructionEfficiency_Angle_ThinBinning = (TH1D*) MCReconstructionEfficiency_PTheta_ThinBinning->ProjectionY("MCReconstructionEfficiency_Angle_ThinBinning",0,MCReconstructionEfficiency_PTheta_ThinBinning->GetNbinsY());
 
+    MCReconstructionEfficiency_Momentum_ThinBinning_CC = (TH1D*) MCReconstructionEfficiency_PTheta_ThinBinning_CC->ProjectionX("MCReconstructionEfficiency_Momentum_ThinBinning_CC",0,MCReconstructionEfficiency_PTheta_ThinBinning_CC->GetNbinsX());
+    MCReconstructionEfficiency_Angle_ThinBinning_CC = (TH1D*) MCReconstructionEfficiency_PTheta_ThinBinning_CC->ProjectionY("MCReconstructionEfficiency_Angle_ThinBinning_CC",0,MCReconstructionEfficiency_PTheta_ThinBinning_CC->GetNbinsY());
+    TotalCCEvent_Momentum_ThinBinning = (TH1D*) TotalCCEvent_PTheta_ThinBinning->ProjectionX("TotalCCEvent_Momentum_ThinBinning",0,TotalCCEvent_PTheta_ThinBinning->GetNbinsX());
+    TotalCCEvent_Angle_ThinBinning = (TH1D*) TotalCCEvent_PTheta_ThinBinning->ProjectionY("TotalCCEvent_Angle_ThinBinning",0,TotalCCEvent_PTheta_ThinBinning->GetNbinsY());
+
+    MCReconstructionEfficiency_Momentum_ThinBinning_NC = (TH1D*) MCReconstructionEfficiency_PTheta_ThinBinning_NC->ProjectionX("MCReconstructionEfficiency_Momentum_ThinBinning_NC",0,MCReconstructionEfficiency_PTheta_ThinBinning_NC->GetNbinsX());
+    MCReconstructionEfficiency_Angle_ThinBinning_NC = (TH1D*) MCReconstructionEfficiency_PTheta_ThinBinning_NC->ProjectionY("MCReconstructionEfficiency_Angle_ThinBinning_NC",0,MCReconstructionEfficiency_PTheta_ThinBinning_NC->GetNbinsY());
+    TotalNCEvent_Momentum_ThinBinning = (TH1D*) TotalNCEvent_PTheta_ThinBinning->ProjectionX("TotalNCEvent_Momentum_ThinBinning",0,TotalNCEvent_PTheta_ThinBinning->GetNbinsX());
+    TotalNCEvent_Angle_ThinBinning = (TH1D*) TotalNCEvent_PTheta_ThinBinning->ProjectionY("TotalNCEvent_Angle_ThinBinning",0,TotalNCEvent_PTheta_ThinBinning->GetNbinsY());
+
     MCReconstructionAndTopologyEfficiency_Momentum_ThinBinning = (TH1D*) MCReconstructionAndTopologyEfficiency_PTheta_ThinBinning->ProjectionX("MCReconstructionAndTopologyEfficiency_Momentum_ThinBinning",0,MCReconstructionAndTopologyEfficiency_PTheta_ThinBinning->GetNbinsX());
     MCReconstructionAndTopologyEfficiency_Angle_ThinBinning = (TH1D*) MCReconstructionAndTopologyEfficiency_PTheta_ThinBinning->ProjectionY("MCReconstructionAndTopologyEfficiency_Angle_ThinBinning",0,MCReconstructionAndTopologyEfficiency_PTheta_ThinBinning->GetNbinsY());
 
@@ -2513,6 +2604,17 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
 
     MCReconstructionEfficiency_Momentum_ThinBinning->Divide(TotalEvent_Momentum_ThinBinning);
     MCReconstructionEfficiency_Angle_ThinBinning->Divide(TotalEvent_Angle_ThinBinning);
+
+    MCReconstructionEfficiency_PTheta_ThinBinning_CC->Divide(TotalCCEvent_PTheta_ThinBinning);
+    MCReconstructionEfficiency_Momentum_ThinBinning_CC->Divide(TotalCCEvent_Momentum_ThinBinning);
+    MCReconstructionEfficiency_Angle_ThinBinning_CC->Divide(TotalCCEvent_Angle_ThinBinning);
+    MCReconstructionEfficiency_PTheta_ThinBinning_NC->Divide(TotalNCEvent_PTheta_ThinBinning);
+    MCReconstructionEfficiency_Momentum_ThinBinning_NC->Divide(TotalNCEvent_Momentum_ThinBinning);
+    MCReconstructionEfficiency_Angle_ThinBinning_NC->Divide(TotalNCEvent_Angle_ThinBinning);
+
+    MCReconstructionEfficiency_Energy->Divide(TotalCC0piEvent_Energy);
+    MCReconstructionEfficiency_Energy_CC->Divide(TotalCCEvent_Energy);
+    MCReconstructionEfficiency_Energy_NC->Divide(TotalNCEvent_Energy);
 
     MCReconstructionAndTopologyEfficiency_Momentum_ThinBinning->Divide(TotalEvent_Momentum_ThinBinning);
     MCReconstructionAndTopologyEfficiency_Angle_ThinBinning->Divide(TotalEvent_Angle_ThinBinning);
@@ -2656,6 +2758,7 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
       THStack * Stack_RecMom = new THStack("Stack_RecMom","");
       THStack * Stack_RecAngle = new THStack("Stack_RecAngle","");
       THStack * Stack_FCFVTrueEvents = new THStack("Stack_FCFVTrueEvents","");
+      THStack * Stack_RecTrueEvents = new THStack("Stack_RecTrueEvents","");
       THStack * Stack_NTracks_CC0pi = new THStack("Stack_NTracks_CC0pi","");
       THStack * Stack_RecMom_CC0pi_restr = new THStack("Stack_RecMom_CC0pi_restr","");
       THStack * Stack_RecAngle_CC0pi_restr = new THStack("Stack_RecAngle_CC0pi_restr","");
@@ -2696,6 +2799,7 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
       ProduceStack(hRecMom,Stack_RecMom);
       ProduceStack(hRecAngle,Stack_RecAngle);
       ProduceStack(hFCFVTrueEvents,Stack_FCFVTrueEvents);
+      ProduceStack(hRecTrueEvents,Stack_RecTrueEvents);
       ProduceStack(hRecMom_CC0pi_restr,Stack_RecMom_CC0pi_restr);
       ProduceStack(hRecAngle_CC0pi_restr,Stack_RecAngle_CC0pi_restr);
       ProduceStack(hRecMom_CC0pi,Stack_RecMom_CC0pi);
@@ -2739,6 +2843,7 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
       //TFile * fMC = new TFile("plots/MCPlots.root","RECREATE");
 
       Stack_FCFVTrueEvents->Write();
+      Stack_RecTrueEvents->Write();
 
       Stack_MuCL_Particles->Write();
       Stack_MuCL->Write();
@@ -2784,6 +2889,10 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
       MCEfficiency_PTheta_Angle->Write();
       MCEfficiency_Energy->Write();
 
+      MCReconstructionEfficiency_Energy->Write();
+      MCReconstructionEfficiency_Energy_CC->Write();
+      MCReconstructionEfficiency_Energy_NC->Write();
+
       MCEfficiency_PTheta_ThinBinning->Write();
       MCEfficiency_Momentum_ThinBinning->Write(); 
       MCEfficiency_Angle_ThinBinning->Write();
@@ -2791,6 +2900,14 @@ void CC0piDistributions(TChain * wtree,TChain * wtreeMVA, bool IsData,int Select
       MCReconstructionEfficiency_PTheta_ThinBinning->Write();
       MCReconstructionEfficiency_Momentum_ThinBinning->Write(); 
       MCReconstructionEfficiency_Angle_ThinBinning->Write();
+
+      MCReconstructionEfficiency_PTheta_ThinBinning_CC->Write();
+      MCReconstructionEfficiency_Momentum_ThinBinning_CC->Write(); 
+      MCReconstructionEfficiency_Angle_ThinBinning_CC->Write();
+
+      MCReconstructionEfficiency_PTheta_ThinBinning_NC->Write();
+      MCReconstructionEfficiency_Momentum_ThinBinning_NC->Write(); 
+      MCReconstructionEfficiency_Angle_ThinBinning_NC->Write();
 
       MCReconstructionAndTopologyEfficiency_PTheta_ThinBinning->Write();
       MCReconstructionAndTopologyEfficiency_Momentum_ThinBinning->Write(); 
@@ -3330,7 +3447,7 @@ int main(int argc, char ** argv){
      //cin>>DataEquivalent;
      ScalingMC=DataEquivalent/NMCfiles;//one MC file is equivalent to 1e21 POT
      cout<<NMCfiles<<endl;
-     for(int i=1;i<NMCfiles;i++){
+     for(int i=1;i<10/*NMCfiles*/;i++){
      	       //sprintf(fName,i);
 	        //sprintf(fName,"%s",InNameEvent);
 	        //sprintf(fName,"root_input/CC0piTree%d.root",i);

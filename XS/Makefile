@@ -1,5 +1,5 @@
 CPP 		= g++
-CXXFLAGS	= -g -O3 -Wall -fPIC -D_REENTRANT -Wno-deprecated
+CXXFLAGS	= -g -O3 -fPIC -Wall -D_REENTRANT -Wno-deprecated
 
 ROOTCFLAGS	:= $(shell root-config --cflags)
 ROOTLIBS     	:= $(shell root-config --libs)
@@ -27,7 +27,7 @@ SRC= src
 
 CXXFLAGS += -I$(LIB) -I$(SRC) -I$(INC)
 
-TARGET=XSFileGenerator FinalMCOutputMaker CC0piPlots CC0piSelection Draw_CompareCalibrationsPM DrawXSPlots DrawXSPlots_Toys GeneratePEAngleDistributions XS_CC0pi_Plan DrawReconstructedEventsPlots_Dvt UnfoldingOptimisation_Dvt SequentialSand SandSelection_Plan GeneratePDFMuCL_Likelihood ShrinkXSFormat GenieReweight HitEfficiency CompareCalibrationsPM
+TARGET=XSFileGenerator FinalMCOutputMaker CC0piPlots CC0piSelection Draw_CompareCalibrationsPM DrawXSPlots DrawXSPlots_Toys GeneratePEAngleDistributions XS_CC0pi_Plan DrawReconstructedEventsPlots_Dvt UnfoldingOptimisation_Dvt SequentialSand SandSelection_Plan GeneratePDFMuCL_Likelihood ShrinkXSFormat GenieReweight HitEfficiency CompareCalibrationsPM ShrinkXSFormatEarlier
 
 all: $(TARGET)
 
@@ -51,6 +51,7 @@ ShrinkXSFormat: ShrinkXSFormat.o
 GenieReweight: GenieReweight.o	
 HitEfficiency: HitEfficiency.o
 CompareCalibrationsPM: CompareCalibrationsPM.o
+ShrinkXSFormatEarlier: ShrinkXSFormatEarlier.o
 
 %: %.o
 	@echo "Now make $@"

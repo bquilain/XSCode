@@ -213,6 +213,7 @@ void LoadMuCLDistributions_Likelihood(bool PM=true,int ErrorType=0, int ErrorVal
 #else
   file_Likelihood = new TFile(Form("$INSTALLREPOSITORY/XS/src/PDFMuCL_Likelihood%s.root",(PM?"":"_WM")));
 #endif
+  
   PDFParticle = (TH1D*) file_Likelihood->Get("PDFParticle");
   PDFParticle->Scale(1./PDFParticle->Integral());
   double Start_PDG=PDFParticle->GetXaxis()->GetXmin();
@@ -837,7 +838,7 @@ int main(int argc, char **argv)
 
   cout<<"Welcome"<<endl;
   vector <HitTemp> HitV;
-  TApplication theApp("App",0,0);
+  //TApplication theApp("App",0,0);
   int TrackSample;
 
   cout<<"Opening Events"<<endl;
@@ -2030,10 +2031,17 @@ int main(int argc, char **argv)
   hTestImmediate_Ing->Write();
 
 #endif
-  wfile  -> Write();
+  cout<<"Stat tree writing"<<endl;
+  wfile->cd();
+  wtree  -> Write();
+#ifdef MVA  
+  wtreeMVA  -> Write();
+#endif
+  cout<<"Done tree writing"<<endl;
   wfile  -> Close();
+  cout<<"File is closed"<<endl;
 
-  if(Disp) theApp.Run();    
-  return(0);
+  //if(Disp) theApp.Run();    
+  return 0;
 }
   

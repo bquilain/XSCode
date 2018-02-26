@@ -151,7 +151,7 @@ vector <Hit3D> Reconstruction::SearchIngridHit(vector <Hit3D> Vec, vector <Hit3D
     double ZX,ZY;
     double XMean=0;double YMean=0;
     double NClusterX=0;double NClusterY=0;
-    IngridHitSummary * Hit = new IngridHitSummary();
+    //IngridHitSummary * Hit = new IngridHitSummary();
     
     for(int ihit=0;ihit<Vec.size();ihit++){
       if(Vec[ihit].pln!=17) continue;
@@ -322,7 +322,7 @@ vector <HitTemp> Reconstruction::EraseDoubleHitsPM(PMAnaSummary * recon, int itr
   HitTemp Coord;
   int ndouble;
   HitV.clear();
-  IngridHitSummary * Hit = new IngridHitSummary();
+  IngridHitSummary * Hit;
 #ifdef DEBUG2
   cout<<"New track, number of hits="<<recon->NhitTs(itrk)<<endl;
 #endif
@@ -396,7 +396,7 @@ vector <HitTemp> Reconstruction::EraseDoubleHitsAllTracks(IngridBasicReconSummar
 vector <HitTemp> Reconstruction::EraseDoubleHitsAllTracksPM(PMAnaSummary * recon, vector <HitTemp> HitV){
   //cout<<"hello"<<endl;
   HitV.clear();
-  IngridHitSummary * Hit = new IngridHitSummary();
+  IngridHitSummary * Hit;// = new IngridHitSummary();
   HitTemp Coord;
   int ndouble;
   for(int itrk=0;itrk<recon->Ntrack;itrk++){
@@ -568,8 +568,8 @@ vector <HitTemp> Reconstruction::EraseDoubleHitsAllTracksPM(PMAnaSummary * recon
 vector <Hit3D> Reconstruction::Hit2DMatchingPM( IngridEventSummary* evt, PMAnaSummary * recon,vector <HitTemp> HitV,vector <Hit3D> Vec, bool MC){
   
   Vec.clear();
-  IngridHitSummary * hit=new IngridHitSummary();
-  IngridHitSummary * hit2=new IngridHitSummary();
+  IngridHitSummary * hit;
+  IngridHitSummary * hit2;
   Hit3D hit3d,hit3d2;
   IngridSimParticleSummary * SimPart2;
 
@@ -678,8 +678,8 @@ vector <Hit3D> Reconstruction::Hit2DMatchingPM( IngridEventSummary* evt, PMAnaSu
 
 vector <Hit3D> Reconstruction::Hit2DMatchingAllTracksPM(PMAnaSummary * recon, bool MC){
 
-  IngridHitSummary * hit =new IngridHitSummary();
-  IngridHitSummary * hit2 =new IngridHitSummary();
+  IngridHitSummary * hit;// =new IngridHitSummary();
+  IngridHitSummary * hit2;// =new IngridHitSummary();
   vector <Hit3D> VecAll;
   Hit3D hit3d,hit3d2;
   vector <HitTemp> HitV;
@@ -696,7 +696,7 @@ vector <Hit3D> Reconstruction::Hit2DMatchingAllTracksPM(PMAnaSummary * recon, bo
     }
   }
 
-  IngridHitSummary * Hit = new IngridHitSummary();
+  IngridHitSummary * Hit;// = new IngridHitSummary();
   HitTemp Coord;
   int ndouble;
 
@@ -1003,6 +1003,10 @@ vector <double> Reconstruction::GetTrackAnglePM(vector <Hit3D> Vec, double Angle
   double Norm=TMath::Sqrt((Fpos[0]-Ipos[0])*(Fpos[0]-Ipos[0])+(Fpos[1]-Ipos[1])*(Fpos[1]-Ipos[1])+(Fpos[2]-Ipos[2])*(Fpos[2]-Ipos[2]));
   double Angle=TMath::ACos(Scalar/Norm)*180/TMath::Pi();
   Out.push_back(Angle);
+  HistPosX->Delete();   
+  HistPosY->Delete();
+  fx->Delete();
+  fy->Delete();
 
   } 
   return Out;
@@ -1030,11 +1034,6 @@ vector <double> Reconstruction::GetTrackAnglePM(vector <Hit3D> Vec, double Angle
   Out.push_back(Zi[1]); 
   Out.push_back(Zf[1]);
 
-  HistPosX->Delete();   
-  HistPosY->Delete();
-  Norm->Delete();
-  fx->Delete();
-  fy->Delete();
   return Out;
   */
 }
@@ -1349,8 +1348,8 @@ vector <Hit3D> Reconstruction::SeveralHitsPlanePM(PMAnaSummary * recon,vector <H
 
 vector <Hit3D> Reconstruction::Hit2DMatchingClusterPM(IngridEventSummary* evt, PMAnaSummary * recon, bool MC){
   //cout<<"Change Z and X/Y of hits in Hit2DMatchingClusterPM before to use"<<endl;
-  IngridHitSummary * hit =new IngridHitSummary();
-  IngridHitSummary * hit2 =new IngridHitSummary();
+  IngridHitSummary * hit;// =new IngridHitSummary();
+  IngridHitSummary * hit2;// =new IngridHitSummary();
   vector <Hit3D> VecAll;
   Hit3D hit3d,hit3d2;
   double TCluster= recon->clstime;
@@ -1508,7 +1507,7 @@ vector <Hit3D> Reconstruction::Hit2DMatchingClusterPM(IngridEventSummary* evt, P
 
 vector <Hit3D> Reconstruction::ClusterPM(IngridEventSummary* evt, PMAnaSummary * recon, int nTracks){
   int Mod=16;
-  IngridHitSummary * hit =new IngridHitSummary();
+  IngridHitSummary * hit;// =new IngridHitSummary();
   vector <Hit3D> VecAll;
   vector <HitTemp> HitV;
   HitV.clear();
@@ -1516,7 +1515,7 @@ vector <Hit3D> Reconstruction::ClusterPM(IngridEventSummary* evt, PMAnaSummary *
   Hit3D hit3d,hit3d2;
   double TCluster= recon->clstime;
 
-  IngridHitSummary * hit2 = new IngridHitSummary();
+  IngridHitSummary * hit2;// = new IngridHitSummary();
   HitTemp Coord;
   int ndouble;
 
@@ -2070,6 +2069,15 @@ vector <double> Reconstruction::TheoreticalTrack(int startplnx, double startchx,
   Track.push_back(StartPln_Ing);
   Track.push_back(EndPln_Ing);
   ////cout<<StartPln_Ing<<", "<<EndPln_Ing<<endl;
+  delete Xx;
+  delete Zx;
+  delete Yy;
+  delete Zy;
+  delete x_ini;
+  delete z_iniX;
+  delete y_ini;
+  delete z_iniY;
+
   return Track;
 }
 
@@ -2215,6 +2223,10 @@ bool Reconstruction::HasGeomTrack(int mod, int startplnx, int startchx, double t
       //cout<<"Has Geom in Module="<<imod<<endl;
     }
   }
+  delete posXxy;
+  delete posXz;
+  delete posYxy;
+  delete posYz;
 
   return HasGeom;
 }
@@ -2323,6 +2335,11 @@ vector <double> Reconstruction::IngridTrack(int mod, int startplnx, int startchx
   vector <double> Pln;
   Pln.push_back(StartPln);
   Pln.push_back(EndPln);
+  delete posXxy;
+  delete posXz;
+  delete posYxy;
+  delete posYz;
+
   return Pln;
 }
 
@@ -2386,6 +2403,10 @@ vector <double> Reconstruction::TrackPenetration(int Mod, int pln_iniX, double c
   //cout<<"Distance in Iron="<<DistIron<<endl;
   double EqSciLength=DistIron*55.85/1.03+DistCarbon;//equivalent length of scintillators crossed by the particle
   Dist.push_back(EqSciLength);
+  delete x_ini;
+  delete z_iniX;
+  delete y_ini;
+  delete z_iniY;
 
   return Dist;
 }
@@ -2566,6 +2587,10 @@ vector <double> Reconstruction::TrackPenetrationPM(int pln_iniX, double ch_iniX,
   cout<<"Total carbon length="<<DistCarbon<<", total iron length="<<DistIron<<", equivalent length="<<EqSciLength<<endl;
   cout<<"**************************************************************************************"<<endl;
 #endif
+  delete x_ini;
+  delete z_iniX;
+  delete y_ini;
+  delete z_iniY;
     
   return Dist;
 }
@@ -2890,6 +2915,8 @@ double Reconstruction::Get2TrackAngle(double thetax1, double thetay1, double the
   }
 
   double AngleInTracks=180/TMath::Pi()*TMath::ACos(Track1[0]*Track2[0]+Track1[1]*Track2[1]+Track1[2]*Track2[2]);
+  delete Track1;
+  delete Track2;
   return AngleInTracks;
 
 }
@@ -3375,7 +3402,15 @@ vector <double> Reconstruction::GetMatchingPMINGRID(vector <Hit3D> Vec){
   MatchingPMINGRID.push_back(AngleY_Ing);
   MatchingPMINGRID.push_back(HalfX_Ing);
   MatchingPMINGRID.push_back(HalfY_Ing);
-
+  delete HistPosX;
+  delete HistPosY;
+  delete HistPosX_Ing;
+  delete HistPosY_Ing;
+  delete fx;
+  delete fy;
+  delete fx_Ing;
+  delete fy_Ing;
+  
   return MatchingPMINGRID;
 }
 
