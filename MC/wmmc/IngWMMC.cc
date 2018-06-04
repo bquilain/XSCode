@@ -51,13 +51,18 @@ int main(int argc, char** argv)
  	bool isParticleGun=false;
 	int particleGun_pdg=0;
 
+	bool reduced_ingrid=false;
+	int ingrid_mod=-1;
+
 	double CBIRKS_values[3]={0.0185,0.0208,0.0231}; // nominal 0.0208; Birks_Minus = 0.0185; Birks_Plus = 0.0231 
 	int BirksIndex=1;
 
 	int NumberOfEvent = 0;
 
+	bool physicsListChange=false;
+
 	int c = -1;
-	while ((c = getopt(argc, argv, "ho:i:m:b:f:r:dB:p:")) != -1) {
+	while ((c = getopt(argc, argv, "ho:i:m:b:f:r:dB:p:I:P")) != -1) {
     switch(c){
 			case 'o':
 				sprintf(output,"%s",optarg);
@@ -93,6 +98,13 @@ int main(int argc, char** argv)
 			       isParticleGun=true;
 			       particleGun_pdg=atoi(optarg);
 			        break;
+                        case 'I':
+			        reduced_ingrid=true;
+				ingrid_mod=atoi(optarg);
+				break;
+                        case 'P':
+			        physicsListChange=true;
+				break;
 			case 'h':
 				std::cerr << "o:output root file name" << std::endl;
 				std::cerr << "i:input neut file" << std::endl;
@@ -128,6 +140,7 @@ int main(int argc, char** argv)
 	NumberOfEvent = neut->NtupleReadInit(neutfile);
 	G4cout << "NumberOfEvent :" << NumberOfEvent << G4endl;
   }
+
   // set mandatory user initialization classes...
   cout<<"Neut Init OK"<<endl;
 
@@ -139,8 +152,9 @@ int main(int argc, char** argv)
   // particles and physics processes
   //runManager-> SetUserInitialization(new ND280mPhysicsList);
   //runManager-> SetUserInitialization(new QGSP);
-  runManager-> SetUserInitialization(new QGSP_BERT); // ML 2017/05/02
-  //runManager-> SetUserInitialization(new QGSP_BIC);
+  if(physicsListChange)  runManager-> SetUserInitialization(new QGSP_BIC); // ML 2018/03/20 to study Secondary Interactions
+  else runManager-> SetUserInitialization(new QGSP_BERT); // ML 2017/05/02
+  
   G4cout << "PhysicsList Init OK" << G4endl;
 
 	IngridRunAction * rac = new IngridRunAction(output);
@@ -154,7 +168,7 @@ int main(int argc, char** argv)
 	runManager->SetUserAction(tra);
 	G4cout << "TrackingAction init OK" << G4endl;
 
-	IngridPrimaryGeneratorAction *gen=new IngridPrimaryGeneratorAction(neut, rac, evt, nd, flav,seed);
+	IngridPrimaryGeneratorAction *gen=new IngridPrimaryGeneratorAction(neut, rac, evt, nd, flav,seed,reduced_ingrid,ingrid_mod);
 	gen->SetParticleGun(isParticleGun,particleGun_pdg);
 	runManager-> SetUserAction(gen);
 	G4cout << "PrimaryGenerator init OK" ;
@@ -201,7 +215,7 @@ int main(int argc, char** argv)
 #endif
 
   delete runManager;  //G4cout << G4endl;
-
+	
   return 0;
 
 }

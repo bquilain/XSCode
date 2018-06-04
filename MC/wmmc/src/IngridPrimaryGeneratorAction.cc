@@ -79,7 +79,7 @@ const double iron_start03 = iron_start + 0.9;
 
 //
 IngridPrimaryGeneratorAction::
-IngridPrimaryGeneratorAction(Neut *neut0,IngridRunAction* rac, IngridEventAction* evt,int nd,int flavor0,int seed=-1)
+IngridPrimaryGeneratorAction(Neut *neut0,IngridRunAction* rac, IngridEventAction* evt,int nd,int flavor0,int seed=-1,bool reduced_ingrid=false, int ingrid_mod=-1)
   :runaction(rac)
 {
   eventaction = evt;
@@ -92,6 +92,8 @@ IngridPrimaryGeneratorAction(Neut *neut0,IngridRunAction* rac, IngridEventAction
   G4String particleName;
   isParticleGun=false;
   particleGun_pdg=0;
+  is_reduced_ingrid=reduced_ingrid;
+  imod=ingrid_mod;
 
   if(seed!=-1)CLHEP::HepRandom::setTheSeed(seed);
   runaction->NotEntry = 0;
@@ -298,7 +300,7 @@ void IngridPrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
       // iron#/module is 0 ~ 8, scinti#/module is 0~10
       // unit of pos is [cm];
 
-      if( fdid==3 && fabs(pos[0]) <= 60 && fabs(pos[1]) <= 60){
+      if( fdid==3 && (fabs(pos[0]) <= 60 && fabs(pos[1]) <= 60) || (is_reduced_ingrid && imod==3)){
 	if( vertex_flag==0 ) {
 	  flayer = (int)(9*G4UniformRand());      // 0 < 9*rand < 9
 	  pos[2] = width_fe*G4UniformRand();
@@ -514,8 +516,14 @@ void IngridPrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
       for( int m=0;m<7;m++ ) {
         if( fabs(pos[0]+MOD_CEN_GAP*(3-m)) <= 60 &&
             fabs(pos[1]) <= 60 ) {
-          ID = m;
-          goto NEXTSTEP;
+	  if(is_reduced_ingrid){
+	    pos[0]=pos[0]+MOD_CEN_GAP*(imod-m);
+	    ID = imod;
+	  }
+	  else{
+	    ID = m;
+	  }
+	  goto NEXTSTEP;
         }
       }
     }
@@ -523,7 +531,13 @@ void IngridPrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
       for( int m=0;m<7;m++ ) {
         if( fabs(pos[0]) <= 60 &&
             fabs(pos[1]+MOD_CEN_GAP*(3-m)) <= 60 ) {
-          ID = m+7;
+	  if(is_reduced_ingrid){
+	    pos[1]=pos[1]+MOD_CEN_GAP*(imod-7-m);
+	    ID = imod;
+	  }
+	  else{
+	    ID = m+7;
+	  }
           goto NEXTSTEP;
         }
       }
@@ -585,6 +599,7 @@ NEXTSTEP:
     simvertex -> mod      = ID;
     simvertex -> norm	  = (neut->Vector).Neutrino.Norm;
     if(fdid==7)    simvertex -> norm = (neut->Vector).Neutrino.Norm*Nsuccess_sand/((float)Ndraws_sand);
+    if(is_reduced_ingrid) simvertex->norm=simvertex->norm/7.0;
     simvertex -> totcrsne	= (neut->Vector).neutcrs.Totcrsne;
 
     //for Al density added by koga

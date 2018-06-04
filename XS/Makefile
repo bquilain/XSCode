@@ -27,7 +27,7 @@ SRC= src
 
 CXXFLAGS += -I$(LIB) -I$(SRC) -I$(INC)
 
-TARGET=XSFileGenerator FinalMCOutputMaker CC0piPlots CC0piSelection Draw_CompareCalibrationsPM DrawXSPlots DrawXSPlots_Toys GeneratePEAngleDistributions XS_CC0pi_Plan DrawReconstructedEventsPlots_Dvt UnfoldingOptimisation_Dvt SequentialSand SandSelection_Plan GeneratePDFMuCL_Likelihood ShrinkXSFormat GenieReweight HitEfficiency CompareCalibrationsPM ShrinkXSFormatEarlier
+TARGET=XSFileGenerator FinalMCOutputMaker CC0piPlots CC0piSelection Draw_CompareCalibrationsPM DrawXSPlots DrawXSPlots_Toys GeneratePEAngleDistributions XS_CC0pi_Plan DrawReconstructedEventsPlots_Dvt UnfoldingOptimisation_Dvt SequentialSand SandSelection_Plan GeneratePDFMuCL_Likelihood ShrinkXSFormat GenieReweight HitEfficiency CompareCalibrationsPM ShrinkXSFormatEarlier GeneratePDFMuCL_Likelihood_Fast DrawReconstructedEventsPlots_Dvt_Temp GenerateHitEfficiencyMask DrawReconstructedEventsPlots
 
 all: $(TARGET)
 
@@ -52,6 +52,10 @@ GenieReweight: GenieReweight.o
 HitEfficiency: HitEfficiency.o
 CompareCalibrationsPM: CompareCalibrationsPM.o
 ShrinkXSFormatEarlier: ShrinkXSFormatEarlier.o
+GeneratePDFMuCL_Likelihood_Fast: GeneratePDFMuCL_Likelihood_Fast.o
+DrawReconstructedEventsPlots_Dvt_Temp: DrawReconstructedEventsPlots_Dvt_Temp.o
+GenerateHitEfficiencyMask: GenerateHitEfficiencyMask.o
+DrawReconstructedEventsPlots: DrawReconstructedEventsPlots.o
 
 %: %.o
 	@echo "Now make $@"

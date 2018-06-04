@@ -3,7 +3,7 @@
 #include "G4UItcsh.hh"
 #include "G4VUserPhysicsList.hh"
 //#include "QGSP.hh"
-//#include "QGSP_BERT.hh"
+#include "QGSP_BIC.hh"
 #include "QGSP_BERT.hh"
 #include "G4NeutronHPData.hh"
 #include "G4UserLimits.hh"
@@ -46,10 +46,15 @@ int main(int argc, char** argv)
  	bool isParticleGun=false;
 	int particleGun_pdg=0;
 
+	bool reduced_ingrid=false;
+	int ingrid_mod=-1;
+
 	int NumberOfEvent = 0;
 
+	bool physicsListChange=false;
+
 	int c = -1;
-	while ((c = getopt(argc, argv, "ho:i:m:b:f:B:p:")) != -1) {
+	while ((c = getopt(argc, argv, "ho:i:m:b:f:B:p:I:P")) != -1) {
     switch(c){
 			case 'o':
 				sprintf(output,"%s",optarg);
@@ -74,6 +79,13 @@ int main(int argc, char** argv)
 				  exit(1);
 				}
 			        break;
+                        case 'P':
+			        physicsListChange=true;
+				break;
+                        case 'I':
+			        reduced_ingrid=true;
+				ingrid_mod=atoi(optarg);
+				break;
                         case 'p':
 			       // option -p : propagate only a single type of particle
 			       isParticleGun=true;
@@ -119,19 +131,27 @@ int main(int argc, char** argv)
   //runManager-> SetUserInitialization(new ND280mPhysicsList);
   //QGSP_BERT *thePL = new QGSP_BERT;
 
-  G4VModularPhysicsList* thePL = new QGSP_BERT;
+  if(physicsListChange){  
+    G4VModularPhysicsList* thePL = new QGSP_BIC; // change the PL to study Secondary Interactions -- ML 2018/03/20
+    thePL->SetDefaultCutValue(.1*mm);
+    thePL->SetCutsWithDefault();
+    runManager-> SetUserInitialization(thePL);
+  } 
+  else {// nominal
+    G4VModularPhysicsList* thePL = new QGSP_BERT; 
+    thePL->SetDefaultCutValue(.1*mm);
+    thePL->SetCutsWithDefault();
+    runManager-> SetUserInitialization(thePL);
+  }
   //thePL->RegisterPhysics(new G4EmLivermorePhysics());
   //G4StepLimiterBuilder * h = new G4StepLimiterBuilder();
   //thePL->RegisterPhysics(h);
   //thePL->RegisterPhysics(new G4VPhysicsConstructor("G4EmStandardPhysics_option3"));
-  thePL->SetDefaultCutValue(.1*mm);
+
   //SetCutsWithDefault();  
   //the PL->SetCutValue(defaultCutValue,“e-”); 
   //G4cout<<"Here is the PL default cut value="<<thePL->GetDefaultCutValue()<<G4endl;
-  thePL->SetCutsWithDefault();
   //G4cout<<"Here is the PL default cut value="<<thePL->GetDefaultCutValue()<<G4endl;
-
-  runManager-> SetUserInitialization(thePL);
 
   G4cout << "PhysicsList Init OK" << G4endl;
 
@@ -145,7 +165,7 @@ int main(int argc, char** argv)
 	runManager->SetUserAction(tra);
 	G4cout << "TrackingAction init OK" << G4endl;
 
-	IngridPrimaryGeneratorAction* gen=new IngridPrimaryGeneratorAction(neut, rac, evt, nd, flav);
+	IngridPrimaryGeneratorAction* gen=new IngridPrimaryGeneratorAction(neut, rac, evt, nd, flav,reduced_ingrid,ingrid_mod);
 	gen->SetParticleGun(isParticleGun, particleGun_pdg);
 	runManager-> SetUserAction(gen);
 	G4cout << "PrimaryGenerator init OK" ;

@@ -15,7 +15,7 @@ class G4Event;
 class IngridPrimaryGeneratorAction : public G4VUserPrimaryGeneratorAction
 {
 public:
-  IngridPrimaryGeneratorAction(Neut*, IngridRunAction*, IngridEventAction*, int, int);
+  IngridPrimaryGeneratorAction(Neut*, IngridRunAction*, IngridEventAction*, int, int, bool, int);
   ~IngridPrimaryGeneratorAction();
 
 public:
@@ -28,6 +28,9 @@ private:
 
   int module_mode;
   int neutrino_flavor;
+
+  bool is_reduced_ingrid;
+  int imod;
 
   IngridRunAction* runaction;
   IngridEventAction* eventaction;
