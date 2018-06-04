@@ -1625,11 +1625,12 @@ double Reconstruction::GetTrackEnergyPerDistance(vector <Hit3D> Vec,double dx){
 /******************************************************************************/
 
 
-vector <int> Reconstruction::TrackComposition(vector <Hit3D> Vec, double VertexX,double VertexY,double VertexZ){
+vector <int> Reconstruction::TrackComposition(vector <Hit3D> Vec, double VertexX = 0, double VertexY = 0, double VertexZ = 0){
   vector <int> Compo;
   int NMuons=0;
   int NPions=0;
   int NProtons=0;
+  int NOthers=0;
   sort(Vec.begin(),Vec.end());
   //cout<<"New Track:"<<endl;
   for(int ihit=0/*Vec.size()-4*/;ihit<Vec.size();ihit++){
@@ -1637,21 +1638,24 @@ vector <int> Reconstruction::TrackComposition(vector <Hit3D> Vec, double VertexX
     double Dist=TMath::Sqrt(pow(Vec[ihit].x-VertexX,2)+pow(Vec[ihit].y-VertexY,2)+pow(Vec[ihit].z-VertexZ,2));
     if(Vec[ihit].used>1) continue;//skip hits too close from vertex
     //cout<<"Particle Type="<<Vec[ihit].pdg<<" Distance from Vertex="<<Dist<<endl;
-    if(Dist<10) continue;
-    if(Vec[ihit].pdg==13) NMuons++;
-    else if(Vec[ihit].pdg==211) NPions++;
-    else if(Vec[ihit].pdg==2212) NProtons++;
+    //if(Dist<10) continue;
+    if(TMath::Abs(Vec[ihit].pdg)==13) NMuons++;
+    else if(TMath::Abs(Vec[ihit].pdg)==211) NPions++;
+    else if(TMath::Abs(Vec[ihit].pdg)==2212) NProtons++;
+    else NOthers++;
   }
 
-  if(NMuons==0 && NPions==0 && NProtons==0) {//case where all hits are shared
+  if(NMuons + NPions + NProtons + NOthers < 4) {//case where not enough "free" hits
     //cout<<"All Hits are shared"<<endl;
     for(int ihit=0;ihit<Vec.size();ihit++){
+      if(Vec[ihit].used <= 1) continue;
       //if(Vec[ihit].mod==16) continue;
-      double Dist=TMath::Sqrt(pow(Vec[ihit].x-VertexX,2)+pow(Vec[ihit].y-VertexY,2)+pow(Vec[ihit].z-VertexZ,2));                                                    
-      //cout<<"Particle Type="<<Vec[ihit].pdg<<" Distance from Vertex="<<Dist<<endl;
-      if(Vec[ihit].pdg==13) NMuons++;
-      else if(Vec[ihit].pdg==211) NPions++;
-      else if(Vec[ihit].pdg==2212) NProtons++;
+      //double Dist=TMath::Sqrt(pow(Vec[ihit].x-VertexX,2)+pow(Vec[ihit].y-VertexY,2)+pow(Vec[ihit].z-VertexZ,2));                                                    
+      //cout<<"Particle Type="<<TMath::Abs(Vec[ihit].pdg)<<" Distance from Vertex="<<Dist<<endl;
+      if(TMath::Abs(Vec[ihit].pdg)==13) NMuons++;
+      else if(TMath::Abs(Vec[ihit].pdg)==211) NPions++;
+      else if(TMath::Abs(Vec[ihit].pdg)==2212) NProtons++;
+      else NOthers++;
     }
   }
   /*
@@ -1662,7 +1666,7 @@ vector <int> Reconstruction::TrackComposition(vector <Hit3D> Vec, double VertexX
   Compo.push_back(NMuons);
   Compo.push_back(NPions);
   Compo.push_back(NProtons);
-  
+  Compo.push_back(NOthers);
   return Compo;
 }
 
@@ -2958,8 +2962,7 @@ int Reconstruction::GetTrackParticle(IngridEventSummary *evt, PMAnaSummary * rec
 
 #ifdef DEBUG
       cout<<"Is selected: Particle="<<SimPart2->pdg<<"       :";
-      cout<<"here is the rec thetax, thetay="<<(recon->thetay)[itrk]<<", "<<(recon->thetax)[itrk]<<", Angle 3D="<<(recon->angle)[itrk]<<", And here are the angles="<<thetaX<<", "<<thetaY<<"opening angle="<<Ang3D<<endl;
-      cout<<"rec trk length="<<TrkLength<<", Simpart length="<<SimPart2->length<<endl;
+      cout<<"Rec vs Sim: thetay="<<(recon->thetay)[itrk]<<"X"<<thetaX<<" , thetax="<<(recon->thetax)[itrk]<<"X"<<thetaY<<" , 3D angle="<<(recon->angle)[itrk]<<"X"<<Ang3D<<" , length="<<TrkLength<<"X"<<SimPart2->length<<" cm"<<endl;
 #endif
       
       bool Change=false;
@@ -2997,8 +3000,7 @@ int Reconstruction::GetTrackParticle(IngridEventSummary *evt, PMAnaSummary * rec
       
 #ifdef DEBUG
       cout<<"Is selected: Particle="<<SimPart2->pdg<<"       :";
-      cout<<"here is the rec thetax, thetay="<<(recon->thetay)[itrk]<<", "<<(recon->thetax)[itrk]<<", Angle 3D="<<(recon->angle)[itrk]<<", And here are the angles="<<thetaX<<", "<<thetaY<<", opening angle="<<Ang3D<<endl;
-      cout<<"rec trk length="<<TrkLength<<", Simpart length="<<SimPart2->length<<endl;
+      cout<<"Rec vs Sim: thetay="<<(recon->thetay)[itrk]<<"X"<<thetaX<<" , thetax="<<(recon->thetax)[itrk]<<"X"<<thetaY<<" , 3D angle="<<(recon->angle)[itrk]<<"X"<<Ang3D<<" , length="<<TrkLength<<"X"<<SimPart2->length<<" cm"<<endl;
 #endif DEBUG
       
       

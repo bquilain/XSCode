@@ -2,7 +2,7 @@ void ProduceStackParticles(TH1D * hmu, TH1D * hpi, TH1D * hp, TH1D * ho, THStack
 
   hmu->GetYaxis()->SetTitleOffset(1.3);
 
-  hmu->SetFillColor(kBlue);
+  hmu->SetFillColor(kBlue+2);
   hmu->SetLineColor(1);
   hmu->SetLineWidth(2);
 
@@ -48,6 +48,8 @@ void MVAOptimizer(){
   //###############CHECK ALSO RIGHT TAIL CUT FOR PROTON. USE ANOTHER MVA, MVAProton##################
   bool MVAPion=false;
   bool MVAProton=true;
+  bool PM=false;
+  char Det[3] = PM? "PM_":"WM_"; 
   //#################################################################################################
 
   
@@ -67,8 +69,9 @@ void MVAOptimizer(){
  
   //TFile * rfile = new TFile("../src/MVAparticleMuon_1000trees_BugTrueParticleSolved.root");
   //TFile * rfile = new TFile("../src/MVAparticleMuon_1000trees.root");
-  TFile * rfile = new TFile("../src/MVAWMparticleMuon_1000trees.root");
-
+  TFile * rfile;
+  if(PM) rfile = new TFile("../src/MVAparticleMuon_1000trees.root");
+  else rfile = new TFile("../src/MVAWMparticleMuon_1000trees.root");
   //TFile * rfile = new TFile("../src/MVAparticleMuon_Forest1000trees_Input1000trees.root");
   //TFile * rfile = new TFile("../src/MVAparticleProton_1000trees.root");
   
@@ -157,6 +160,11 @@ void MVAOptimizer(){
   rtree->SetBranchAddress(Form("weight"),&(weight));
 
   //Create the plot of the muon, pion and proton distribution.
+  TH2D * MVAdiscriminantXCL_TrueMuon[6];
+  TH2D * MVAdiscriminantXCL_TruePion[6];
+  TH2D * MVAdiscriminantXCL_TrueProton[6];
+  TH2D * MVAdiscriminantXCL_TrueOthers[6];
+
   TH1D * MVAdiscriminant_TrueMuon[6];
   TH1D * MVAdiscriminant_TruePion[6];
   TH1D * MVAdiscriminant_TrueProton[6];
@@ -164,12 +172,23 @@ void MVAOptimizer(){
   THStack * StackMVAdiscriminant[6];
 
   for(int is=0;is<6;is++){
+    MVAdiscriminantXCL_TrueMuon[is] = new TH2D(Form("MVAdiscriminantXCL_TrueMuon%d",is),"MVA discriminant of true muons",NBinsMVA,LowerBoundMVA,UpperBoundMVA,NBinsCL,LowerBoundCL,UpperBoundCL);
+    MVAdiscriminantXCL_TruePion[is] = new TH2D(Form("MVAdiscriminantXCL_TruePion%d",is),"MVA discriminant of true pions",NBinsMVA,LowerBoundMVA,UpperBoundMVA,NBinsCL,LowerBoundCL,UpperBoundCL);
+    MVAdiscriminantXCL_TrueProton[is] = new TH2D(Form("MVAdiscriminantXCL_TrueProton%d",is),"MVA discriminant of true protons",NBinsMVA,LowerBoundMVA,UpperBoundMVA,NBinsCL,LowerBoundCL,UpperBoundCL);
+    MVAdiscriminantXCL_TrueOthers[is] = new TH2D(Form("MVAdiscriminantXCL_TrueOthers%d",is),"MVA discriminant of true others",NBinsMVA,LowerBoundMVA,UpperBoundMVA,NBinsCL,LowerBoundCL,UpperBoundCL);
+    
     MVAdiscriminant_TrueMuon[is] = new TH1D(Form("MVAdiscriminant_TrueMuon%d",is),"MVA discriminant of true muons",NBinsMVA,LowerBoundMVA,UpperBoundMVA);
     MVAdiscriminant_TruePion[is] = new TH1D(Form("MVAdiscriminant_TruePion%d",is),"MVA discriminant of true pions",NBinsMVA,LowerBoundMVA,UpperBoundMVA);
     MVAdiscriminant_TrueProton[is] = new TH1D(Form("MVAdiscriminant_TrueProton%d",is),"MVA discriminant of true protons",NBinsMVA,LowerBoundMVA,UpperBoundMVA);
     MVAdiscriminant_TrueOthers[is] = new TH1D(Form("MVAdiscriminant_TrueOthers%d",is),"MVA discriminant of true others",NBinsMVA,LowerBoundMVA,UpperBoundMVA);
     StackMVAdiscriminant[is] = new THStack(Form("StackMVAdiscriminant%d",is),"");
   }
+  
+  TH2D * MVAdiscriminantXCL_TrueMuon_AllSamples;
+  TH2D * MVAdiscriminantXCL_TruePion_AllSamples;
+  TH2D * MVAdiscriminantXCL_TrueProton_AllSamples;
+  TH2D * MVAdiscriminantXCL_TrueOthers_AllSamples;
+  
   TH1D * MVAdiscriminant_TrueMuon_AllSamples;
   TH1D * MVAdiscriminant_TruePion_AllSamples;
   TH1D * MVAdiscriminant_TrueProton_AllSamples;
@@ -230,21 +249,25 @@ void MVAOptimizer(){
       if(TMath::Abs(TypeOfTrack)==13 /*&& (iSample>=3)*/){
 	CLdiscriminant_TrueMuon->Fill(CLMuon_Likelihood,weight);
 	MVAdiscriminant_TrueMuon[iSample]->Fill(BDT,weight); 
+	MVAdiscriminantXCL_TrueMuon[iSample]->Fill(BDT,CLMuon_Likelihood,weight); 
 	//CLdiscriminant_TrueMuon[iSample]->Fill(CLMuon_Likelihood,weight);
       }
       else if(TMath::Abs(TypeOfTrack)==211){
 	CLdiscriminant_TruePion->Fill(CLMuon_Likelihood,weight);
 	MVAdiscriminant_TruePion[iSample]->Fill(BDT,weight); 
+	MVAdiscriminantXCL_TruePion[iSample]->Fill(BDT,CLMuon_Likelihood,weight); 
 	//CLdiscriminant_TruePion[iSample]->Fill(CLMuon_Likelihood,weight);
       }
       else if(TMath::Abs(TypeOfTrack)==2212){
 	CLdiscriminant_TrueProton->Fill(CLMuon_Likelihood,weight);
-	MVAdiscriminant_TrueProton[iSample]->Fill(BDT,weight); 
+	MVAdiscriminant_TrueProton[iSample]->Fill(BDT,weight);
+	MVAdiscriminantXCL_TrueProton[iSample]->Fill(BDT,CLMuon_Likelihood,weight); 
 	//CLdiscriminant_TrueProton[iSample]->Fill(CLMuon_Likelihood,weight);
       }
       else{
 	CLdiscriminant_TrueOthers->Fill(CLMuon_Likelihood,weight);
 	MVAdiscriminant_TrueOthers[iSample]->Fill(BDT,weight); 
+	MVAdiscriminantXCL_TrueOthers[iSample]->Fill(BDT,CLMuon_Likelihood,weight); 
 	//CLdiscriminant_TrueOthers[iSample]->Fill(CLMuon_Likelihood,weight);
       }
     }
@@ -252,12 +275,23 @@ void MVAOptimizer(){
 
   for(int is=0;is<6;is++){
     if(is==0){
+      
+      MVAdiscriminantXCL_TrueMuon_AllSamples = (TH2D*) MVAdiscriminantXCL_TrueMuon[is]->Clone("MVAdiscriminantXCL_TrueMuon_AllSamples");
+      MVAdiscriminantXCL_TruePion_AllSamples = (TH2D*) MVAdiscriminantXCL_TruePion[is]->Clone("MVAdiscriminantXCL_TruePion_AllSamples");
+      MVAdiscriminantXCL_TrueProton_AllSamples = (TH2D*) MVAdiscriminantXCL_TrueProton[is]->Clone("MVAdiscriminantXCL_TrueProton_AllSamples");
+      MVAdiscriminantXCL_TrueOthers_AllSamples = (TH2D*) MVAdiscriminantXCL_TrueOthers[is]->Clone("MVAdiscriminantXCL_TrueOthers_AllSamples");
+      
       MVAdiscriminant_TrueMuon_AllSamples = (TH1D*) MVAdiscriminant_TrueMuon[is]->Clone("MVAdiscriminant_TrueMuon_AllSamples");
       MVAdiscriminant_TruePion_AllSamples = (TH1D*) MVAdiscriminant_TruePion[is]->Clone("MVAdiscriminant_TruePion_AllSamples");
       MVAdiscriminant_TrueProton_AllSamples = (TH1D*) MVAdiscriminant_TrueProton[is]->Clone("MVAdiscriminant_TrueProton_AllSamples");
       MVAdiscriminant_TrueOthers_AllSamples = (TH1D*) MVAdiscriminant_TrueOthers[is]->Clone("MVAdiscriminant_TrueOthers_AllSamples");
     }
     else{
+      MVAdiscriminantXCL_TrueMuon_AllSamples->Add(MVAdiscriminantXCL_TrueMuon[is]);
+      MVAdiscriminantXCL_TruePion_AllSamples->Add(MVAdiscriminantXCL_TruePion[is]);
+      MVAdiscriminantXCL_TrueProton_AllSamples->Add(MVAdiscriminantXCL_TrueProton[is]);
+      MVAdiscriminantXCL_TrueOthers_AllSamples->Add(MVAdiscriminantXCL_TrueOthers[is]);
+
       MVAdiscriminant_TrueMuon_AllSamples->Add(MVAdiscriminant_TrueMuon[is]);
       MVAdiscriminant_TruePion_AllSamples->Add(MVAdiscriminant_TruePion[is]);
       MVAdiscriminant_TrueProton_AllSamples->Add(MVAdiscriminant_TrueProton[is]);
@@ -266,28 +300,34 @@ void MVAOptimizer(){
   }
   
   ////////////////////////// MVA based plots/////////////////////////////////////
+  cout<<"Create MVA plots"<<endl;
   TCanvas * cMVA_AllSamples = new TCanvas("cMVA_AllSamples","MVA distributions of true particles");
-  MVAdiscriminant_TrueMuon_AllSamples->SetLineColor(kBlue);
+  MVAdiscriminant_TrueMuon_AllSamples->SetLineColor(kBlue+2);
   MVAdiscriminant_TruePion_AllSamples->SetLineColor(kGreen+2);
   MVAdiscriminant_TrueProton_AllSamples->SetLineColor(kRed);
   MVAdiscriminant_TrueOthers_AllSamples->SetLineColor(kGray);
   MVAdiscriminant_TrueMuon_AllSamples->Draw();
-  MVAdiscriminant_TrueMuon_AllSamples->GetXaxis()->SetTitle("#mu_{MVA}");
+  MVAdiscriminant_TrueMuon_AllSamples->GetXaxis()->SetTitle("#mu_{CL}");
   MVAdiscriminant_TrueMuon_AllSamples->GetYaxis()->SetTitle("Number of events");
   MVAdiscriminant_TruePion_AllSamples->Draw("same");
   MVAdiscriminant_TrueProton_AllSamples->Draw("same");
   MVAdiscriminant_TrueOthers_AllSamples->Draw("same");
   
   
-  TLegend * lParticles = new TLegend(0.1,0.7,0.3,0.9);
+  TLegend * lParticles = new TLegend(0.11,0.6,0.3,0.89);
+  lParticles->SetFillColor(0);
+  lParticles->SetLineColor(0);
   lParticles->AddEntry(MVAdiscriminant_TrueMuon_AllSamples,"#mu");
   lParticles->AddEntry(MVAdiscriminant_TruePion_AllSamples,"#pi");
   lParticles->AddEntry(MVAdiscriminant_TrueProton_AllSamples,"p");
+  lParticles->AddEntry(MVAdiscriminant_TrueOthers_AllSamples,"Others");
   lParticles->Draw("same");
 
   ProduceStackParticles(MVAdiscriminant_TrueMuon_AllSamples,MVAdiscriminant_TruePion_AllSamples,MVAdiscriminant_TrueProton_AllSamples,MVAdiscriminant_TrueOthers_AllSamples,StackMVAdiscriminant_AllSamples);
   TCanvas * cMVAstack_AllSamples = new TCanvas("cMVAstack_AllSamples","Stack of MVA distributions of true particles");
   StackMVAdiscriminant_AllSamples->Draw();
+  StackMVAdiscriminant_AllSamples->GetXaxis()->SetTitle("#mu_{CL}");
+  StackMVAdiscriminant_AllSamples->GetYaxis()->SetTitle("Number of events");
   lParticles->Draw("same");
   //
 
@@ -295,12 +335,12 @@ void MVAOptimizer(){
   TCanvas * cMVAstack[6];
   for(int is=0;is<6;is++){
     cMVA[is] = new TCanvas(Form("cMVA%d",is),Form("MVA distributions of true particles for sample %d",is));
-    MVAdiscriminant_TrueMuon[is]->SetLineColor(kBlue);
+    MVAdiscriminant_TrueMuon[is]->SetLineColor(kBlue+2);
     MVAdiscriminant_TruePion[is]->SetLineColor(kGreen+2);
     MVAdiscriminant_TrueProton[is]->SetLineColor(kRed);
     MVAdiscriminant_TrueOthers[is]->SetLineColor(kGray);
     MVAdiscriminant_TrueMuon[is]->Draw();
-    MVAdiscriminant_TrueMuon[is]->GetXaxis()->SetTitle("#mu_{MVA}");
+    MVAdiscriminant_TrueMuon[is]->GetXaxis()->SetTitle("#mu_{CL}");
     MVAdiscriminant_TrueMuon[is]->GetYaxis()->SetTitle("Number of events");
     MVAdiscriminant_TruePion[is]->Draw("same");
     MVAdiscriminant_TrueProton[is]->Draw("same");
@@ -310,6 +350,8 @@ void MVAOptimizer(){
     ProduceStackParticles(MVAdiscriminant_TrueMuon[is],MVAdiscriminant_TruePion[is],MVAdiscriminant_TrueProton[is],MVAdiscriminant_TrueOthers[is],StackMVAdiscriminant[is]);
     cMVAstack[is] = new TCanvas(Form("cMVAstack%d",is),Form("Stack of MVA distributions of true particles for sample %d",is));
     StackMVAdiscriminant[is]->Draw();
+    StackMVAdiscriminant[is]->GetXaxis()->SetTitle("#mu_{CL}");
+    StackMVAdiscriminant[is]->GetYaxis()->SetTitle("Number of events");
     lParticles->Draw("same");
   //
   }
@@ -378,10 +420,10 @@ void MVAOptimizer(){
   }
 
   TCanvas * cEfficiencyMVA_TrueMuon = new TCanvas("cEfficiencyMVA_TrueMuon","Efficiency and purity of muons using MVA");
-  EfficiencyMVA_TrueMuon->SetLineColor(kBlue);
+  EfficiencyMVA_TrueMuon->SetLineColor(kBlue+2);
   PurityMVA_TrueMuon->SetLineColor(kRed);
   EfficiencyMVA_TrueMuon->Draw();
-  EfficiencyMVA_TrueMuon->GetXaxis()->SetTitle("#mu_{MVA}");
+  EfficiencyMVA_TrueMuon->GetXaxis()->SetTitle("#mu_{CL}");
   PurityMVA_TrueMuon->Draw("same");
   EfficiencyMVA_TrueMuon->GetYaxis()->SetRangeUser(0.,1.);
   PurityMVA_TrueMuonVSPion->SetLineColor(kGreen+2);
@@ -393,19 +435,19 @@ void MVAOptimizer(){
   lLeftTail->Draw("same");
 
   TCanvas * cEfficiencyMVA_TrueMuon_INGRIDStopping = new TCanvas("cEfficiencyMVA_TrueMuon_INGRIDStopping","Efficiency and purity of muons using MVA");
-  EfficiencyMVA_TrueMuon_INGRIDStopping->SetLineColor(kBlue);
+  EfficiencyMVA_TrueMuon_INGRIDStopping->SetLineColor(kBlue+2);
   PurityMVA_TrueMuon_INGRIDStopping->SetLineColor(kRed);
   EfficiencyMVA_TrueMuon_INGRIDStopping->Draw();
-  EfficiencyMVA_TrueMuon_INGRIDStopping->GetXaxis()->SetTitle("#mu_{MVA}");
+  EfficiencyMVA_TrueMuon_INGRIDStopping->GetXaxis()->SetTitle("#mu_{CL}");
   PurityMVA_TrueMuon_INGRIDStopping->Draw("same");
   EfficiencyMVA_TrueMuon_INGRIDStopping->GetYaxis()->SetRangeUser(0.,1.);
   lLeftTail->Draw("same");
   
   TCanvas * cEfficiencyMVA_TrueProton = new TCanvas("cEfficiencyMVA_TrueProton","Efficiency and purity of protons using MVA");
-  EfficiencyMVA_TrueProton->SetLineColor(kBlue);
+  EfficiencyMVA_TrueProton->SetLineColor(kBlue+2);
   PurityMVA_TrueProton->SetLineColor(kRed);
   EfficiencyMVA_TrueProton->Draw();
-  EfficiencyMVA_TrueProton->GetXaxis()->SetTitle("#mu_{MVA}");
+  EfficiencyMVA_TrueProton->GetXaxis()->SetTitle("#mu_{CL}");
   PurityMVA_TrueProton->Draw("same");
   EfficiencyMVA_TrueProton->GetYaxis()->SetRangeUser(0.,1.);
   TLegend * lRightTail = new TLegend(0.7,0.1,0.9,0.3);
@@ -416,13 +458,14 @@ void MVAOptimizer(){
   ////////////////////////////////////////////////////////////////////////////////
 
     ////////////////////////// CL based plots/////////////////////////////////////
+  cout<<"Create CL plots"<<endl;
   TCanvas * cCL = new TCanvas("cCL","CL distributions of true particles");
-  CLdiscriminant_TrueMuon->SetLineColor(kBlue);
+  CLdiscriminant_TrueMuon->SetLineColor(kBlue+2);
   CLdiscriminant_TruePion->SetLineColor(kGreen+2);
   CLdiscriminant_TrueProton->SetLineColor(kRed);
   CLdiscriminant_TrueOthers->SetLineColor(kGray);
   CLdiscriminant_TrueMuon->Draw();
-  CLdiscriminant_TrueMuon->GetXaxis()->SetTitle("#mu_{CL}");
+  CLdiscriminant_TrueMuon->GetXaxis()->SetTitle("#mu_{Bayes}");
   CLdiscriminant_TruePion->Draw("same");
   CLdiscriminant_TrueProton->Draw("same");
   CLdiscriminant_TrueOthers->Draw("same");
@@ -432,6 +475,8 @@ void MVAOptimizer(){
   ProduceStackParticles(CLdiscriminant_TrueMuon,CLdiscriminant_TruePion,CLdiscriminant_TrueProton,CLdiscriminant_TrueOthers,StackCLdiscriminant);
   TCanvas * cCLstack = new TCanvas("cCLstack","Stack of CL distributions of true particles");
   StackCLdiscriminant->Draw();
+  StackCLdiscriminant->GetXaxis()->SetTitle("#mu_{Bayes}");
+  StackCLdiscriminant->GetYaxis()->SetTitle("Number of events");
   lParticles->Draw("same");
 
   /*
@@ -498,10 +543,10 @@ void MVAOptimizer(){
   }
 
   TCanvas * cEfficiencyCL_TrueMuon = new TCanvas("cEfficiencyCL_TrueMuon","Efficiency and purity of muons using CL");
-  EfficiencyCL_TrueMuon->SetLineColor(kBlue);
+  EfficiencyCL_TrueMuon->SetLineColor(kBlue+2);
   PurityCL_TrueMuon->SetLineColor(kRed);
   EfficiencyCL_TrueMuon->Draw();
-  EfficiencyCL_TrueMuon->GetXaxis()->SetTitle("#mu_{CL}");
+  EfficiencyCL_TrueMuon->GetXaxis()->SetTitle("#mu_{Bayes}");
   PurityCL_TrueMuon->Draw("same");
   EfficiencyCL_TrueMuon->GetYaxis()->SetRangeUser(0.0,1);
   PurityCL_TrueMuonVSPion->SetLineColor(kGreen+2);
@@ -509,18 +554,20 @@ void MVAOptimizer(){
   lLeftTail->Draw("same");
   
   TCanvas * cEfficiencyCL_TrueProton = new TCanvas("cEfficiencyCL_TrueProton","Efficiency and purity of protons using CL");
-  EfficiencyCL_TrueProton->SetLineColor(kBlue);
+  EfficiencyCL_TrueProton->SetLineColor(kBlue+2);
   PurityCL_TrueProton->SetLineColor(kRed);
   EfficiencyCL_TrueProton->Draw();
-  EfficiencyCL_TrueProton->GetXaxis()->SetTitle("#mu_{CL}");
+  EfficiencyCL_TrueProton->GetXaxis()->SetTitle("#mu_{Bayes}");
   PurityCL_TrueProton->Draw("same");
   EfficiencyCL_TrueProton->GetYaxis()->SetRangeUser(0.0,1);
   lRightTail->Draw("same");
-  
+
 
   if(MVAProton){
     //TFile * rfile_MVAProton = new TFile("../src/MVAparticleProton_1000trees.root");
-    TFile * rfile_MVAProton = new TFile("../src/MVAWMparticleProton_1000trees.root");
+    TFile * rfile_MVAProton;
+    if(PM) rfile_MVAProton = new TFile("../src/MVAparticleProton_1000trees.root");
+    else rfile_MVAProton = new TFile("../src/MVAWMparticleProton_1000trees.root");
     //TFile * rfile_MVAProton = new TFile("../src/MVAparticleProton_1000trees_BugTrueParticleSolved.root");
     //TFile * rfile_MVAProton = new TFile("../src/MVAparticleProton_500trees_BugTrueParticleSolved_90PerCentEventsUsedForTraining.root");
 
@@ -687,12 +734,12 @@ void MVAOptimizer(){
   ////////////////////////// MVA based plots/////////////////////////////////////
 
   TCanvas * cMVAProton_AllSamples = new TCanvas("cMVAProton_AllSamples","MVAProton distributions of true particles");
-  MVAProtondiscriminant_TrueMuon_AllSamples->SetLineColor(kBlue);
+  MVAProtondiscriminant_TrueMuon_AllSamples->SetLineColor(kBlue+2);
   MVAProtondiscriminant_TruePion_AllSamples->SetLineColor(kGreen+2);
   MVAProtondiscriminant_TrueProton_AllSamples->SetLineColor(kRed);
   MVAProtondiscriminant_TrueOthers_AllSamples->SetLineColor(kGray);
   MVAProtondiscriminant_TrueMuon_AllSamples->Draw();
-  MVAProtondiscriminant_TrueMuon_AllSamples->GetXaxis()->SetTitle("#mu_{MVAProton}");
+  MVAProtondiscriminant_TrueMuon_AllSamples->GetXaxis()->SetTitle("p_{CL}");
   MVAProtondiscriminant_TrueMuon_AllSamples->GetYaxis()->SetTitle("Number of events");
   MVAProtondiscriminant_TruePion_AllSamples->Draw("same");
   MVAProtondiscriminant_TrueProton_AllSamples->Draw("same");
@@ -701,6 +748,8 @@ void MVAOptimizer(){
   ProduceStackParticles(MVAProtondiscriminant_TrueMuon_AllSamples,MVAProtondiscriminant_TruePion_AllSamples,MVAProtondiscriminant_TrueProton_AllSamples,MVAProtondiscriminant_TrueOthers_AllSamples,StackMVAProtondiscriminant_AllSamples);
   TCanvas * cMVAProtonstack_AllSamples = new TCanvas("cMVAProtonstack_AllSamples","Stack of MVAProton distributions of true particles");
   StackMVAProtondiscriminant_AllSamples->Draw();
+  StackMVAProtondiscriminant_AllSamples->GetXaxis()->SetTitle("p_{CL}");
+  StackMVAProtondiscriminant_AllSamples->GetYaxis()->SetTitle("Number of events");
   lParticles->Draw("same");
   //
 
@@ -708,12 +757,12 @@ void MVAOptimizer(){
   TCanvas * cMVAProtonstack[6];
   for(int is=0;is<6;is++){
     cMVAProton[is] = new TCanvas(Form("cMVAProton%d",is),Form("MVAProton distributions of true particles for sample %d",is));
-    MVAProtondiscriminant_TrueMuon[is]->SetLineColor(kBlue);
+    MVAProtondiscriminant_TrueMuon[is]->SetLineColor(kBlue+2);
     MVAProtondiscriminant_TruePion[is]->SetLineColor(kGreen+2);
     MVAProtondiscriminant_TrueProton[is]->SetLineColor(kRed);
     MVAProtondiscriminant_TrueOthers[is]->SetLineColor(kGray);
     MVAProtondiscriminant_TrueMuon[is]->Draw();
-    MVAProtondiscriminant_TrueMuon[is]->GetXaxis()->SetTitle("p_{MVA}");
+    MVAProtondiscriminant_TrueMuon[is]->GetXaxis()->SetTitle("p_{CL}");
     MVAProtondiscriminant_TrueMuon[is]->GetYaxis()->SetTitle("Number of events");
     MVAProtondiscriminant_TruePion[is]->Draw("same");
     MVAProtondiscriminant_TrueProton[is]->Draw("same");
@@ -723,6 +772,8 @@ void MVAOptimizer(){
     ProduceStackParticles(MVAProtondiscriminant_TrueMuon[is],MVAProtondiscriminant_TruePion[is],MVAProtondiscriminant_TrueProton[is],MVAProtondiscriminant_TrueOthers[is],StackMVAProtondiscriminant[is]);
     cMVAProtonstack[is] = new TCanvas(Form("cMVAProtonstack%d",is),Form("Stack of MVAProton distributions of true particles for sample %d",is));
     StackMVAProtondiscriminant[is]->Draw();
+    StackMVAProtondiscriminant[is]->GetXaxis()->SetTitle("p_{CL}");
+    StackMVAProtondiscriminant[is]->GetYaxis()->SetTitle("Number of events");
     lParticles->Draw("same");
   //
   }
@@ -730,12 +781,12 @@ void MVAOptimizer(){
   /*
   ////////////////////////// MVAProton based plots/////////////////////////////////////
   TCanvas * cMVAProton = new TCanvas("cMVAProton","MVAProton distributions of true particles");
-  MVAProtondiscriminant_TrueMuon->SetLineColor(kBlue);
+  MVAProtondiscriminant_TrueMuon->SetLineColor(kBlue+2);
   MVAProtondiscriminant_TruePion->SetLineColor(kGreen+2);
   MVAProtondiscriminant_TrueProton->SetLineColor(kRed);
   MVAProtondiscriminant_TrueOthers->SetLineColor(kGray);
   MVAProtondiscriminant_TrueMuon->Draw();
-  MVAProtondiscriminant_TrueMuon->GetXaxis()->SetTitle("p_{MVA}");
+  MVAProtondiscriminant_TrueMuon->GetXaxis()->SetTitle("p_{CL}");
   MVAProtondiscriminant_TrueMuon->GetYaxis()->SetTitle("Number of events");
   MVAProtondiscriminant_TruePion->Draw("same");
   MVAProtondiscriminant_TrueProton->Draw("same");
@@ -779,10 +830,10 @@ void MVAOptimizer(){
   }
   
   TCanvas * cEfficiencyMVAProton_TrueProton = new TCanvas("cEfficiencyMVAProton_TrueProton","Efficiency and purity of muons using MVAProton");
-  EfficiencyMVAProton_TrueProton->SetLineColor(kBlue);
+  EfficiencyMVAProton_TrueProton->SetLineColor(kBlue+2);
   PurityMVAProton_TrueProton->SetLineColor(kRed);
   EfficiencyMVAProton_TrueProton->Draw();
-  EfficiencyMVAProton_TrueProton->GetXaxis()->SetTitle("p_{MVA}");
+  EfficiencyMVAProton_TrueProton->GetXaxis()->SetTitle("p_{CL}");
   PurityMVAProton_TrueProton->Draw("same");
   EfficiencyMVAProton_TrueProton->GetYaxis()->SetRangeUser(0.0,1);
   PurityMVAProton_TrueProtonVSPion->SetLineColor(kGreen+2);
@@ -961,7 +1012,7 @@ void MVAOptimizer(){
   ////////////////////////// MVA based plots/////////////////////////////////////
 
   TCanvas * cMVAPion_AllSamples = new TCanvas("cMVAPion_AllSamples","MVAPion distributions of true particles");
-  MVAPiondiscriminant_TrueMuon_AllSamples->SetLineColor(kBlue);
+  MVAPiondiscriminant_TrueMuon_AllSamples->SetLineColor(kBlue+2);
   MVAPiondiscriminant_TruePion_AllSamples->SetLineColor(kGreen+2);
   MVAPiondiscriminant_TrueProton_AllSamples->SetLineColor(kRed);
   MVAPiondiscriminant_TrueOthers_AllSamples->SetLineColor(kGray);
@@ -982,12 +1033,12 @@ void MVAOptimizer(){
   TCanvas * cMVAPionstack[6];
   for(int is=0;is<6;is++){
     cMVAPion[is] = new TCanvas(Form("cMVAPion%d",is),Form("MVAPion distributions of true particles for sample %d",is));
-    MVAPiondiscriminant_TrueMuon[is]->SetLineColor(kBlue);
+    MVAPiondiscriminant_TrueMuon[is]->SetLineColor(kBlue+2);
     MVAPiondiscriminant_TruePion[is]->SetLineColor(kGreen+2);
     MVAPiondiscriminant_TrueProton[is]->SetLineColor(kRed);
     MVAPiondiscriminant_TrueOthers[is]->SetLineColor(kGray);
     MVAPiondiscriminant_TrueMuon[is]->Draw();
-    MVAPiondiscriminant_TrueMuon[is]->GetXaxis()->SetTitle("p_{MVA}");
+    MVAPiondiscriminant_TrueMuon[is]->GetXaxis()->SetTitle("p_{CL}");
     MVAPiondiscriminant_TrueMuon[is]->GetYaxis()->SetTitle("Number of events");
     MVAPiondiscriminant_TruePion[is]->Draw("same");
     MVAPiondiscriminant_TrueProton[is]->Draw("same");
@@ -1004,12 +1055,12 @@ void MVAOptimizer(){
   /*
   ////////////////////////// MVAPion based plots/////////////////////////////////////
   TCanvas * cMVAPion = new TCanvas("cMVAPion","MVAPion distributions of true particles");
-  MVAPiondiscriminant_TrueMuon->SetLineColor(kBlue);
+  MVAPiondiscriminant_TrueMuon->SetLineColor(kBlue+2);
   MVAPiondiscriminant_TruePion->SetLineColor(kGreen+2);
   MVAPiondiscriminant_TrueProton->SetLineColor(kRed);
   MVAPiondiscriminant_TrueOthers->SetLineColor(kGray);
   MVAPiondiscriminant_TrueMuon->Draw();
-  MVAPiondiscriminant_TrueMuon->GetXaxis()->SetTitle("p_{MVA}");
+  MVAPiondiscriminant_TrueMuon->GetXaxis()->SetTitle("p_{CL}");
   MVAPiondiscriminant_TrueMuon->GetYaxis()->SetTitle("Number of events");
   MVAPiondiscriminant_TruePion->Draw("same");
   MVAPiondiscriminant_TrueProton->Draw("same");
@@ -1053,10 +1104,10 @@ void MVAOptimizer(){
   }
 
   TCanvas * cEfficiencyMVAPion_TrueProton = new TCanvas("cEfficiencyMVAPion_TrueProton","Efficiency and purity of muons using MVAPion");
-  EfficiencyMVAPion_TrueProton->SetLineColor(kBlue);
+  EfficiencyMVAPion_TrueProton->SetLineColor(kBlue+2);
   PurityMVAPion_TrueProton->SetLineColor(kRed);
   EfficiencyMVAPion_TrueProton->Draw();
-  EfficiencyMVAPion_TrueProton->GetXaxis()->SetTitle("p_{MVA}");
+  EfficiencyMVAPion_TrueProton->GetXaxis()->SetTitle("p_{CL}");
   PurityMVAPion_TrueProton->Draw("same");
   EfficiencyMVAPion_TrueProton->GetYaxis()->SetRangeUser(0.0,1);
   PurityMVAPion_TrueProtonVSPion->SetLineColor(kGreen+2);
@@ -1090,7 +1141,7 @@ void MVAOptimizer(){
     
   
   TCanvas * cEfficiencyVSPurity_MVA = new TCanvas("cEfficiencyVSPurityMVA_TrueMuon","Efficiency VS purity of muons and protons using MVA");
-  EfficiencyVSPurityMVA_TrueMuon->SetLineColor(kBlue);
+  EfficiencyVSPurityMVA_TrueMuon->SetLineColor(kBlue+2);
   EfficiencyVSPurityMVA_TrueMuon->SetLineWidth(2);
   EfficiencyVSPurityMVA_TrueMuon->SetFillColor(0);
   EfficiencyVSPurityMVA_TrueMuon->Draw("ALC");
@@ -1114,13 +1165,13 @@ void MVAOptimizer(){
   EfficiencyVSPurityMVA_TrueMuon->GetYaxis()->SetRangeUser(0.,1.);
 
   TLegend * lEffficiencyPurity = new TLegend(0.3,0.1,0.55,0.3);
-  lEffficiencyPurity->AddEntry(EfficiencyVSPurityMVA_TrueMuon,"#mu, #mu_{MVA}");
-  lEffficiencyPurity->AddEntry(EfficiencyVSPurityMVA_TrueProton,"p, #mu_{MVA}");
-  if(MVAProton) lEffficiencyPurity->AddEntry(EfficiencyVSPurityMVAProton_TrueProton,"p, p_{MVA}");
+  lEffficiencyPurity->AddEntry(EfficiencyVSPurityMVA_TrueMuon,"#mu, #mu_{CL}");
+  lEffficiencyPurity->AddEntry(EfficiencyVSPurityMVA_TrueProton,"p, #mu_{CL}");
+  if(MVAProton) lEffficiencyPurity->AddEntry(EfficiencyVSPurityMVAProton_TrueProton,"p, p_{CL}");
   lEffficiencyPurity->Draw("same");
 
   TCanvas * cEfficiencyVSPurity_CL = new TCanvas("cEfficiencyVSPurityCL_TrueMuon","Efficiency VS purity of muons and protons using CL");
-  EfficiencyVSPurityCL_TrueMuon->SetLineColor(kBlue);
+  EfficiencyVSPurityCL_TrueMuon->SetLineColor(kBlue+2);
   EfficiencyVSPurityCL_TrueProton->SetLineColor(kRed);
   EfficiencyVSPurityCL_TrueMuon->SetLineWidth(2);
   EfficiencyVSPurityCL_TrueProton->SetLineWidth(2);
@@ -1153,11 +1204,11 @@ void MVAOptimizer(){
   EfficiencyVSPurityCL_TrueProton_clone->Draw("Csame");
   
   TLegend * lEffficiencyPurity_MVACL = new TLegend(0.3,0.1,0.55,0.45);
-  lEffficiencyPurity_MVACL->AddEntry(EfficiencyVSPurityCL_TrueMuon_clone,"#mu, #mu_{CL}");
-  lEffficiencyPurity_MVACL->AddEntry(EfficiencyVSPurityCL_TrueProton_clone,"p, #mu_{CL}");
-  lEffficiencyPurity_MVACL->AddEntry(EfficiencyVSPurityMVA_TrueMuon,"#mu, #mu_{MVA}");
-  lEffficiencyPurity_MVACL->AddEntry(EfficiencyVSPurityMVA_TrueProton,"p, #mu_{MVA}");
-  if(MVAProton) lEffficiencyPurity_MVACL->AddEntry(EfficiencyVSPurityMVAProton_TrueProton,"p, p_{MVA}");
+  lEffficiencyPurity_MVACL->AddEntry(EfficiencyVSPurityCL_TrueMuon_clone,"#mu, #mu_{Bayes}");
+  lEffficiencyPurity_MVACL->AddEntry(EfficiencyVSPurityCL_TrueProton_clone,"p, #mu_{Bayes}");
+  lEffficiencyPurity_MVACL->AddEntry(EfficiencyVSPurityMVA_TrueMuon,"#mu, #mu_{CL}");
+  lEffficiencyPurity_MVACL->AddEntry(EfficiencyVSPurityMVA_TrueProton,"p, #mu_{CL}");
+  if(MVAProton) lEffficiencyPurity_MVACL->AddEntry(EfficiencyVSPurityMVAProton_TrueProton,"p, p_{CL}");
   lEffficiencyPurity_MVACL->Draw("same");
 
   /*
@@ -1168,7 +1219,7 @@ void MVAOptimizer(){
   */  
   /*  
   TCanvas * cEfficiencyVSPurity_TrueMuon = new TCanvas("cEfficiencyVSPurity_TrueMuon","Efficiency VS purity of muons");
-  EfficiencyVSPurityMVA_TrueMuon->SetLineColor(kBlue);
+  EfficiencyVSPurityMVA_TrueMuon->SetLineColor(kBlue+2);
   EfficiencyVSPurityMVA_TrueMuon->Draw("ACP");
   EfficiencyVSPurityCL_TrueMuon->SetLineColor(kRed);
   EfficiencyVSPurityCL_TrueMuon->Draw("CPsame");
@@ -1177,26 +1228,27 @@ void MVAOptimizer(){
   
   /////////////////////////////////////////////////////////////////////////////////////////
   for(is=0;is<6;is++){
-    cMVAstack[is]->SaveAs(Form("../plots/MVAOptimisation/MVADistributionParticles_stack_sample%d.png",is));
-    if(MVAPion) cMVAPionstack[is]->SaveAs(Form("../plots/MVAOptimisation/MVAPionDistributionParticles_stack_sample%d.png",is));
-    if(MVAProton) cMVAProtonstack[is]->SaveAs(Form("../plots/MVAOptimisation/MVAProtonDistributionParticles_stack_sample%d.png",is));
+    cMVAstack[is]->SaveAs(Form("../plots/MVAOptimisation/%sMVADistributionParticles_stack_sample%d.pdf",Det,is));
+    if(MVAPion) cMVAPionstack[is]->SaveAs(Form("../plots/MVAOptimisation/%sMVAPionDistributionParticles_stack_sample%d.pdf",Det,is));
+    if(MVAProton) cMVAProtonstack[is]->SaveAs(Form("../plots/MVAOptimisation/%sMVAProtonDistributionParticles_stack_sample%d.pdf",Det,is));
   }
-  cMVAstack_AllSamples->SaveAs("../plots/MVAOptimisation/MVADistributionParticles_stack.png");
-  if(MVAPion) cMVAPionstack_AllSamples->SaveAs("../plots/MVAOptimisation/MVAPionDistributionParticles_stack.png");
-  if(MVAProton) cMVAProtonstack_AllSamples->SaveAs("../plots/MVAOptimisation/MVAProtonDistributionParticles_stack.png");
-  cEfficiencyMVA_TrueMuon->SaveAs("../plots/MVAOptimisation/EfficiencyMVA_TrueMuon.png");
-  cEfficiencyMVA_TrueMuon_INGRIDStopping->SaveAs("../plots/MVAOptimisation/EfficiencyMVA_TrueMuon_INGRIDStopping.png");
-  //cEfficiencyMVA_TruePion->SaveAs("../plots/MVAOptimisation/EfficiencyMVA_TruePion.png");
-  cEfficiencyMVA_TrueProton->SaveAs("../plots/MVAOptimisation/EfficiencyMVA_TrueProton.png");
-  cEfficiencyVSPurity_MVA->SaveAs("../plots/MVAOptimisation/EfficiencyVSPurity_MVA.png");
-  cCLstack->SaveAs("../plots/MVAOptimisation/CLDistributionParticles_stack.png");
-  cEfficiencyCL_TrueMuon->SaveAs("../plots/MVAOptimisation/EfficiencyCL_TrueMuon.png");
-  //cEfficiencyCL_TrueMuon_INGRIDStopping->SaveAs("../plots/MVAOptimisation/EfficiencyCL_TrueMuon_INGRIDStopping.png");
-  //cEfficiencyCL_TruePion->SaveAs("../plots/MVAOptimisation/EfficiencyCL_TruePion.png");
-  cEfficiencyCL_TrueProton->SaveAs("../plots/MVAOptimisation/EfficiencyCL_TrueProton.png");
-  cEfficiencyVSPurity_CL->SaveAs("../plots/MVAOptimisation/EfficiencyVSPurity_CL.png");
+  cout<<"The end"<<endl;
+  cMVAstack_AllSamples->SaveAs(Form("../plots/MVAOptimisation/%sMVADistributionParticles_stack.pdf",Det));
+  if(MVAPion) cMVAPionstack_AllSamples->SaveAs(Form("../plots/MVAOptimisation/%sMVAPionDistributionParticles_stack.pdf",Det));
+  if(MVAProton) cMVAProtonstack_AllSamples->SaveAs(Form("../plots/MVAOptimisation/%sMVAProtonDistributionParticles_stack.pdf",Det));
+  cEfficiencyMVA_TrueMuon->SaveAs(Form("../plots/MVAOptimisation/%sEfficiencyMVA_TrueMuon.pdf",Det));
+  cEfficiencyMVA_TrueMuon_INGRIDStopping->SaveAs(Form("../plots/MVAOptimisation/%sEfficiencyMVA_TrueMuon_INGRIDStopping.pdf",Det));
+  //cEfficiencyMVA_TruePion->SaveAs(Form("../plots/MVAOptimisation/EfficiencyMVA_TruePion.pdf",Det));
+  cEfficiencyMVA_TrueProton->SaveAs(Form("../plots/MVAOptimisation/%sEfficiencyMVA_TrueProton.pdf",Det));
+  cEfficiencyVSPurity_MVA->SaveAs(Form("../plots/MVAOptimisation/%sEfficiencyVSPurity_MVA.pdf",Det));
+  cCLstack->SaveAs(Form("../plots/MVAOptimisation/%sCLDistributionParticles_stack.pdf",Det));
+  cEfficiencyCL_TrueMuon->SaveAs(Form("../plots/MVAOptimisation/%sEfficiencyCL_TrueMuon.pdf",Det));
+  //cEfficiencyCL_TrueMuon_INGRIDStopping->SaveAs(Form("../plots/MVAOptimisation/EfficiencyCL_TrueMuon_INGRIDStopping.pdf",Det));
+  //cEfficiencyCL_TruePion->SaveAs(Form("../plots/MVAOptimisation/EfficiencyCL_TruePion.pdf",Det));
+  cEfficiencyCL_TrueProton->SaveAs(Form("../plots/MVAOptimisation/%sEfficiencyCL_TrueProton.pdf",Det));
+  cEfficiencyVSPurity_CL->SaveAs(Form("../plots/MVAOptimisation/%sEfficiencyVSPurity_CL.pdf",Det));
   
-  if(MVAProton) cEfficiencyMVAProton_TrueProton->SaveAs("../plots/MVAOptimisation/EfficiencyMVAProton_TrueProton.png");
-  cEfficiencyVSPurity_MVACL->SaveAs("../plots/MVAOptimisation/EfficiencyVSPurity_MVACL.png");
+  if(MVAProton) cEfficiencyMVAProton_TrueProton->SaveAs(Form("../plots/MVAOptimisation/%sEfficiencyMVAProton_TrueProton.pdf",Det));
+  cEfficiencyVSPurity_MVACL->SaveAs(Form("../plots/MVAOptimisation/%sEfficiencyVSPurity_MVACL.pdf",Det));
 }
 

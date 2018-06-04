@@ -1,4 +1,3 @@
-
 //To correct: covariance should be 1/(n-1) & add a plot for each bin for each different source, not only for the total
 //How to set the number of files of flux? In a card, that would be ideal! Call this NFluxFiles, add also NXsecSources. For now, the latter should be <25.
 #include<iostream>
@@ -52,13 +51,10 @@ using namespace std;
 //#define DEBUG
 #define PLOTS
 bool SideBand = false;
-const int NBinsIteration=51;
+const int NBinsIteration=12;
 const int NBinsSystToys=1;
 bool UseXS=false;//true:study XS, false: study number of events
 bool Fit=false;
-//Keep in mind that value is divided by sqrt, so to obtain  the absolute number of event, multiply by sart(nevt)
-
-//////////////////////////////////////////////
 
 int main(int argc, char ** argv){
 
@@ -76,9 +72,8 @@ int main(int argc, char ** argv){
 #ifdef DEBUG
   cout<<"ReInitialized"<<endl;
 #endif
-  int NBinsTrueMomPlots=0;int NBinsTrueAnglePlots=0;
-  int FirstBinMomPlots=1; int FirstBinAnglePlots=0;  
-//int StartBinTrueMomPlots, StartBinTrueAnglePlots;
+  int NBinsTrueMomPlots, NBinsTrueAnglePlots;
+  //int StartBinTrueMomPlots, StartBinTrueAnglePlots;
   if(SideBand){//We do not care to watch both trash bin of signal, the CC1pi and the Other interaction result.
     //StartBinTrueMomPlots = 1;
     //StartBinTrueAnglePlots = 1;
@@ -90,65 +85,6 @@ int main(int argc, char ** argv){
     //StartBinTrueAnglePlots = 1;
     NBinsTrueMomPlots = NBinsTrueMomSignal-1;
     NBinsTrueAnglePlots = NBinsTrueAngleSignal-1;
-  }
-
-  int ListBinPlots[NBinsTrueMomPlots][NBinsTrueAnglePlots][2];
-  bool UsedBinPlots[NBinsTrueMom][NBinsTrueAngle];
-  bool UsedBinPlotsMom[NBinsTrueMom];
-  bool UsedBinPlotsAngle[NBinsTrueAngle];
-
-  int CurrentBinMom=0;
-  
-  for(int c0=0;c0<NBinsTrueMom;c0++){//loop over cause 0
-    bool MomUsed=false;
-    
-    int CurrentBinAngle=0;
-    for(int c1=0;c1<NBinsTrueAngle;c1++){//loop over cause 1
-      bool AngleUsed=false;
-      if(c0 < FirstBinMomPlots || c0 >= (NBinsTrueMomSignal -1) || c1 < FirstBinAnglePlots || c1 >= (NBinsTrueAngleSignal-1)){// first mom bin is throw, last signal mom bin is throw, SB is throw, last angle bin is throw
-	UsedBinPlots[c0][c1] = false;
-	continue;
-      }
-      else{
-	UsedBinPlots[c0][c1] = true;
-	ListBinPlots[CurrentBinMom][CurrentBinAngle][0] = c0;
-	ListBinPlots[CurrentBinMom][CurrentBinAngle][1] = c1;
-	MomUsed=true;
-	AngleUsed=true;
-      }
-      if(AngleUsed) CurrentBinAngle++;
-    }
-    
-    if(MomUsed) CurrentBinMom++;
-  }
-
-  for(int c0=0;c0<NBinsTrueMomPlots;c0++){//loop over cause 0
-    UsedBinPlotsMom[c0] = false;
-    for(int c1=0;c1<NBinsTrueAnglePlots;c1++){//loop over cause 1
-      if(UsedBinPlots[c0][c1]){
-	UsedBinPlotsMom[c0] = true;
-	cout<<"Mom bin #"<<c0<<" is used"<<endl;
-	break;
-      }
-    }
-  }
-  for(int c1=0;c1<NBinsTrueAnglePlots;c1++){//loop over cause 1
-    UsedBinPlotsAngle[c1] = false;
-    for(int c0=0;c0<NBinsTrueMomPlots;c0++){//loop over cause 0
-      if(UsedBinPlots[c0][c1]){
-	UsedBinPlotsAngle[c1] = true;
-	cout<<"Ang bin #"<<c1<<" is used"<<endl;
-	break;
-      }
-    }
-  }
-
-  static const int ccolor[] = {632, 800, 400, 416+2, 416, 416-8, 600, 616+2, 432, 1, 920, 616};
-  std::vector <int> color (ccolor, ccolor + sizeof(ccolor) / sizeof(ccolor[0]));
-  int ic=0;
-  while(color.size() <NBinsTrueMom*NBinsTrueAngle){
-    color.push_back(921+ic);
-    ic++;
   }
 
   Xsec * XS = new Xsec();
@@ -274,12 +210,10 @@ int main(int argc, char ** argv){
   TH1D * Chi2TotalXIterationsFinalIteration[NBinsSystToys];
   TH1D * Chi2DataStatErrorXIterationsFinalIteration[NBinsSystToys][NBinsTrueMom][NBinsTrueAngle];
   TH1D * Chi2DataStatErrorTotalXIterationsFinalIteration[NBinsSystToys];
-  TH1D * CorrelatedChi2DataStatErrorTotalXIterationsFinalIteration[NBinsSystToys];
 
   //To create a chi2 as the standard one, but just for the nominal experiement
   TH1D * Chi2DataStatErrorXIterations[NBinsSystToys][NBinsTrueMom][NBinsTrueAngle];
   TH1D * Chi2DataStatErrorTotalXIterations[NBinsSystToys];
-  TH1D * CorrelatedChi2DataStatErrorTotalXIterations[NBinsSystToys];
 
   
   //############### 3. STAT. VARIATIONS ONLY #################
@@ -289,30 +223,9 @@ int main(int argc, char ** argv){
   TH1D * pullstatEventsmeanXIterations[NBinsTrueMom][NBinsTrueAngle];
   TH1D * pullstatEventssigmaXIterations[NBinsTrueMom][NBinsTrueAngle];
   //0. Preparation for covariance estimation
-  TH2D * CovarianceStat_Iteration1;
-  TH2D * CorrelationStat_Iteration1;
-  TH2D * CovarianceStat_Iteration3;
-  TH2D * CorrelationStat_Iteration3;
   TH2D * CovarianceStat;
   TH2D * CorrelationStat;
   TH2D * NVariationsStat;
- 
-  TMatrixDSym CovarianceXIterations[NBinsIteration];
-  TMatrixDSym CovarianceInvertXIterations[NBinsIteration];
-  TMatrixDSym CovarianceXIterationsFinalIteration[NBinsIteration];
-  TMatrixDSym CovarianceInvertXIterationsFinalIteration[NBinsIteration];
-  
-  for(int it=0;it<NBinsIteration;it++){
-    CovarianceXIterations[it].ResizeTo((NBinsTrueMomPlots)*(NBinsTrueAnglePlots),(NBinsTrueMomPlots)*(NBinsTrueAnglePlots));
-    CovarianceInvertXIterations[it].ResizeTo((NBinsTrueMomPlots)*(NBinsTrueAnglePlots),(NBinsTrueMomPlots)*(NBinsTrueAnglePlots));
-    CovarianceXIterationsFinalIteration[it].ResizeTo((NBinsTrueMomPlots)*(NBinsTrueAnglePlots),(NBinsTrueMomPlots)*(NBinsTrueAnglePlots));
-    CovarianceInvertXIterationsFinalIteration[it].ResizeTo((NBinsTrueMomPlots)*(NBinsTrueAnglePlots),(NBinsTrueMomPlots)*(NBinsTrueAnglePlots));
-  }
-  //= new TH3D("CovarianceXIterations","Covariance natrix wrt the number of iterations",NBinsIteration,0,NBinsIteration,(NBinsTrueMomPlots)*(NBinsTrueAnglePlots),0,(NBinsTrueMomPlots)*(NBinsTrueAnglePlots),(NBinsTrueMomPlots)*(NBinsTrueAnglePlots),0,(NBinsTrueMomPlots)*(NBinsTrueAnglePlots)); 
-  //TH3D * CovarianceXIterationsFinalIterations = new TH3D("CovarianceXIterationsFinalIteration","Covariance natrix wrt the number of iterations",NBinsIteration,0,NBinsIteration,(NBinsTrueMomPlots)*(NBinsTrueAnglePlots),0,(NBinsTrueMomPlots)*(NBinsTrueAnglePlots),(NBinsTrueMomPlots)*(NBinsTrueAnglePlots),0,(NBinsTrueMomPlots)*(NBinsTrueAnglePlots));
-  
-  //TH3D * CovarianceXIterations = new TH3D("CovarianceXIterations","Covariance natrix wrt the number of iterations",NBinsIteration,0,NBinsIteration,(NBinsTrueMomPlots)*(NBinsTrueAnglePlots),0,(NBinsTrueMomPlots)*(NBinsTrueAnglePlots),(NBinsTrueMomPlots)*(NBinsTrueAnglePlots),0,(NBinsTrueMomPlots)*(NBinsTrueAnglePlots)); 
-  //TH3D * CovarianceXIterationsFinalIterations = new TH3D("CovarianceXIterationsFinalIteration","Covariance natrix wrt the number of iterations",NBinsIteration,0,NBinsIteration,(NBinsTrueMomPlots)*(NBinsTrueAnglePlots),0,(NBinsTrueMomPlots)*(NBinsTrueAnglePlots),(NBinsTrueMomPlots)*(NBinsTrueAnglePlots),0,(NBinsTrueMomPlots)*(NBinsTrueAnglePlots)); 
 
   
   //############### 4. SYST. VARIATIONS ONLY #################
@@ -337,36 +250,16 @@ int main(int argc, char ** argv){
   CorrelationStat = new TH2D("CorrelationStat","CorrelationStat matrix",(NBinsTrueMomPlots)*(NBinsTrueAnglePlots),0,(NBinsTrueMomPlots)*(NBinsTrueAnglePlots),(NBinsTrueMomPlots)*(NBinsTrueAnglePlots),0,(NBinsTrueMomPlots)*(NBinsTrueAnglePlots));
   NVariationsStat = new TH2D("NVariationsStat","",(NBinsTrueMomPlots)*(NBinsTrueAnglePlots),0,(NBinsTrueMomPlots)*(NBinsTrueAnglePlots),(NBinsTrueMomPlots)*(NBinsTrueAnglePlots),0,(NBinsTrueMomPlots)*(NBinsTrueAnglePlots));
 
-  CovarianceStat_Iteration1 = new TH2D("CovarianceStat_Iteration1","CovarianceStat_Iteration1 matrix",(NBinsTrueMomPlots)*(NBinsTrueAnglePlots),0,(NBinsTrueMomPlots)*(NBinsTrueAnglePlots),(NBinsTrueMomPlots)*(NBinsTrueAnglePlots),0,(NBinsTrueMomPlots)*(NBinsTrueAnglePlots));
-  CorrelationStat_Iteration1 = new TH2D("CorrelationStat_Iteration1","CorrelationStat_Iteration1 matrix",(NBinsTrueMomPlots)*(NBinsTrueAnglePlots),0,(NBinsTrueMomPlots)*(NBinsTrueAnglePlots),(NBinsTrueMomPlots)*(NBinsTrueAnglePlots),0,(NBinsTrueMomPlots)*(NBinsTrueAnglePlots));
-
-  CovarianceStat_Iteration3 = new TH2D("CovarianceStat_Iteration3","CovarianceStat_Iteration3 matrix",(NBinsTrueMomPlots)*(NBinsTrueAnglePlots),0,(NBinsTrueMomPlots)*(NBinsTrueAnglePlots),(NBinsTrueMomPlots)*(NBinsTrueAnglePlots),0,(NBinsTrueMomPlots)*(NBinsTrueAnglePlots));
-  CorrelationStat_Iteration3 = new TH2D("CorrelationStat_Iteration3","CorrelationStat_Iteration3 matrix",(NBinsTrueMomPlots)*(NBinsTrueAnglePlots),0,(NBinsTrueMomPlots)*(NBinsTrueAnglePlots),(NBinsTrueMomPlots)*(NBinsTrueAnglePlots),0,(NBinsTrueMomPlots)*(NBinsTrueAnglePlots));
-
-  
   for(int c0=0;c0<NBinsTrueMomPlots;c0++){//loop over cause 0
     for(int c1=0;c1<NBinsTrueAnglePlots;c1++){//loop over cause 1
-      //int imom = ListBinPlots[c0][c1][0];
-      //int iang = ListBinPlots[c0][c1][1];
-      if(!UsedBinPlots[c0][c1]) continue;
-      
       NumberOfEvents->SetBinContent(c0+1,c1+1,0);
       for(int d0=0;d0<NBinsTrueMomPlots;d0++){//loop over cause 0
 	for(int d1=0;d1<NBinsTrueAnglePlots;d1++){//loop over cause 1
-	  //int imom2 = ListBinPlots[c0][c1][0];
-	  //int iang2 = ListBinPlots[c0][c1][1];
-	  if(!UsedBinPlots[d0][d1]) continue;
 	  int BinX=c0*(NBinsTrueAnglePlots)+c1+1;
 	  int BinY=d0*(NBinsTrueAnglePlots)+d1+1;
 	  CovarianceStat->SetBinContent(BinX,BinY,0);
 	  CorrelationStat->SetBinContent(BinX,BinY,0);
 	  NVariationsStat->SetBinContent(BinX,BinY,0);
-
-	  CovarianceStat_Iteration1->SetBinContent(BinX,BinY,0);
-	  CorrelationStat_Iteration1->SetBinContent(BinX,BinY,0);
-
-	  CovarianceStat_Iteration3->SetBinContent(BinX,BinY,0);
-	  CorrelationStat_Iteration3->SetBinContent(BinX,BinY,0);
 	}
       }
       for(int e0=0;e0<NBinsRecMom;e0++){//loop over effect 0
@@ -390,46 +283,42 @@ int main(int argc, char ** argv){
   Chi2MCStatErrorFinalIteration = new TH1D("Chi2MCStatErrorFinalIteration","Total chi2/NDF distribution as a function of the unfolding iterations",3*NBinsTrueMom*NBinsTrueAngle,0,3*NBinsTrueMom*NBinsTrueAngle);
 
 
-  //  for(int c0=0;c0<NBinsTrueMomPlots;c0++){//loop over cause 0 
-  //for(int c1=0;c1<NBinsTrueAngle;c1++){//loop over cause 1
-  //  if(!UsedBinPlots[c0][c1]) continue;
-  for(int c0=0;c0<NBinsTrueMom;c0++){//loop over cause 0 
+  for(int c0=0;c0<NBinsTrueMomPlots;c0++){//loop over cause 0
     for(int c1=0;c1<NBinsTrueAngle;c1++){//loop over cause 1
-  
+
 
       EventXIterations[c0][c1] = new TH1D(Form("EventXIterations[%d][%d]",c0,c1),"Chi2 distribution as a function of the unfolding iterations, for true binning",NBinsIteration,0,NBinsIteration);
       Chi2MCStatErrorXIterations[c0][c1] = new TH1D(Form("Chi2MCStatErrorXIterations[%d][%d]",c0,c1),"Chi2 distribution as a function of the unfolding iterations, for true binning",NBinsIteration,0,NBinsIteration);
 
-      pullEvents[c0][c1] = new TH1D(Form("pullEvents[%d][%d]",c0,c1),"",100,-10,10);
+      pullEvents[c0][c1] = new TH1D(Form("pullEvents[%d][%d]",c0,c1),"",400,-2,2);
 
-      pullEventsXIterations[c0][c1] = new TH2D(Form("pullEventsXIterations[%d][%d]",c0,c1),"Pull distribution X unfolding iterations, for true binning",NBinsIteration,0,NBinsIteration,100,-10,10);
+      pullEventsXIterations[c0][c1] = new TH2D(Form("pullEventsXIterations[%d][%d]",c0,c1),"Pull distribution X unfolding iterations, for true binning",NBinsIteration,0,NBinsIteration,400,-2,2);
       pullEventsmeanXIterations[c0][c1] = new TH1D(Form("pullEventsmeanXIterations[%d][%d]",c0,c1),"Mean (gaussian fit) pull distribution X unfolding iterations, for true binning",NBinsIteration,0,NBinsIteration);
       pullEventssigmaXIterations[c0][c1] = new TH1D(Form("pullEventssigmaXIterations[%d][%d]",c0,c1),"Error (gaussian fit) pull distribution X unfolding iterations, for true binning",NBinsIteration,0,NBinsIteration);
  
       
-      pullstatEventsXIterations[c0][c1] = new TH2D(Form("pullstatEventsXIterations[%d][%d]",c0,c1),"Pull distribution X unfolding iterations, for true binning (Stat. error variations only between toy experiment to build pull)",NBinsIteration,0,NBinsIteration,100,-10,10);
+      pullstatEventsXIterations[c0][c1] = new TH2D(Form("pullstatEventsXIterations[%d][%d]",c0,c1),"Pull distribution X unfolding iterations, for true binning (Stat. error variations only between toy experiment to build pull)",NBinsIteration,0,NBinsIteration,400,-2,2);
       pullstatEventsmeanXIterations[c0][c1] = new TH1D(Form("pullstatEventsmeanXIterations[%d][%d]",c0,c1),"Mean (gaussian fit) pull distribution X unfolding iterations, for true binning (Stat. error variations only between toy experiment to build pull)",NBinsIteration,0,NBinsIteration);
       pullstatEventssigmaXIterations[c0][c1] = new TH1D(Form("pullstatEventssigmaXIterations[%d][%d]",c0,c1),"Error (gaussian fit) pull distribution X unfolding iterations, for true binning (Stat. error variations only between toy experiment to build pull)",NBinsIteration,0,NBinsIteration);
 
-      pullsystEventsXIterations[c0][c1] = new TH2D(Form("pullsystEventsXIterations[%d][%d]",c0,c1),"Pull distribution X unfolding iterations, for true binning (Syst. error variations only between toy experiment to build pull)",NBinsIteration,0,NBinsIteration,100,-10,10);
+      pullsystEventsXIterations[c0][c1] = new TH2D(Form("pullsystEventsXIterations[%d][%d]",c0,c1),"Pull distribution X unfolding iterations, for true binning (Syst. error variations only between toy experiment to build pull)",NBinsIteration,0,NBinsIteration,400,-2,2);
       pullsystEventsmeanXIterations[c0][c1] = new TH1D(Form("pullsystEventsmeanXIterations[%d][%d]",c0,c1),"Mean (gaussian fit) pull distribution X unfolding iterations, for true binning (Syst. error variations only between toy experiment to build pull)",NBinsIteration,0,NBinsIteration);
       pullsystEventssigmaXIterations[c0][c1] = new TH1D(Form("pullsystEventssigmaXIterations[%d][%d]",c0,c1),"Error (gaussian fit) pull distribution X unfolding iterations, for true binning (Syst. error variations only between toy experiment to build pull)",NBinsIteration,0,NBinsIteration);      
 
 
-      pullstatEventsXsystEvents[c0][c1] = new TH2D(Form("pullstatEventsXsystEvents[%d][%d]",c0,c1),"Pull distribution X systematically varied toy experiment, for true binning (Stat. error variations only between toy experiment to build pull)",NBinsSystToys,0,NBinsSystToys,100,-10,10);
+      pullstatEventsXsystEvents[c0][c1] = new TH2D(Form("pullstatEventsXsystEvents[%d][%d]",c0,c1),"Pull distribution X systematically varied toy experiment, for true binning (Stat. error variations only between toy experiment to build pull)",NBinsSystToys,0,NBinsSystToys,400,-2,2);
       pullstatEventsmeanXsystEvents[c0][c1] = new TH1D(Form("pullstatEventsmeanXsystEvents[%d][%d]",c0,c1),"Mean (gaussian fit) pull distribution X systematically varied toy experiment, for true binning (Stat. error variations only between toy experiment to build pull)",NBinsSystToys,0,NBinsSystToys);
       pullstatEventssigmaXsystEvents[c0][c1] = new TH1D(Form("pullstatEventssigmaXsystEvents[%d][%d]",c0,c1),"Error (gaussian fit) pull distribution X systematically varied toy experiment, for true binning (Stat. error variations only between toy experiment to build pull)",NBinsSystToys,0,NBinsSystToys);
-      pullstatEventsXsystEventsXIterations[c0][c1] = new TH3D(Form("pullstatEventsXsystEventsXIterations[%d][%d]",c0,c1),"Pull distribution X systematically varied toy experiment X Number of unfolding iterations, for true binning (Stat. error variations only between toy experiment to build pull)",NBinsIteration,0,NBinsIteration,NBinsSystToys,0,NBinsSystToys,100,-10,10);
+      pullstatEventsXsystEventsXIterations[c0][c1] = new TH3D(Form("pullstatEventsXsystEventsXIterations[%d][%d]",c0,c1),"Pull distribution X systematically varied toy experiment X Number of unfolding iterations, for true binning (Stat. error variations only between toy experiment to build pull)",NBinsIteration,0,NBinsIteration,NBinsSystToys,0,NBinsSystToys,400,-2,2);
 
-      pullstatEventsXsystEventsXIterationsFinalIteration[c0][c1] = new TH3D(Form("pullstatEventsXsystEventsXIterationsFinalIteration[%d][%d]",c0,c1),"Pull distribution X systematically varied toy experiment X Number of unfolding iterations, for true binning (Stat. error variations only between toy experiment to build pull)",NBinsIteration,0,NBinsIteration,NBinsSystToys,0,NBinsSystToys,100,-10,10);
+      pullstatEventsXsystEventsXIterationsFinalIteration[c0][c1] = new TH3D(Form("pullstatEventsXsystEventsXIterationsFinalIteration[%d][%d]",c0,c1),"Pull distribution X systematically varied toy experiment X Number of unfolding iterations, for true binning (Stat. error variations only between toy experiment to build pull)",NBinsIteration,0,NBinsIteration,NBinsSystToys,0,NBinsSystToys,400,-2,2);
     }
   }
 
   for(int isys=0;isys<NBinsSystToys;isys++){
-    for(int c0=0;c0<NBinsTrueMom;c0++){//loop over cause 0
+    for(int c0=0;c0<NBinsTrueMomPlots;c0++){//loop over cause 0
       for(int c1=0;c1<NBinsTrueAngle;c1++){//loop over cause 1
-	//if(!UsedBinPlots[c0][c1]) continue;
-  	BiasXIterations[isys][c0][c1] = new TH1D(Form("BiasXIterations[%d][%d][%d]",isys,c0,c1),Form("For the toy XP %d: Bias distribution as a function of the unfolding iterations, for true binning",isys),NBinsIteration,0,NBinsIteration);
+	BiasXIterations[isys][c0][c1] = new TH1D(Form("BiasXIterations[%d][%d][%d]",isys,c0,c1),Form("For the toy XP %d: Bias distribution as a function of the unfolding iterations, for true binning",isys),NBinsIteration,0,NBinsIteration);
 	Chi2XIterations[isys][c0][c1] = new TH1D(Form("Chi2XIterations[%d][%d][%d]",isys,c0,c1),Form("For the toy XP %d: Chi2 distribution as a function of the unfolding iterations, for true binning",isys),NBinsIteration,0,NBinsIteration);
 	Chi2DataStatErrorXIterations[isys][c0][c1] = new TH1D(Form("Chi2DataStatErrorXIterations[%d][%d][%d]",isys,c0,c1),Form("For the toy XP %d: Chi2DataStatError distribution as a function of the unfolding iterations, for true binning",isys),NBinsIteration,0,NBinsIteration);
 
@@ -439,12 +328,9 @@ int main(int argc, char ** argv){
       }
     }
     Chi2DataStatErrorTotalXIterations[isys]= new TH1D(Form("Chi2DataStatErrorTotalXIterations[%d]",isys),"For the toy XP %d: Total chi2/NDF distribution as a function of the unfolding iterations",NBinsIteration,0,NBinsIteration);
-    CorrelatedChi2DataStatErrorTotalXIterations[isys]= new TH1D(Form("CorrelatedChi2DataStatErrorTotalXIterations[%d]",isys),"For the toy XP %d: Total chi2/NDF distribution as a function of the unfolding iterations",NBinsIteration,0,NBinsIteration);
     Chi2TotalXIterations[isys]= new TH1D(Form("Chi2TotalXIterations[%d]",isys),"For the toy XP %d: Total chi2/NDF distribution as a function of the unfolding iterations",NBinsIteration,0,NBinsIteration);
-    
     Chi2TotalXIterationsFinalIteration[isys]= new TH1D(Form("Chi2TotalXIterationsFinalIteration[%d]",isys),"For the toy XP %d: Total chi2/NDF distribution as a function of the unfolding iterations",NBinsIteration,0,NBinsIteration);
     Chi2DataStatErrorTotalXIterationsFinalIteration[isys]= new TH1D(Form("Chi2DataStatErrorTotalXIterationsFinalIteration[%d]",isys),"For the toy XP %d: Total chi2/NDF distribution as a function of the unfolding iterations",NBinsIteration,0,NBinsIteration);
-    CorrelatedChi2DataStatErrorTotalXIterationsFinalIteration[isys]= new TH1D(Form("CorrelatedChi2DataStatErrorTotalXIterationsFinalIteration[%d]",isys),"For the toy XP %d: Total chi2/NDF distribution as a function of the unfolding iterations",NBinsIteration,0,NBinsIteration);
   }
 
 
@@ -568,10 +454,9 @@ int main(int argc, char ** argv){
   //################### 3. LOOP OVER INPUT FILE ###################
   //###############################################################
   //###############################################################
-  int nevt=wtree->GetEntries();
-  int NMaxIterations=0;
-  int NStatVariations=0; 
-
+    int nevt=wtree->GetEntries();
+    int NMaxIterations=0;
+    
     int ToyID[2] = {-1,-1};//To identify if the loop concerns the same toy (with just one more iteration) or if we are chaning of toys.
     double EventsFinalIteration[NBinsTrueMom][NBinsTrueAngle];
     double XSectionFinalIteration[NBinsTrueMom][NBinsTrueAngle];
@@ -592,7 +477,6 @@ int main(int argc, char ** argv){
 	double chi2FinalIteration=0;double chi2Bin = 0; 
 	for(int c0=0;c0<NBinsTrueMomPlots;c0++){//loop over cause 0
 	  for(int c1=0;c1<NBinsTrueAnglePlots;c1++){//loop over cause 1
-	    if(!UsedBinPlots[c0][c1]) continue;
 	    if(UseXS){
 	      chi2Bin = XSectionFinalIteration[c0][c1]-TrueXSection[c0][c1];
 	      if(TrueXSection[c0][c1] != 0) chi2Bin /= TMath::Sqrt(TrueXSection[c0][c1]);
@@ -622,7 +506,6 @@ int main(int argc, char ** argv){
 
 	    for(int c0=0;c0<NBinsTrueMomPlots;c0++){//loop over cause 0
 	      for(int c1=0;c1<NBinsTrueAnglePlots;c1++){//loop over cause 1
-		if(!UsedBinPlots[c0][c1]) continue;
 		EventsFinalIteration[c0][c1] = Events[c0][c1];
 		XSectionFinalIteration[c0][c1] = XSection[c0][c1];
 	      }
@@ -639,7 +522,7 @@ int main(int argc, char ** argv){
 
 
 
-    if(Statistics > NStatVariations) NStatVariations = Statistics;
+    
     if(Iterations > NMaxIterations) NMaxIterations=Iterations;
     if(Iterations>=NBinsIteration){cout<<"Reset manually the number of iterations in this code to match the input file"<<endl; break;}
     if(Systematics>=NBinsSystToys){cout<<"Reset manually the number of syst toy XP in this code to match the input file"<<endl;break;}
@@ -647,15 +530,14 @@ int main(int argc, char ** argv){
     if(Statistics==0 && Systematics ==0){
       for(int e0=0;e0<NBinsRecMomSignal;e0++){//loop over effect 0
 	for(int e1=0;e1<NBinsRecAngleSignal;e1++){//loop over effect 1
-	  EventReconstructed->SetBinContent(e0+1,e1+1,EventsRec[e0][e1]);
+	  EventReconstructed->SetBinContent(e0,e1,EventsRec[e0][e1]);
 	}
       }
     }
     
       for(int c0=0;c0<NBinsTrueMomPlots;c0++){//loop over cause 0
 	for(int c1=0;c1<NBinsTrueAnglePlots;c1++){//loop over cause 1
-	  //if(!UsedBinPlots[c0][c1]) continue;
-  
+
 #ifdef DEBUG
 	  if(Iterations == 0 && Statistics == 0){
 	    cout<<setprecision(4)<<"Systematic toy="<<Systematics<<", Mom bin="<<c0<<", ang bin="<<c1<<", Number of Events="<<Events[c0][c1]<<", True events="<<TrueEvents[c0][c1]<<", XS="<<XSection[c0][c1]<<", True XS="<<TrueXSection[c0][c1]<<endl;
@@ -696,15 +578,15 @@ int main(int argc, char ** argv){
 	  double Value=0.; double ValueFinalIteration=0.;
 	  if(UseXS){
 	    Value=XSection[c0][c1]-TrueXSection[c0][c1];
-	    if(TrueXSection[c0][c1]!=0) Value/=TMath::Sqrt(TrueXSection[c0][c1]);
+	    if(TrueXSection[c0][c1]!=0) Value/=TrueXSection[c0][c1];
 	    ValueFinalIteration=XSection[c0][c1]-XSectionFinalIteration[c0][c1];
-	    if(XSectionFinalIteration[c0][c1]!=0) Value/=TMath::Sqrt(XSectionFinalIteration[c0][c1]);
+	    if(XSectionFinalIteration[c0][c1]!=0) Value/=XSectionFinalIteration[c0][c1];
 	  }
 	  else{
 	    Value=Events[c0][c1]-TrueEvents[c0][c1];
-	    if(TrueEvents[c0][c1] != 0) Value /= TMath::Sqrt(TrueEvents[c0][c1]);
+	    if(TrueEvents[c0][c1] != 0) Value /= TrueEvents[c0][c1];
 	    ValueFinalIteration=Events[c0][c1]-EventsFinalIteration[c0][c1];
-	    if(EventsFinalIteration[c0][c1]!=0) ValueFinalIteration /= TMath::Sqrt(EventsFinalIteration[c0][c1]);
+	    if(EventsFinalIteration[c0][c1]!=0) ValueFinalIteration/=EventsFinalIteration[c0][c1];
 #ifdef DEBUG
 	    //if(Iterations == 0)
 	    cout<<"Events="<<Events[c0][c1]<<", true="<<TrueEvents[c0][c1]<<endl;
@@ -738,31 +620,20 @@ int main(int argc, char ** argv){
 	    pullstatEventsXIterations[c0][c1]->Fill(Iterations,Value);
 	    for(int d0=0;d0<NBinsTrueMomPlots;d0++){//loop over dause 0
 	      for(int d1=0;d1<NBinsTrueAnglePlots;d1++){//loop over cause 1
-		//if(!UsedBinPlots[d0][d1]) continue;
 		int BinX=c0*(NBinsTrueAnglePlots)+c1+1;
 		int BinY=d0*(NBinsTrueAnglePlots)+d1+1;
-
-		double Cova,CovaFinalIteration;
+		double Cova=CovarianceStat->GetBinContent(BinX,BinY);
 		if(UseXS){
-		  Cova=(XSection[c0][c1]-TrueXSection[c0][c1])*(XSection[d0][d1]-TrueXSection[d0][d1]);
-		  CovaFinalIteration=(XSection[c0][c1]-XSectionFinalIteration[c0][c1])*(XSection[d0][d1]-XSectionFinalIteration[d0][d1]);
+		  Cova+=(XSection[c0][c1]-TrueXSection[c0][c1])*(XSection[d0][d1]-TrueXSection[d0][d1]);
 		}
 		else{
-		  Cova=(Events[c0][c1]-TrueEvents[c0][c1])*(Events[d0][d1]-TrueEvents[d0][d1]);
-		  CovaFinalIteration=(Events[c0][c1]-EventsFinalIteration[c0][c1])*(Events[d0][d1]-EventsFinalIteration[d0][d1]);
+		  Cova+=(Events[c0][c1]-TrueEvents[c0][c1])*(Events[d0][d1]-TrueEvents[d0][d1]);
 		} 
-		if(Iterations == 0) CovarianceStat_Iteration1->SetBinContent(BinX,BinY,CovarianceStat_Iteration1->GetBinContent(BinX,BinY)+Cova); 
-		else if(Iterations == 2) CovarianceStat_Iteration3->SetBinContent(BinX,BinY,CovarianceStat_Iteration3->GetBinContent(BinX,BinY)+Cova); 
-		CovarianceStat->SetBinContent(BinX,BinY,CovarianceStat->GetBinContent(BinX,BinY)+Cova);
+		CovarianceStat->SetBinContent(BinX,BinY,Cova);
 		
-		CovarianceXIterations[Iterations](BinX-1,BinY-1) = CovarianceXIterations[Iterations](BinX-1,BinY-1)+Cova;
-		CovarianceInvertXIterations[Iterations](BinX-1,BinY-1) = CovarianceInvertXIterations[Iterations](BinX-1,BinY-1)+Cova;
-		CovarianceXIterationsFinalIteration[Iterations](BinX-1,BinY-1) = CovarianceXIterationsFinalIteration[Iterations](BinX-1,BinY-1)+CovaFinalIteration;
-		CovarianceInvertXIterationsFinalIteration[Iterations](BinX-1,BinY-1) = CovarianceInvertXIterationsFinalIteration[Iterations](BinX-1,BinY-1)+CovaFinalIteration;
-
 		int nvar=NVariationsStat->GetBinContent(BinX,BinY);
 		nvar++;
-		NVariationsStat->SetBinContent(BinX,BinY,nvar);
+		NVariationsStat->SetBinContent(BinX,BinY,1);
 		
 	      }
 	    }
@@ -777,22 +648,8 @@ int main(int argc, char ** argv){
   //###############################################################
   //###############################################################
   //###############################################################
-    //General->cd();
-    cout<<"number of stat variations="<<NStatVariations<<endl;
-    for(int it=0;it<NBinsIteration;it++){
-      for(int a=0;a<CovarianceXIterations[it].GetNrows();a++){
-	for(int b=0;b<CovarianceXIterations[it].GetNcols();b++){
-	  CovarianceInvertXIterations[it](a,b) = CovarianceInvertXIterations[it](a,b) / NStatVariations;
-	  CovarianceXIterations[it](a,b) = CovarianceXIterations[it](a,b) / NStatVariations;
-	  CovarianceInvertXIterationsFinalIteration[it](a,b) = CovarianceInvertXIterationsFinalIteration[it](a,b) / NStatVariations;
-	  CovarianceXIterationsFinalIteration[it](a,b) = CovarianceXIterationsFinalIteration[it](a,b) / NStatVariations;
-	}
-      }
-      CovarianceInvertXIterations[it].Invert();
-      CovarianceInvertXIterationsFinalIteration[it].Invert();
-      //CovarianceXIterations[it].Write(Form("CovarianceXIterations_%d",it));
-      //CovarianceInvertXIterations[it].Write(Form("CovarianceInvertXIterations_%d",it));  
-    } 
+
+    
 
 
 
@@ -881,7 +738,6 @@ int main(int argc, char ** argv){
       int NBinsTotal = 0;
       for(int c0=0;c0<NBinsTrueMomPlots;c0++){//loop over cause 0
 	for(int c1=0;c1<NBinsTrueAnglePlots;c1++){//loop over cause 1
-	  if(!UsedBinPlots[c0][c1]) continue;
 	  double evtUnfolded = EventXIterations[c0][c1]->GetBinContent(iit+1);
 	  double evtTrue = TrueDistribution->GetBinContent(c0+1,c1+1);
 	  double error = TMath::Sqrt(evtTrue);
@@ -904,30 +760,23 @@ int main(int argc, char ** argv){
     Chi2MCStatErrorTotalXIterations->Write();
 
 
+
     TCanvas * cChi2MCStatError = new TCanvas("cChi2MCStatError","");
     TLegend * lModified = new TLegend(0.75,0.2,0.99,0.8);
     lModified->SetFillColor(0.);
     lModified->SetLineColor(0.);    
     Chi2MCStatErrorTotalXIterations->SetLineWidth(3);
     Chi2MCStatErrorTotalXIterations->SetLineStyle(2);
-    Chi2MCStatErrorTotalXIterations->GetXaxis()->SetTitle("Number of iterations");
-    Chi2MCStatErrorTotalXIterations->GetYaxis()->SetTitle("#chi^{2} / NDF");
     Chi2MCStatErrorTotalXIterations->GetYaxis()->SetRangeUser(1e-10,1e4);
     Chi2MCStatErrorTotalXIterations->Draw();
     lModified->AddEntry(Chi2MCStatErrorTotalXIterations,"Total");
-    TLine * line1 = new TLine(0.,1.,Chi2MCStatErrorTotalXIterations->GetXaxis()->GetXmax(),1.);
-    line1->SetLineColor(1);
-    line1->SetLineWidth(2);
-    line1->SetLineStyle(10);
-    line1->Draw("same");
-    
+
     //TEMP: TO FIX WITH MODULABLE NUMBER OF BINS: C0 should start at NStartBin and change c0 -1 -> c0 below
     for(int c0=1;c0<NBinsTrueMomPlots;c0++){//loop over cause 0
       for(int c1=0;c1<NBinsTrueAnglePlots;c1++){//loop over cause 1
 	
-	if(!UsedBinPlots[c0][c1]) continue;
-  	Chi2MCStatErrorXIterations[c0][c1]->SetLineWidth(2);
-	Chi2MCStatErrorXIterations[c0][c1]->SetLineColor(color[(c0-FirstBinMomPlots)*NBinsTrueAnglePlots+(c1-FirstBinAnglePlots)]);
+	Chi2MCStatErrorXIterations[c0][c1]->SetLineWidth(2);
+	Chi2MCStatErrorXIterations[c0][c1]->SetLineColor((c0-1)*NBinsTrueAnglePlots+c1+1);
 	lModified->AddEntry(Chi2MCStatErrorXIterations[c0][c1] ,Form("p_{#mu} %d, #theta_{#mu} %d",c0,c1));
 	Chi2MCStatErrorXIterations[c0][c1]->Draw("same");
 	EventXIterations[c0][c1]->Write();
@@ -948,8 +797,7 @@ int main(int argc, char ** argv){
     //General variations: both systematic and statictal uncertainties are varied
     for(int c0=0;c0<NBinsTrueMomPlots;c0++){//loop over cause 0
       for(int c1=0;c1<NBinsTrueAnglePlots;c1++){//loop over cause 1
-	if(!UsedBinPlots[c0][c1]) continue;
-	fPoisson[c0][c1] = new TF1(Form("fPoisson[%d][%d]",c0,c1),"[0]*(TMath::Poisson((x*[1]+[1]),[1]))",-10,10);
+	fPoisson[c0][c1] = new TF1(Form("fPoisson[%d][%d]",c0,c1),"[0]*(TMath::Poisson((x*[1]+[1]),[1]))",-2,2);
 	fPoisson[c0][c1]->SetParameter(1,TrueDistribution->GetBinContent(c0+1,c1+1));
 	fPoisson[c0][c1]->SetParameter(0,pullEvents[c0][c1]->Integral());
 	//Draw the pull distribution for all the variations in the input file
@@ -1010,21 +858,20 @@ int main(int argc, char ** argv){
     TH2D * TempstatPullXIterations;
     double Chi2Total[NBinsSystToys][NBinsIteration]={{0.}};
     double Chi2NominalTotal[NBinsSystToys][NBinsIteration]={{0.}};
-    double CorrelatedChi2NominalTotal[NBinsSystToys][NBinsIteration]={{0.}};
     int NDFTotal[NBinsSystToys][NBinsIteration]={{0.}};
 
     //ProjectAndEvaluateChi2(pullstatEventsXsystEventsXIterations,)
     for(int c0=0;c0<NBinsTrueMomPlots;c0++){//loop over cause 0
       for(int c1=0;c1<NBinsTrueAnglePlots;c1++){//loop over cause 1
-	if(!UsedBinPlots[c0][c1]) continue;
 	cout<<"Bin "<<c0<<", "<<c1<<endl;
+	
 	for(int isys=1;isys<=pullstatEventsXsystEventsXIterations[c0][c1]->GetNbinsY();isys++){
 	  cout<<"Toy XP #"<<isys<<endl;
+	  
 	  pullstatEventsXsystEventsXIterations[c0][c1]->GetYaxis()->SetRange(isys,isys);
 	  TempstatPullXIterations = (TH2D*) pullstatEventsXsystEventsXIterations[c0][c1]->Project3D("zx");
 	  TempstatPullXIterations->Write(Form("StatPullXIterationsForToy[%d][%d][%d]",isys-1,c0,c1));
 	  //then, for each iteration, wants to fit the pull:
-
 	  for(int ibinx=1;ibinx<=TempstatPullXIterations->GetNbinsX();ibinx++){
 	    double Mean;
 	    double RMS;
@@ -1049,78 +896,79 @@ int main(int argc, char ** argv){
 	    Chi2Total[isys-1][ibinx-1] += Chi2;
 	    NDFTotal[isys-1][ibinx-1] ++;
 	    double Chi2Nominal=pow(EventXIterations[c0][c1]->GetBinContent(ibinx) - TrueDistribution->GetBinContent(c0+1,c1+1),2.);
-	    double ErrorNominal=TMath::Sqrt(TrueDistribution->GetBinContent(c0+1,c1+1))*RMS;//Multiply the spread of the pull by the number of event to have the spread in number of events
+	    double ErrorNominal=TrueDistribution->GetBinContent(c0+1,c1+1)*RMS;//Multiply the spread of the pull by the number of event to have the spread in number of events
 	    if(ErrorNominal) Chi2Nominal /= pow(ErrorNominal,2.);
 	    //cout<<EventXIterations[c0][c1]->GetBinContent(ibinx)<<", "<<TrueDistribution->GetBinContent(c0+1,c1+1)<<", chi2="<<Chi2Nominal<<endl;
 	    Chi2DataStatErrorXIterations[isys-1][c0][c1]->SetBinContent(ibinx,Chi2Nominal);
 	    Chi2NominalTotal[isys-1][ibinx-1] += Chi2Nominal;
-
-	    for(int d0=0;d0<NBinsTrueMomPlots;d0++){//loop over cause 0
-	      for(int d1=0;d1<NBinsTrueAnglePlots;d1++){//loop over cause 1
-		if(!UsedBinPlots[d0][d1]) continue;
-		double Chi2Correlated=(EventXIterations[c0][c1]->GetBinContent(ibinx) - TrueDistribution->GetBinContent(c0+1,c1+1))*(EventXIterations[d0][d1]->GetBinContent(ibinx) - TrueDistribution->GetBinContent(d0+1,d1+1));
-		int BinX=c0*(NBinsTrueAnglePlots)+c1;
-		int BinY=d0*(NBinsTrueAnglePlots)+d1;
-		double ErrorInvertSquaredCorrelated=CovarianceInvertXIterations[ibinx-1](BinX,BinY);
-		CorrelatedChi2NominalTotal[isys-1][ibinx-1] += Chi2Correlated*ErrorInvertSquaredCorrelated;
-		//if(c0 == d0 && c1 == d1) cout<<setprecision(6)<<TMath::Sqrt(CovarianceXIterations[ibinx-1](BinX,BinY))<<", "<<Chi2Correlated<<", "<<1./TMath::Sqrt(ErrorInvertSquaredCorrelated)<<endl;
-	      }
-	    }
-	    //cout<<"Iteration #"<<ibinx<<", chi2="<<Chi2NominalTotal[isys-1][ibinx-1]<<", correlated chi2="<<CorrelatedChi2NominalTotal[isys-1][ibinx-1]<<endl;
 	  }
 	  BiasXIterations[isys-1][c0][c1]->Write();
 	  Chi2XIterations[isys-1][c0][c1]->Write();
 	}	
       }	
     }
-
-    TCanvas * cChi2FittedDataStatError = new TCanvas("cChi2FittedDataStatError","");
+   
+    TCanvas * cChi2[NBinsSystToys][NBinsTrueMomPlots];
+    TLegend * l = new TLegend(0.75,0.2,0.99,0.8);
+    l->SetFillColor(0.);
+    l->SetLineColor(0.);    
     for(int isys=1;isys<=pullstatEventsXsystEventsXIterations[0][0]->GetNbinsY();isys++){
       for(int ibinx=1;ibinx<=pullstatEventsXsystEventsXIterations[0][0]->GetNbinsX();ibinx++){
-	cout<<ibinx<<endl;
-	//if(!UsedBinPlotsMom[ibinx-1]) continue;
-	cout<<ibinx<<" vs "<<NBinsTrueMomPlots<<", chi2="<<Chi2Total[isys-1][ibinx-1]<<", NDF="<<NDFTotal[isys-1][ibinx-1]<<endl;
 	Chi2Total[isys-1][ibinx-1] /= NDFTotal[isys-1][ibinx-1];
 	Chi2TotalXIterations[isys-1]->SetBinContent(ibinx,Chi2Total[isys-1][ibinx-1]);
       }
       Chi2TotalXIterations[isys-1]->Write();
   
       //Chi2TotalXIterations->Draw();
-      //if(isys==1) l->AddEntry(Chi2TotalXIterations[isys-1],"Total");
+      if(isys==1) l->AddEntry(Chi2TotalXIterations[isys-1],"Total");
     
-      Chi2TotalXIterations[isys-1]->Draw();
-      Chi2TotalXIterations[isys-1]->GetXaxis()->SetTitle("Number of iterations");
-      Chi2TotalXIterations[isys-1]->GetYaxis()->SetTitle("#chi^{2} / NDF");
-      Chi2TotalXIterations[isys-1]->SetLineWidth(3);
-      Chi2TotalXIterations[isys-1]->SetLineStyle(2);
-      Chi2TotalXIterations[isys-1]->GetYaxis()->SetRangeUser(1e-5,100.);
       for(int c0=0;c0<NBinsTrueMomPlots;c0++){//loop over cause 0
-	
+	cChi2[isys-1][c0] = new TCanvas(Form("cChi2 for toy XP %d and mom %d",isys-1,c0),"");
+	Chi2TotalXIterations[isys-1]->Draw();
+	Chi2TotalXIterations[isys-1]->SetLineWidth(2);
+	Chi2TotalXIterations[isys-1]->GetYaxis()->SetRangeUser(1e-5,100.);
+
 	for(int c1=0;c1<NBinsTrueAnglePlots;c1++){//loop over cause 1
-	  if(!UsedBinPlots[c0][c1]) continue;
 	  Chi2XIterations[isys-1][c0][c1]->SetLineWidth(2);
-	  Chi2XIterations[isys-1][c0][c1]->SetLineColor(color[(c0-FirstBinMomPlots)*NBinsTrueAnglePlots+(c1-FirstBinAnglePlots)]);
-	  //if(isys==1 && c0==0) l->AddEntry(Chi2XIterations[isys-1][c0][c1] , Form("#theta_{#mu} %d",c1));
+	  Chi2XIterations[isys-1][c0][c1]->SetLineColor(c1+2);
+	  if(isys==1 && c0==0) l->AddEntry(Chi2XIterations[isys-1][c0][c1] , Form("#theta_{#mu} %d",c1));
 	  Chi2XIterations[isys-1][c0][c1]->Draw("same");
 	  //int BinY=c0*(NBinsTrueAnglePlots)+c1+1;
 	  //Chi2XIterations[c0][c1]->SetLineColor(BinY);
 	  //Chi2XIterations[c0][c1]->Draw("same");
 	  //l->AddEntry( Chi2XIterations[c0][c1] , Form("Mom %d, Angle %d",c0,c1));
 	}
-	//l->Draw("same");
-	//cChi2[isys-1][c0]->SetGridx();
-	//cChi2[isys-1][c0]->SetGridy();
-	//cChi2[isys-1][c0]->SetLogy();
-       //cChi2[isys-1][c0]->Write();
+	l->Draw("same");
+	cChi2[isys-1][c0]->SetGridx();
+	cChi2[isys-1][c0]->SetGridy();
+	cChi2[isys-1][c0]->SetLogy();
+	cChi2[isys-1][c0]->Write();
       }
     }
-    line1->Draw("same");
-    lModified->Draw("same");
-    cChi2FittedDataStatError->SetGridx();
-    cChi2FittedDataStatError->SetGridy();
-    cChi2FittedDataStatError->SetLogy();
-    cChi2FittedDataStatError->Write();
 
+    TCanvas * cBias[NBinsSystToys][NBinsTrueMomPlots];
+   
+    for(int isys=1;isys<=pullstatEventsXsystEventsXIterations[0][0]->GetNbinsY();isys++){
+	
+      for(int c0=0;c0<NBinsTrueMomPlots;c0++){//loop over cause 0
+	cBias[isys-1][c0] = new TCanvas(Form("cBias for toy XP %d and mom %d",isys-1,c0),"");
+	//BiasTotalXIterations[isys-1]->GetYaxis()->SetRangeUser(1e-5,100.);
+	
+	for(int c1=0;c1<NBinsTrueAnglePlots;c1++){//loop over cause 1
+	  BiasXIterations[isys-1][c0][c1]->SetLineWidth(2);
+	  BiasXIterations[isys-1][c0][c1]->SetLineColor(c1+2);
+	  if(c1==0){
+	    BiasXIterations[isys-1][c0][c1]->Draw();
+	    BiasXIterations[isys-1][c0][c1]->GetYaxis()->SetRangeUser(-0.2,0.2);
+	  }
+	  else BiasXIterations[isys-1][c0][c1]->Draw("same");
+	}
+	l->Draw("same");
+	cBias[isys-1][c0]->SetGridx();
+	cBias[isys-1][c0]->SetGridy();
+	cBias[isys-1][c0]->Write();
+      }
+    }
   TCanvas * canBias = new TCanvas("cPull_Mean");
   gStyle->SetPaintTextFormat("2.2f");
   gStyle->SetOptStat(kFALSE);
@@ -1131,63 +979,48 @@ int main(int argc, char ** argv){
   gStyle->SetOptStat(kFALSE);
   ErrorDistribution->Draw("colztext");
   canError->Write();
-
   
-  TCanvas * cChi2DataStatError = new TCanvas("cChi2DataStatError");
-  //TCanvas * cChi2DataStatError[NBinsSystToys][NBinsTrueMomPlots];
+  TCanvas * cChi2DataStatError[NBinsSystToys][NBinsTrueMomPlots];
   for(int isys=1;isys<=pullstatEventsXsystEventsXIterations[0][0]->GetNbinsY();isys++){
     for(int ibinx=1;ibinx<=pullstatEventsXsystEventsXIterations[0][0]->GetNbinsX();ibinx++){
       Chi2NominalTotal[isys-1][ibinx-1] /= NDFTotal[isys-1][ibinx-1];
       Chi2DataStatErrorTotalXIterations[isys-1]->SetBinContent(ibinx,Chi2NominalTotal[isys-1][ibinx-1]);
-      CorrelatedChi2NominalTotal[isys-1][ibinx-1] /= NDFTotal[isys-1][ibinx-1];
-      CorrelatedChi2DataStatErrorTotalXIterations[isys-1]->SetBinContent(ibinx,CorrelatedChi2NominalTotal[isys-1][ibinx-1]);
       //cout<<"Iteration #"<<ibinx<<", Chi2="<<Chi2NominalTotal[isys-1][ibinx-1]<<endl;
     }
-    Chi2DataStatErrorTotalXIterations[isys-1]->GetXaxis()->SetTitle("Number of iterations");
-    Chi2DataStatErrorTotalXIterations[isys-1]->GetYaxis()->SetTitle("#chi^{2} / NDF");
     Chi2DataStatErrorTotalXIterations[isys-1]->Write();
-    Chi2DataStatErrorTotalXIterations[isys-1]->Draw();
-    Chi2DataStatErrorTotalXIterations[isys-1]->SetLineWidth(3);
-    Chi2DataStatErrorTotalXIterations[isys-1]->SetLineStyle(2);
-    Chi2DataStatErrorTotalXIterations[isys-1]->GetYaxis()->SetRangeUser(1e-5,100.);
-
-    CorrelatedChi2DataStatErrorTotalXIterations[isys-1]->GetXaxis()->SetTitle("Number of iterations");
-    CorrelatedChi2DataStatErrorTotalXIterations[isys-1]->GetYaxis()->SetTitle("#chi^{2} / NDF");
-    CorrelatedChi2DataStatErrorTotalXIterations[isys-1]->Write();
     
     for(int c0=0;c0<NBinsTrueMomPlots;c0++){//loop over cause 0
-      //cChi2DataStatError[isys-1][c0] = new TCanvas(Form("cChi2DataStatError for toy XP %d and mom %d",isys-1,c0),"");
+      cChi2DataStatError[isys-1][c0] = new TCanvas(Form("cChi2DataStatError for toy XP %d and mom %d",isys-1,c0),"");
+      Chi2DataStatErrorTotalXIterations[isys-1]->Draw();
+      Chi2DataStatErrorTotalXIterations[isys-1]->SetLineWidth(2);
+      Chi2DataStatErrorTotalXIterations[isys-1]->GetYaxis()->SetRangeUser(1e-5,100.);
       
       for(int c1=0;c1<NBinsTrueAnglePlots;c1++){//loop over cause 1
-	if(!UsedBinPlots[c0][c1]) continue;
 	Chi2DataStatErrorXIterations[isys-1][c0][c1]->SetLineWidth(2);
-	Chi2DataStatErrorXIterations[isys-1][c0][c1]->SetLineColor(color[(c0-FirstBinMomPlots)*NBinsTrueAnglePlots+(c1-FirstBinAnglePlots)]);
+	Chi2DataStatErrorXIterations[isys-1][c0][c1]->SetLineColor(c1+2);
 	Chi2DataStatErrorXIterations[isys-1][c0][c1]->Draw("same");
 	//int BinY=c0*(NBinsTrueAnglePlots)+c1+1;
 	//Chi2DataStatErrorXIterations[c0][c1]->SetLineColor(BinY);
 	//Chi2DataStatErrorXIterations[c0][c1]->Draw("same");
 	//l->AddEntry( Chi2DataStatErrorXIterations[c0][c1] , Form("Mom %d, Angle %d",c0,c1));
       }
+      l->Draw("same");
+      cChi2DataStatError[isys-1][c0]->SetGridx();
+      cChi2DataStatError[isys-1][c0]->SetGridy();
+      cChi2DataStatError[isys-1][c0]->SetLogy();
+      cChi2DataStatError[isys-1][c0]->Write();
     }
   }
-  line1->Draw("same");
-  lModified->Draw("same");
-  cChi2DataStatError->SetGridx();
-  cChi2DataStatError->SetGridy();
-  cChi2DataStatError->SetLogy();
-  cChi2DataStatError->Write();
 
 
   TH2D * TempstatPullXIterationsFinalIteration;
   double Chi2TotalFinalIteration[NBinsSystToys][NBinsIteration]={{0.}};
   double Chi2NominalTotalFinalIteration[NBinsSystToys][NBinsIteration]={{0.}};
-  double CorrelatedChi2NominalTotalFinalIteration[NBinsSystToys][NBinsIteration]={{0.}};
   int NDFTotalFinalIteration[NBinsSystToys][NBinsIteration]={{0.}};
  
     //ProjectAndEvaluateChi2(pullstatEventsXsystEventsXIterationsFinalIteration,)
     for(int c0=0;c0<NBinsTrueMomPlots;c0++){//loop over cause 0
       for(int c1=0;c1<NBinsTrueAnglePlots;c1++){//loop over cause 1
-	if(!UsedBinPlots[c0][c1]) continue;
 	cout<<"Bin "<<c0<<", "<<c1<<endl;
 	
 	for(int isys=1;isys<=pullstatEventsXsystEventsXIterationsFinalIteration[c0][c1]->GetNbinsY();isys++){
@@ -1223,24 +1056,11 @@ int main(int argc, char ** argv){
 	    NDFTotalFinalIteration[isys-1][ibinx-1] ++;
 
 	    double Chi2Nominal=pow(EventXIterations[c0][c1]->GetBinContent(ibinx) - UnfoldedFinalIterationDistribution->GetBinContent(c0+1,c1+1),2.);
-	    double ErrorNominal=TMath::Sqrt(UnfoldedFinalIterationDistribution->GetBinContent(c0+1,c1+1))*RMS;//Multiply the spread of the pull by the number of event to have the spread in number of events
+	    double ErrorNominal=UnfoldedFinalIterationDistribution->GetBinContent(c0+1,c1+1)*RMS;//Multiply the spread of the pull by the number of event to have the spread in number of events
 	    if(ErrorNominal) Chi2Nominal /= pow(ErrorNominal,2.);
 	    //cout<<EventXIterations[c0][c1]->GetBinContent(ibinx)<<", "<<TrueDistribution->GetBinContent(c0+1,c1+1)<<", chi2="<<Chi2Nominal<<endl;
 	    Chi2DataStatErrorXIterationsFinalIteration[isys-1][c0][c1]->SetBinContent(ibinx,Chi2Nominal);
 	    Chi2NominalTotalFinalIteration[isys-1][ibinx-1] += Chi2Nominal;
-
-	    for(int d0=0;d0<NBinsTrueMomPlots;d0++){//loop over cause 0
-	      for(int d1=0;d1<NBinsTrueAnglePlots;d1++){//loop over cause 1
-		if(!UsedBinPlots[d0][d1]) continue;
-		double Chi2Correlated=(EventXIterations[c0][c1]->GetBinContent(ibinx) - UnfoldedFinalIterationDistribution->GetBinContent(c0+1,c1+1))*(EventXIterations[d0][d1]->GetBinContent(ibinx) - UnfoldedFinalIterationDistribution->GetBinContent(d0+1,d1+1));
-		int BinX=c0*(NBinsTrueAnglePlots)+c1;
-		int BinY=d0*(NBinsTrueAnglePlots)+d1;
-		double ErrorInvertSquaredCorrelated=CovarianceInvertXIterationsFinalIteration[ibinx-1](BinX,BinY);
-		CorrelatedChi2NominalTotalFinalIteration[isys-1][ibinx-1] += Chi2Correlated*ErrorInvertSquaredCorrelated;
-		//if(c0 == d0 && c1 == d1) cout<<setprecision(6)<<TMath::Sqrt(CovarianceXIterations[ibinx-1](BinX,BinY))<<", "<<Chi2Correlated<<", "<<1./TMath::Sqrt(ErrorInvertSquaredCorrelated)<<endl;
-	      }
-	    }
-
 	  }
 	  //BiasXIterationsFinalIteration[isys-1][c0][c1]->Write();
 	  Chi2XIterationsFinalIteration[isys-1][c0][c1]->Write();
@@ -1248,139 +1068,108 @@ int main(int argc, char ** argv){
       }	
     }
    
-    TCanvas * cChi2FinalIteration = new TCanvas("cChi2FinalIteration");
-    //TCanvas * cChi2FinalIteration[NBinsSystToys][NBinsTrueMomPlots];
+    TCanvas * cChi2FinalIteration[NBinsSystToys][NBinsTrueMomPlots];
     for(int isys=1;isys<=pullstatEventsXsystEventsXIterationsFinalIteration[0][0]->GetNbinsY();isys++){
       for(int ibinx=1;ibinx<=pullstatEventsXsystEventsXIterationsFinalIteration[0][0]->GetNbinsX();ibinx++){
 	Chi2TotalFinalIteration[isys-1][ibinx-1] /= NDFTotalFinalIteration[isys-1][ibinx-1];
 	Chi2TotalXIterationsFinalIteration[isys-1]->SetBinContent(ibinx,Chi2TotalFinalIteration[isys-1][ibinx-1]);
       }
-      //Chi2TotalXIterationsFinalIteration[isys-1]->Write();
-      Chi2TotalXIterationsFinalIteration[isys-1]->GetXaxis()->SetTitle("Number of iterations");
-      Chi2TotalXIterationsFinalIteration[isys-1]->GetYaxis()->SetTitle("#chi^{2} / NDF");
-      Chi2TotalXIterationsFinalIteration[isys-1]->Draw();
-      Chi2TotalXIterationsFinalIteration[isys-1]->SetLineWidth(3);
-      Chi2TotalXIterationsFinalIteration[isys-1]->SetLineStyle(2);
-      Chi2TotalXIterationsFinalIteration[isys-1]->GetYaxis()->SetRangeUser(1e-5,100.);
+      Chi2TotalXIterationsFinalIteration[isys-1]->Write();
       
       for(int c0=0;c0<NBinsTrueMomPlots;c0++){//loop over cause 0
-	//cChi2FinalIteration[isys-1][c0] = new TCanvas(Form("cChi2FinalIteration for toy XP %d and mom %d",isys-1,c0),"");
+	cChi2FinalIteration[isys-1][c0] = new TCanvas(Form("cChi2FinalIteration for toy XP %d and mom %d",isys-1,c0),"");
+	Chi2TotalXIterationsFinalIteration[isys-1]->Draw();
+	Chi2TotalXIterationsFinalIteration[isys-1]->SetLineWidth(2);
+	Chi2TotalXIterationsFinalIteration[isys-1]->GetYaxis()->SetRangeUser(1e-5,100.);
 
 	for(int c1=0;c1<NBinsTrueAnglePlots;c1++){//loop over cause 1
-	  if(!UsedBinPlots[c0][c1]) continue;
 	  Chi2XIterationsFinalIteration[isys-1][c0][c1]->SetLineWidth(2);
-	  Chi2XIterationsFinalIteration[isys-1][c0][c1]->SetLineColor(color[(c0-FirstBinMomPlots)*NBinsTrueAnglePlots+(c1-FirstBinAnglePlots)]);
+	  Chi2XIterationsFinalIteration[isys-1][c0][c1]->SetLineColor(c1+2);
 	  Chi2XIterationsFinalIteration[isys-1][c0][c1]->Draw("same");
-	  //int BinY=c0*(NBinsTrueAnglePlots)+c1+1;->SetLineColor((c0-FirstBinMomPlots)*NBinsTrueAnglePlots+(c1-FirstBinAnglePlots
+	  //int BinY=c0*(NBinsTrueAnglePlots)+c1+1;
 	  //Chi2XIterationsFinalIteration[c0][c1]->SetLineColor(BinY);
 	  //Chi2XIterationsFinalIteration[c0][c1]->Draw("same");
 	  //l->AddEntry( Chi2XIterationsFinalIteration[c0][c1] , Form("Mom %d, Angle %d",c0,c1));
 	}
+	l->Draw("same");
+	cChi2FinalIteration[isys-1][c0]->SetGridx();
+	cChi2FinalIteration[isys-1][c0]->SetGridy();
+	cChi2FinalIteration[isys-1][c0]->SetLogy();
+	cChi2FinalIteration[isys-1][c0]->Write();
       }
     }
-    lModified->Draw("same");
-    line1->Draw("same");
-    cChi2FinalIteration->SetGridx();
-    cChi2FinalIteration->SetGridy();
-    cChi2FinalIteration->SetLogy();
-    cChi2FinalIteration->Write();
     Chi2MCStatErrorFinalIteration->Write();
 
-    TCanvas * cChi2DataStatErrorFinalIteration = new TCanvas("cChi2DataStatErrorFinalIteration");
-    //TCanvas * cChi2DataStatErrorFinalIteration[NBinsSystToys][NBinsTrueMomPlots];
+    TCanvas * cChi2DataStatErrorFinalIteration[NBinsSystToys][NBinsTrueMomPlots];
     for(int isys=1;isys<=pullstatEventsXsystEventsXIterationsFinalIteration[0][0]->GetNbinsY();isys++){
       for(int ibinx=1;ibinx<=pullstatEventsXsystEventsXIterationsFinalIteration[0][0]->GetNbinsX();ibinx++){
 	Chi2NominalTotalFinalIteration[isys-1][ibinx-1] /= NDFTotalFinalIteration[isys-1][ibinx-1];
 	Chi2DataStatErrorTotalXIterationsFinalIteration[isys-1]->SetBinContent(ibinx,Chi2NominalTotalFinalIteration[isys-1][ibinx-1]);
-      CorrelatedChi2NominalTotalFinalIteration[isys-1][ibinx-1] /= NDFTotal[isys-1][ibinx-1];
-      CorrelatedChi2DataStatErrorTotalXIterationsFinalIteration[isys-1]->SetBinContent(ibinx,CorrelatedChi2NominalTotalFinalIteration[isys-1][ibinx-1]);
-      //cout<<"Iteration #"<<ibinx<<", Chi2="<<Chi2NominalTotal[isys-1][ibinx-1]<<endl;
-    }
-
-
-
-      Chi2DataStatErrorTotalXIterationsFinalIteration[isys-1]->GetXaxis()->SetTitle("Number of iterations");
-      Chi2DataStatErrorTotalXIterationsFinalIteration[isys-1]->GetYaxis()->SetTitle("#chi^{2} / NDF");
+      }
       Chi2DataStatErrorTotalXIterationsFinalIteration[isys-1]->Write();
       
-      Chi2DataStatErrorTotalXIterationsFinalIteration[isys-1]->Draw();
-      Chi2DataStatErrorTotalXIterationsFinalIteration[isys-1]->SetLineWidth(3);
-      Chi2DataStatErrorTotalXIterationsFinalIteration[isys-1]->SetLineStyle(2);
-      Chi2DataStatErrorTotalXIterationsFinalIteration[isys-1]->GetYaxis()->SetRangeUser(1e-5,100.);
-
-      CorrelatedChi2DataStatErrorTotalXIterationsFinalIteration[isys-1]->GetXaxis()->SetTitle("Number of iterations");
-    CorrelatedChi2DataStatErrorTotalXIterationsFinalIteration[isys-1]->GetYaxis()->SetTitle("#chi^{2} / NDF");
-    CorrelatedChi2DataStatErrorTotalXIterationsFinalIteration[isys-1]->Write();
-
-
       for(int c0=0;c0<NBinsTrueMomPlots;c0++){//loop over cause 0
-	//cChi2DataStatErrorFinalIteration[isys-1][c0] = new TCanvas(Form("cChi2DataStatErrorFinalIteration for toy XP %d and mom %d",isys-1,c0),"");
-	
+	cChi2DataStatErrorFinalIteration[isys-1][c0] = new TCanvas(Form("cChi2DataStatErrorFinalIteration for toy XP %d and mom %d",isys-1,c0),"");
+	Chi2DataStatErrorTotalXIterationsFinalIteration[isys-1]->Draw();
+	Chi2DataStatErrorTotalXIterationsFinalIteration[isys-1]->SetLineWidth(2);
+	Chi2DataStatErrorTotalXIterationsFinalIteration[isys-1]->GetYaxis()->SetRangeUser(1e-5,100.);
+
 	for(int c1=0;c1<NBinsTrueAnglePlots;c1++){//loop over cause 1
-	  if(!UsedBinPlots[c0][c1]) continue;
 	  Chi2DataStatErrorXIterationsFinalIteration[isys-1][c0][c1]->SetLineWidth(2);
-	  Chi2DataStatErrorXIterationsFinalIteration[isys-1][c0][c1]->SetLineColor(color[(c0-FirstBinMomPlots)*NBinsTrueAnglePlots+(c1-FirstBinAnglePlots)]);
+	  Chi2DataStatErrorXIterationsFinalIteration[isys-1][c0][c1]->SetLineColor(c1+2);
 	  Chi2DataStatErrorXIterationsFinalIteration[isys-1][c0][c1]->Draw("same");
 	  //int BinY=c0*(NBinsTrueAnglePlots)+c1+1;
 	  //Chi2DataStatErrorXIterationsFinalIteration[c0][c1]->SetLineColor(BinY);
 	  //Chi2DataStatErrorXIterationsFinalIteration[c0][c1]->Draw("same");
 	  //l->AddEntry( Chi2DataStatErrorXIterationsFinalIteration[c0][c1] , Form("Mom %d, Angle %d",c0,c1));
 	}
+	l->Draw("same");
+	cChi2DataStatErrorFinalIteration[isys-1][c0]->SetGridx();
+	cChi2DataStatErrorFinalIteration[isys-1][c0]->SetGridy();
+	cChi2DataStatErrorFinalIteration[isys-1][c0]->SetLogy();
+	cChi2DataStatErrorFinalIteration[isys-1][c0]->Write();
       }
     }
-    lModified->Draw("same");
-    line1->Draw("same");
-    cChi2DataStatErrorFinalIteration->SetGridx();
-    cChi2DataStatErrorFinalIteration->SetGridy();
-    cChi2DataStatErrorFinalIteration->SetLogy();
-    cChi2DataStatErrorFinalIteration->Write();
-
-    TCanvas * cChi2DataStatErrorComparison = new TCanvas("cChi2DataStatErrorComparison");
-    Chi2DataStatErrorTotalXIterations[0]->SetLineWidth(2);    
-    Chi2DataStatErrorTotalXIterations[0]->SetLineStyle(1);    
-    Chi2DataStatErrorTotalXIterations[0]->SetLineColor(kBlue+2);    
-    Chi2DataStatErrorTotalXIterations[0]->Draw();
-    Chi2DataStatErrorTotalXIterations[0]->GetXaxis()->SetRangeUser(0,50);
-    TLine * line2 = new TLine(0.,1.,50,1.);
-    line2->SetLineColor(1);
-    line2->SetLineWidth(2);
-    line2->SetLineStyle(10);
-    line2->Draw("same");
-
-    CorrelatedChi2DataStatErrorTotalXIterations[0]->SetLineWidth(2);    
-    CorrelatedChi2DataStatErrorTotalXIterations[0]->SetLineStyle(1);    
-    CorrelatedChi2DataStatErrorTotalXIterations[0]->SetLineColor(kGreen+2);    
-    CorrelatedChi2DataStatErrorTotalXIterations[0]->Draw("same");
-    
-    Chi2DataStatErrorTotalXIterationsFinalIteration[0]->SetLineWidth(2);    
-    Chi2DataStatErrorTotalXIterationsFinalIteration[0]->SetLineStyle(1);    
-    Chi2DataStatErrorTotalXIterationsFinalIteration[0]->SetLineColor(kRed);    
-    Chi2DataStatErrorTotalXIterationsFinalIteration[0]->Draw("same");    
-
-    CorrelatedChi2DataStatErrorTotalXIterationsFinalIteration[0]->SetLineWidth(2);    
-    CorrelatedChi2DataStatErrorTotalXIterationsFinalIteration[0]->SetLineStyle(1);    
-    CorrelatedChi2DataStatErrorTotalXIterationsFinalIteration[0]->SetLineColor(kMagenta);    
-    CorrelatedChi2DataStatErrorTotalXIterationsFinalIteration[0]->Draw("same");
-
-    TLegend * lComparison = new TLegend(0.75,0.2,0.89,0.89);
-    lComparison->SetFillColor(0.);
-    lComparison->SetLineColor(0.);    
-    lComparison->AddEntry(Chi2DataStatErrorTotalXIterations[0],"#chi^{2}_{NC} / NDF");
-    lComparison->AddEntry(CorrelatedChi2DataStatErrorTotalXIterations[0],"#chi^{2} / NDF");
-    lComparison->AddEntry(Chi2DataStatErrorTotalXIterationsFinalIteration[0],"#chi^{2}_{NC,DD} / NDF");
-    lComparison->AddEntry(CorrelatedChi2DataStatErrorTotalXIterationsFinalIteration[0],"#chi^{2}_{DD} / NDF");
-    lComparison->Draw("same");
-    
-    cChi2DataStatErrorComparison->SetGridx();
-    cChi2DataStatErrorComparison->SetGridy();
-    cChi2DataStatErrorComparison->SetLogy();
-    cChi2DataStatErrorComparison->Write();
+    /*
+    TCanvas * cBias[NBinsSystToys][NBinsTrueMomPlots];
+   
+    for(int isys=1;isys<=pullstatEventsXsystEventsXIterationsFinalIteration[0][0]->GetNbinsY();isys++){
+	
+      for(int c0=0;c0<NBinsTrueMomPlots;c0++){//loop over cause 0
+	cBias[isys-1][c0] = new TCanvas(Form("cBias for toy XP %d and mom %d",isys-1,c0),"");
+	//BiasTotalXIterationsFinalIteration[isys-1]->GetYaxis()->SetRangeUser(1e-5,100.);
+	
+	for(int c1=0;c1<NBinsTrueAnglePlots;c1++){//loop over cause 1
+	  BiasXIterationsFinalIteration[isys-1][c0][c1]->SetLineWidth(2);
+	  BiasXIterationsFinalIteration[isys-1][c0][c1]->SetLineColor(c1+2);
+	  if(c1==0){
+	    BiasXIterationsFinalIteration[isys-1][c0][c1]->Draw();
+	    BiasXIterationsFinalIteration[isys-1][c0][c1]->GetYaxis()->SetRangeUser(-0.2,0.2);
+	  }
+	  else BiasXIterationsFinalIteration[isys-1][c0][c1]->Draw("same");
+	}
+	l->Draw("same");
+	cBias[isys-1][c0]->SetGridx();
+	cBias[isys-1][c0]->SetGridy();
+	cBias[isys-1][c0]->Write();
+      }
+    }
+  TCanvas * canBias = new TCanvas("cPull_Mean");
+  gStyle->SetPaintTextFormat("2.2f");
+  gStyle->SetOptStat(kFALSE);
+  BiasDistribution->Draw("colztext");
+  canBias->Write();
+  TCanvas * canError = new TCanvas("cPull_Error");
+  gStyle->SetPaintTextFormat("2.2f");
+  gStyle->SetOptStat(kFALSE);
+  ErrorDistribution->Draw("colztext");
+  canError->Write();
+*/
   ////////////////////STAT VS SYST///////////////////////////////
   
     //Draw the pull distribution with iterations & behaviour of the mean/error of the pull, BUT ONLY FOR STATISTICAL VARIATIONS in the input file	
     for(int c0=0;c0<NBinsTrueMomPlots;c0++){//loop over cause 0
       for(int c1=0;c1<NBinsTrueAnglePlots;c1++){//loop over cause 1
-	if(!UsedBinPlots[c0][c1]) continue;
 	canstatEventsXIterations[c0][c1] = new TCanvas(Form("cstatPullXIterations%d_%d",c0,c1),Form("Pull maximum and 1#sigma error of events after unfolding in the bin %d_%d",c0,c1));
 	pullstatEventsXIterations[c0][c1]->GetXaxis()->SetTitle("Unfolding iterations");
 	pullstatEventsXIterations[c0][c1]->GetYaxis()->SetTitle("Pullstat");
@@ -1432,38 +1221,22 @@ int main(int argc, char ** argv){
     //4. For the total error, build the correlation matrix from the covariant one
     StatisticalVariations->cd();
     CovarianceStat->Divide(NVariationsStat);
-    CovarianceStat_Iteration1->Divide(NVariationsStat);
-    CovarianceStat_Iteration3->Divide(NVariationsStat);
-
     for(int c0=0;c0<NBinsTrueMomPlots;c0++){//loop over cause 0
       for(int c1=0;c1<NBinsTrueAnglePlots;c1++){//loop over cause 1
-	//if(!UsedBinPlots[c0][c1]) continue;
 	for(int d0=0;d0<NBinsTrueMomPlots;d0++){//loop over cause 0
 	  for(int d1=0;d1<NBinsTrueAnglePlots;d1++){//loop over cause 1
-	    //if(!UsedBinPlots[d0][d1]) continue;
 	    int BinX=c0*(NBinsTrueAnglePlots)+c1+1;
 	    int BinY=d0*(NBinsTrueAnglePlots)+d1+1;
-
 	    double Corr=CovarianceStat->GetBinContent(BinX,BinY);
 	    double NormCorr=TMath::Sqrt(CovarianceStat->GetBinContent(BinX,BinX)*CovarianceStat->GetBinContent(BinY,BinY));
 	    if(NormCorr) Corr/=NormCorr;
 	    CorrelationStat->SetBinContent(BinX,BinY,Corr);
-
-	    Corr=CovarianceStat_Iteration1->GetBinContent(BinX,BinY);
-	    NormCorr=TMath::Sqrt(CovarianceStat_Iteration1->GetBinContent(BinX,BinX)*CovarianceStat_Iteration1->GetBinContent(BinY,BinY));
-	    if(NormCorr) Corr/=NormCorr;
-	    CorrelationStat_Iteration1->SetBinContent(BinX,BinY,Corr);
-
-	    Corr=CovarianceStat_Iteration3->GetBinContent(BinX,BinY);
-	    NormCorr=TMath::Sqrt(CovarianceStat_Iteration3->GetBinContent(BinX,BinX)*CovarianceStat_Iteration3->GetBinContent(BinY,BinY));
-	    if(NormCorr) Corr/=NormCorr;
-	    CorrelationStat_Iteration3->SetBinContent(BinX,BinY,Corr);	    
 	  }
 	}
       }
     }
-    //
-    TCanvas * canCorrelationStat = new TCanvas("cCorrelationStat");
+    //T
+    TCanvas * canCorrelationStats = new TCanvas("cCorrelationStats");
     gStyle->SetPaintTextFormat("2.2f");
     gStyle->SetOptStat(kFALSE);
     CorrelationStat->GetXaxis()->SetLabelSize(0.);
@@ -1475,35 +1248,7 @@ int main(int argc, char ** argv){
       lBins[imom][0]->Draw("same");
       lBins[imom][1]->Draw("same");
     }
-    canCorrelationStat->Write();
-   
-    TCanvas * canCorrelationStat_Iteration1 = new TCanvas("cCorrelationStat_Iteration1");
-    gStyle->SetPaintTextFormat("2.2f");
-    gStyle->SetOptStat(kFALSE);
-    CorrelationStat_Iteration1->GetXaxis()->SetLabelSize(0.);
-    CorrelationStat_Iteration1->GetYaxis()->SetLabelSize(0.);
-    CorrelationStat_Iteration1->Draw("colztext");
-    for(int imom=0;imom<NBinsTrueMomPlots;imom++){
-      tBins[imom][0]->Draw("same");
-      tBins[imom][1]->Draw("same");
-      lBins[imom][0]->Draw("same");
-      lBins[imom][1]->Draw("same");
-    }
-    canCorrelationStat_Iteration1->Write();
-
-    TCanvas * canCorrelationStat_Iteration3 = new TCanvas("cCorrelationStat_Iteration3");
-    gStyle->SetPaintTextFormat("2.2f");
-    gStyle->SetOptStat(kFALSE);
-    CorrelationStat_Iteration3->GetXaxis()->SetLabelSize(0.);
-    CorrelationStat_Iteration3->GetYaxis()->SetLabelSize(0.);
-    CorrelationStat_Iteration3->Draw("colztext");
-    for(int imom=0;imom<NBinsTrueMomPlots;imom++){
-      tBins[imom][0]->Draw("same");
-      tBins[imom][1]->Draw("same");
-      lBins[imom][0]->Draw("same");
-      lBins[imom][1]->Draw("same");
-    }
-    canCorrelationStat_Iteration3->Write();
+    canCorrelationStats->Write();
 
     //////////////////////////////////////////////////////////////////////////////
 
@@ -1515,7 +1260,6 @@ int main(int argc, char ** argv){
     SystematicVariations->cd();
     for(int c0=0;c0<NBinsTrueMomPlots;c0++){//loop over cause 0
       for(int c1=0;c1<NBinsTrueAnglePlots;c1++){//loop over cause 1
-	if(!UsedBinPlots[c0][c1]) continue;
 	//Systematic variation
 	//Draw the pull distribution with iterations & behaviour of the mean/error of the pull, BUT ONLY FOR SYSTEMATICS VARIATIONS in the input file	
 	cansystEventsXIterations[c0][c1] = new TCanvas(Form("csystPullXIterations%d_%d",c0,c1),Form("Pull maximum and 1#sigma error of events after unfolding in the bin %d_%d",c0,c1));
@@ -1624,8 +1368,7 @@ int main(int argc, char ** argv){
       NEvents[it] = new TH2D(Form("NEvents_Iteration%d",it),"",NBinsTrueMomPlots,0,NBinsTrueMomPlots,NBinsTrueAnglePlots,0,NBinsTrueAnglePlots);
       for(int imom=0;imom<NBinsTrueMomPlots;imom++){
 	for(int iang=0;iang<NBinsTrueAnglePlots;iang++){
-	  if(!UsedBinPlots[imom][iang]) continue;
-  	  NEvents[it]->SetBinContent(imom+1,iang+1,EventXIterations[imom][iang]->GetBinContent(it+1));
+	  NEvents[it]->SetBinContent(imom+1,iang+1,EventXIterations[imom][iang]->GetBinContent(it+1));
 	}
       }
       
@@ -1762,10 +1505,8 @@ int main(int argc, char ** argv){
     cNEventsMom->cd(1);
     TH1D * TrueNEventsMomFull = (TH1D*) TrueDistribution->ProjectionX("TrueNEventsMomFull",0,TrueDistribution->GetNbinsY());
     TH1D * TrueNEventsMom = new TH1D("TrueNEventsMom","",NBinsTrueMomPlots,0,NBinsTrueMomPlots);
-    for(int imom=0;imom<NBinsTrueMomPlots;imom++){
-      if(!UsedBinPlots[imom][0]) continue;
-      TrueNEventsMom->SetBinContent(imom+1,TrueNEventsMomFull->GetBinContent(imom+1));
-    }
+    for(int imom=0;imom<NBinsTrueMomPlots;imom++) TrueNEventsMom->SetBinContent(imom+1,TrueNEventsMomFull->GetBinContent(imom+1));
+
     TrueNEventsMom->SetLineColor(kBlue);
     TrueNEventsMom->SetLineStyle(2);
     TrueNEventsMom->SetLineWidth(3);
@@ -1792,10 +1533,7 @@ int main(int argc, char ** argv){
     }
     legNEvents->Draw("same");
     TAxis * aX_NEventsMom = (TAxis*) TrueNEventsMom->GetXaxis();
-    for(int ibin=1;ibin<=NBinsTrueMomPlots;ibin++){
-      if(!UsedBinPlots[ibin][0]) continue;
-      aX_NEventsMom->SetBinLabel(ibin,Form(Form("%4.1fGeV-%4.1fGeV",BinningTrueMom[ibin-1],BinningTrueMom[ibin])));
-    }
+    for(int ibin=1;ibin<=NBinsTrueMomPlots;ibin++) aX_NEventsMom->SetBinLabel(ibin,Form(Form("%4.1fGeV-%4.1fGeV",BinningTrueMom[ibin-1],BinningTrueMom[ibin])));
     aX_NEventsMom->SetLabelSize(0.05);
     aX_NEventsMom->SetTitleSize(0.05);
     TrueNEventsMom->GetYaxis()->SetLabelSize(0.05);
@@ -1823,10 +1561,8 @@ int main(int argc, char ** argv){
     cNEventsAngle->cd(1);
     TH1D * TrueNEventsAngleFull = (TH1D*) TrueDistribution->ProjectionY("TrueNEventsAngleFull",0,TrueDistribution->GetNbinsX());
     TH1D * TrueNEventsAngle = new TH1D("TrueNEventsAngle","",NBinsTrueAnglePlots,0,NBinsTrueAnglePlots);
-    for(int iang=0;iang<NBinsTrueAnglePlots;iang++){
-      if(!UsedBinPlotsAngle[iang]) continue;
-      TrueNEventsAngle->SetBinContent(iang+1,TrueNEventsAngleFull->GetBinContent(iang+1));
-    }
+    for(int iang=0;iang<NBinsTrueAnglePlots;iang++) TrueNEventsAngle->SetBinContent(iang+1,TrueNEventsAngleFull->GetBinContent(iang+1));
+
     TrueNEventsAngle->SetLineColor(kBlue);
     TrueNEventsAngle->SetLineStyle(2);
     TrueNEventsAngle->SetLineWidth(3);
@@ -1850,10 +1586,7 @@ int main(int argc, char ** argv){
     }
     legNEvents->Draw("same");
     TAxis * aX_NEventsAngle = (TAxis*) TrueNEventsAngle->GetXaxis();
-    for(int ibin=1;ibin<=NBinsTrueAnglePlots;ibin++){
-      if(!UsedBinPlotsAngle[ibin]) continue;
-      aX_NEventsAngle->SetBinLabel(ibin,Form(Form("%4.1fGeV-%4.1fGeV",BinningTrueAngle[ibin-1],BinningTrueAngle[ibin])));
-    }
+    for(int ibin=1;ibin<=NBinsTrueAnglePlots;ibin++) aX_NEventsAngle->SetBinLabel(ibin,Form(Form("%4.1fGeV-%4.1fGeV",BinningTrueAngle[ibin-1],BinningTrueAngle[ibin])));
     aX_NEventsAngle->SetLabelSize(0.05);
     aX_NEventsAngle->SetTitleSize(0.05);
     TrueNEventsAngle->GetYaxis()->SetLabelSize(0.05);
@@ -2114,13 +1847,83 @@ int main(int argc, char ** argv){
 	cout<<"Bin ("<<c0<<","<<c1<<"), ratio="<<NonDiagonal/(Diagonal)<<", Diagonal="<<Diagonal<<", Non diagonal="<<NonDiagonal<<endl; 
       }
     }
-
+    /*
+    TH2D * ReconstructedLikelihood[NBinsTrueMom][NBinsTrueAngle];
+    TF2 * Gaussian2D[NBinsTrueMom][NBinsTrueAngle];
+    
+    for(int c0=0;c0<NBinsTrueMom;c0++){//loop over cause 0
+      for(int c1=0;c1<NBinsTrueAngle;c1++){//loop over cause 1
+	ReconstructedLikelihood[c0][c1]= new TH2D(Form("ReconstructedLikelihood[%d][%d]",c0,c1),"",NBinsRecMom,BinningRecMom,NBinsRecAngle,BinningRecAngle);
+	double minrecmom=BinningRecMom[0];
+	double maxrecmom=BinningRecMom[NBinsRecMom];
+	double minrecangle=BinningRecAngle[0];
+	double maxrecangle=BinningRecAngle[NBinsRecAngle];
+	
+	Gaussian2D[c0][c1] = new TF2(Form("Gaussian2D[%d][%d]",c0,c1),"[0]*TMath::Gaus(x,[1],[2])*TMath::Gaus(y,[3],[4])",minrecmom,maxrecmom,minrecangle,maxrecangle);
+	Gaussian2D[c0][c1]->SetParameters(1,10,10,10,10);
+	
+	for(int e0=0;e0<NBinsRecMom;e0++){//loop over effect 0
+	  for(int e1=0;e1<NBinsRecAngle;e1++){//loop over effect 1
+	    int bintrue=c0*NBinsTrueAngle+c1;
+	    int binrec=e0*NBinsRecAngle+e1;
+	    //cout<<bintrue<<", "<<binrec<<endl;
+	    //cout<<(*MLikelihood)(bintrue,binrec)<<endl;
+	    //cout<<(*MLikelihood)[bintrue][binrec]<<endl;
+	    double correlation=(*MLikelihood)(bintrue,binrec);
+	    ReconstructedLikelihood[c0][c1]->SetBinContent(e0+1,e1+1,correlation);
+	  }
+	}
+	ReconstructedLikelihood[c0][c1]->Fit(Gaussian2D[c0][c1],"R0");
+	ReconstructedLikelihood[c0][c1]->Write(Form("ReconstructedLikelihood[%d][%d]",c0,c1));
+      }
+    }
+   
+    TH1D * ReconstructedLikelihood_RecMom[NBinsTrueMom][NBinsTrueAngle];
+    TH1D * ReconstructedLikelihood_RecAngle[NBinsTrueMom][NBinsTrueAngle];
+    TF1 * Gaussian1D_RecMom[NBinsTrueMom][NBinsTrueAngle];
+    TF1 * Gaussian1D_RecAngle[NBinsTrueMom][NBinsTrueAngle];
+    
+    for(int c0=0;c0<NBinsTrueMom;c0++){//loop over cause 0
+      for(int c1=0;c1<NBinsTrueAngle;c1++){//loop over cause 1
+	ReconstructedLikelihood_RecMom[c0][c1]= new TH1D(Form("ReconstructedLikelihood_RecMom[%d][%d]",c0,c1),"",NBinsRecMom,BinningRecMom);
+	ReconstructedLikelihood_RecAngle[c0][c1]= new TH1D(Form("ReconstructedLikelihood_RecAngle[%d][%d]",c0,c1),"",NBinsRecAngle,BinningRecAngle);
+	
+	double minrecmom=BinningRecMom[0];
+	double maxrecmom=BinningRecMom[NBinsRecMom];
+	double minrecangle=BinningRecAngle[0];
+	double maxrecangle=BinningRecAngle[NBinsRecAngle];
+	
+	Gaussian1D_RecMom[c0][c1] = new TF1(Form("Gaussian1D_RecMom[%d][%d]",c0,c1),"[0]*TMath::Gaus(x,[1],[2])",minrecmom,maxrecmom);
+	Gaussian1D_RecMom[c0][c1]->SetParameters(1,10,10);
+	Gaussian1D_RecAngle[c0][c1] = new TF1(Form("Gaussian1D_RecAngle[%d][%d]",c0,c1),"[0]*TMath::Gaus(x,[1],[2])",minrecangle,maxrecangle);
+	Gaussian1D_RecAngle[c0][c1]->SetParameters(1,10,10);
+	
+	for(int e0=0;e0<NBinsRecMom;e0++){//loop over effect 0
+	  for(int e1=0;e1<NBinsRecAngle;e1++){//loop over effect 1
+	    int bintrue=c0*NBinsTrueAngle+c1;
+	    int binrec=e0*NBinsRecAngle+e1;
+	    //cout<<bintrue<<", "<<binrec<<endl;
+	    //cout<<(*MLikelihood)(bintrue,binrec)<<endl;
+	    //cout<<(*MLikelihood)[bintrue][binrec]<<endl;
+	    double correlation=(*MLikelihood)(bintrue,binrec);
+	    //cout<<setprecision(5)<<"Bin Rec Mom="<<e0+1<<", Rec Angle="<<e1+1<<", Correlation="<<correlation<<endl;
+	    ReconstructedLikelihood_RecMom[c0][c1]->SetBinContent(e0+1,correlation);
+	    ReconstructedLikelihood_RecAngle[c0][c1]->SetBinContent(e1+1,correlation);
+	  }
+	}
+	ReconstructedLikelihood_RecMom[c0][c1]->Fit(Gaussian1D_RecMom[c0][c1],"R0");
+	ReconstructedLikelihood_RecMom[c0][c1]->Write(Form("ReconstructedLikelihood_RecMom[%d][%d]",c0,c1));
+	ReconstructedLikelihood_RecAngle[c0][c1]->Fit(Gaussian1D_RecAngle[c0][c1],"R0");
+	ReconstructedLikelihood_RecAngle[c0][c1]->Write(Form("ReconstructedLikelihood_RecAngle[%d][%d]",c0,c1));
+      }
+    }
+*/
 
     ///////////////////////////////////////////////////////////////////////////////////////
 
 
     
-    //canCorrelationStat->Write();
+    canCorrelationStats->Write();
     NumberOfEvents->Write();
     NumberOfEvents_TrueRec->Write();
     BiasDistribution->Write();

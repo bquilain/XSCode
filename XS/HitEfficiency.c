@@ -147,7 +147,8 @@ int main(int argc, char **argv){
       // ---- choice of the input files ----
       //if(MC && PM &&(f>=415 && f<=419)) continue; ML 2017/06/23
       if(MC) {
-	sprintf(FileName,"%s/%sMC_Wall_Run1_%d_wNoise_ana.root",cMCOUT,DetName,f);
+	sprintf(FileName,"%s/%sMC_Run1_%d_wNoise_ana.root",cMCOUT,DetName,f);
+	//sprintf(FileName,"%s/%sMC_Wall_Run1_%d_wNoise_ana.root",cMCOUT,DetName,f);
       }
       else {
 	if(PM) sprintf(FileName,"/export/scraid2/data/bquilain/DataNew/ingrid_%08d_%04d_pmmergedKSPManabsd_woXTalk.root",R,f);

@@ -27,7 +27,7 @@ using namespace std;
 
 //16: Xsec
 //17: Flux
-    
+#define LIBRARYDIFF    
  
 int main(int argc, char **argv){
 
@@ -44,10 +44,14 @@ int main(int argc, char **argv){
   bool FakeData=false;
   bool BkgSub=false;
   int nIterations=2;
-  bool GenerateReconstruction=false;
+  bool GenerateReconstruction=true;
   bool ProcessAllData=false;
+  bool Shrink=true;  
+  bool GenerateShrink=true;  
+  bool GeneratePID = false;
+  bool GenerateReWeight = true;
   
-  while ((c = getopt(argc, argv, "mdspwgSbfB")) != -1) {
+  while ((c = getopt(argc, argv, "PmdspwgSbfB")) != -1) {
     switch(c){
     case 'm':
       MC=true;
@@ -79,6 +83,9 @@ int main(int argc, char **argv){
     case 'f':
       FakeData=true;
       break;
+    case 'P':
+      GeneratePID=true;
+      break;
     }      
   }  
 
@@ -89,7 +96,7 @@ int main(int argc, char **argv){
   char Command1_1[1000], Command1_2[1000], Command1_3[1000], Command1_4[1000], Command1_5[1000], Command1_6[1000];
   char Command1[1000], Command2[1000], Command3[1000], Command4[1000], Command5[1000], Command6[1000], Command7[1000], Command8[1000], Command9[1000], Command11[1000], Command12[1000], Command13[1000],Command14[1000], Command15[1000], Command16[1000], Command17[1000], Command18[1000];
   char  Command10[1000], Command20[1000], Command30[1000];
-  char CommandShrink[1000], CommandMask[1000], CommandReweight[1000];
+  char CommandShrink[1000], CommandPID[1000], CommandMask[1000], CommandReweight[1000];
   char Name[1000];
 
   //  xs->Xsec::Initialize();
@@ -111,7 +118,7 @@ int main(int argc, char **argv){
   cout<<"Selected particle generator is"<<(ParticleGun?" a particle gun":" neutrino event")<<endl;
 
 
-  
+
   ///////////FOR THE PREREQUISITE, SO DO NOT CLEAN FOR EACH ERROR/////////////////////
   sprintf(Command01,"");
   sprintf(Command02,"");
@@ -122,20 +129,17 @@ int main(int argc, char **argv){
 
   if(!SelectionOnly){
     for(int ErrorType=StartError;ErrorType<=EndError;ErrorType++){
-      //for(int ErrorType=2;ErrorType<=6;ErrorType++){//TEMP
-
-    
+      
       cout<<endl<<"Error Type="<<ErrorType<<endl;
-
       
       if(ErrorType==3){
-	sprintf(Command01,"${INSTALLREPOSITORY}/XS/HitEfficiency -m -i 1 -f 100"); //Generate a file containing MC hit efficiency (XS/files_MCDataComparison/MC_CalibrationPM.root )
-	sprintf(Command02,"${INSTALLREPOSITORY}/XS/HitEfficiency -r 14510 -t 14510 -i 0 -f 300"); //Generate a file containing Data hit efficiency (${INSTALLREPOSITORY}/XS/files_MCDataComparison/MC_CalibrationPM.root )
+	sprintf(Command01,"${INSTALLREPOSITORY}/XS/HitEfficiency -m -i 1 -f 100 %s",(PM?"":"-w")); //Generate a file containing MC hit efficiency (XS/files_MCDataComparison/MC_CalibrationPM.root )
+	sprintf(Command02,"${INSTALLREPOSITORY}/XS/HitEfficiency -r 14510 -t 14510 -i 0 -f 300 %s",(PM?"":"-w")); //Generate a file containing Data hit efficiency (${INSTALLREPOSITORY}/XS/files_MCDataComparison/MC_CalibrationPM.root )
       }
       else if(ErrorType==4){
-	sprintf(Command03,"${INSTALLREPOSITORY}/XS/CompareCalibrationsPM -m -i 1 -f 100"); //-> Generate a file containing each hit info for MC (XS/files_MCDataComparison/MC_CalibrationPM.root )
-	sprintf(Command04,"${INSTALLREPOSITORY}/XS/CompareCalibrationsPM -r 14510 -t 14570 -i 0 -f 300");//-> Generate a file containing each hit info for Data (XS/files_MCDataComparison/Data_CalibrationPM.root )
-	sprintf(Command05,"${INSTALLREPOSITORY}/XS/GeneratePEAngleDistributions -o ${INSTALLREPOSITORY}/XS/files/PEXAngle.root");//Read the data and MC files above and create the dependency of PE with angle.
+	sprintf(Command03,"${INSTALLREPOSITORY}/XS/CompareCalibrationsPM -m -i 1 -f 100 %s",(PM?"":"-w")); //-> Generate a file containing each hit info for MC (XS/files_MCDataComparison/MC_CalibrationPM.root )
+	sprintf(Command04,"${INSTALLREPOSITORY}/XS/CompareCalibrationsPM -r 14510 -t 14570 -i 0 -f 300 %s",(PM?"":"-w"));//-> Generate a file containing each hit info for Data (XS/files_MCDataComparison/Data_CalibrationPM.root )
+	sprintf(Command05,"${INSTALLREPOSITORY}/XS/GeneratePEAngleDistributions %s",(PM?"":"-w"));//Read the data and MC files above and create the dependency of PE with angle.
       }
       if(ErrorType==5){
 	sprintf(Command06,"#Don't forget to copy your MC two times and change the Birks Constant. The path and name of this MC can be changed in XSFileGenerator.c");
@@ -173,6 +177,7 @@ int main(int argc, char **argv){
 	    sprintf(Command30,"");
 	    //sprintf(Command40,"");
 
+	    sprintf(CommandPID,"");
 	    sprintf(CommandShrink,"");
 	    sprintf(CommandMask,"");
 	    sprintf(CommandReweight,"");
@@ -211,7 +216,7 @@ int main(int argc, char **argv){
 		//else sprintf(Command1,"${INSTALLREPOSITORY}/MC/bin/Linux-g++/%s -o ${MCOUTPUTSTORAGE}/PMMC_Numu_Run1_%d.root -i ${MCINPUTSTORAGE}/run1add3/11bfluka_nd2_numu_ch_%d.nt -m %d -f 1",execMC,i,i-1500,MCDetID);
 		
 		//NuMuBar
-		if(i<1000) sprintf(InputFile,(PM?"${MCINPUTSTORAGE}/ingbg_5.3.6/13a_nd2_numubar_ch_%d.nt":"${MCINPUTSTORAGE_WM}/ingbg_5.3.6/13a_nd2_numubar_h2o_%d.nt"),i);
+		if(i<1000) sprintf(InputFile,(PM?"${MCINPUTSTORAGE_BKG}/13a_nd2_numubar_ch_%d.nt":"${MCINPUTSTORAGE_WM_BKG}/13a_nd2_numubar_h2o_%d.nt"),i);
 		else {cout<<"*** only 1000 NEUT files available ***"<<endl; return 0;}
 		sprintf(Command1_1,"${INSTALLREPOSITORY}/MC/bin/Linux-g++/%s -o ${MCOUTPUTSTORAGE%s}/%sMC_Numubar_Run1_%d.root -i %s -m %d -f 2",execMC,suffix,DetName,i,InputFile,MCDetID);
 		
@@ -221,7 +226,7 @@ int main(int argc, char **argv){
 		//else if(i<=2000) sprintf(Command1_1,"${INSTALLREPOSITORY}/MC/bin/Linux-g++/%s -o ${MCOUTPUTSTORAGE}/PMMC_Numubar_Run1_%d.root -i ${MCINPUTSTORAGE}/run1add3nubar/11bfluka_nd2_numubar_ch_%d.nt -m %d -f 2",execMC,i,i-1500,MCDetID);
 		
 		//NuE
-		if(i<1000) sprintf(InputFile,(PM?"${MCINPUTSTORAGE}/ingbg_5.3.6/13a_nd2_nue_ch_%d.nt":"${MCINPUTSTORAGE_WM}/ingbg_5.3.6/13a_nd2_nue_h2o_%d.nt"),i);
+		if(i<1000) sprintf(InputFile,(PM?"${MCINPUTSTORAGE_BKG}/13a_nd2_nue_ch_%d.nt":"${MCINPUTSTORAGE_WM_BKG}/13a_nd2_nue_h2o_%d.nt"),i);
 		else {cout<<"*** only 1000 NEUT files available ***"<<endl; return 0;}
 		sprintf(Command1_2,"${INSTALLREPOSITORY}/MC/bin/Linux-g++/%s -o ${MCOUTPUTSTORAGE%s}/%sMC_Nue_Run1_%d.root -i %s -m %d -f 3",execMC,suffix,DetName,i,InputFile,MCDetID);
 		
@@ -231,7 +236,7 @@ int main(int argc, char **argv){
 		//else if(i<=2000) sprintf(Command1_2,"${INSTALLREPOSITORY}/MC/bin/Linux-g++/%s -o ${MCOUTPUTSTORAGE}/PMMC_Nue_Run1_%d.root -i ${MCINPUTSTORAGE}/nuerun1add3/11bfluka_nd2_nue_ch_%d.nt -m %d -f 3",execMC,i,i-1500,MCDetID);
 		
 		//Wall Bkg (mainly Sand Muons)
-		if(i<1000)sprintf(InputFile,(PM?"${MCINPUTSTORAGE}/wallbg_5.3.6/13a_nd7_numu_o_%d_1.nt":"${MCINPUTSTORAGE_WM}/wallbg_5.3.6/13a_nd7_numu_o_%d_1.nt"),i);
+		if(i<1000)sprintf(InputFile,(PM?"${MCINPUTSTORAGE_WALL}/13a_nd7_numu_o_%d_1.nt":"${MCINPUTSTORAGE_WM_WALL}/wallbg_5.3.6/13a_nd7_numu_o_%d_1.nt"),i);
 		else {cout<<"*** only 1000 NEUT files available ***"<<endl; return 0;}	      
 		sprintf(Command1_3,"${INSTALLREPOSITORY}/MC/bin/Linux-g++/%s -o ${MCOUTPUTSTORAGE%s}/%sMC_Wall_Run1_%d.root -i %s -m %d -f 1",execMC,suffix,DetName,i,InputFile,MCDetID);
 		
@@ -240,7 +245,7 @@ int main(int argc, char **argv){
 		
 		//Ingrid Bkg
 		//Horizontal modules
-		if(i<1000) sprintf(InputFile,(PM?"${MCINPUTSTORAGE}/ingbg_5.3.6/13a_nd3_numu_fe_%d.nt":"${MCINPUTSTORAGE_WM}/ingbg_5.3.6/13a_nd3_numu_fe_%d.nt"),i);
+		if(i<1000) sprintf(InputFile,(PM?"${MCINPUTSTORAGE_BKG}/13a_nd3_numu_fe_%d.nt":"${MCINPUTSTORAGE_WM_BKG}/13a_nd3_numu_fe_%d.nt"),i);
 		else {cout<<"*** only 1000 NEUT files available ***"<<endl; return 0;}	      
 		sprintf(Command1_4,"${INSTALLREPOSITORY}/MC/bin/Linux-g++/%s -o ${MCOUTPUTSTORAGE%s}/%sMC_INGRIDH_Run1_%d.root -i %s -m %d -f 1",execMC,suffix,DetName,i,InputFile,MCDetID);
 		
@@ -250,7 +255,7 @@ int main(int argc, char **argv){
 		//else if(i<=2000) sprintf(Command1_4,"${INSTALLREPOSITORY}/MC/bin/Linux-g++/%s -o ${MCOUTPUTSTORAGE}/PMMC_INGRIDH_Run1_%d.root -i ${MCINPUTSTORAGE}/nd3numurun1add3/11bfluka_nd3_numu_fe_%d.nt -m %d -f 1",execMC,i,i-1500,MCDetID);
 		
 		//Vertical modules
-		if(i<1000) sprintf(InputFile,(PM?"${MCINPUTSTORAGE}/ingbg_5.3.6/13a_nd4_numu_fe_%d.nt":"${MCINPUTSTORAGE_WM}/ingbg_5.3.6/13a_nd4_numu_fe_%d.nt"),i);
+		if(i<1000) sprintf(InputFile,(PM?"${MCINPUTSTORAGE_BKG}/13a_nd4_numu_fe_%d.nt":"${MCINPUTSTORAGE_WM_BKG}/13a_nd4_numu_fe_%d.nt"),i);
 		else {cout<<"*** only 1000 NEUT files available ***"<<endl; return 0;}	      
 		sprintf(Command1_5,"${INSTALLREPOSITORY}/MC/bin/Linux-g++/%s -o ${MCOUTPUTSTORAGE%s}/%sMC_INGRIDV_Run1_%d.root -i %s -m %d -f 1",execMC,suffix,DetName,i,InputFile,MCDetID);
 		
@@ -271,22 +276,36 @@ int main(int argc, char **argv){
 	      //sprintf(Command1,"bin/Linux-g++/IngMC -o ${MCOUTPUTSTORAGE}/PMMC_Run1_%d.root -i /export/scraid2/data/bquilain/neutfile_pm/11bfluka_nd2_numu_ch_%d.nt -m 2 -f 2",i,i);
 	      sprintf(Command3,"${INSTALLREPOSITORY}/Reconstruction/app%s/IngAddNoisePMMC_new -f ${MCOUTPUTSTORAGE%s}/%sMC%s%s_Run1_%d%s.root -o ${MCOUTPUTSTORAGE%s}/%sMC%s%s_Run1_%d_wNoise.root %s",DetName,suffix,DetName,ParticleGenerator,Sand,i,(PM?"":"_wXtalk"),suffix,DetName,ParticleGenerator,Sand,i,(PM?"":Form("-n %2.1f -w",DNRateWM)));
 	      sprintf(Command4,"${INSTALLREPOSITORY}/Reconstruction/app%s/%s -r 14000 -s 0 -f ${MCOUTPUTSTORAGE%s}/%sMC%s%s_Run1_%d_wNoise.root -o ${MCOUTPUTSTORAGE%s}/%sMC%s%s_Run1_%d_wNoise_recon.root",DetName,execRecon,suffix,DetName,ParticleGenerator,Sand,i,suffix,DetName,ParticleGenerator,Sand,i);
-	      sprintf(Command5,"${INSTALLREPOSITORY}/Reconstruction/app%s/%s -r 14000 -s 0 -f ${MCOUTPUTSTORAGE%s}/%sMC%s%s_Run1_%d_wNoise_recon.root -o ${MCOUTPUTSTORAGE%s}/%sMC%s%s_Run1_%d_wNoise_ana_PreShrink.root %s",DetName, execAna,suffix,DetName,ParticleGenerator,Sand,i,suffix,DetName,ParticleGenerator,Sand,i,(ParticleGun || sandOnly?"-N":""));
+	  
 		
 	      //ML tmp
 	      //sprintf(Command5,"source ${INSTALLREPOSITORY}/source_T2KReweight.sh"); 
 
 	      //NEUT 5.3.2  -> now NEUT 5.3.6 (ML 2017/02/01)
 
-	            sprintf(CommandShrink,"${INSTALLREPOSITORY}/XS/ShrinkXSFormatEarlier -i ${MCOUTPUTSTORAGE%s}/%sMC%s%s_Run1_%d_wNoise_ana.root -o ${MCOUTPUTSTORAGE%s}/%sMC%s%s_Run1_%d_wNoise_ana_shrinked.root %s",suffix,DetName,ParticleGenerator,Sand,i,suffix,DetName,ParticleGenerator,Sand,i,(PM?"":"-w"));
+	      sprintf(Command5,"${INSTALLREPOSITORY}/Reconstruction/app%s/%s -r 14000 -s 0 -f ${MCOUTPUTSTORAGE%s}/%sMC%s%s_Run1_%d_wNoise_recon.root -o ${MCOUTPUTSTORAGE%s}/%sMC%s%s_Run1_%d_wNoise_ana.root %s",DetName, execAna,suffix,DetName,ParticleGenerator,Sand,i,suffix,DetName,ParticleGenerator,Sand,i,(ParticleGun || sandOnly?"-N":""));
+	      if(GenerateShrink){
+		sprintf(CommandShrink,"${INSTALLREPOSITORY}/XS/ShrinkXSFormatEarlier -i ${MCOUTPUTSTORAGE%s}/%sMC%s%s_Run1_%d_wNoise_ana.root -o ${MCOUTPUTSTORAGE%s}/%sMC%s%s_Run1_%d_wNoise_ana_shrinked.root %s",suffix,DetName,ParticleGenerator,Sand,i,suffix,DetName,ParticleGenerator,Sand,i,(PM?"":"-w"));
+	      }
 	      // sprintf(Command6,"${INSTALLREPOSITORY}/XS/XS_CC0pi_Plan -i ${MCOUTPUTSTORAGE%s}/%sMC%s_Run1_%d_wNoise_ana.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s%s_Run1_%d_Plan.root -f 1 -m%s",suffix,DetName,ParticleGenerator,i,DetName,ParticleGenerator,i,(PM?"":"w"));
-	       sprintf(Command6,"${INSTALLREPOSITORY}/XS/XS_CC0pi_Plan -i ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_ana_shrinked.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s_Run1_%d_Systematics%d_%d_Plan.root -f 1 -m%s",suffix,DetName,i,DetName,i,ErrorType,n,(PM?"":"w"));
 
+	      //TEMPORARY BECAUSE THE WM FILE NAMES ARE DIFFERENT
+#ifdef LIBRARYDIFF
+	      if(PM){
+		if(Shrink) sprintf(Command6,"${INSTALLREPOSITORY}/XS/XS_CC0pi_Plan -i ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_ana_shrinked.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s_Run1_%d_Systematics%d_%d_Plan.root -f 1 -m%s",suffix,DetName,i,DetName,i,ErrorType,n,(PM?"":"w"));
+		else  sprintf(Command6,"${INSTALLREPOSITORY}/XS/XS_CC0pi_Plan -i ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_ana.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s_Run1_%d_Systematics%d_%d_Plan.root -f 1 -m%s",suffix,DetName,i,DetName,i,ErrorType,n,(PM?"":"w"));
+	    }
+	    else{
+	   	if(Shrink) sprintf(Command6,"${INSTALLREPOSITORY}/XS_Matt/XS_CC0pi_Plan -i ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_ana_shrinked.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s_Run1_%d_Systematics%d_%d_Plan.root -f 1 -m%s",suffix,DetName,i,DetName,i,ErrorType,n,(PM?"":"w"));
+		else  sprintf(Command6,"${INSTALLREPOSITORY}/XS_Matt/XS_CC0pi_Plan -i ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_ana.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s_Run1_%d_Systematics%d_%d_Plan.root -f 1 -m%s",suffix,DetName,i,DetName,i,ErrorType,n,(PM?"":"w"));
+	    }
+#endif
 	      //NEUT 5.1.4.2
 	      //sprintf(Command6,"${INSTALLREPOSITORY}/XS/XS_CC0pi_Plan -i ${MCOUTPUTSTORAGE}/PM_MC_Beam%d_BirksCorrectedMIP40_ReWeight_SciBar188_wNoise_KSana_woXtalk.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_Old_%d_Plan.root -f 1 -m",i,i);
 	      
 	      //sprintf(Command7,"${T2KREWEIGHTREPOSITORY}/app/genWeightsFromINGRID_2015.exe -i ${MCOUTPUTSTORAGE}/PMMC_Run1_%d.root -o ${MCOUTPUTSTORAGE}/PMMC_Run1_%d_ReWeight2015.root",i,i);
 
+	       sprintf(CommandPID,"${INSTALLREPOSITORY}/XS/GeneratePDFMuCL_Likelihood_Fast -f %d -m",i,(PM?"":"w"));
 	    }
 	    
 	    else if(ErrorType==1) continue;
@@ -294,15 +313,33 @@ int main(int argc, char **argv){
 	      sprintf(Command3,"${INSTALLREPOSITORY}/Reconstruction/app%s/IngAddNoisePMMC_new -f ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d.root -o ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_Systematics%d_%d.root -n %2.1f",DetName,suffix,DetName,i,suffix,DetName,i,ErrorType,n,ErrorValue);  
 	      sprintf(Command4,"${INSTALLREPOSITORY}/Reconstruction/app%s/%s -r 14000 -s 0 -f ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_Systematics%d_%d.root -o ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_recon_Systematics%d_%d.root",DetName,execRecon,suffix,DetName,i,ErrorType,n,suffix,DetName,i,ErrorType,n);
 	      sprintf(Command5,"${INSTALLREPOSITORY}/Reconstruction/app%s/%s -r 14000 -s 0 -f ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_recon_Systematics%d_%d.root -o ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_ana_Systematics%d_%d.root",DetName,execAna,suffix,DetName,i,ErrorType,n,suffix,DetName,i,ErrorType,n);
-	      sprintf(Command6,"${INSTALLREPOSITORY}/XS/XS_CC0pi_Plan -i ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_ana_Systematics%d_%d.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s_Run1_%d_Systematics%d_%d_Plan.root -f 1 -m%s",suffix,DetName,i,ErrorType,n,DetName,i,ErrorType,n,(PM?"":"w"));
+
+
+#ifdef LIBRARYDIFF
+	      if(PM){
+		sprintf(Command6,"${INSTALLREPOSITORY}/XS/XS_CC0pi_Plan -i ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_ana_Systematics%d_%d.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s_Run1_%d_Systematics%d_%d_Plan.root -f 1 -m%s",suffix,DetName,i,ErrorType,n,DetName,i,ErrorType,n,(PM?"":"w"));
+	      }
+	      else{
+		sprintf(Command6,"${INSTALLREPOSITORY}/XS_Matt/XS_CC0pi_Plan -i ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_ana_Systematics%d_%d.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s_Run1_%d_Systematics%d_%d_Plan.root -f 1 -m%s",suffix,DetName,i,ErrorType,n,DetName,i,ErrorType,n,(PM?"":"w"));
+	      }
+#endif		
 	    }
 	    else if(ErrorType==3){//One should give in input the file name of the data/MC difference
 	      //The best thing would be just to generate everything w/ an option
-	      sprintf(CommandMask,"${INSTALLREPOSITORY}/XS/GenerateHitEfficiencyMask -i ${MCOUTPUTSTORAGE}/PMMC_Run1_%d_wNoise_ana.root -o ${MCOUTPUTSTORAGE}/PMMC_Run1_%d_wNoise_Systematics%d_%d.root",i,i,ErrorType,n);
+		if(Shrink) sprintf(CommandMask,"${INSTALLREPOSITORY}/XS/GenerateHitEfficiencyMask -i ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_ana_shrinked.root -o ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_Systematics%d_%d.root",suffix,DetName,i,suffix,DetName,i,ErrorType,n);
+		else sprintf(CommandMask,"${INSTALLREPOSITORY}/XS/GenerateHitEfficiencyMask -i ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_ana.root -o ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_Systematics%d_%d.root",suffix,DetName,i,suffix,DetName,i,ErrorType,n);
+
 	      sprintf(Command4,"${INSTALLREPOSITORY}/Reconstruction/app%s/%s -r 14000 -s 0 -f ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_Systematics%d_%d.root -o ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_recon_Systematics%d_%d.root",DetName,execRecon,suffix,DetName,i,ErrorType,n,suffix,DetName,i,ErrorType,n);
 	      sprintf(Command5,"${INSTALLREPOSITORY}/Reconstruction/app%s/%s -r 14000 -s 0 -f ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_recon_Systematics%d_%d.root -o ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_ana_Systematics%d_%d.root",DetName,execAna,suffix,DetName,i,ErrorType,n,suffix,DetName,i,ErrorType,n);
 	      //sprintf(Command5,"source ${INSTALLREPOSITORY}/source_T2KReweight.sh");
-	      sprintf(Command6,"${INSTALLREPOSITORY}/XS/XS_CC0pi_Plan -i ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_ana_Systematics%d_%d.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s_Run1_%d_Systematics%d_%d_Plan.root -f 1 -m%s",suffix,DetName,i,ErrorType,n,DetName,i,ErrorType,n,(PM?"":"w"));
+#ifdef LIBRARYDIFF
+	      if(PM){
+		sprintf(Command6,"${INSTALLREPOSITORY}/XS/XS_CC0pi_Plan -i ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_ana_Systematics%d_%d.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s_Run1_%d_Systematics%d_%d_Plan.root -f 1 -m%s",suffix,DetName,i,ErrorType,n,DetName,i,ErrorType,n,(PM?"":"w"));
+	      }
+	      else{
+		sprintf(Command6,"${INSTALLREPOSITORY}/XS_Matt/XS_CC0pi_Plan -i ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_ana_Systematics%d_%d.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s_Run1_%d_Systematics%d_%d_Plan.root -f 1 -m%s",suffix,DetName,i,ErrorType,n,DetName,i,ErrorType,n,(PM?"":"w"));
+	      }
+#endif
 	      /*
 
 	      sprintf(Command4,"${INSTALLREPOSITORY}/Reconstruction/appPM/PMreconRevOfficial -r 14000 -s 0 -f ${MCOUTPUTSTORAGE}/PMMC_Run1_%d_wNoise_Systematics%d_%d.root -o ${MCOUTPUTSTORAGE}/PMMC_Run1_%d_wNoise_recon_Systematics%d_%d.root",i,ErrorType,n,i,ErrorType,n);
@@ -313,21 +350,42 @@ int main(int argc, char **argv){
 	    else if(ErrorType==4){//One should give in input the file name of the data/MC difference
 	      //The best thing would be just to generate everything w/ an option
 	      //sprintf(Command1,"source ${INSTALLREPOSITORY}/source_T2KReweight.sh");
-	      sprintf(Command6,"${INSTALLREPOSITORY}/XS/XS_CC0pi_Plan -i ${MCOUTPUTSTORAGE}/PMMC_Run1_%d_wNoise_ana.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s_Run1_%d_Systematics%d_%d_Plan.root -f 1 -m -e %d -v ${INSTALLREPOSITORY}/XS/files/PEXAngle.root",i,DetName,i,ErrorType,n,ErrorType);
+
+#ifdef LIBRARYDIFF
+	      if(PM){
+	      if(Shrink) sprintf(Command6,"${INSTALLREPOSITORY}/XS/XS_CC0pi_Plan -i ${MCOUTPUTSTORAGE}/PMMC_Run1_%d_wNoise_ana_shrinked.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s_Run1_%d_Systematics%d_%d_Plan.root -f 1 -m -e %d -v ${INSTALLREPOSITORY}/XS/files/PEXAngle_%s.root",i,DetName,i,ErrorType,n,ErrorType,DetName);
+	      else sprintf(Command6,"${INSTALLREPOSITORY}/XS/XS_CC0pi_Plan -i ${MCOUTPUTSTORAGE}/PMMC_Run1_%d_wNoise_ana.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s_Run1_%d_Systematics%d_%d_Plan.root -f 1 -m -e %d -v ${INSTALLREPOSITORY}/XS/files/PEXAngle_%s.root",i,DetName,i,ErrorType,n,ErrorType,DetName);
+	      }
+	      else{
+	      if(Shrink) sprintf(Command6,"${INSTALLREPOSITORY}/XS_Matt/XS_CC0pi_Plan -i ${MCOUTPUTSTORAGE}/PMMC_Run1_%d_wNoise_ana_shrinked.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s_Run1_%d_Systematics%d_%d_Plan.root -f 1 -m -e %d -v ${INSTALLREPOSITORY}/XS/files/PEXAngle_%s.root",i,DetName,i,ErrorType,n,ErrorType,DetName);
+	       else sprintf(Command6,"${INSTALLREPOSITORY}/XS_Matt/XS_CC0pi_Plan -i ${MCOUTPUTSTORAGE}/PMMC_Run1_%d_wNoise_ana.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s_Run1_%d_Systematics%d_%d_Plan.root -f 1 -m -e %d -v ${INSTALLREPOSITORY}/XS/files/PEXAngle_%s.root",i,DetName,i,ErrorType,n,ErrorType,DetName);
+	      }
+#endif
 
 	    }
 	    else if(ErrorType==5){
 	      // the value of the Birks constant is an option
 	      // -B (0,1,or 2) for (-1sigma, nominal, or +1sigma) [0.0185,0.0208,0.0231]
 	      int birksindex=2*n;
+#ifdef GOODBUTLONG
 	      sprintf(InputFile,(PM?"${MCINPUTSTORAGE}/13a_nd2_numu_ch_%d.nt":"${MCINPUTSTORAGE_WM}/13a_nd3_numu_h2o_%d.nt"),i);
-	      sprintf(Command1,"${INSTALLREPOSITORY}/MC/bin/Linux-g++/%s -o ${MCOUTPUTSTORAGE%s}/%sMC_Numu_Run1_%d.root -i %s -m %d -f 1 -B %d",execMC,suffix,DetName,i,InputFile,MCDetID,2*n);
+	      sprintf(Command1,"${INSTALLREPOSITORY}/MC/bin/Linux-g++/%s -o ${MCOUTPUTSTORAGE%s}/%sMC_Numu_Run1_%d.root -i %s -m %d -f 1 -B %d",execMC,suffix,DetName,i,InputFile,MCDetID,birksindex);
 	      // *** -B option not implemented yet for WM
 	      // re-run FinalOutputMaker with background files (unmodified) ?
 	      sprintf(Command3,"${INSTALLREPOSITORY}/Reconstruction/app%s/IngAddNoisePMMC_new -f ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_Sytematics%d_%d.root -o ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_Systematics%d_%d.root %s",DetName,suffix,DetName,i,ErrorType,n,suffix,DetName,i,ErrorType,n,(PM?"":Form("-n %2.1f -w",DNRateWM)));  
 	      sprintf(Command4,"${INSTALLREPOSITORY}/Reconstruction/app%s/%s -r 14000 -s 0 -f ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_Systematics%d_%d.root -o ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_recon_Systematics%d_%d.root",DetName,execRecon,suffix,DetName,i,ErrorType,n,suffix,DetName,i,ErrorType,n);
 	      sprintf(Command5,"${INSTALLREPOSITORY}/Reconstruction/app%s/%s -r 14000 -s 0 -f ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_recon_Systematics%d_%d.root -o ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_ana_Systematics%d_%d.root",DetName,execAna,suffix,DetName,i,ErrorType,n,suffix,DetName,i,ErrorType,n);
 	      sprintf(Command6,"${INSTALLREPOSITORY}/XS/XS_CC0pi_Plan -i ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_ana_Systematics%d_%d.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s_Run1_%d_Systematics%d_%d_Plan.root -f 1 -m%s",suffix,DetName,i,ErrorType,n,DetName,i,ErrorType,n,(PM?"":"w"));
+#else
+	      if(PM){
+		if(Shrink) sprintf(Command6,"${INSTALLREPOSITORY}/XS/XS_CC0pi_Plan -i ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_ana_shrinked.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s_Run1_%d_Systematics%d_%d_Plan.root -f 1 -mr%s -e %d -v %3.1f",suffix,DetName,i,DetName,i,ErrorType,n,(PM?"":"w"),ErrorType,ErrorValue);
+		else sprintf(Command6,"${INSTALLREPOSITORY}/XS/XS_CC0pi_Plan -i ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_ana.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s_Run1_%d_Systematics%d_%d_Plan.root -f 1 -mr%s -e %d -v %3.1f",suffix,DetName,i,DetName,i,ErrorType,n,(PM?"":"w"),ErrorType,ErrorValue);
+	      }
+	      else{
+		if(Shrink) sprintf(Command6,"${INSTALLREPOSITORY}/XS_Matt/XS_CC0pi_Plan -i ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_ana_shrinked.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s_Run1_%d_Systematics%d_%d_Plan.root -f 1 -mr%s -e %d -v %3.1f",suffix,DetName,i,DetName,i,ErrorType,n,(PM?"":"w"),ErrorType,ErrorValue);
+		else sprintf(Command6,"${INSTALLREPOSITORY}/XS_Matt/XS_CC0pi_Plan -i ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_ana.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s_Run1_%d_Systematics%d_%d_Plan.root -f 1 -mr%s -e %d -v %3.1f",suffix,DetName,i,DetName,i,ErrorType,n,(PM?"":"w"),ErrorType,ErrorValue);
+	      }	      
+#endif
 	    }
 	    else if(ErrorType==6){
 	      // done at the level of CC0piSelection.c
@@ -344,14 +402,91 @@ int main(int argc, char **argv){
 	      sprintf(Command5,"${INSTALLREPOSITORY}/Reconstruction/app%s/%s -r 14000 -s 0 -f ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_recon.root -o ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_ana_Systematics%d_%d.root -e %d -v %3.1f",DetName,execAna,suffix,DetName,i,suffix,DetName,i,ErrorType,n,ErrorType,ErrorValue);
 	      sprintf(Command6,"${INSTALLREPOSITORY}/XS/XS_CC0pi_Plan -i ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_ana_Systematics%d_%d.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s_Run1_%d_Systematics%d_%d_Plan.root -f 1 -m%s",suffix,DetName,i,ErrorType,n,DetName,i,ErrorType,n,(PM?"":"w"));
 	    }
-	    else if(ErrorType==16) continue;
+	    else if(ErrorType==16){//cross-talk
+	      if(!PM){
+		// modif of Loli_addcrosstalk_slit - use the pre-existing files as an input
+
+		sprintf(Command2,"${INSTALLREPOSITORY}/Reconstruction/appWM/Loli_addcrosstalk_slit -f ${MCOUTPUTSTORAGE_dev_WM}/%sMC_Run1_%d.root -o ${MCOUTPUTSTORAGE_dev_WM}/%sMC_Run1_%d_wXtalk_Systematics%d_%d.root -y %f -z %f",DetName,i,DetName,i,ErrorType,n,ErrorValue,ErrorValue);
+		
+		sprintf(Command3,"${INSTALLREPOSITORY}/Reconstruction/app%s/IngAddNoisePMMC_new -f ${MCOUTPUTSTORAGE_dev_WM}/%sMC_Run1_%d_wXtalk_Systematics%d_%d.root -o ${MCOUTPUTSTORAGE_dev_WM}/%sMC_Run1_%d_wNoise_Systematics%d_%d.root %s",DetName,DetName,i,ErrorType,n,DetName,i,ErrorType,n,(PM?"":Form("-n %2.1f -w",DNRateWM)));
+		sprintf(Command4,"${INSTALLREPOSITORY}/Reconstruction/app%s/%s -r 14000 -s 0 -f ${MCOUTPUTSTORAGE_dev%s}/%sMC_Run1_%d_wNoise_Systematics%d_%d.root -o ${MCOUTPUTSTORAGE_dev%s}/%sMC_Run1_%d_wNoise_recon_Systematics%d_%d.root",DetName,execRecon,suffix,DetName,i,ErrorType,n,suffix,DetName,i,ErrorType,n);
+		sprintf(Command5,"${INSTALLREPOSITORY}/Reconstruction/app%s/%s -r 14000 -s 0 -f ${MCOUTPUTSTORAGE_dev%s}/%sMC_Run1_%d_wNoise_recon_Systematics%d_%d.root -o ${MCOUTPUTSTORAGE_dev%s}/%sMC_Run1_%d_wNoise_ana_Systematics%d_%d.root",DetName,execAna,suffix,DetName,i,ErrorType,n,suffix,DetName,i,ErrorType,n);
+		sprintf(Command7,"${INSTALLREPOSITORY}/XS/XS_CC0pi_Plan%s -i ${MCOUTPUTSTORAGE_dev%s}/%sMC_Run1_%d_wNoise_ana_Systematics%d_%d.root -o ${INSTALLREPOSITORY}/XS/root_input/Prod3/XSFormat_%s%s_Run1_%d_Systematics%d_%d_Plan.root -f 1 -m%s",suffix,suffix,DetName,i,ErrorType,n,DetName,i,ErrorType,n,(PM?"":"w"));
+	      }
+	    }
+	    else if(ErrorType==17){//secondary interactions
+	      //sprintf(optionTuneSyst,Form(fileTuneSyst,i,ErrorType,n));
+
+	      sprintf(InputFile,(PM?"${MCINPUTSTORAGE}/13a_nd2_numu_ch_%d.nt":"${MCINPUTSTORAGE_WM}/13a_nd2_numu_h2o_%d.nt"),i);
+		//NuMu
+		if(i<1000) sprintf(InputFile,(PM?"${MCINPUTSTORAGE_BKG}/13a_nd2_numu_ch_%d.nt":"${MCINPUTSTORAGE_WM_BKG}/13a_nd2_numu_h2o_%d.nt"),i);
+		else {cout<<"*** only 1000 NEUT files available ***"<<endl; return 0;}
+		sprintf(Command1,"${INSTALLREPOSITORY}/MC/bin/Linux-g++/%s -o ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_Systematics%d_%d.root -i %s -m %d -P -f 1",execMC,suffix,DetName,i,ErrorType,n,InputFile,MCDetID);
+		//NuMuBar
+		if(i<1000) sprintf(InputFile,(PM?"${MCINPUTSTORAGE_BKG}/13a_nd2_numubar_ch_%d.nt":"${MCINPUTSTORAGE_WM_BKG}/13a_nd2_numubar_h2o_%d.nt"),i);
+		else {cout<<"*** only 1000 NEUT files available ***"<<endl; return 0;}
+		sprintf(Command1_1,"${INSTALLREPOSITORY}/MC/bin/Linux-g++/%s -o ${MCOUTPUTSTORAGE%s}/%sMC_Numubar_Run1_%d_Systematics%d_%d.root -i %s -m %d -P -f 2",execMC,suffix,DetName,i,ErrorType,n,InputFile,MCDetID);
+		
+		//NuE
+		if(i<1000) sprintf(InputFile,(PM?"${MCINPUTSTORAGE_BKG}/13a_nd2_nue_ch_%d.nt":"${MCINPUTSTORAGE_WM_BKG}/13a_nd2_nue_h2o_%d.nt"),i);
+		else {cout<<"*** only 1000 NEUT files available ***"<<endl; return 0;}
+		sprintf(Command1_2,"${INSTALLREPOSITORY}/MC/bin/Linux-g++/%s -o ${MCOUTPUTSTORAGE%s}/%sMC_Nue_Run1_%d_Systematics%d_%d.root -i %s -m %d -P -f 3",execMC,suffix,DetName,i,ErrorType,n,InputFile,MCDetID);
+		
+		//Wall Bkg (mainly Sand Muons)
+		if(i<1000)sprintf(InputFile,(PM?"${MCINPUTSTORAGE_WALL}/wallbg_5.3.6/13a_nd7_numu_o_%d_1.nt":"${MCINPUTSTORAGE_WM_WALL}/wallbg_5.3.6/13a_nd7_numu_o_%d_1.nt"),i);
+		else {cout<<"*** only 1000 NEUT files available ***"<<endl; return 0;}	      
+		sprintf(Command1_3,"${INSTALLREPOSITORY}/MC/bin/Linux-g++/%s -o ${MCOUTPUTSTORAGE%s}/%sMC_Wall_Run1_%d_Systematics%d_%d.root -i %s -m %d -P -f 1",execMC,suffix,DetName,i,ErrorType,n,InputFile,MCDetID);
+		
+		//Ingrid Bkg
+		//Horizontal modules
+		if(i<1000) sprintf(InputFile,(PM?"${MCINPUTSTORAGE_BKG}/13a_nd3_numu_fe_%d.nt":"${MCINPUTSTORAGE_WM_BKG}/13a_nd3_numu_fe_%d.nt"),i);
+		else {cout<<"*** only 1000 NEUT files available ***"<<endl; return 0;}	      
+		sprintf(Command1_4,"${INSTALLREPOSITORY}/MC/bin/Linux-g++/%s -o ${MCOUTPUTSTORAGE%s}/%sMC_INGRIDH_Run1_%d_Systematics%d_%d.root -i %s -m %d -P -f 1",execMC,suffix,DetName,i,ErrorType,n,InputFile,MCDetID);
+		
+		//Vertical modules
+		if(i<1000) sprintf(InputFile,(PM?"${MCINPUTSTORAGE_BKG}/13a_nd4_numu_fe_%d.nt":"${MCINPUTSTORAGE_WM_BKG}/13a_nd4_numu_fe_%d.nt"),i);
+		else {cout<<"*** only 1000 NEUT files available ***"<<endl; return 0;}	      
+		sprintf(Command1_5,"${INSTALLREPOSITORY}/MC/bin/Linux-g++/%s -o ${MCOUTPUTSTORAGE%s}/%sMC_INGRIDV_Run1_%d_Systematics%d_%d.root -i %s -m %d -P -f 1",execMC,suffix,DetName,i,ErrorType,n,InputFile,MCDetID);
+		
+		//Merge Files Together
+		sprintf(Command1_6,"${INSTALLREPOSITORY}/XS/FinalMCOutputMaker -a ${MCOUTPUTSTORAGE%s}/%sMC_Numu_Run1_%d_Systematics%d_%d.root -b ${MCOUTPUTSTORAGE%s}/%sMC_Numubar_Run1_%d_Systematics%d_%d.root -c ${MCOUTPUTSTORAGE%s}/%sMC_Nue_Run1_%d_Systematics%d_%d.root -d ${MCOUTPUTSTORAGE%s}/%sMC_Wall_Run1_%d_Systematics%d_%d.root -e ${MCOUTPUTSTORAGE%s}/%sMC_INGRIDH_Run1_%d_Systematics%d_%d.root -f ${MCOUTPUTSTORAGE%s}/%sMC_INGRIDV_Run1_%d_Systematics%d_%d.root -o ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_Systematics%d_%d.root",suffix,DetName,i,ErrorType,n,suffix,DetName,i,ErrorType,n,suffix,DetName,i,ErrorType,n,suffix,DetName,i,ErrorType,n,suffix,DetName,i,ErrorType,n,suffix,DetName,i,ErrorType,n,suffix,DetName,i,ErrorType,n);
+		//if(!PM) sprintf(Command2,"${INSTALLREPOSITORY}/Reconstruction/appWM/Loli_addcrosstalk_slit -f ${MCOUTPUTSTORAGE_WM}/WMMC%s_Run1_%d.root -o ${MCOUTPUTSTORAGE_WM}/WMMC%s_Run1_%d_wXtalk.root",Sand,i,Sand,i);     	  
+		sprintf(Command3,"${INSTALLREPOSITORY}/Reconstruction/app%s/IngAddNoisePMMC_new -f ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_Systematics%d_%d.root -o ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_Systematics%d_%d.root -n %2.1f",DetName,suffix,DetName,i,ErrorType,n,suffix,DetName,i,ErrorType,n,ErrorValue);  
+	      sprintf(Command4,"${INSTALLREPOSITORY}/Reconstruction/app%s/%s -r 14000 -s 0 -f ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_Systematics%d_%d.root -o ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_recon_Systematics%d_%d.root",DetName,execRecon,suffix,DetName,i,ErrorType,n,suffix,DetName,i,ErrorType,n);
+	      sprintf(Command5,"${INSTALLREPOSITORY}/Reconstruction/app%s/%s -r 14000 -s 0 -f ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_recon_Systematics%d_%d.root -o ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_ana_Systematics%d_%d.root",DetName,execAna,suffix,DetName,i,ErrorType,n,suffix,DetName,i,ErrorType,n);
+#ifdef LIBRARYDIFF
+	      if(PM){
+		sprintf(Command6,"${INSTALLREPOSITORY}/XS/XS_CC0pi_Plan -i ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_ana_Systematics%d_%d.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s_Run1_%d_Systematics%d_%d_Plan.root -f 1 -m%s",suffix,DetName,i,ErrorType,n,DetName,i,ErrorType,n,(PM?"":"w"));
+	      }
+	      else{
+		sprintf(Command6,"${INSTALLREPOSITORY}/XS_Matt/XS_CC0pi_Plan -i ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_ana_Systematics%d_%d.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s_Run1_%d_Systematics%d_%d_Plan.root -f 1 -m%s",suffix,DetName,i,ErrorType,n,DetName,i,ErrorType,n,(PM?"":"w"));
+	      }
+#endif		
+	    }
+	    else if(ErrorType >= Systematics_Flux_Start && ErrorType <= Systematics_Flux_End) continue;
 	    //sprintf(Command2,"${INSTALLREPOSITORY}/XS/XS_CC0pi_Plan -i ${MCOUTPUTSTORAGE}/PMMC_Run1_%d_wNoise_ana.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_Run1_%d_Plan_ReWeight2015.root -f 1 -m",i,i);
 
-	    else if(ErrorType>=17){
-	      if(n!=0 || ErrorType>17) continue;//this is a something only for XS errors. This is because all the error is contain in one file (the files contains nominal tree + Reweight vector) and so, we do not need to generate different files for different sources or for 7 different variations of it (-3,-2,-1,0,1,2,3)sigmas.
+	    else if(ErrorType >= Systematics_Xsec_Start && ErrorType <= Systematics_Xsec_End){
+	      if(n!=0 || ErrorType>Systematics_Xsec_Start) continue;//this is a something only for XS errors. This is because all the error is contain in one file (the files contains nominal tree + Reweight vector) and so, we do not need to generate different files for different sources or for 7 different variations of it (-3,-2,-1,0,1,2,3)sigmas.
 	      //sprintf(Command1,"source ${INSTALLREPOSITORY}/source_T2KReweight.sh");
-	      sprintf(CommandReweight,"${T2KREWEIGHTREPOSITORY}/app/genWeightsFromINGRID_2015.exe -i ${MCOUTPUTSTORAGE}/PMMC_Run1_%d.root -o ${MCOUTPUTSTORAGE}/PMMC_Run1_%d_ReWeight2015.root",i,i);
-	      sprintf(Command6,"${INSTALLREPOSITORY}/XS/XS_CC0pi_Plan -i ${MCOUTPUTSTORAGE}/PMMC_Run1_%d_wNoise_ana.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s%s_Run1_%d_ReWeight2015_Plan.root -f 1 -m -t -x ${MCOUTPUTSTORAGE}/PMMC_Run1_%d_ReWeight2015.root",i,DetName,ParticleGenerator,i,i);
+	      //if(Shrink) sprintf(CommandReweight,"${T2KREWEIGHTREPOSITORY}/app/genWeightsFromINGRID_2015.exe -i ${MCOUTPUTSTORAGE%s}/%sMC%s%s_Run1_%d_wNoise_ana_shrinked.root -o ${MCOUTPUTSTORAGE%s}/%sMC%s%s_Run1_%d_wNoise_ReWeight2015.root > /dev/null",suffix,DetName,ParticleGenerator,Sand,i,suffix,DetName,ParticleGenerator,Sand,i);
+	      //else
+	      if(GenerateReWeight){//TEMP: DUE TO DIFFERENCE OF NAMING BETWEEN WM (Nominal has no sand) and PM(Nominal has sand)
+		if(PM) sprintf(CommandReweight,"${T2KREWEIGHTREPOSITORY}/app/genWeightsFromINGRID_2015.exe -i ${MCOUTPUTSTORAGE%s}/%sMC%s%s_Numu_Run1_%d.root -t -o ${MCOUTPUTSTORAGE%s}/%sMC%s%s_Run1_%d_ReWeight2015.root > /dev/null",suffix,DetName,ParticleGenerator,Sand,i,suffix,DetName,ParticleGenerator,Sand,i);
+	    	else  sprintf(CommandReweight,"${T2KREWEIGHTREPOSITORY}/app/genWeightsFromINGRID_2015.exe -i ${MCOUTPUTSTORAGE%s}/%sMC%s%s_Run1_%d.root -t -o ${MCOUTPUTSTORAGE%s}/%sMC%s%s_Run1_%d_ReWeight2015.root > /dev/null",suffix,DetName,ParticleGenerator,Sand,i,suffix,DetName,ParticleGenerator,Sand,i);
+	      }
+	      //sprintf(Command6,"${INSTALLREPOSITORY}/XS/XS_CC0pi_Plan -i ${MCOUTPUTSTORAGE}/PMMC_Run1_%d_wNoise_ana.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s%s_Run1_%d_ReWeight2015_Plan.root -f 1 -m -t -x ${MCOUTPUTSTORAGE}/PMMC_Run1_%d_ReWeight2015.root",i,DetName,ParticleGenerator,i,i);
+#ifdef LIBRARYDIFF
+	      if(PM){
+		if(Shrink) sprintf(Command6,"${INSTALLREPOSITORY}/XS/XS_CC0pi_Plan -i ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_ana_shrinked.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s_Run1_%d_ReWeight2015_Plan.root -f 1 -m%s -x ${MCOUTPUTSTORAGE%s}/%sMC%s%s_Run1_%d_ReWeight2015.root -t",suffix,DetName,i,DetName,i,(PM?"":"w"),suffix,DetName,ParticleGenerator,Sand,i);
+		else  sprintf(Command6,"${INSTALLREPOSITORY}/XS/XS_CC0pi_Plan -i ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_ana.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s_Run1_%d_ReWeight2015_Plan.root -f 1 -m%s -x ${MCOUTPUTSTORAGE%s}/%sMC%s%s_Run1_%d_ReWeight2015.root -t",suffix,DetName,i,DetName,i,(PM?"":"w"),suffix,DetName,ParticleGenerator,Sand,i);
+	      }
+	      else{
+		if(Shrink) sprintf(Command6,"${INSTALLREPOSITORY}/XS_Matt/XS_CC0pi_Plan -i ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_ana_shrinked.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s_Run1_%d_ReWeight2015_Plan.root -f 1 -m%s -x ${MCOUTPUTSTORAGE%s}/%sMC%s%s_Run1_%d_ReWeight2015.root -t",suffix,DetName,i,DetName,i,(PM?"":"w"),suffix,DetName,ParticleGenerator,Sand,i);
+		else  sprintf(Command6,"${INSTALLREPOSITORY}/XS_Matt/XS_CC0pi_Plan -i ${MCOUTPUTSTORAGE%s}/%sMC_Run1_%d_wNoise_ana.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s_Run1_%d_ReWeight2015_Plan.root -f 1 -m%s -x ${MCOUTPUTSTORAGE%s}/%sMC%s%s_Run1_%d_ReWeight2015.root -t",suffix,DetName,i,DetName,i,(PM?"":"w"),suffix,DetName,ParticleGenerator,Sand,i);
+	      }
+#endif
+	      //sprintf(Command6,"${INSTALLREPOSITORY}/XS/XS_CC0pi_Plan -i ${MCOUTPUTSTORAGE}/PMMC_Run1_%d_wNoise_ana.root -o ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s%s_Run1_%d_ReWeight2015_Plan.root -f 1 -m -x ${MCOUTPUTSTORAGE}/PMMC_Run1_%d_ReWeight2015.root",i,DetName,ParticleGenerator,i,i);
 
 	    }
 
@@ -374,25 +509,28 @@ int main(int argc, char **argv){
 		else{
 		  ScriptMC<<"#!/bin/bash +x"<<endl;
 
-		  if(GenerateReconstruction){
-		    ScriptMC<<Command1<<endl
-			    <<Command1_1<<endl
-			    <<Command1_2<<endl
-			    <<Command1_3<<endl
-			    <<Command1_4<<endl
-			    <<Command1_5<<endl
-			    <<Command1_6<<endl
-			    <<"source ${INSTALLREPOSITORY}/source_T2KReweight.sh"<<endl//TEMP by Benjamin
-			    <<Command2<<endl
-			    <<Command3<<endl
+		  if(GeneratePID) ScriptMC<<CommandPID<<endl;
+		  else{
+		    if(GenerateReconstruction){
+		      ScriptMC/*<<Command1<<endl
+			      <<Command1_1<<endl
+			      <<Command1_2<<endl
+			      <<Command1_3<<endl
+			      <<Command1_4<<endl
+			      <<Command1_5<<endl*/
+			      <<Command1_6<<endl
+			      <<"source ${INSTALLREPOSITORY}/source_T2KReweight.sh"<<endl//TEMP by Benjamin
+			      <<Command2<<endl
+			      <<Command3<<endl
 			    <<CommandMask<<endl
-			    <<Command4<<endl
-			    <<Command5<<endl;
+			      <<Command4<<endl
+			      <<Command5<<endl;
+		    }
+		    ScriptMC<<CommandShrink<<endl
+		      //	    <<CommandReweight<<endl
+			    <<Command6<<endl
+			    <<Command7<<endl;
 		  }
-		  ScriptMC<<CommandShrink<<endl
-			  <<CommandReweight<<endl
-			  <<Command6<<endl
-			  <<Command7<<endl;
 		}
 	      }
       
@@ -593,7 +731,8 @@ int main(int argc, char **argv){
 	    <<Command01<<endl
 	    <<Command02<<endl
 	    <<Command03<<endl
-	    <<Command04<<endl;
+	    <<Command04<<endl
+	    <<Command05<<endl;
     }
   
   
@@ -636,30 +775,29 @@ int main(int argc, char **argv){
       sprintf(Name2,"%s/MC/Jobs/condorPostrequisite_Systematics%d_%d.sh",cINSTALLREPOSITORY,ErrorType,n);
       cout<<Name1<<endl;
       ofstream ScriptPost(Name1);
-      //if(ErrorType==0){
-      sprintf(Command001,"${INSTALLREPOSITORY}/XS/CC0piSelection -i ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s%s_Run1_%s_Systematics%d_%d_Plan.root -o ${INSTALLREPOSITORY}/XS/files/MCSelected_%s%s_Systematics%d_%d -s 1 -e %d -v %3.3f -m -p %2.2f %s %s",DetName,ParticleGenerator,"%d",ErrorType,n, DetName,ParticleGenerator,ErrorType,n, ErrorType,ErrorValue,DataPOT,(BkgSub?"-B":""),(PM?"":"-W"));//Yes because error type==1 is stat. error. The latter is calculated directly in the unfolding code
-      //sprintf(Command001,"${INSTALLREPOSITORY}/XS/CC0piSelection -i ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s%s_Run1_%s_Plan.root -o ${INSTALLREPOSITORY}/XS/files/MCSelected_%s%s_Systematics%d_%d -s 1 -e %d -v %3.3f -m -p %2.2f %s %s",DetName,ParticleGenerator,"%d",DetName,ParticleGenerator,ErrorType,n,ErrorType,ErrorValue,DataPOT,(BkgSub?"-B":""),(PM?"":"-W"));
-
-      sprintf(Command002,"${INSTALLREPOSITORY}/XS/CC0piSelection -i ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s%s_%s_%s_Systematics%d_%d.root -o ${INSTALLREPOSITORY}/XS/files/DataSelected_%s%s_Systematics%d_%d -s 1 -e %d -v %3.3f %s %s",DetName,ParticleGenerator,"%08d","%04d",ErrorType,n, DetName,ParticleGenerator,ErrorType,n, ErrorType,ErrorValue,(BkgSub?"-B":""),(PM?"":"-W"));
-
-      //sprintf(Command002,"${INSTALLREPOSITORY}/XS/CC0piSelection -i ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s_%s.root -o ${INSTALLREPOSITORY}/XS/files/DataSelected_Systematics%d_%d -s 1 -e %d -v %3.3f %s %s","%08d","%04d",ErrorType,n,ErrorType,ErrorValue,(BkgSub?"-B":""),(PM?"":"-W"));
+      if(ErrorType != 1){//No need to regenerate the distribution if stat error. Stat error is applied in the unfolding
+	sprintf(Command001,"${INSTALLREPOSITORY}/XS/CC0piSelection -i ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s%s_Run1_%s_Systematics%d_%d_Plan.root -o ${INSTALLREPOSITORY}/XS/files/MCSelected_%s%s_Systematics%d_%d -s 1 -e %d -v %3.3f -m -p %2.2f %s %s",DetName,ParticleGenerator,"%d",ErrorType,n, DetName,ParticleGenerator,ErrorType,n, ErrorType,ErrorValue,DataPOT,(BkgSub?"-B":""),(PM?"":"-W"));//Yes because error type==1 is stat. error. The latter is calculated directly in the unfolding code
 	
+	sprintf(Command002,"${INSTALLREPOSITORY}/XS/CC0piSelection -i ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s%s_%s_%s_Systematics%d_%d.root -o ${INSTALLREPOSITORY}/XS/files/DataSelected_%s%s_Systematics%d_%d -s 1 -e %d -v %3.3f %s %s",DetName,ParticleGenerator,"%08d","%04d",ErrorType,n, DetName,ParticleGenerator,ErrorType,n, ErrorType,ErrorValue,(BkgSub?"-B":""),(PM?"":"-W"));
+	sprintf(Command003,"${INSTALLREPOSITORY}/XS/UnfoldingOptimisation_Dvt -d ${INSTALLREPOSITORY}/XS/files/MCSelected_%s%s_Systematics%d_%d -m ${INSTALLREPOSITORY}/XS/files/MCSelected_%s%s_Systematics%d_%d -o ${INSTALLREPOSITORY}/XS/files/MCUnfolded_%s%s_Systematics%d_%d -n %d %s %s %s",DetName,ParticleGenerator,0,0,DetName,ParticleGenerator,ErrorType,n,DetName,ParticleGenerator,ErrorType,n,nIterations,FakeDataGenerator,(BkgSub?"-B":""),(PM?"":"-w"));
+      
 	if(SideBand){
 	  sprintf(SideBand_Command001,"${INSTALLREPOSITORY}/XS/CC0piSelection -i ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s%s_Run1_%s_Systematics%d_%d_Plan.root -o ${INSTALLREPOSITORY}/XS/files/MCSideBand_%s%s_Systematics%d_%d -s 2 -e %d -v %3.3f -m -p %2.2f %s",DetName,ParticleGenerator,"%d",ErrorType,n,DetName,ParticleGenerator,ErrorType,n,ErrorType,ErrorValue,DataPOT,(PM?"":"-W"));	  
-	  sprintf(SideBand_Command002,"${INSTALLREPOSITORY}/XS/CC0piSelection -i ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s%s_%s_%s_Systematics%d_%d.root -o ${INSTALLREPOSITORY}/XS/files/DataSideBand_%s%s_Systematics%d_%d -s 2 -e %d -v %3.3f %s",DetName,ParticleGenerator,"%08d","%04d",ErrorType,n, DetName,ParticleGenerator,ErrorType,n,ErrorType,ErrorValue,(PM?"":"-W"));
-	  //sprintf(SideBand_Command001,"${INSTALLREPOSITORY}/XS/CC0piSelection -i ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s%s_Run1_%s_Plan.root -o ${INSTALLREPOSITORY}/XS/files/MCSideBand_%s%s_Systematics%d_%d -s 2 -e %d -v %3.3f -m -p %2.2f %s",DetName,ParticleGenerator,"%d",DetName,ParticleGenerator,ErrorType,n,ErrorType,ErrorValue,DataPOT,(PM?"":"-W"));	  
-	  //sprintf(SideBand_Command002,"${INSTALLREPOSITORY}/XS/CC0piSelection -i ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s_%s.root -o ${INSTALLREPOSITORY}/XS/files/DataSideBand_Systematics%d_%d -s 2 -e %d -v %3.3f %s","%08d","%04d",ErrorType,n,ErrorType,ErrorValue,(PM?"":"-W"));
+	  sprintf(SideBand_Command002,"${INSTALLREPOSITORY}/XS/CC0piSelection -i ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s%s_%s_%s_Systematics%d_%d.root -o ${INSTALLREPOSITORY}/XS/files/DataSideBand_%s%s_Systematics%d_%d -s 2 -e %d -v %3.3f %s",DetName,ParticleGenerator,"%08d","%04d",0,0,DetName,ParticleGenerator,ErrorType,n,ErrorType,ErrorValue,(PM?"":"-W"));
+
+	 sprintf(Command003,"${INSTALLREPOSITORY}/XS/UnfoldingOptimisation_Dvt -d ${INSTALLREPOSITORY}/XS/files/MCSelected_%s%s_Systematics%d_%d -m ${INSTALLREPOSITORY}/XS/files/MCSelected_%s%s_Systematics%d_%d -o ${INSTALLREPOSITORY}/XS/files/MCUnfolded_%s%s_Systematics%d_%d -b ${INSTALLREPOSITORY}/XS/files/MCSideBand_%s%s_Systematics%d_%d -c ${INSTALLREPOSITORY}/XS/files/MCSideBand_%s%s_Systematics%d_%d -n %d %s %s",DetName,ParticleGenerator,0,0,DetName,ParticleGenerator,ErrorType,n,DetName,ParticleGenerator,ErrorType,n,DetName,ParticleGenerator,ErrorType,n,DetName,ParticleGenerator,ErrorType,n,nIterations,FakeDataGenerator,(PM?"":"-w"));
 	  
-	  sprintf(Command004,"${INSTALLREPOSITORY}/XS/UnfoldingOptimisation_Dvt -d ${INSTALLREPOSITORY}/XS/files/DataSelected_%s%s_Systematics%d_%d -m ${INSTALLREPOSITORY}/XS/files/MCSelected_%s%s_Systematics%d_%d -o ${INSTALLREPOSITORY}/XS/files/DataUnfolded_%s%s_Systematics%d_%d -b ${INSTALLREPOSITORY}/XS/files/DataSideBand_%s%s_Systematics%d_%d -c ${INSTALLREPOSITORY}/XS/files/MCSideBand_%s%s_Systematics%d_%d -f -n %d %s",DetName,ParticleGenerator,ErrorType,n,DetName,ParticleGenerator,ErrorType,n,DetName,ParticleGenerator,ErrorType,n,DetName,ParticleGenerator,ErrorType,n,DetName,ParticleGenerator,ErrorType,n,nIterations,FakeDataGenerator);
+	  sprintf(Command004,"${INSTALLREPOSITORY}/XS/UnfoldingOptimisation_Dvt -d ${INSTALLREPOSITORY}/XS/files/DataSelected_%s%s_Systematics%d_%d -m ${INSTALLREPOSITORY}/XS/files/MCSelected_%s%s_Systematics%d_%d -o ${INSTALLREPOSITORY}/XS/files/DataUnfolded_%s%s_Systematics%d_%d -b ${INSTALLREPOSITORY}/XS/files/DataSideBand_%s%s_Systematics%d_%d -c ${INSTALLREPOSITORY}/XS/files/MCSideBand_%s%s_Systematics%d_%d -f -n %d %s %s",DetName,ParticleGenerator,0,0,DetName,ParticleGenerator,ErrorType,n,DetName,ParticleGenerator,ErrorType,n,DetName,ParticleGenerator,0,0,DetName,ParticleGenerator,ErrorType,n,nIterations,FakeDataGenerator,(PM?"":"-w"));
 	}
-	else sprintf(Command004,"${INSTALLREPOSITORY}/XS/UnfoldingOptimisation_Dvt -d ${INSTALLREPOSITORY}/XS/files/DataSelected_%s%s_Systematics%d_%d -m ${INSTALLREPOSITORY}/XS/files/MCSelected_%s%s_Systematics%d_%d -o ${INSTALLREPOSITORY}/XS/files/DataUnfolded_%s%s_Systematics%d_%d -n %d %s %s",DetName,ParticleGenerator,ErrorType,n,DetName,ParticleGenerator,ErrorType,n,DetName,ParticleGenerator,ErrorType,n,nIterations,FakeDataGenerator,(BkgSub?"-B":""));
-	//}
+	else sprintf(Command004,"${INSTALLREPOSITORY}/XS/UnfoldingOptimisation_Dvt -d ${INSTALLREPOSITORY}/XS/files/DataSelected_%s%s_Systematics%d_%d -m ${INSTALLREPOSITORY}/XS/files/MCSelected_%s%s_Systematics%d_%d -o ${INSTALLREPOSITORY}/XS/files/DataUnfolded_%s%s_Systematics%d_%d -n %d %s %s %s",DetName,ParticleGenerator,0,0,DetName,ParticleGenerator,ErrorType,n,DetName,ParticleGenerator,ErrorType,n,nIterations,FakeDataGenerator,(BkgSub?"-B":""),(PM?"":"-w"));
+      }
       
       if(ErrorType==6){
-	sprintf(Command001,"${INSTALLREPOSITORY}/XS/CC0piSelection -i ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s%s_Run1_%s_Systematics%d_%d.root -o ${INSTALLREPOSITORY}/XS/files/MCSelected_%d%d_Systematics%d_%d -s 1 -e %d -v %3.3f -m -w %2.2f -p %2.2f %s %s",DetName,ParticleGenerator,"%d",0,0, DetName,ParticleGenerator,ErrorType,n,ErrorType,ErrorValue,DataPOT,(BkgSub?"-B":""),(PM?"":"-W"));
+	sprintf(Command001,"${INSTALLREPOSITORY}/XS/CC0piSelection -i ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s%s_Run1_%s_Systematics%d_%d_Plan.root -o ${INSTALLREPOSITORY}/XS/files/MCSelected_%s%s_Systematics%d_%d -s 1 -e %d -v %3.3f -w %3.3f -m -p %2.2f %s %s",DetName,ParticleGenerator,"%d",0,0,DetName,ParticleGenerator,ErrorType,n,ErrorType,ErrorValue,ErrorValue,DataPOT,(BkgSub?"-B":""),(PM?"":"-W"));
 	if(SideBand){
-	}	  
-	sprintf(SideBand_Command001,"${INSTALLREPOSITORY}/XS/CC0piSelection -i ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s%s_Run1_%s_Systematics%d_%d_Plan.root -o ${INSTALLREPOSITORY}/XS/files/MCSideBand_%s%s_Systematics%d_%d -s 2 -e %d -v %3.3f -m -p %2.2f %s %s",DetName,ParticleGenerator,"%d",0,0, DetName,ParticleGenerator,ErrorType,n,ErrorType,ErrorValue,DataPOT,(BkgSub?"-B":""),(PM?"":"-W"));	  
+	  sprintf(SideBand_Command001,"${INSTALLREPOSITORY}/XS/CC0piSelection -i ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s%s_Run1_%s_Systematics%d_%d_Plan.root -o ${INSTALLREPOSITORY}/XS/files/MCSideBand_%s%s_Systematics%d_%d -s 2 -e %d -v %3.3f -m -p %2.2f %s %s",DetName,ParticleGenerator,"%d",0,0, DetName,ParticleGenerator,ErrorType,n,ErrorType,ErrorValue,DataPOT,(BkgSub?"-B":""),(PM?"":"-W"));
+ 	}	  
+
       }
       /*
       else if(ErrorType!=1){	
@@ -673,20 +811,28 @@ int main(int argc, char **argv){
 	sprintf(Command002,"${INSTALLREPOSITORY}/XS/CC0piSelection -i ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s_%s_%s_Systematics%d_%d.root -o ${INSTALLREPOSITORY}/XS/files/DataSelected_Systematics%d_%d -s 1 -e %d -v %3.3f %s %s",DetName,"%08d","%04d",ErrorType,n,ErrorType,n,ErrorType,ErrorValue,(BkgSub?"-B":""),(PM?"":"-W"));
 	if(SideBand){
 	  sprintf(SideBand_Command002,"${INSTALLREPOSITORY}/XS/CC0piSelection -i ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s_%s_%s_Systematics%d_%d.root -o ${INSTALLREPOSITORY}/XS/files/DataSideBand_Systematics%d_%d -s 2 -e %d -v %3.3f %s",DetName,"%08d","%04d",ErrorType,n,ErrorType,n,ErrorType,ErrorValue,(PM?"":"-W"));
-	  sprintf(Command004,"${INSTALLREPOSITORY}/XS/UnfoldingOptimisation_Dvt -d ${INSTALLREPOSITORY}/XS/files/DataSelected_%s%s_Systematics%d_%d -m ${INSTALLREPOSITORY}/XS/files/MCSelected_%s%s_Systematics%d_%d -o ${INSTALLREPOSITORY}/XS/files/DataUnfolded_%s%s_Systematics%d_%d -b ${INSTALLREPOSITORY}/XS/files/DataSideBand_%s%s_Systematics%d_%d -c ${INSTALLREPOSITORY}/XS/files/MCSideBand_%s%s_Systematics%d_%d -n %d %s",DetName,ParticleGenerator,ErrorType,n,DetName,ParticleGenerator,ErrorType,n,DetName,ParticleGenerator,ErrorType,n,DetName,ParticleGenerator,ErrorType,n,DetName,ParticleGenerator,ErrorType,n,nIterations,FakeDataGenerator);
+	  sprintf(Command004,"${INSTALLREPOSITORY}/XS/UnfoldingOptimisation_Dvt -d ${INSTALLREPOSITORY}/XS/files/DataSelected_%s%s_Systematics%d_%d -m ${INSTALLREPOSITORY}/XS/files/MCSelected_%s%s_Systematics%d_%d -o ${INSTALLREPOSITORY}/XS/files/DataUnfolded_%s%s_Systematics%d_%d -b ${INSTALLREPOSITORY}/XS/files/DataSideBand_%s%s_Systematics%d_%d -c ${INSTALLREPOSITORY}/XS/files/MCSideBand_%s%s_Systematics%d_%d -n %d %s %s",DetName,ParticleGenerator,0,0,DetName,ParticleGenerator,ErrorType,n,DetName,ParticleGenerator,ErrorType,n,DetName,ParticleGenerator,0,0,DetName,ParticleGenerator,ErrorType,n,nIterations,FakeDataGenerator,(PM?"":"-w"));
 	}
-	else sprintf(Command004,"${INSTALLREPOSITORY}/XS/UnfoldingOptimisation_Dvt -d ${INSTALLREPOSITORY}/XS/files/DataSelected_%s%s_Systematics%d_%d -m ${INSTALLREPOSITORY}/XS/files/MCSelected_%s%s_Systematics%d_%d -o ${INSTALLREPOSITORY}/XS/files/DataUnfolded_%s%s_Systematics%d_%d -n %d %s %s",DetName,ParticleGenerator,ErrorType,n,DetName,ParticleGenerator,ErrorType,n,DetName,ParticleGenerator,ErrorType,n,nIterations,FakeDataGenerator,(BkgSub?"-B":""));
+	else sprintf(Command004,"${INSTALLREPOSITORY}/XS/UnfoldingOptimisation_Dvt -d ${INSTALLREPOSITORY}/XS/files/DataSelected_%s%s_Systematics%d_%d -m ${INSTALLREPOSITORY}/XS/files/MCSelected_%s%s_Systematics%d_%d -o ${INSTALLREPOSITORY}/XS/files/DataUnfolded_%s%s_Systematics%d_%d -n %d %s %s %s",DetName,ParticleGenerator,0,0,DetName,ParticleGenerator,ErrorType,n,DetName,ParticleGenerator,ErrorType,n,nIterations,FakeDataGenerator,(BkgSub?"-B":""),(PM?"":"-w"));
 	//sprintf(Command004,"${INSTALLREPOSITORY}/XS/UnfoldingOptimisation_Dvt -d ${INSTALLREPOSITORY}/XS/files/DataSelected_Systematics%d_%d -m ${INSTALLREPOSITORY}/XS/files/MCSelected_Systematics%d_%d -o ${INSTALLREPOSITORY}/XS/files/DataUnfolded_Systematics%d_%d -n 3",ErrorType,n,ErrorType,n,ErrorType,n);
       }
-      else if(ErrorType==16){
-	sprintf(Command001,"${INSTALLREPOSITORY}/XS/CC0piSelection -i ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s%s_Run1_%s_Plan.root -o ${INSTALLREPOSITORY}/XS/files/MCSelected_%s%s_Systematics%d_%d -s 1 -e %d -v %3.3f -m -p %2.2f %s %s",DetName,ParticleGenerator,"%d",DetName,ParticleGenerator,ErrorType,n,ErrorType,ErrorValue,DataPOT,(BkgSub?"-B":""),(PM?"":"-W"));
+      
+      else if(ErrorType >= Systematics_Flux_Start && ErrorType <= Systematics_Flux_End){
+      sprintf(Command001,"${INSTALLREPOSITORY}/XS/CC0piSelection -i ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s%s_Run1_%s_Systematics%d_%d_Plan.root -o ${INSTALLREPOSITORY}/XS/files/MCSelected_%s%s_Systematics%d_%d -s 1 -e %d -v %3.3f -m -p %2.2f %s %s",DetName,ParticleGenerator,"%d",0,0, DetName,ParticleGenerator,ErrorType,n, ErrorType,ErrorValue,DataPOT,(BkgSub?"-B":""),(PM?"":"-W"));//Yes because error type==1 is stat. error. The latter is calculated directly in the unfolding code
+      sprintf(Command002,"${INSTALLREPOSITORY}/XS/CC0piSelection -i ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s%s_%s_%s_Systematics%d_%d.root -o ${INSTALLREPOSITORY}/XS/files/DataSelected_%s%s_Systematics%d_%d -s 1 -e %d -v %3.3f %s %s",DetName,ParticleGenerator,"%08d","%04d",0,0, DetName,ParticleGenerator,ErrorType,n, ErrorType,ErrorValue,(BkgSub?"-B":""),(PM?"":"-W"));
+	
 	if(SideBand){
-	  sprintf(SideBand_Command001,"${INSTALLREPOSITORY}/XS/CC0piSelection -i ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s%s_Run1_%s_Plan.root -o ${INSTALLREPOSITORY}/XS/files/MCSideBand_%s%s_Systematics%d_%d -s 2 -e %d -v %3.3f -m -p %2.2f %s",DetName,ParticleGenerator,"%d",DetName,ParticleGenerator,ErrorType,n,ErrorType,ErrorValue,DataPOT,(PM?"":"-W"));
-	} 
+	  sprintf(SideBand_Command001,"${INSTALLREPOSITORY}/XS/CC0piSelection -i ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s%s_Run1_%s_Systematics%d_%d_Plan.root -o ${INSTALLREPOSITORY}/XS/files/MCSideBand_%s%s_Systematics%d_%d -s 2 -e %d -v %3.3f -m -p %2.2f %s",DetName,ParticleGenerator,"%d",0,0,DetName,ParticleGenerator,ErrorType,n,ErrorType,ErrorValue,DataPOT,(PM?"":"-W"));	  
+	  sprintf(SideBand_Command002,"${INSTALLREPOSITORY}/XS/CC0piSelection -i ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s%s_%s_%s_Systematics%d_%d.root -o ${INSTALLREPOSITORY}/XS/files/DataSideBand_%s%s_Systematics%d_%d -s 2 -e %d -v %3.3f %s",DetName,ParticleGenerator,"%08d","%04d",0,0, DetName,ParticleGenerator,ErrorType,n,ErrorType,ErrorValue,(PM?"":"-W"));
+	}
+	//sprintf(Command001,"${INSTALLREPOSITORY}/XS/CC0piSelection -i ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s%s_Run1_%s_Plan.root -o ${INSTALLREPOSITORY}/XS/files/MCSelected_%s%s_Systematics%d_%d -s 1 -e %d -v %3.3f -m -p %2.2f %s %s",DetName,ParticleGenerator,"%d",DetName,ParticleGenerator,ErrorType,n,ErrorType,ErrorValue,DataPOT,(BkgSub?"-B":""),(PM?"":"-W"));
+	//if(SideBand){
+	//sprintf(SideBand_Command001,"${INSTALLREPOSITORY}/XS/CC0piSelection -i ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s%s_Run1_%s_Plan.root -o ${INSTALLREPOSITORY}/XS/files/MCSideBand_%s%s_Systematics%d_%d -s 2 -e %d -v %3.3f -m -p %2.2f %s",DetName,ParticleGenerator,"%d",DetName,ParticleGenerator,ErrorType,n,ErrorType,ErrorValue,DataPOT,(PM?"":"-W"));
+	//} 
 	cout <<"Flux" << endl;
 	//sprintf(Command001,"${INSTALLREPOSITORY}/XS/CC0piSelection -i ${INSTALLREPOSITORY}/XS/root_input/XSFormat_Run1_%s_Plan.root -o ${INSTALLREPOSITORY}/XS/files/MCSelected_Systematics%d_%d -s 1 -e %d -v %3.3f -m -p %2.2f","%d",ErrorType,n,ErrorType,ErrorValue,DataPOT);	
       }
-      else if(ErrorType>=17){
+      else if(ErrorType >= Systematics_Xsec_Start && ErrorType <= Systematics_Xsec_End){
 	//double XsecVariation=ErrorValue-CenterXsecVariations*(ErrorType-Systematics_Xsec_Start);//The variation of Xsec parameter, in #sigma. A number between 0 and 175 - the center of the current systematic source (nominal). For example, for Xsec error source #10, it starts from 7*(10-1)=63 and ends at 70. from 63 to 70, it contains the variariation of -3,-2,-1,0,1,2,3 sigma respectively. The center is then located at 66. For the example of a 2 sigma variation, the substraction will be therefore equal to: 68-66=2, which gives the number of sigmas!
 	sprintf(Command001,"${INSTALLREPOSITORY}/XS/CC0piSelection -i ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s%s_Run1_%s_ReWeight2015_Plan.root -o ${INSTALLREPOSITORY}/XS/files/MCSelected_%s%s_Systematics%d_%d -s 1 -e %d -v %3.3f -m -t -p %2.2f %s %s",DetName,ParticleGenerator,"%d",DetName,ParticleGenerator,ErrorType,n,ErrorType,ErrorValue,DataPOT,(BkgSub?"-B":""),(PM?"":"-W"));
 	if(SideBand){
@@ -695,13 +841,10 @@ int main(int argc, char **argv){
 	//sprintf(Command001,"${INSTALLREPOSITORY}/XS/CC0piSelection -i ${INSTALLREPOSITORY}/XS/root_input/XSFormat_%s_Run1_%s_ReWeight2015_Plan.root -o ${INSTALLREPOSITORY}/XS/files/MCSelected_Systematics%d_%d -s 1 -e %d -v %3.3f -m -p %2.2f","%d",DetName,ErrorType,n,ErrorType,ErrorValue,DataPOT);
       }
     
-      if(SideBand) sprintf(Command003,"${INSTALLREPOSITORY}/XS/UnfoldingOptimisation_Dvt -d ${INSTALLREPOSITORY}/XS/files/MCSelected_%s%s_Systematics0_0 -m ${INSTALLREPOSITORY}/XS/files/MCSelected_%s%s_Systematics%d_%d -o ${INSTALLREPOSITORY}/XS/files/MCUnfolded_%s%s_Systematics%d_%d -b ${INSTALLREPOSITORY}/XS/files/MCSideBand_%s%s_Systematics%d_%d -c ${INSTALLREPOSITORY}/XS/files/MCSideBand_%s%s_Systematics%d_%d -n %d %s",DetName,ParticleGenerator,DetName,ParticleGenerator,ErrorType,n,DetName,ParticleGenerator,ErrorType,n,DetName,ParticleGenerator,ErrorType,n,DetName,ParticleGenerator,ErrorType,n,nIterations,FakeDataGenerator);
-      else sprintf(Command003,"${INSTALLREPOSITORY}/XS/UnfoldingOptimisation_Dvt -d ${INSTALLREPOSITORY}/XS/files/MCSelected_%s%s_Systematics0_0 -m ${INSTALLREPOSITORY}/XS/files/MCSelected_%s%s_Systematics%d_%d -o ${INSTALLREPOSITORY}/XS/files/MCUnfolded_%s%s_Systematics%d_%d -n %d %s %s",DetName,ParticleGenerator,DetName,ParticleGenerator,ErrorType,n,DetName,ParticleGenerator,ErrorType,n,nIterations,FakeDataGenerator,(BkgSub?"-B":""));
-      //else sprintf(Command003,"${INSTALLREPOSITORY}/XS/UnfoldingOptimisation_Dvt -d ${INSTALLREPOSITORY}/XS/files/MCSelected_%s%s_Systematics0_0 -m ${INSTALLREPOSITORY}/XS/files/MCSelected_%s%s_Systematics%d_%d -o ${INSTALLREPOSITORY}/XS/files/MCUnfolded_%s%s_Systematics%d_%d -n 3 -f",DetName,ParticleGenerator,DetName,ParticleGenerator,ErrorType,n,DetName,ParticleGenerator,ErrorType,n);
        
       if(ErrorType==1){
-	if(SideBand) sprintf(Command003,"${INSTALLREPOSITORY}/XS/UnfoldingOptimisation_Dvt -d ${INSTALLREPOSITORY}/XS/files/MCSelected_%s%s_Systematics0_0 -m ${INSTALLREPOSITORY}/XS/files/MCSelected_%s%s_Systematics0_0 -o ${INSTALLREPOSITORY}/XS/files/MCUnfolded_%s%s_Systematics%d_%d -n 3 -b ${INSTALLREPOSITORY}/XS/files/MCSideBand_%s%s_Systematics0_0 -c ${INSTALLREPOSITORY}/XS/files/MCSideBand_%s%s_Systematics0_0 -n %d -s 1",DetName,ParticleGenerator,DetName,ParticleGenerator,DetName,ParticleGenerator,ErrorType,n,DetName,ParticleGenerator,DetName,ParticleGenerator,nIterations);
-	else sprintf(Command003,"${INSTALLREPOSITORY}/XS/UnfoldingOptimisation_Dvt -d ${INSTALLREPOSITORY}/XS/files/MCSelected_%s%s_Systematics0_0 -m ${INSTALLREPOSITORY}/XS/files/MCSelected_%s%s_Systematics0_0 -o ${INSTALLREPOSITORY}/XS/files/MCUnfolded_%s%s_Systematics%d_%d -n %d -s 1 %s",DetName,ParticleGenerator,DetName,ParticleGenerator,DetName,ParticleGenerator,ErrorType,n,nIterations,(BkgSub?"-B":""));
+	if(SideBand) sprintf(Command003,"${INSTALLREPOSITORY}/XS/UnfoldingOptimisation_Dvt -d ${INSTALLREPOSITORY}/XS/files/MCSelected_%s%s_Systematics0_0 -m ${INSTALLREPOSITORY}/XS/files/MCSelected_%s%s_Systematics0_0 -o ${INSTALLREPOSITORY}/XS/files/MCUnfolded_%s%s_Systematics%d_%d -n 3 -b ${INSTALLREPOSITORY}/XS/files/MCSideBand_%s%s_Systematics0_0 -c ${INSTALLREPOSITORY}/XS/files/MCSideBand_%s%s_Systematics0_0 -n %d -s 2 -S %s",DetName,ParticleGenerator,DetName,ParticleGenerator,DetName,ParticleGenerator,ErrorType,n,DetName,ParticleGenerator,DetName,ParticleGenerator,nIterations,(PM?"":"-w"));
+	else sprintf(Command003,"${INSTALLREPOSITORY}/XS/UnfoldingOptimisation_Dvt -d ${INSTALLREPOSITORY}/XS/files/MCSelected_%s%s_Systematics0_0 -m ${INSTALLREPOSITORY}/XS/files/MCSelected_%s%s_Systematics0_0 -o ${INSTALLREPOSITORY}/XS/files/MCUnfolded_%s%s_Systematics%d_%d -n %d -s 2 %s -S %s",DetName,ParticleGenerator,DetName,ParticleGenerator,DetName,ParticleGenerator,ErrorType,n,nIterations,(BkgSub?"-B":""),(PM?"":"-w"));
       }
       //sprintf(Command003,"${INSTALLREPOSITORY}/XS/UnfoldingOptimisation_Dvt -d ${INSTALLREPOSITORY}/XS/files/MCSelected_Systematics%d_%d -m ${INSTALLREPOSITORY}/XS/files/MCSelected_Systematics%d_%d -o ${INSTALLREPOSITORY}/XS/files/MCUnfolded_Systematics%d_%d -n 3",ErrorType,n,ErrorType,n,ErrorType,n);// Not for stat. variations, since unfolded is already done differently
       //if(ErrorType==1) sprintf(Command003,"${INSTALLREPOSITORY}/XS/UnfoldingOptimisation_Dvt -d ${INSTALLREPOSITORY}/XS/files/MCSelected_Systematics0_0 -m ${INSTALLREPOSITORY}/XS/files/MCSelected_Systematics0_0 -o ${INSTALLREPOSITORY}/XS/files/MCUnfolded_Systematics%d_%d -n 3 -s 1",ErrorType,n);
@@ -710,11 +853,11 @@ int main(int argc, char **argv){
       if(ScriptPost)
 	{
 	  ScriptPost<<"#!/bin/bash +x"<<endl;
-
-	    if(MC){
-	      ScriptPost<<Command001<<endl
+	  
+	  if(MC){
+	    ScriptPost<<Command001<<endl
 			<<SideBand_Command001<<endl;
-	    }
+	  }
 	    if(Data) ScriptPost<<Command002<<endl;
 	    if(MC) ScriptPost<<Command003<<endl;
 	    if(Data) ScriptPost<<Command004<<endl;

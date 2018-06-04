@@ -11,22 +11,22 @@
   
   int NBins=Cov->GetNbinsX();//Number of INGRID module x energy bins.
   cout<<"Total number of bins="<<NBins<<endl;
-  int NRand=1e4;
+  int NRand=1e3;
   int NBinsMod=20;//Number of energy bins.
   TMatrixDSym Cov2(NBinsMod);
-  int Module=3;  
+  int NeutrinoMode=0;  
 
   //1. Fill the erro vector and the correlation matrix
   for(int k1=0;k1<NBins;k1++){//Run over all the bins: INGRID module and energy.
     //cout<<"k1="<<k1<<endl;
     int m1=(int) (k1/NBinsMod);//Provide the module number
-    int x=k1-NBinsMod*Module;//Provide the energy bin numnber
+    int x=k1-NBinsMod*NeutrinoMode;//Provide the energy bin numnber
     for(int k2=0;k2<NBins;k2++){
       //cout<<"k2="<<k2<<endl;
      int m2=(int) (k2/NBinsMod);
-      if(m1!=Module || m2!=Module) continue;
+      if(m1!=NeutrinoMode || m2!=NeutrinoMode) continue;
       else{
-	int y=k2-NBinsMod*Module;
+	int y=k2-NBinsMod*NeutrinoMode;
 	cout<<x<<", "<<y<<endl;
 	//Cov2(0,0)=3;
 	Cov2(x,y)=Cov->GetBinContent(k1+1,k2+1);
@@ -62,7 +62,7 @@
   TVectorD * Var = new TVectorD(NBinsMod);
   int NMods=(int) NBins/NBinsMod;
   char Name[256];
-  TFile *fwr = new TFile("ErrorVarFinal_mod3.root","RECREATE");
+  TFile *fwr = new TFile("ErrorFlux_mod3.root","RECREATE");
 
   
   //////////////////////////////////////////////////////////

@@ -56,10 +56,10 @@ double INGRIDSCIBAR=2.0;
 Int_t Scyc =  4;
 Int_t Ncyc = 12;
 int NMod=17;
-int NPln=11;
-int NPlnPM=18;
-int NPlnWM=24;
-int NView=2;
+const int NPln=11;
+const int NPlnPM=18;
+const int NPlnWM=24;
+const int NView=2;
 int NCh=24;
 int NChPM=32;
 int NChWM=40;
@@ -78,12 +78,12 @@ const float Mpi=139.57/1000.;
 float EpiBins[5]={0,0.25,0.50,0.75,1};
 float EpiReWeight[5]={0.135,0.4,0.294,1.206,1};
 const int StartRun=14510;//13000;
-const int EndRun=14510;//17218;
+const int EndRun=14600;//600;//17218;
 const int StartSubRun=0;
 const int EndSubRun=300;
 const int StartRunList=14;//Which list will be read (14=>14000.txt). Necessary to use only run processed
 const int EndRunList=17;//Which list will be read (14=>14000.txt). Necessary to use only run processed
-double NMCfiles=100; // up to now only 1000 are available with NEUT 5.3.6
+double NMCfiles=1000; // up to now only 1000 are available with NEUT 5.3.6
 
 double DataPOTPM=0.58;//In units of 10^21 POT -- runs 234
 //double DataPOTPM=0.76;//In units of 10^21 POT -- runs 234  (+56)
@@ -91,12 +91,10 @@ double DataPOTWM=0.72;//In units of 10^21 POT -- run 8
 
 double DataPOT;
 const int StartError=0;
-const int EndError=0;//36;//15 for det, 17 for det+flux, 37 for det+flux+xs, 38 to add NEUT tunings
-const int MaxError=36;
+const int EndError=39;//37;//15 for det, 17 for det+flux, 37 for det+flux+xs, 38 to add NEUT tunings
+const int MaxError=39;
 
 int NFluxFiles;
-int StartXsec=0;const int EndXsec=19;int NXsecVariations=7; int NXsecTunings=7;
-int CenterXsecVariations=(int) (NXsecVariations-1-((double) (NXsecVariations-1)/2));
 
 int NE[MaxError+1];
 double Step[MaxError+1];
@@ -105,22 +103,30 @@ double End[MaxError+1];
 
 double Nominal; double Err;
 const int Systematics_Detector_Start=2;
-const int Systematics_Detector_End=15;
-const int Systematics_Flux_Start=17;
-const int Systematics_Flux_End=17;
-const int Systematics_Xsec_Start=18;
+const int Systematics_Detector_End=17;
+const int Systematics_Flux_Start=18;
+const int Systematics_Flux_End=19;
+const int Systematics_Xsec_Start=20;
+int StartXsec=0;const int EndXsec=MaxError - Systematics_Xsec_Start;int NXsecVariations=7; int NXsecTunings=7;
 const int Systematics_Xsec_End=Systematics_Xsec_Start+EndXsec;
+int CenterXsecVariations=(int) (NXsecVariations-1-((double) (NXsecVariations-1)/2));
 bool EStatistics=true;//if true, estimate stat. error after unfolding
 const int NStatisticalVariations=1000;//number of stat. varied toy experiments to evaluate the stat. error.
     
 const int NSamples = 6;//number of track samples, see Reconstruction.cc
 const int LimitTracks = 5;
-const int LimitHits = 25;
+const int LimitHits = 5;
 double RangeRelativeDistance = 1.;
-const int NDials=175; //NXsecVariations*(EndXsec+1) + NXsecTunings
+const int NDials=147; //NXsecVariations*(EndXsec+1) + NXsecTunings
 //For particle gun
 const int npdg=4;
 int pdgValues[npdg]={13,211,-211,2212};
+double GoodTracksCut = 15;//Sum of angle differences in degrees. Represent the sum of the the absolute angle differences (in X and Y views) between a rec and its simulated matched track.
+int CutNHitsPID = 2;
+double NTargetWM_h2o = 9.781e28;
+double NTargetWM_sci = 2.470e28;
+double NTargetPM = 1.889e29;
+double NTargetWM = ((double) NTargetWM_h2o + NTargetWM_sci);
 
 const int NBinsEnergyFlux=20;
 double BinningEnergyFlux[NBinsEnergyFlux+1];
@@ -152,6 +158,8 @@ int NBinsRecAngleSB=30;
 //int NBinsRecAngleSB=1;
 //int NBinsTrueMomSB=1;
 //int NBinsTrueAngleSB=1;
+int NBinsRecMomTrash=17+1;//+1 is the through going bin
+int NBinsRecAngleTrash=30;
 int NBinsTrueMomSB=1;//5;
 int NBinsTrueAngleSB=1;//5;
 //
@@ -183,8 +191,10 @@ double * BinningTrueAngleTrash;
 double * BinningRecMomTrash;
 double * BinningRecAngleTrash;
 
-bool IsTrueMomTrashBin[5]={true,false,false,false,true};
-bool IsTrueAngleTrashBin[5]={false,false,false,false,true};
+int NTrashBinsMom = 2 + NBinsTrueMomSB + NBinsTrueMomTrash;
+int NTrashBinsAngle = 1 + NBinsTrueAngleSB + NBinsTrueAngleTrash;
+bool * IsTrueMomTrashBin;//[NBinsTrueMom];
+bool * IsTrueAngleTrashBin;//[NBinsTrueAngle];
 const int NBinsPiRecMom=13;// ML 2017/12/08
 double * BinningPiRecMom;// ML 2017/12/08
 
@@ -309,6 +319,19 @@ void InitializeGlobal(bool PM=true, int Selection=1){
   for(int i=1;i<=NBinsTrueAngleSB;i++) BinningTrueAngle[i+NBinsTrueAngleSignal] = BinningTrueAngleSB[i];//skip i=0, since i=0 is botht the higher bin limit for signal and lower for SB
   for(int i=1;i<=NBinsTrueAngleTrash;i++) BinningTrueAngle[i+NBinsTrueAngleSignal+NBinsTrueAngleSB] = BinningTrueAngleTrash[i];
 
+
+  IsTrueMomTrashBin = new bool[NBinsTrueMom];
+  IsTrueAngleTrashBin = new bool[NBinsTrueAngle];
+  for(int imom=0;imom<NBinsTrueMom;imom++){
+    if(imom == 0) IsTrueMomTrashBin[imom] = true;
+    else if(imom >= NBinsTrueMomSignal -1) IsTrueMomTrashBin[imom] = true;
+    else IsTrueMomTrashBin[imom] = false;
+  }
+  for(int iang=0;iang<NBinsTrueAngle;iang++){
+    if(iang >= NBinsTrueAngleSignal -1) IsTrueAngleTrashBin[iang] = true;
+    else IsTrueAngleTrashBin[iang] = false;
+  }
+
   /*
   //Signal
   BinningTrueMom[0]=0;
@@ -389,6 +412,31 @@ void InitializeGlobal(bool PM=true, int Selection=1){
     
     //Rec Angle
     for(int i=0;i<NBinsRecAngleSB+1;i++){
+      BinningRecAngle[i]=3*i;
+    }
+    /*    BinningRecMom[0]=0;
+    BinningRecMom[1]=150;
+    BinningRecAngle[0]=0;
+    BinningRecAngle[1]=180;*/
+  }
+  else if(Selection == 3){
+    NBinsRecMom = NBinsRecMomTrash;
+    NBinsRecAngle = NBinsRecAngleTrash;
+    
+    BinningRecMom = new double[NBinsRecMom+1];
+    BinningRecAngle = new double[NBinsRecAngle+1];
+
+    //Rec Momentum
+    for(int i=0;i<NBinsRecMomTrash+1;i++){
+      BinningRecMom[0]=0;
+      BinningRecMom[1]=10;    
+      if(i>1 && i<(NBinsRecMomTrash-1)) BinningRecMom[i]=10+5*(i-1);
+      if(i==NBinsRecMomTrash-1) BinningRecMom[i]=90;
+      if(i==NBinsRecMomTrash) BinningRecMom[i]=100;//This is the through-going bin.
+    }
+    
+    //Rec Angle
+    for(int i=0;i<NBinsRecAngleTrash+1;i++){
       BinningRecAngle[i]=3*i;
     }
     /*    BinningRecMom[0]=0;
@@ -546,9 +594,23 @@ void InitializeGlobal(bool PM=true, int Selection=1){
 	Step[n]=Err;
 	NE[n]=3;
       }
+      else if(n==16){//16: cross talk (in the WM only) -- added ML 2018/03/20
+	if(PM){
+	  NE[n]=0;
+	}
+	else {  // only two values are tested : 0.5% and 1.5%
+	  Start[n]=0.005;
+	  Step[n]=0.01;
+	  NE[n]=2;
+	}
+      }
+      else if(n==17){//17: Secondary variations -- Note BQ 2018/04/10: added also by ML
+	// only one change in G4 physics list
+	NE[n]=1;
+      }
     }
     else if(n>=Systematics_Flux_Start && n<=Systematics_Flux_End){
-      if(n==16){//16: flux error
+      if(n == Systematics_Flux_Start ){//18: flux error
 	Nominal=0;
 	Err=1;
 	Start[n]=Nominal;
@@ -556,7 +618,7 @@ void InitializeGlobal(bool PM=true, int Selection=1){
 	NE[n]=500;
 	NFluxFiles=NE[n];
       }
-      else if(n==17){//17: Beam contamination (Antinu,Nue) 
+      else if(n == Systematics_Flux_Start+1 ){//19: Beam contamination (Antinu,Nue) 
 	Nominal=0.0;
 	Err=0.1;
 	Start[n]=Nominal-Err;
@@ -564,7 +626,7 @@ void InitializeGlobal(bool PM=true, int Selection=1){
 	NE[n]=3;
       }
     }
-    else if(n>=Systematics_Xsec_Start && n<=Systematics_Xsec_End){//18-: cross section error
+    else if(n>=Systematics_Xsec_Start && n<=Systematics_Xsec_End){//20-: cross section error
       //one should separate the place in the reweight vector, and the real starts of the Xsection.
       //Real start=0. Place in the Xsection vector is (StartXsec+n)*NXsecVariations.
       Start[n]=(StartXsec+(n-Systematics_Xsec_Start))*NXsecVariations;

@@ -1,4 +1,3 @@
-
 //#check if error value for xsec is really -3,-2,-1,0,1,2,3
 #include<iostream>
 #include<sstream>
@@ -52,10 +51,9 @@ using namespace std;
 //#define RECONSTRUCTED 
 
 //Step 0. comment #define DETECTORSYST if you wish to study straight XS and Flux systematics
-//#define DETECTORSYST 
+#define DETECTORSYST 
 #define DEBUG
 #define BADTUNING
-#define SCALINGBUG
 //#define XSTABLE
 //3 modes should not be mixed:
 //1. Predictions MC: (Varied MC - varied bkg) - (Fixed MC - fixed bkg)
@@ -64,41 +62,19 @@ using namespace std;
 //U.(Fixed MC - varied bkg) - U.(Fixed MC - fixed bkg)
 // So, if we wish to evaluate the variation of MC prediction: this is the mode 0. For the real systematics, select the mode 1
 const int MODE=1;
-const int NXS = 20;
-string NameXSParam[NXS] =        {"Fermi momentum $^{12}$C",
-				  "Fermi momentum $^{16}$O",
-				  "Binding energy $^{12}$C",
-				  "Binding energy $^{16}$O",
-				  "MEC norm. $^{12}$C",
-				  "MEC norm. $^{16}$O",
-				  "$M_{A}^{QE}$",
-				  "$C_{A}$",
-				  "$M_{A}^{RES}$",
-				  "$I_{bkg}$",
-				  "CC-other shape",
-				  "CC-co$herent norm.",
-				  "NC-coherent norm.",
-				  "NC-other shape",
-				  "FSI $\\pi$ absorption",
-				  "FSI charge exchange, LE",
-				  "FSI charge exchange, HE",
-				  "FSI $\\pi$ QE scattering, LE",
-				  "FSI $\\pi$ QE scattering, HE",
-				  "FSI $\\pi$ production"};
 
-inline bool IsReducedXSSyst(int s){ // for model. These corresponds to model tuning (ex: from RFG to SF)
+inline bool IsReducedXSSyst(int s){ // for model
   return (s==4 || s==5 || s==14 || s==15 || s==17 || s==19);
 }
 
 inline bool IsReadyDetSyst(int s){
-  return (s==6 || s==5);
+  return (s==3 || s==4 || s==6 || s==5);
 }
 
 inline bool IsReadySyst(int s){
   return (IsReadyDetSyst(s) || s>Systematics_Detector_End || s<Systematics_Detector_Start);
 }
 
-      
 
 void Evaluate1DError(TH2D * NominalMC, double **** CovarianceMatrix, TH1D * NominalMC_RecMom, TH1D * NominalMC_RecAngle){
 
@@ -271,9 +247,8 @@ int main(int argc, char ** argv){
     }
   }
 
-  cout<<NTargetWM<<", H2O = "<<NTargetWM_h2o<<endl;
   if(ratio || water) {
-    normalized=false;
+    normalized=true;
     PM=false; //WM is used as first file
   }
   if(!FakeData) allIters=false;
@@ -342,30 +317,22 @@ int main(int argc, char ** argv){
   double ** DataReconstructedEvents = new double*[NBinsRecMom];
   double ** MCReconstructedEvents = new double*[NBinsRecMom];
   double ** MCTrueEvents = new double*[NBinsRecMom];
-  // for combined analysis (water or ratio)
-  double ** MCReconstructedEvents_h2o = new double*[NBinsRecMom];
-  double ** MCReconstructedEvents_ch = new double*[NBinsRecMom];
-  double ** MCTrueEvents_h2o = new double*[NBinsRecMom];
-  double ** MCTrueEvents_ch = new double*[NBinsRecMom];
  
   for(int i=0;i<NBinsRecMom;i++){
     DataReconstructedEvents[i] = new double [NBinsRecAngle];
     MCReconstructedEvents[i] = new double [NBinsRecAngle];
-    MCReconstructedEvents_h2o[i] = new double [NBinsRecAngle];
-    MCReconstructedEvents_ch[i] = new double [NBinsRecAngle];
     MCTrueEvents[i] = new double [NBinsRecAngle];
-    MCTrueEvents_h2o[i] = new double [NBinsRecAngle];
-    MCTrueEvents_ch[i] = new double [NBinsRecAngle];
     for(int j=0;j<NBinsRecAngle;j++){
       DataReconstructedEvents[i][j] = 0;
       MCReconstructedEvents[i][j] = 0;
-      MCReconstructedEvents_h2o[i][j] = 0;
-      MCReconstructedEvents_ch[i][j] = 0;
       MCTrueEvents[i][j] = 0;
-      MCTrueEvents_h2o[i][j] = 0;
-      MCTrueEvents_ch[i][j] = 0;
     }
   }
+  // for combined analysis (water or ratio)
+  double MCReconstructedEvents_h2o[NBinsMom][NBinsAngle];
+  double MCTrueEvents_h2o[NBinsMom][NBinsAngle];
+  double MCReconstructedEvents_ch[NBinsMom][NBinsAngle];
+  double MCTrueEvents_ch[NBinsMom][NBinsAngle];
 
   //For check of MC purity etc...
   double Efficiency[NBinsTrueMom][NBinsTrueAngle];
@@ -526,13 +493,11 @@ int main(int argc, char ** argv){
 #endif
     TH1D * NominalSelectedMC_RecAngle = new TH1D("NominalSelectedMC_RecAngle","#theta_{#mu} distribution of selected events",NBinsAngle,BinningAngle);
     TH2D * NominalSelectedMC_XSTemp = new TH2D("NominalSelectedMC_XSTemp","",NBinsMom,BinningMom,NBinsAngle,BinningAngle);
-    TH2D * NominalSelectedMC_XSTemp_ch = new TH2D("NominalSelectedMC_XSTemp_ch","",NBinsMom,BinningMom,NBinsAngle,BinningAngle);
-    TH2D * NominalSelectedMC_XSTemp_h2o = new TH2D("NominalSelectedMC_XSTemp_h2o","",NBinsMom,BinningMom,NBinsAngle,BinningAngle);
 
     TH2D * NominalTrueMC = new TH2D("NominalTrueMC","",NBinsMom,BinningMom,NBinsAngle,BinningAngle);
     TH2D * NominalTrueMC_ch = new TH2D("NominalTrueMC_ch","",NBinsMom,BinningMom,NBinsAngle,BinningAngle);
     TH2D * NominalTrueMC_h2o = new TH2D("NominalTrueMC_h2o","",NBinsMom,BinningMom,NBinsAngle,BinningAngle);
-  
+
     TH2D * Error_Minus[EndError+1]; TH2D * Error_Plus[EndError+1];
     TH2D * Error_Minus_ch[EndError+1]; TH2D * Error_Plus_ch[EndError+1];
     TH2D * Error_Minus_h2o[EndError+1]; TH2D * Error_Plus_h2o[EndError+1];
@@ -628,8 +593,8 @@ int main(int argc, char ** argv){
 
     double TotalValue=0., TotalValue_ch=0., TotalValue_h2o=0.;
 
-    double RelativeErrorWM[Systematics_Detector_End+1]={0,0.8,0.05,2.,0,0,0,0.6,0.82,0.41,0.31,0.13,0,0.35,.60,0,0,0};
-    double RelativeErrorPM[Systematics_Detector_End+1]={0,1.1,0.47,1.04,0,0,0,0.58,0.58,0,0.18,0.12,0,0.97,.27,0,0,0};
+    double RelativeErrorWM[Systematics_Detector_End+1]={0,0,0.10,0,0,0,0,0.6,0.82,0.41,0.31,0.13,0,0.35,.60,0};
+    double RelativeErrorPM[Systematics_Detector_End+1]={0,0,0.12,0,0,0,0,0.58,0.58,0,0.18,0.12,0,0.97,.27,0};
 
     TH1D* h_test=new TH1D("gaus_test","gaus_test",100,-5,5);
     TH1D* h_test_red=new TH1D("gaus_test_red","gaus_test",100,-5,5);
@@ -669,11 +634,11 @@ int main(int argc, char ** argv){
       cout<<"The error currently tested is number "<<ErrorType<<endl;
 
 #ifndef DETECTORSYST
-      //if(ErrorType>=Systematics_Detector_Start && ErrorType<=Systematics_Detector_End) continue;
+      if(ErrorType>=Systematics_Detector_Start && ErrorType<=Systematics_Detector_End) continue;
       //    if(ErrorType>=Systematics_Detector_Start && ErrorType<=16) continue;
 #endif
 
-    
+        
       //##############################HISTOGRAM INITIALIZATION#########################################
       //Error_Minus and _Plus are used for simple cov matrix; filled with RELATIVE ERRORS
       Error_Minus[ErrorType] = new TH2D(Form("Error_Minus[%d]",ErrorType),"",NBinsMom,BinningMom,NBinsAngle,BinningAngle);
@@ -738,7 +703,7 @@ int main(int argc, char ** argv){
       //##############################SELECTED ERRORS#########################################
       if (FakeData && ErrorType>1) continue;
       //if (ErrorType > 1 && ErrorType < 18) continue;
-      //if (ErrorType > 1 && ErrorType < 18 && ErrorType != 3 && ErrorType != 4 && ErrorType != 5 && ErrorType != 6 ) continue;
+      if (ErrorType > 1 && ErrorType < 18 && ErrorType != 3 && ErrorType != 4 && ErrorType != 5 && ErrorType != 6 ) continue;
       if (ErrorType == 19) continue;
       //      if (ErrorType>=18 && ErrorType<=22) continue;
 #ifdef RECONSTRUCTED
@@ -770,31 +735,8 @@ int main(int argc, char ** argv){
 
 #else
 #ifdef DETECTORSYST
-      //if(ErrorType==2 && !FakeData) NE[ErrorType]=2; // Scaled errors put in this slot
-      //else if(!IsReadySyst(ErrorType)) continue;
-      if(useKogaDetError && !IsReadySyst(ErrorType)){
-	cout<<"Use CC inclusive errors: "<<useKogaDetError<<", is ready: "<<IsReadySyst(ErrorType)<<endl;
-	double RelativeError=(PM?RelativeErrorPM[ErrorType]:RelativeErrorWM[ErrorType])/100.;
-	for(int e0=0;e0<NBinsMom;e0++){
-	  for(int e1=0;e1<NBinsAngle;e1++){
-	    //MC = SIGNAL Nominal MC - BKG Varied MC. Note that SIGNAL Nominal MC = SELECTED Nominal MC + BKG Nominal MC.  
-	    double Value1 = NominalSelectedMC->GetBinContent(e0+1,e1+1)*(1+RelativeError);
-	    double Error1=Value1-NominalSelectedMC->GetBinContent(e0+1,e1+1);
-	    //double Value1=NominalSelectedMC->GetBinContent(e0+1,e1+1);
-	    cout<<std::scientific<<setprecision(3)<<"Error type = "<<ErrorType<<", value = "<<Value1<<", Error = "<<Error1<<endl; 
-	    //Error_Minus[ErrorType]->SetBinContent(e0+1,e1+1,-fabs(Error1));
-	    //Error_Plus[ErrorType]->SetBinContent(e0+1,e1+1,+fabs(Error1));
-	    for(int f0=0;f0<NBinsMom;f0++){
-	      for(int f1=0;f1<NBinsAngle;f1++){
-		double Value2 =NominalSelectedMC->GetBinContent(f0+1,f1+1)*(1+RelativeError);
-		double Error2=Value2-NominalSelectedMC->GetBinContent(f0+1,f1+1);
-		CovarianceReduced[ErrorType][e0][e1][f0][f1]=Error1*Error2;
-	      } 
-	    }
-	  }
-	}
-	continue;
-      }
+      if(ErrorType==2 && !FakeData) NE[ErrorType]=2; // Scaled errors put in this slot
+      else if(!IsReadySyst(ErrorType)) continue;
 #else
       if(!IsReadySyst(ErrorType)) continue;
 #endif
@@ -835,50 +777,21 @@ int main(int argc, char ** argv){
 	  }
 	}
 #else
+	if(SideBand) sprintf(txtMCName,"%s/XS/files/SB/MCUnfolded_%s_Systematics%d_%d.root",cINSTALLREPOSITORY,DetName,ErrorType,n);
+	else sprintf(txtMCName,"%s/XS/files/MCUnfolded_%s_Systematics%d_%d.root",cINSTALLREPOSITORY,DetName,ErrorType,n);
+	if(ErrorType>=7 && ErrorType<=Systematics_Detector_End) sprintf(txtDataName,"%s/XS/files/DataUnfolded_%s_Systematics%d_%d.txt",cINSTALLREPOSITORY,DetName,ErrorType,n);
+	else if(ErrorType==0 && EndError>=7 && StartError<=Systematics_Detector_End) sprintf(txtDataName,"%s/XS/files/DataUnfolded_%s_Systematics%d_%d%s.txt",cINSTALLREPOSITORY,DetName,ErrorType,n);
+	else sprintf(txtDataName,"%s/XS/files/DataUnfolded_%s_Systematics%d_%d.txt",cINSTALLREPOSITORY,DetName,ErrorType,n);
 
-	if(water || ratio){
-	  sprintf(DetName,"WM");
-	  if(SideBand) sprintf(txtMCName,"%s/XS/files/SB/MCUnfolded_%s_Systematics%d_%d.root",cINSTALLREPOSITORY,DetName,ErrorType,n);
-	  else sprintf(txtMCName,"%s/XS/files/MCUnfolded_%s_Systematics%d_%d.root",cINSTALLREPOSITORY,DetName,ErrorType,n);
-	  if(ErrorType>=7 && ErrorType<=Systematics_Detector_End) sprintf(txtDataName,"%s/XS/files/DataUnfolded_%s_Systematics%d_%d.txt",cINSTALLREPOSITORY,DetName,ErrorType,n);
-	  else if(ErrorType==0 && EndError>=7 && StartError<=Systematics_Detector_End) sprintf(txtDataName,"%s/XS/files/DataUnfolded_%s_Systematics%d_%d%s.txt",cINSTALLREPOSITORY,DetName,ErrorType,n);
-	  else sprintf(txtDataName,"%s/XS/files/DataUnfolded_%s_Systematics%d_%d.txt",cINSTALLREPOSITORY,DetName,ErrorType,n);
-	  XS->Xsec::LoadInputFiles_OnlyUnfoldedData((MC? txtMCName : txtDataName),MCReconstructedEvents_h2o,MCTrueEvents_h2o);
-
-	  sprintf(DetName,"PM");
-	  if(SideBand) sprintf(txtMCName,"%s/XS/files/SB/MCUnfolded_%s_Systematics%d_%d.root",cINSTALLREPOSITORY,DetName,ErrorType,n);
-	  else sprintf(txtMCName,"%s/XS/files/MCUnfolded_%s_Systematics%d_%d.root",cINSTALLREPOSITORY,DetName,ErrorType,n);
-	  if(ErrorType>=7 && ErrorType<=Systematics_Detector_End) sprintf(txtDataName,"%s/XS/files/DataUnfolded_%s_Systematics%d_%d.txt",cINSTALLREPOSITORY,DetName,ErrorType,n);
-	  else if(ErrorType==0 && EndError>=7 && StartError<=Systematics_Detector_End) sprintf(txtDataName,"%s/XS/files/DataUnfolded_%s_Systematics%d_%d%s.txt",cINSTALLREPOSITORY,DetName,ErrorType,n);
-	  else sprintf(txtDataName,"%s/XS/files/DataUnfolded_%s_Systematics%d_%d.txt",cINSTALLREPOSITORY,DetName,ErrorType,n);
-	  XS->Xsec::LoadInputFiles_OnlyUnfoldedData((MC? txtMCName : txtDataName),MCReconstructedEvents_ch,MCTrueEvents_ch);
-	}
-	else{
-	  if(SideBand) sprintf(txtMCName,"%s/XS/files/SB/MCUnfolded_%s_Systematics%d_%d.root",cINSTALLREPOSITORY,DetName,ErrorType,n);
-	  else sprintf(txtMCName,"%s/XS/files/MCUnfolded_%s_Systematics%d_%d.root",cINSTALLREPOSITORY,DetName,ErrorType,n);
-	  if(ErrorType>=7 && ErrorType<=Systematics_Detector_End) sprintf(txtDataName,"%s/XS/files/DataUnfolded_%s_Systematics%d_%d.txt",cINSTALLREPOSITORY,DetName,ErrorType,n);
-	  else if(ErrorType==0 && EndError>=7 && StartError<=Systematics_Detector_End) sprintf(txtDataName,"%s/XS/files/DataUnfolded_%s_Systematics%d_%d%s.txt",cINSTALLREPOSITORY,DetName,ErrorType,n);
-	  else sprintf(txtDataName,"%s/XS/files/DataUnfolded_%s_Systematics%d_%d.txt",cINSTALLREPOSITORY,DetName,ErrorType,n);
-	  XS->Xsec::LoadInputFiles_OnlyUnfoldedData((MC? txtMCName : txtDataName),MCReconstructedEvents,MCTrueEvents);
-	} 
+	if(MC) XS->Xsec::LoadInputFiles_OnlyUnfoldedData(txtMCName,MCReconstructedEvents,MCTrueEvents);
+	else XS->Xsec::LoadInputFiles_OnlyUnfoldedData(txtDataName,DataReconstructedEvents,MCTrueEvents);
+    
 #endif
 	for(int e0=0;e0<NBinsMom;e0++){//loop over effect 0
 	  for(int e1=0;e1<NBinsAngle;e1++){//loop over effect 1
 	    NominalSelectedMC_XSTemp->SetBinContent(e0+1,e1+1,MCReconstructedEvents[e0][e1]);
-	    NominalSelectedMC_XSTemp_ch->SetBinContent(e0+1,e1+1,MCReconstructedEvents_ch[e0][e1]);
-	    NominalSelectedMC_XSTemp_h2o->SetBinContent(e0+1,e1+1,MCReconstructedEvents_h2o[e0][e1]);
-	    // WM --> water
-	    double ScaledWM;
-#ifdef SCALINGBUG
-	    ScaledWM = (NTargetWM*NominalSelectedMC_XSTemp_h2o->GetBinContent(e0+1,e1+1))/NTargetWM_h2o;
-#else
-	    ScaledWM = (NTargetWM*NominalSelectedMC_XSTemp_h2o->GetBinContent(e0+1,e1+1)-NTargetWM_sci*NominalSelectedMC_XSTemp_ch->GetBinContent(e0+1,e1+1))/NTargetWM_h2o;
-#endif
-	    NominalSelectedMC_XSTemp_h2o->SetBinContent(e0+1,e1+1,ScaledWM);
-	    
 	  }
 	}
-
       }
 #endif
 
@@ -911,19 +824,15 @@ int main(int argc, char ** argv){
 	}
 
 	//2. Load files
-	/*
-	if(water || ratio){
-	  if(SideBand){
-	    XS->Xsec::LoadInputFilesSB((MC? txtMCName : txtDataName),txtMCName,txtMCNameSB,txtMCNameSB,MCReconstructedEvents_TrueSignal,(MC? MCReconstructedEvents_h2o:DataReconstructedEvents_h20),MCReconstructedEvents_h2o,MCReconstructedBkgEvents,Efficiency,NumberOfPOT);
-	    XS->Xsec::LoadInputFilesSB((MC? txtMCName : txtDataName),txtMCName,txtMCNameSB,txtMCNameSB,MCReconstructedEvents_TrueSignal,(MC? MCReconstructedEvents_ch:DataReconstructedEvents_ch),MCReconstructedEvents_ch,MCReconstructedBkgEvents,Efficiency,NumberOfPOT);
-	  }
-
+	if(SideBand){
+	  if(MC) XS->Xsec::LoadInputFilesSB(txtMCName,txtMCName,txtMCNameSB,txtMCNameSB,MCReconstructedEvents_TrueSignal,MCReconstructedEvents,MCReconstructedEvents,MCReconstructedBkgEvents,Efficiency,NumberOfPOT);
+	  else XS->Xsec::LoadInputFilesSB(txtDataName,txtMCName,txtDataNameSB,txtMCNameSB,MCReconstructedEvents_TrueSignal,DataReconstructedEvents,MCReconstructedEvents,MCReconstructedBkgEvents,Efficiency,NumberOfPOT);
 	}
-	  else{
-	    */
-	    if(SideBand) XS->Xsec::LoadInputFilesSB((MC? txtMCName : txtDataName),txtMCName,txtMCNameSB,txtMCNameSB,MCReconstructedEvents_TrueSignal,(MC? MCReconstructedEvents:DataReconstructedEvents),MCReconstructedEvents,MCReconstructedBkgEvents,Efficiency,NumberOfPOT);
-	    else XS->Xsec::LoadInputFiles((MC? txtMCName : txtDataName),txtMCName,MCReconstructedEvents_TrueSignal,(MC? MCReconstructedEvents:DataReconstructedEvents),MCReconstructedEvents,MCReconstructedBkgEvents,Efficiency,NumberOfPOT);
-      	  
+	else{
+	  if(MC) XS->Xsec::LoadInputFiles(txtMCName,txtMCName,MCReconstructedEvents_TrueSignal,MCReconstructedEvents,MCReconstructedEvents,MCReconstructedBkgEvents,Efficiency,NumberOfPOT);
+	  else XS->Xsec::LoadInputFiles(txtDataName,txtMCName,MCReconstructedEvents_TrueSignal,DataReconstructedEvents,MCReconstructedEvents,MCReconstructedBkgEvents,Efficiency,NumberOfPOT);
+	}
+
 	//3. Perform background substraction in the case of selected data (already done in the case of unfolded data)
 	for(int e0=0;e0<NBinsMom;e0++){//loop over effect 0
 	  for(int e1=0;e1<NBinsAngle;e1++){//loop over effect 1
@@ -934,32 +843,15 @@ int main(int argc, char ** argv){
 	  }
 	}
 #else
+	if(SideBand) sprintf(txtMCName,"%s/XS/files/SB/MCUnfolded_%s_Systematics%d_%d.root",cINSTALLREPOSITORY,DetName,ErrorType,n);
+	else sprintf(txtMCName,"%s/XS/files/MCUnfolded_%s_Systematics%d_%d.root",cINSTALLREPOSITORY,DetName,ErrorType,n);
+	if(ErrorType>=7 && ErrorType<=Systematics_Detector_End) sprintf(txtDataName,"%s/XS/files/DataUnfolded_%s_Systematics%d_%d.txt",cINSTALLREPOSITORY,DetName,ErrorType,n);
+	else if(ErrorType==0 && EndError>=7 && StartError<=Systematics_Detector_End) sprintf(txtDataName,"%s/XS/files/DataUnfolded_%s_Systematics%d_%d%s.txt",cINSTALLREPOSITORY,DetName,ErrorType,n);
+	else sprintf(txtDataName,"%s/XS/files/DataUnfolded_%s_Systematics%d_%d.txt",cINSTALLREPOSITORY,DetName,ErrorType,n);
 
-	if(water || ratio){
-	  sprintf(DetName,"WM");
-	  if(SideBand) sprintf(txtMCName,"%s/XS/files/SB/MCUnfolded_%s_Systematics%d_%d.root",cINSTALLREPOSITORY,DetName,ErrorType,n);
-	  else sprintf(txtMCName,"%s/XS/files/MCUnfolded_%s_Systematics%d_%d.root",cINSTALLREPOSITORY,DetName,ErrorType,n);
-	  if(ErrorType>=7 && ErrorType<=Systematics_Detector_End) sprintf(txtDataName,"%s/XS/files/DataUnfolded_%s_Systematics%d_%d.txt",cINSTALLREPOSITORY,DetName,ErrorType,n);
-	  else if(ErrorType==0 && EndError>=7 && StartError<=Systematics_Detector_End) sprintf(txtDataName,"%s/XS/files/DataUnfolded_%s_Systematics%d_%d%s.txt",cINSTALLREPOSITORY,DetName,ErrorType,n);
-	  else sprintf(txtDataName,"%s/XS/files/DataUnfolded_%s_Systematics%d_%d.txt",cINSTALLREPOSITORY,DetName,ErrorType,n);
-	  XS->Xsec::LoadInputFiles_OnlyUnfoldedData((MC? txtMCName : txtDataName),MCReconstructedEvents_h2o,MCTrueEvents_h2o);
-	  
-	  sprintf(DetName,"PM");
-	  if(SideBand) sprintf(txtMCName,"%s/XS/files/SB/MCUnfolded_%s_Systematics%d_%d.root",cINSTALLREPOSITORY,DetName,ErrorType,n);
-	  else sprintf(txtMCName,"%s/XS/files/MCUnfolded_%s_Systematics%d_%d.root",cINSTALLREPOSITORY,DetName,ErrorType,n);
-	  if(ErrorType>=7 && ErrorType<=Systematics_Detector_End) sprintf(txtDataName,"%s/XS/files/DataUnfolded_%s_Systematics%d_%d.txt",cINSTALLREPOSITORY,DetName,ErrorType,n);
-	  else if(ErrorType==0 && EndError>=7 && StartError<=Systematics_Detector_End) sprintf(txtDataName,"%s/XS/files/DataUnfolded_%s_Systematics%d_%d%s.txt",cINSTALLREPOSITORY,DetName,ErrorType,n);
-	  else sprintf(txtDataName,"%s/XS/files/DataUnfolded_%s_Systematics%d_%d.txt",cINSTALLREPOSITORY,DetName,ErrorType,n);
-	  XS->Xsec::LoadInputFiles_OnlyUnfoldedData((MC? txtMCName : txtDataName),MCReconstructedEvents_ch,MCTrueEvents_ch);
-	}
-	else{
-	  if(SideBand) sprintf(txtMCName,"%s/XS/files/SB/MCUnfolded_%s_Systematics%d_%d.root",cINSTALLREPOSITORY,DetName,ErrorType,n);
-	  else sprintf(txtMCName,"%s/XS/files/MCUnfolded_%s_Systematics%d_%d.root",cINSTALLREPOSITORY,DetName,ErrorType,n);
-	  if(ErrorType>=7 && ErrorType<=Systematics_Detector_End) sprintf(txtDataName,"%s/XS/files/DataUnfolded_%s_Systematics%d_%d.txt",cINSTALLREPOSITORY,DetName,ErrorType,n);
-	  else if(ErrorType==0 && EndError>=7 && StartError<=Systematics_Detector_End) sprintf(txtDataName,"%s/XS/files/DataUnfolded_%s_Systematics%d_%d%s.txt",cINSTALLREPOSITORY,DetName,ErrorType,n);
-	  else sprintf(txtDataName,"%s/XS/files/DataUnfolded_%s_Systematics%d_%d.txt",cINSTALLREPOSITORY,DetName,ErrorType,n);
-	  XS->Xsec::LoadInputFiles_OnlyUnfoldedData((MC? txtMCName : txtDataName),MCReconstructedEvents,MCTrueEvents);
-	}
+	if(MC) XS->Xsec::LoadInputFiles_OnlyUnfoldedData(txtMCName,MCReconstructedEvents,MCTrueEvents);
+	else XS->Xsec::LoadInputFiles_OnlyUnfoldedData(txtDataName,DataReconstructedEvents,MCTrueEvents);
+    
 #endif
     /////////////////////////////////
 
@@ -984,28 +876,15 @@ int main(int argc, char ** argv){
 #else
 	    if(water || ratio){
 	      // WM --> water
-#ifdef SCALINGBUG
-	      cout<<"Scaling bug = "<< NTargetWM/NTargetWM_h2o << endl;
-	      MCReconstructedEvents_h2o[e0][e1] = (NTargetWM*MCReconstructedEvents_h2o[e0][e1])/NTargetWM_h2o;
-	      MCTrueEvents_h2o[e0][e1] = (NTargetWM*MCTrueEvents_h2o[e0][e1])/NTargetWM_h2o;
-#else
-	      cout<<"No scaling bug"<< endl;
 	      MCReconstructedEvents_h2o[e0][e1] = (NTargetWM*MCReconstructedEvents_h2o[e0][e1]-NTargetWM_sci*MCReconstructedEvents_ch[e0][e1])/NTargetWM_h2o;
 	      MCTrueEvents_h2o[e0][e1] = (NTargetWM*MCTrueEvents_h2o[e0][e1]-NTargetWM_sci*MCTrueEvents_ch[e0][e1])/NTargetWM_h2o;
-#endif
-	      //DataReconstructedEvents_h2o[e0][e1] = (NTargetWM*DataReconstructedEvents_h2o[e0][e1]-NTargetWM_sci*DataReconstructedEvents_ch[e0][e1])/NTargetWM_h2o;
-	      //DataTrueEvents_h2o[e0][e1] = (NTargetWM*DataTrueEvents_h2o[e0][e1]-NTargetWM_sci*DataTrueEvents_ch[e0][e1])/NTargetWM_h2o;
 	      if(ratio){
-		MCReconstructedEvents[e0][e1]=MCReconstructedEvents_h2o[e0][e1]/( MCReconstructedEvents_ch[e0][e1] == 0 ? 1 : MCReconstructedEvents_ch[e0][e1]);
-		MCTrueEvents[e0][e1]=MCTrueEvents_h2o[e0][e1]/( MCTrueEvents_ch[e0][e1] == 0 ? 1 : MCTrueEvents_ch[e0][e1]);
-		//DataReconstructedEvents[e0][e1]=DataReconstructedEvents_h2o[e0][e1]/( DataReconstructedEvents_ch[e0][e1] == 0 ? 1 : DataReconstructedEvents_ch[e0][e1]);
-		//DataTrueEvents[e0][e1]=DataTrueEvents_h2o[e0][e1]/( DataTrueEvents_ch[e0][e1] == 0 ? 1 : DataTrueEvents_ch[e0][e1]);
+		MCReconstructedEvents[e0][e1]=MCReconstructedEvents_h2o[e0][e1]/MCReconstructedEvents_ch[e0][e1];
+		MCTrueEvents[e0][e1]=MCTrueEvents_h2o[e0][e1]/MCTrueEvents_ch[e0][e1];
 	      }
 	      if(water){
 		MCReconstructedEvents[e0][e1]=MCReconstructedEvents_h2o[e0][e1];
 		MCTrueEvents[e0][e1]=MCTrueEvents_h2o[e0][e1];
-		//DataReconstructedEvents[e0][e1]=DataReconstructedEvents_h2o[e0][e1];
-		//DataTrueEvents[e0][e1]=DataTrueEvents_h2o[e0][e1];
 	      }
 	    }
 #endif
@@ -1045,12 +924,11 @@ int main(int argc, char ** argv){
 	      NominalMCBkg->SetBinContent(e0+1,e1+1,MCReconstructedBkgEvents[e0][e1]);
 
 	      if(!UseTrashBins ||( !IsTrueMomTrashBin[e0] && !IsTrueAngleTrashBin[e1])){
-		double BinningWidth = (BinningMom[e0+1]-BinningMom[e0])*(BinningAngle[e1+1]-BinningAngle[e1]);
 		if(ratio){
-		  TotalValue_h2o+=NominalSelectedMC_h2o->GetBinContent(e0+1,e1+1)*BinningWidth;
-		  TotalValue_ch+=NominalSelectedMC_ch->GetBinContent(e0+1,e1+1)*BinningWidth;
+		  TotalValue_h2o+=NominalSelectedMC_h2o->GetBinContent(e0+1,e1+1);
+		  TotalValue_ch+=NominalSelectedMC_ch->GetBinContent(e0+1,e1+1);
 		}
-		else TotalValue+=NominalSelectedMC->GetBinContent(e0+1,e1+1)*BinningWidth;
+		else TotalValue+=NominalSelectedMC->GetBinContent(e0+1,e1+1);
 	      }
 	    }
 	  
@@ -1250,12 +1128,10 @@ int main(int argc, char ** argv){
 #ifdef DEBUG
 	      cout<<"XS: N = "<<n<<", bin "<<e0<<","<<e1<<" = "<<MCReconstructedEvents[e0][e1]<<endl;
 #endif
-	     
-#ifdef BADTUNING 
- 	      if(NominalSelectedMC_XSTemp->GetBinContent(e0+1,e1+1)!=0) RelativeMC/=NominalSelectedMC_XSTemp->GetBinContent(e0+1,e1+1);
-#else
-	      if(NominalSelectedMC->GetBinContent(e0+1,e1+1)!=0) RelativeMC/=NominalSelectedMC->GetBinContent(e0+1,e1+1);
-#endif
+	      
+	      if(NominalSelectedMC_XSTemp->GetBinContent(e0+1,e1+1)!=0) RelativeMC/=NominalSelectedMC_XSTemp->GetBinContent(e0+1,e1+1);
+	      //if(NominalSelectedMC->GetBinContent(e0+1,e1+1)!=0) RelativeMC/=NominalSelectedMC->GetBinContent(e0+1,e1+1);
+ 
 	      ErrorXS[ErrorType-Systematics_Xsec_Start][e0][e1]->Fill(XsecVariation,RelativeMC);	    
 	      ErrorXS_Norm[ErrorType-Systematics_Xsec_Start][e0][e1]->Fill(XsecVariation);
 	      //cout<<XsecVariation<<endl;
@@ -1268,23 +1144,14 @@ int main(int argc, char ** argv){
 
 	      if(ratio){
 		double RelativeMC_ch=MCReconstructedEvents_ch[e0][e1];
-#ifdef BADTUNING 
-		if(NominalSelectedMC_XSTemp_ch->GetBinContent(e0+1,e1+1)!=0) RelativeMC_ch/=NominalSelectedMC_XSTemp_ch->GetBinContent(e0+1,e1+1);
-		cout<<setprecision(3)<<std::scientific<<"Varied = "<<MCReconstructedEvents_ch[e0][e1]<<", unvaried = "<<NominalSelectedMC_XSTemp_ch->GetBinContent(e0+1,e1+1)<<endl;
-#else
 		if(NominalSelectedMC_ch->GetBinContent(e0+1,e1+1)!=0) RelativeMC_ch/=NominalSelectedMC_ch->GetBinContent(e0+1,e1+1);
-#endif
 		xXS_ch[ErrorType-Systematics_Xsec_Start][e0][e1][((int) (XsecVariation+CenterXsecVariations))]=XsecVariation;
 		yXS_ch[ErrorType-Systematics_Xsec_Start][e0][e1][((int) (XsecVariation+CenterXsecVariations))]=RelativeMC_ch;
 		xXS_reduced_ch[ErrorType-Systematics_Xsec_Start][e0][e1][((int) (XsecVariation+CenterXsecVariations-2))]=XsecVariation;
 		yXS_reduced_ch[ErrorType-Systematics_Xsec_Start][e0][e1][((int) (XsecVariation+CenterXsecVariations-2))]=RelativeMC_ch;
 		
 		double RelativeMC_h2o=MCReconstructedEvents_h2o[e0][e1];
-#ifdef BADTUNING 
-		if(NominalSelectedMC_XSTemp_h2o->GetBinContent(e0+1,e1+1)!=0) RelativeMC_h2o/=NominalSelectedMC_XSTemp_h2o->GetBinContent(e0+1,e1+1);
-#else
 		if(NominalSelectedMC_h2o->GetBinContent(e0+1,e1+1)!=0) RelativeMC_h2o/=NominalSelectedMC_h2o->GetBinContent(e0+1,e1+1);
-#endif
 		xXS_h2o[ErrorType-Systematics_Xsec_Start][e0][e1][((int) (XsecVariation+CenterXsecVariations))]=XsecVariation;
 		yXS_h2o[ErrorType-Systematics_Xsec_Start][e0][e1][((int) (XsecVariation+CenterXsecVariations))]=RelativeMC_h2o;
 		xXS_reduced_h2o[ErrorType-Systematics_Xsec_Start][e0][e1][((int) (XsecVariation+CenterXsecVariations-2))]=XsecVariation;
@@ -1603,7 +1470,7 @@ int main(int argc, char ** argv){
     //#########################SPECIAL TREATMENT FOR XSECTION SOURCE: THE CORRELATION IS ALSO CHECKED BETWEEN THE ERROR SOUCRES (NOT ONLY THE BINS)
     //--- although here no correlations is assumed in the computation of the total CovarianceXS ... -----
     double TotalRelxsError[EndXsec+1]={0};
-    bool CorrelateMEC=false;
+    bool CorrelateMEC=false;//true;
     double MEC_C_O_corr=1;
     if(EndError>=Systematics_Xsec_Start && !FakeData){
       //cout<<"hello"<<endl;
@@ -1615,7 +1482,7 @@ int main(int argc, char ** argv){
       double NEventsXS1_ch,NEventsXS2_ch,NEventsXS1_h2o,NEventsXS2_h2o;
       double NEventsXS1b_ch,NEventsXS2b_ch,NEventsXS1b_h2o,NEventsXS2b_h2o;
 
-      int NToysXsec=5000;
+      int NToysXsec=5;//5000;
       TRandom3 * rxs = new TRandom3();
       rxs->SetSeed(0);
 
@@ -1647,10 +1514,7 @@ int main(int argc, char ** argv){
 	      if(ratio){
  		NEventsXS1_ch=NominalSelectedMC_ch->GetBinContent(e0+1,e1+1)*(sErrorXS_ch[s1][e0][e1]->Eval(Error)-1);
 		NEventsXS1_h2o=NominalSelectedMC_h2o->GetBinContent(e0+1,e1+1)*(sErrorXS_h2o[s1][e0][e1]->Eval(Error)-1);
-#ifdef BADTUNING
-		NEventsXS1_ch=NominalSelectedMC_ch->GetBinContent(e0+1,e1+1)*(sErrorXS_ch[s1][e0][e1]->Eval(Error)-1);
-		NEventsXS1_h2o=NominalSelectedMC_h2o->GetBinContent(e0+1,e1+1)*(sErrorXS_h2o[s1][e0][e1]->Eval(Error)-1);
-#endif
+
 		if(CorrelateMEC && s1==4){
 		  NEventsXS1b_ch=NominalSelectedMC_ch->GetBinContent(e0+1,e1+1)*(sErrorXS_ch[s1+1][e0][e1]->Eval(Error)-1);
 		  NEventsXS1b_h2o=NominalSelectedMC_h2o->GetBinContent(e0+1,e1+1)*(sErrorXS_h2o[s1+1][e0][e1]->Eval(Error)-1);
@@ -1736,21 +1600,17 @@ int main(int argc, char ** argv){
 	    if(NominalSelectedMC->GetBinContent(e0+1,e1+1)!=0) err/=NominalSelectedMC->GetBinContent(e0+1,e1+1);
 	    Error_Minus[Systematics_Xsec_Start+s1]->SetBinContent(e0+1,e1+1,-err);
 	    Error_Plus[Systematics_Xsec_Start+s1]->SetBinContent(e0+1,e1+1,err);
-
-	    double BinningWidth1 = (BinningMom[e0+1]-BinningMom[e0])*(BinningAngle[e1+1]-BinningAngle[e1]);
-
+	  
 	    for(int f0=0;f0<NBinsMom;f0++){//loop over effect 0
 	      if(UseTrashBins && IsTrueMomTrashBin[f0]) continue;
 	      for(int f1=0;f1<NBinsAngle;f1++){//loop over effect 1
 		if(UseTrashBins && IsTrueAngleTrashBin[f1]) continue;
-
-		double BinningWidth2 = (BinningMom[f0+1]-BinningMom[f0])*(BinningAngle[f1+1]-BinningAngle[f1]);
 		if(ratio){
-		  TotalRelxsError[s1] += BinningWidth1*BinningWidth2*CovarianceReducedTargets[Systematics_Xsec_Start+s1][e0][e1][f0][f1][0][0]/pow(TotalValue_h2o,2.);
-		  TotalRelxsError[s1] += BinningWidth1*BinningWidth2*CovarianceReducedTargets[Systematics_Xsec_Start+s1][e0][e1][f0][f1][1][1]/pow(TotalValue_ch,2.);
-		  TotalRelxsError[s1] += -2*BinningWidth1*BinningWidth2*CovarianceReducedTargets[Systematics_Xsec_Start+s1][e0][e1][f0][f1][1][0]/(TotalValue_ch*TotalValue_h2o);
+		  TotalRelxsError[s1] +=CovarianceReducedTargets[Systematics_Xsec_Start+s1][e0][e1][f0][f1][0][0]/pow(TotalValue_h2o,2.);
+		  TotalRelxsError[s1] +=CovarianceReducedTargets[Systematics_Xsec_Start+s1][e0][e1][f0][f1][1][1]/pow(TotalValue_ch,2.);
+		  TotalRelxsError[s1] += -2*CovarianceReducedTargets[Systematics_Xsec_Start+s1][e0][e1][f0][f1][1][0]/(TotalValue_ch*TotalValue_h2o);
 		}
-		else TotalRelxsError[s1]+=BinningWidth1*BinningWidth2*CovarianceReduced[Systematics_Xsec_Start+s1][e0][e1][f0][f1];
+		else TotalRelxsError[s1]+=CovarianceReduced[Systematics_Xsec_Start+s1][e0][e1][f0][f1];
 
 		/*CorrelationXS[e0][e1][f0][f1]=CovarianceXS[e0][e1][e0][e1];		
 		double Diagonal=CovarianceXS[e0][e1][e0][e1]*CovarianceXS[f0][f1][f0][f1];
@@ -1909,7 +1769,6 @@ int main(int argc, char ** argv){
       for(int e1=0;e1<NBinsAngle;e1++){//loop over effect 1
 	for(int f0=0;f0<NBinsMom;f0++){//loop over effect 0
 	  for(int f1=0;f1<NBinsAngle;f1++){//loop over effect 1
-
 	    /*	    CovarianceTotal[e0][e1][f0][f1]=CovarianceFlux[e0][e1][f0][f1]+CovarianceXS[e0][e1][f0][f1];
 #ifdef DETECTORSYST
 	    for(int ErrorType=Systematics_Detector_Start;ErrorType<=Systematics_Detector_End;ErrorType++){
@@ -2054,29 +1913,26 @@ int main(int argc, char ** argv){
       double Value_ch=0,Value_h2o=0;
       for(int e1=0;e1<NBinsAngle;e1++){//loop over effect 1
 	if(UseTrashBins && IsTrueAngleTrashBin[e1]) continue;
-	double BinningWidth1 = (BinningAngle[e1+1]-BinningAngle[e1]);
-	Value+=BinningWidth1*NominalSelectedMC->GetBinContent(e0+1,e1+1);
+	Value+=NominalSelectedMC->GetBinContent(e0+1,e1+1);
 	if(ratio){
-	  Value_ch+=BinningWidth1*NominalSelectedMC_ch->GetBinContent(e0+1,e1+1);
-	  Value_h2o+=BinningWidth1*NominalSelectedMC_h2o->GetBinContent(e0+1,e1+1);
+	  Value_ch+=NominalSelectedMC_ch->GetBinContent(e0+1,e1+1);
+	  Value_h2o+=NominalSelectedMC_h2o->GetBinContent(e0+1,e1+1);
 	}
       }
       if(ratio) Value=Value_h2o/Value_ch;
-    
+
 #ifndef RECONSTRUCTED    
       for(int e1=0;e1<NBinsAngle;e1++){//loop over effect 1
 	if(UseTrashBins && IsTrueAngleTrashBin[e1]) continue;
-	double BinningWidth1 = (BinningAngle[e1+1]-BinningAngle[e1]);	
 	for(int f1=0;f1<NBinsAngle;f1++){//loop over effect 1
 	  if(UseTrashBins && IsTrueAngleTrashBin[f1]) continue;
-	  double BinningWidth2 = (BinningAngle[f1+1]-BinningAngle[f1]);
 	  if(ratio){
-	    ErrorSquared+=BinningWidth1*BinningWidth2*CovarianceStatisticsTargets[e0][e1][e0][f1][0][0]/pow(Value_h2o,2.);
-	    ErrorSquared+=BinningWidth1*BinningWidth2*CovarianceStatisticsTargets[e0][e1][e0][f1][1][1]/pow(Value_ch,2.);
-	    ErrorSquared+= -BinningWidth1*BinningWidth2*CovarianceStatisticsTargets[e0][e1][e0][f1][1][0]/(Value_ch*Value_h2o);
-	    ErrorSquared+= -BinningWidth1*BinningWidth2*CovarianceStatisticsTargets[e0][e1][e0][f1][0][1]/(Value_ch*Value_h2o);
+	    ErrorSquared+=CovarianceStatisticsTargets[e0][e1][e0][f1][0][0]/pow(Value_h2o,2.);
+	    ErrorSquared+=CovarianceStatisticsTargets[e0][e1][e0][f1][1][1]/pow(Value_ch,2.);
+	    ErrorSquared+= -CovarianceStatisticsTargets[e0][e1][e0][f1][1][0]/(Value_ch*Value_h2o);
+	    ErrorSquared+= -CovarianceStatisticsTargets[e0][e1][e0][f1][0][1]/(Value_ch*Value_h2o);
 	  }
-	  else  ErrorSquared+=BinningWidth1*BinningWidth2*CovarianceStatistics[e0][e1][e0][f1];
+	  else  ErrorSquared+=CovarianceStatistics[e0][e1][e0][f1];
 	}
       }
       if(ratio) ErrorSquared=ErrorSquared*pow(Value,2.);
@@ -2104,11 +1960,10 @@ int main(int argc, char ** argv){
       double Value_ch=0,Value_h2o=0;
       for(int e0=0;e0<NBinsMom;e0++){//loop over effect 1
 	if(UseTrashBins && IsTrueMomTrashBin[e0]) continue;
-	double BinningWidth1 = (BinningMom[e0+1]-BinningMom[e0]);
-	Value+=BinningWidth1*NominalSelectedMC->GetBinContent(e0+1,e1+1)/**(BinningTrueMom[e0+1]-BinningTrueMom[e0])*/;
+	Value+=NominalSelectedMC->GetBinContent(e0+1,e1+1)/**(BinningTrueMom[e0+1]-BinningTrueMom[e0])*/;
 	if(ratio){
-	  Value_ch+=BinningWidth1*NominalSelectedMC_ch->GetBinContent(e0+1,e1+1);
-	  Value_h2o+=BinningWidth1*NominalSelectedMC_h2o->GetBinContent(e0+1,e1+1);
+	  Value_ch+=NominalSelectedMC_ch->GetBinContent(e0+1,e1+1);
+	  Value_h2o+=NominalSelectedMC_h2o->GetBinContent(e0+1,e1+1);
 	}
       }
       if(ratio) Value=Value_h2o/Value_ch;
@@ -2116,15 +1971,13 @@ int main(int argc, char ** argv){
 #ifndef RECONSTRUCTED
       for(int e0=0;e0<NBinsMom;e0++){//loop over effect 1
 	if(UseTrashBins && IsTrueMomTrashBin[e0]) continue;
-	double BinningWidth1 = (BinningMom[e0+1]-BinningMom[e0]);
 	for(int f0=0;f0<NBinsMom;f0++){//loop over effect 1
 	  if(UseTrashBins && IsTrueMomTrashBin[f0]) continue;
-	  double BinningWidth2 = (BinningMom[f0+1]-BinningMom[f0]);
 	  if(ratio){
-	    ErrorSquared+=BinningWidth1*BinningWidth2*CovarianceStatisticsTargets[e0][e1][f0][e1][0][0]/pow(Value_h2o,2.);
-	    ErrorSquared+=BinningWidth1*BinningWidth2*CovarianceStatisticsTargets[e0][e1][f0][e1][1][1]/pow(Value_ch,2.);
-	    ErrorSquared+= -BinningWidth1*BinningWidth2*CovarianceStatisticsTargets[e0][e1][f0][e1][1][0]/(Value_ch*Value_h2o);
-	    ErrorSquared+= -BinningWidth1*BinningWidth2*CovarianceStatisticsTargets[e0][e1][f0][e1][0][1]/(Value_ch*Value_h2o);
+	    ErrorSquared+=CovarianceStatisticsTargets[e0][e1][f0][e1][0][0]/pow(Value_h2o,2.);
+	    ErrorSquared+=CovarianceStatisticsTargets[e0][e1][f0][e1][1][1]/pow(Value_ch,2.);
+	    ErrorSquared+= -CovarianceStatisticsTargets[e0][e1][f0][e1][1][0]/(Value_ch*Value_h2o);
+	    ErrorSquared+= -CovarianceStatisticsTargets[e0][e1][f0][e1][0][1]/(Value_ch*Value_h2o);
 	  }
 	  else  ErrorSquared+=CovarianceStatistics[e0][e1][f0][e1];
 	}
@@ -2154,19 +2007,17 @@ int main(int argc, char ** argv){
       if(UseTrashBins && IsTrueMomTrashBin[e0]) continue;
       for(int e1=0;e1<NBinsAngle;e1++){
 	if(UseTrashBins && IsTrueAngleTrashBin[e1]) continue;
-	double BinningWidth1 = (BinningMom[e0+1]-BinningMom[e0])*(BinningAngle[e1+1]-BinningAngle[e1]);
 	for(int f0=0;f0<NBinsMom;f0++){
 	  if(UseTrashBins && IsTrueMomTrashBin[f0]) continue;
 	  for(int f1=0;f1<NBinsAngle;f1++){
 	    if(UseTrashBins && IsTrueAngleTrashBin[f1]) continue;
-	    double BinningWidth2 = (BinningMom[f0+1]-BinningMom[f0])*(BinningAngle[f1+1]-BinningAngle[f1]);
 	    if(ratio){
-	      TotalErrorStatSquared+=BinningWidth1*BinningWidth2*CovarianceStatisticsTargets[e0][e1][f0][f1][0][0]/pow(TotalValue_h2o,2.);
-	      TotalErrorStatSquared+=BinningWidth1*BinningWidth2*CovarianceStatisticsTargets[e0][e1][f0][f1][1][1]/pow(TotalValue_ch,2.);
-	      TotalErrorStatSquared+= -BinningWidth1*BinningWidth2*CovarianceStatisticsTargets[e0][e1][f0][f1][1][0]/(TotalValue_ch*TotalValue_h2o);
-	      TotalErrorStatSquared+= -BinningWidth1*BinningWidth2*CovarianceStatisticsTargets[e0][e1][f0][f1][0][1]/(TotalValue_ch*TotalValue_h2o);
+	      TotalErrorStatSquared+=CovarianceStatisticsTargets[e0][e1][f0][f1][0][0]/pow(TotalValue_h2o,2.);
+	      TotalErrorStatSquared+=CovarianceStatisticsTargets[e0][e1][f0][f1][1][1]/pow(TotalValue_ch,2.);
+	      TotalErrorStatSquared+= -CovarianceStatisticsTargets[e0][e1][f0][f1][1][0]/(TotalValue_ch*TotalValue_h2o);
+	      TotalErrorStatSquared+= -CovarianceStatisticsTargets[e0][e1][f0][f1][0][1]/(TotalValue_ch*TotalValue_h2o);
 	    }
-	    else TotalErrorStatSquared+=BinningWidth1*BinningWidth2*CovarianceStatistics[e0][e1][f0][f1];
+	    else TotalErrorStatSquared+=CovarianceStatistics[e0][e1][f0][f1];
 	  }
 	}
       }
@@ -2208,15 +2059,13 @@ int main(int argc, char ** argv){
 	  }
 	  else {
 	    if(ErrorType==5){
-	      double totalBirksPlus=( CovarianceBirksPlusTargets[e0][e1][e0][e1][0][0]/pow(Value_h2o,2.)
+	      double totalBirksPlus=CovarianceBirksPlusTargets[e0][e1][e0][e1][0][0]/pow(Value_h2o,2.)
 		+CovarianceBirksPlusTargets[e0][e1][e0][e1][1][1]/pow(Value_ch,2.)
-		-2*CovarianceBirksPlusTargets[e0][e1][e0][e1][0][1]/(Value_h2o*Value_ch)
-								    );
+		-2*CovarianceBirksPlusTargets[e0][e1][e0][e1][0][1]/(Value_h2o*Value_ch);
 
-	      double totalBirksMinus=( CovarianceBirksMinusTargets[e0][e1][e0][e1][0][0]/pow(Value_h2o,2.)
+	      double totalBirksMinus=CovarianceBirksMinusTargets[e0][e1][e0][e1][0][0]/pow(Value_h2o,2.)
 		+CovarianceBirksMinusTargets[e0][e1][e0][e1][1][1]/pow(Value_ch,2.)
-		-2*CovarianceBirksMinusTargets[e0][e1][e0][e1][0][1]/(Value_h2o*Value_ch)
-								     );
+		-2*CovarianceBirksMinusTargets[e0][e1][e0][e1][0][1]/(Value_h2o*Value_ch);
 
 	      total_error+=fmax(totalBirksPlus,totalBirksMinus);
 	    }
@@ -2336,12 +2185,11 @@ int main(int argc, char ** argv){
       if(ratio){
 	for(int e0=0;e0<NBinsMom;e0++){//loop over effect 1
 	  if(UseTrashBins && IsTrueMomTrashBin[e0]) continue;
-	  double BinningWidth1 = (BinningMom[e0+1]-BinningMom[e0]);
-	  Value_ch+=BinningWidth1*NominalSelectedMC_ch->GetBinContent(e0+1,e1+1);
-	  Value_h2o+=BinningWidth1*NominalSelectedMC_h2o->GetBinContent(e0+1,e1+1);
+	  Value_ch+=NominalSelectedMC_ch->GetBinContent(e0+1,e1+1);
+	  Value_h2o+=NominalSelectedMC_h2o->GetBinContent(e0+1,e1+1);
 	}
       }
-    
+	
       double total_error=0;
       for(int ErrorType=StartError;ErrorType<=EndError;ErrorType++){
 	if(ErrorType>Systematics_Detector_End || ErrorType<Systematics_Detector_Start) continue;
@@ -2350,24 +2198,22 @@ int main(int argc, char ** argv){
 	  double errorMinus=0,errorPlus=0;
 	  for(int e0=0;e0<NBinsMom;e0++){//loop over effect 0
 	    if(UseTrashBins && IsTrueMomTrashBin[e0]) continue;
-	    double BinningWidth1 = (BinningMom[e0+1]-BinningMom[e0]);
 	    for(int f0=0;f0<NBinsMom;f0++){//loop over effect 1
 	      if(UseTrashBins && IsTrueMomTrashBin[f0]) continue;
-	      double BinningWidth2 = (BinningMom[f0+1]-BinningMom[f0]);
 	      if(ratio){
-		errorPlus+=BinningWidth1*BinningWidth2*CovarianceBirksPlusTargets[e0][e1][f0][e1][0][0]/pow(Value_h2o,2.);
-		errorPlus+=BinningWidth1*BinningWidth2*CovarianceBirksPlusTargets[e0][e1][f0][e1][1][1]/pow(Value_ch,2.);
-		errorPlus+=-BinningWidth1*BinningWidth2*CovarianceBirksPlusTargets[e0][e1][f0][e1][0][1]/(Value_h2o*Value_ch);// it's 0 for non-correlated errors
-		errorPlus+=-BinningWidth1*BinningWidth2*CovarianceBirksPlusTargets[e0][e1][f0][e1][1][0]/(Value_h2o*Value_ch);// it's 0 for non-correlated errors
+		errorPlus+=CovarianceBirksPlusTargets[e0][e1][f0][e1][0][0]/pow(Value_h2o,2.);
+		errorPlus+=CovarianceBirksPlusTargets[e0][e1][f0][e1][1][1]/pow(Value_ch,2.);
+		errorPlus+=-CovarianceBirksPlusTargets[e0][e1][f0][e1][0][1]/(Value_h2o*Value_ch);// it's 0 for non-correlated errors
+		errorPlus+=-CovarianceBirksPlusTargets[e0][e1][f0][e1][1][0]/(Value_h2o*Value_ch);// it's 0 for non-correlated errors
 
-		errorMinus+=BinningWidth1*BinningWidth2*CovarianceBirksMinusTargets[e0][e1][f0][e1][0][0]/pow(Value_h2o,2.);
-		errorMinus+=BinningWidth1*BinningWidth2*CovarianceBirksMinusTargets[e0][e1][f0][e1][1][1]/pow(Value_ch,2.);
-		errorMinus+=-BinningWidth1*BinningWidth2*CovarianceBirksMinusTargets[e0][e1][f0][e1][0][1]/(Value_h2o*Value_ch);// it's 0 for non-correlated errors
-		errorMinus+=-BinningWidth1*BinningWidth2*CovarianceBirksMinusTargets[e0][e1][f0][e1][1][0]/(Value_h2o*Value_ch);// it's 0 for non-correlated errors
+		errorMinus+=CovarianceBirksMinusTargets[e0][e1][f0][e1][0][0]/pow(Value_h2o,2.);
+		errorMinus+=CovarianceBirksMinusTargets[e0][e1][f0][e1][1][1]/pow(Value_ch,2.);
+		errorMinus+=-CovarianceBirksMinusTargets[e0][e1][f0][e1][0][1]/(Value_h2o*Value_ch);// it's 0 for non-correlated errors
+		errorMinus+=-CovarianceBirksMinusTargets[e0][e1][f0][e1][1][0]/(Value_h2o*Value_ch);// it's 0 for non-correlated errors
 	      }
 	      else{
-		errorPlus+=BinningWidth1*BinningWidth2*CovarianceBirksPlus[e0][e1][f0][e1];
-		errorMinus+=BinningWidth1*BinningWidth2*CovarianceBirksMinus[e0][e1][f0][e1];
+		errorPlus+=CovarianceBirksPlus[e0][e1][f0][e1];
+		errorMinus+=CovarianceBirksMinus[e0][e1][f0][e1];
 	      }
 	    }
 	  }
@@ -2376,17 +2222,15 @@ int main(int argc, char ** argv){
 	else {
 	  for(int e0=0;e0<NBinsMom;e0++){//loop over effect 0
 	    if(UseTrashBins && IsTrueMomTrashBin[e0]) continue;
-	    double BinningWidth1 = (BinningMom[e0+1]-BinningMom[e0]);
 	    for(int f0=0;f0<NBinsMom;f0++){//loop over effect 1
 	      if(UseTrashBins && IsTrueMomTrashBin[f0]) continue;
-	      double BinningWidth2 = (BinningMom[f0+1]-BinningMom[f0]);
 	      if(ratio){
-		total_error+=BinningWidth1*BinningWidth2*CovarianceReducedTargets[ErrorType][e0][e1][f0][e1][0][0]/pow(Value_h2o,2.);
-		total_error+=BinningWidth1*BinningWidth2*CovarianceReducedTargets[ErrorType][e0][e1][f0][e1][1][1]/pow(Value_ch,2.);
-		total_error+=-BinningWidth1*BinningWidth2*CovarianceReducedTargets[ErrorType][e0][e1][f0][e1][0][1]/(Value_h2o*Value_ch);// it's 0 for non-correlated errors
-		total_error+=-BinningWidth1*BinningWidth2*CovarianceReducedTargets[ErrorType][e0][e1][f0][e1][1][0]/(Value_h2o*Value_ch);// it's 0 for non-correlated errors
+		total_error+=CovarianceReducedTargets[ErrorType][e0][e1][f0][e1][0][0]/pow(Value_h2o,2.);
+		total_error+=CovarianceReducedTargets[ErrorType][e0][e1][f0][e1][1][1]/pow(Value_ch,2.);
+		total_error+=-CovarianceReducedTargets[ErrorType][e0][e1][f0][e1][0][1]/(Value_h2o*Value_ch);// it's 0 for non-correlated errors
+		total_error+=-CovarianceReducedTargets[ErrorType][e0][e1][f0][e1][1][0]/(Value_h2o*Value_ch);// it's 0 for non-correlated errors
 	      }
-	      else total_error+=BinningWidth1*BinningWidth2*CovarianceReduced[ErrorType][e0][e1][f0][e1];
+	      else total_error+=CovarianceReduced[ErrorType][e0][e1][f0][e1];
 	    }
 	  }
 	}
@@ -2415,26 +2259,24 @@ int main(int argc, char ** argv){
 	  if(UseTrashBins && IsTrueMomTrashBin[e0]) continue;
 	  for(int e1=0;e1<NBinsAngle;e1++){
 	    if(UseTrashBins && IsTrueAngleTrashBin[e1]) continue;
-	    double BinningWidth1 = (BinningMom[e0+1]-BinningMom[e0])*(BinningAngle[e1+1]-BinningAngle[e1]);
 	    for(int f0=0;f0<NBinsMom;f0++){
 	      if(UseTrashBins && IsTrueMomTrashBin[f0]) continue;
 	      for(int f1=0;f1<NBinsAngle;f1++){
 		if(UseTrashBins && IsTrueAngleTrashBin[f1]) continue;
-		double BinningWidth2 = (BinningMom[f0+1]-BinningMom[f0])*(BinningAngle[f1+1]-BinningAngle[f1]);
 		if(ratio){
-		  errorPlus+=BinningWidth1*BinningWidth2*CovarianceBirksPlusTargets[e0][e1][f0][f1][0][0]/pow(TotalValue_h2o,2.);
-		  errorPlus+=BinningWidth1*BinningWidth2*CovarianceBirksPlusTargets[e0][e1][f0][f1][1][1]/pow(TotalValue_ch,2.);
-		  errorPlus+=-BinningWidth1*BinningWidth2*CovarianceBirksPlusTargets[e0][e1][f0][f1][0][1]/(TotalValue_h2o*TotalValue_ch);// it's 0 for non-correlated errors
-		  errorPlus+=-BinningWidth1*BinningWidth2*CovarianceBirksPlusTargets[e0][e1][f0][f1][1][0]/(TotalValue_h2o*TotalValue_ch);// it's 0 for non-correlated errors
+		  errorPlus+=CovarianceBirksPlusTargets[e0][e1][f0][f1][0][0]/pow(TotalValue_h2o,2.);
+		  errorPlus+=CovarianceBirksPlusTargets[e0][e1][f0][f1][1][1]/pow(TotalValue_ch,2.);
+		  errorPlus+=-CovarianceBirksPlusTargets[e0][e1][f0][f1][0][1]/(TotalValue_h2o*TotalValue_ch);// it's 0 for non-correlated errors
+		  errorPlus+=-CovarianceBirksPlusTargets[e0][e1][f0][f1][1][0]/(TotalValue_h2o*TotalValue_ch);// it's 0 for non-correlated errors
 
-		  errorMinus+=BinningWidth1*BinningWidth2*CovarianceBirksMinusTargets[e0][e1][f0][f1][0][0]/pow(TotalValue_h2o,2.);
-		  errorMinus+=BinningWidth1*BinningWidth2*CovarianceBirksMinusTargets[e0][e1][f0][f1][1][1]/pow(TotalValue_ch,2.);
-		  errorMinus+=-BinningWidth1*BinningWidth2*CovarianceBirksMinusTargets[e0][e1][f0][f1][0][1]/(TotalValue_h2o*TotalValue_ch);// it's 0 for non-correlated errors
-		  errorMinus+=-BinningWidth1*BinningWidth2*CovarianceBirksMinusTargets[e0][e1][f0][f1][1][0]/(TotalValue_h2o*TotalValue_ch);// it's 0 for non-correlated errors
+		  errorMinus+=CovarianceBirksMinusTargets[e0][e1][f0][f1][0][0]/pow(TotalValue_h2o,2.);
+		  errorMinus+=CovarianceBirksMinusTargets[e0][e1][f0][f1][1][1]/pow(TotalValue_ch,2.);
+		  errorMinus+=-CovarianceBirksMinusTargets[e0][e1][f0][f1][0][1]/(TotalValue_h2o*TotalValue_ch);// it's 0 for non-correlated errors
+		  errorMinus+=-CovarianceBirksMinusTargets[e0][e1][f0][f1][1][0]/(TotalValue_h2o*TotalValue_ch);// it's 0 for non-correlated errors
 		}
 		else{
-		  errorPlus+=BinningWidth1*BinningWidth2*CovarianceBirksPlus[e0][e1][f0][f1];
-		  errorMinus+=BinningWidth1*BinningWidth2*CovarianceBirksMinus[e0][e1][f0][f1];
+		  errorPlus+=CovarianceBirksPlus[e0][e1][f0][f1];
+		  errorMinus+=CovarianceBirksMinus[e0][e1][f0][f1];
 		}
 	      }
 	    }
@@ -2452,19 +2294,17 @@ int main(int argc, char ** argv){
 	  if(UseTrashBins && IsTrueMomTrashBin[e0]) continue;
 	  for(int e1=0;e1<NBinsAngle;e1++){
 	    if(UseTrashBins && IsTrueAngleTrashBin[e1]) continue;
-	    double BinningWidth1 = (BinningMom[e0+1]-BinningMom[e0])*(BinningAngle[e1+1]-BinningAngle[e1]);
 	    for(int f0=0;f0<NBinsMom;f0++){
 	      if(UseTrashBins && IsTrueMomTrashBin[f0]) continue;
 	      for(int f1=0;f1<NBinsAngle;f1++){
 		if(UseTrashBins && IsTrueAngleTrashBin[f1]) continue;
-		double BinningWidth2 = (BinningMom[f0+1]-BinningMom[f0])*(BinningAngle[f1+1]-BinningAngle[f1]);
 		if(ratio){
-		  error+=BinningWidth1*BinningWidth2*CovarianceReducedTargets[ErrorType][e0][e1][f0][f1][0][0]/pow(TotalValue_h2o,2.);
-		  error+=BinningWidth1*BinningWidth2*CovarianceReducedTargets[ErrorType][e0][e1][f0][f1][1][1]/pow(TotalValue_ch,2.);
-		  error+=-BinningWidth1*BinningWidth2*CovarianceReducedTargets[ErrorType][e0][e1][f0][f1][0][1]/(TotalValue_h2o*TotalValue_ch);// it's 0 for non-correlated errors
-		  error+=-BinningWidth1*BinningWidth2*CovarianceReducedTargets[ErrorType][e0][e1][f0][f1][1][0]/(TotalValue_h2o*TotalValue_ch);// it's 0 for non-correlated errors
+		  error+=CovarianceReducedTargets[ErrorType][e0][e1][f0][f1][0][0]/pow(TotalValue_h2o,2.);
+		  error+=CovarianceReducedTargets[ErrorType][e0][e1][f0][f1][1][1]/pow(TotalValue_ch,2.);
+		  error+=-CovarianceReducedTargets[ErrorType][e0][e1][f0][f1][0][1]/(TotalValue_h2o*TotalValue_ch);// it's 0 for non-correlated errors
+		  error+=-CovarianceReducedTargets[ErrorType][e0][e1][f0][f1][1][0]/(TotalValue_h2o*TotalValue_ch);// it's 0 for non-correlated errors
 		}
-		else error+=BinningWidth1*BinningWidth2*CovarianceReduced[ErrorType][e0][e1][f0][f1];
+		else error+=CovarianceReduced[ErrorType][e0][e1][f0][f1];
 	      }
 	    }
 	  }
@@ -2475,7 +2315,7 @@ int main(int argc, char ** argv){
 	TotalErrorDetSquared+=error;
 	TotaldetErrorSquared[ErrorType]=error;		
       }
-    
+
       if(ratio)	TotaldetErrorSquared[ErrorType]*=pow(TotalValue,2.); 
       if(TotalValue!=0) TotalReldetError[ErrorType]=TMath::Sqrt(TotaldetErrorSquared[ErrorType])/TotalValue;
     }
@@ -2489,7 +2329,7 @@ int main(int argc, char ** argv){
 
     //#########################################XS ERROR################################
     double TotalErrorXSSquared=0,TotalRelErrorXS=0.;
-  
+
     if(EndError>=Systematics_Xsec_Start){
       cout<<"\nXsec error:"<<endl;
 
@@ -2505,13 +2345,11 @@ int main(int argc, char ** argv){
 	  if(Value!=0) RelativeError/=Value;      
 	  ErrorTotalXS_Plus[e0][e1]=RelativeError;
 	  ErrorTotalXS_Minus[e0][e1]=-RelativeError;
-	  
+
 	  //	ErrorSquared+=NominalSelectedMC->GetBinContent(e0+1,e1+1);
 	  ErrorSquared+=NominalSelectedMC->GetBinError(e0+1,e1+1); // ML modified 2017/07/18
 	  Error=TMath::Sqrt(ErrorSquared);
-
-	  //cout<<e0<<" "<<e1<<" "<<Value<<" "<<Error<<" "<<ErrorSquared<<endl;      
-	  cout<<e0<<" "<<e1<<" "<<Value<<" "<<Value*RelativeError<<" "<<ErrorTotalXS_Plus[e0][e1]<<endl;      
+	  cout<<e0<<" "<<e1<<" "<<Value<<" "<<Error<<" "<<ErrorSquared<<endl;      
 	
 	  NominalSelectedMC->SetBinError(e0+1,e1+1,ErrorSquared);
 	  sliceNominalSelectedMC_RecMom[e1]->SetBinError(e0+1,ErrorSquared);
@@ -2537,25 +2375,22 @@ int main(int argc, char ** argv){
 	if(ratio){
 	  for(int e1=0;e1<NBinsAngle;e1++){//loop over effect 1
 	    if(UseTrashBins && IsTrueAngleTrashBin[e1]) continue;
-	    double BinningWidth1 = (BinningAngle[e1+1]-BinningAngle[e1]);
-	    Value_ch+=BinningWidth1*NominalSelectedMC_ch->GetBinContent(e0+1,e1+1);
-	    Value_h2o+=BinningWidth1*NominalSelectedMC_h2o->GetBinContent(e0+1,e1+1);
+	    Value_ch+=NominalSelectedMC_ch->GetBinContent(e0+1,e1+1);
+	    Value_h2o+=NominalSelectedMC_h2o->GetBinContent(e0+1,e1+1);
 	  }
 	}
 
     	for(int e1=0;e1<NBinsAngle;e1++){//loop over effect 1
 	  if(UseTrashBins && IsTrueAngleTrashBin[e1]) continue;
-	  double BinningWidth1 = (BinningAngle[e1+1]-BinningAngle[e1]);
 	  for(int f1=0;f1<NBinsAngle;f1++){//loop over effect 1
 	    if(UseTrashBins && IsTrueAngleTrashBin[f1]) continue;
-	    double BinningWidth2 = (BinningAngle[f1+1]-BinningAngle[f1]);
 	    if(ratio){
- 	      ErrorSquared+=BinningWidth1*BinningWidth2*CovarianceXSTargets[e0][e1][e0][f1][0][0]/pow(Value_h2o,2.);
-	      ErrorSquared+=BinningWidth1*BinningWidth2*CovarianceXSTargets[e0][e1][e0][f1][1][1]/pow(Value_ch,2.);
-	      ErrorSquared+= -BinningWidth1*BinningWidth2*CovarianceXSTargets[e0][e1][e0][f1][1][0]/(Value_ch*Value_h2o);
-	      ErrorSquared+= -BinningWidth1*BinningWidth2*CovarianceXSTargets[e0][e1][e0][f1][0][1]/(Value_ch*Value_h2o);
+ 	      ErrorSquared+=CovarianceXSTargets[e0][e1][e0][f1][0][0]/pow(Value_h2o,2.);
+	      ErrorSquared+=CovarianceXSTargets[e0][e1][e0][f1][1][1]/pow(Value_ch,2.);
+	      ErrorSquared+= -CovarianceXSTargets[e0][e1][e0][f1][1][0]/(Value_ch*Value_h2o);
+	      ErrorSquared+= -CovarianceXSTargets[e0][e1][e0][f1][0][1]/(Value_ch*Value_h2o);
 	    }
-	    else  ErrorSquared+=BinningWidth1*BinningWidth2*CovarianceXS[e0][e1][e0][f1];
+	    else  ErrorSquared+=CovarianceXS[e0][e1][e0][f1];
 	  }
 	}
 	if(ratio) ErrorSquared=ErrorSquared*pow(Value,2.);
@@ -2585,25 +2420,22 @@ int main(int argc, char ** argv){
 	if(ratio){
 	  for(int e0=0;e0<NBinsMom;e0++){//loop over effect 0
 	    if(UseTrashBins && IsTrueMomTrashBin[e0]) continue;
-	    double BinningWidth1 = (BinningMom[e0+1]-BinningMom[e0]);
-	    Value_ch+=BinningWidth1*NominalSelectedMC_ch->GetBinContent(e0+1,e1+1);
-	    Value_h2o+=BinningWidth1*NominalSelectedMC_h2o->GetBinContent(e0+1,e1+1);
+	    Value_ch+=NominalSelectedMC_ch->GetBinContent(e0+1,e1+1);
+	    Value_h2o+=NominalSelectedMC_h2o->GetBinContent(e0+1,e1+1);
 	  }
 	}
     
 	for(int e0=0;e0<NBinsMom;e0++){//loop over effect 0
 	  if(UseTrashBins && IsTrueMomTrashBin[e0]) continue;
-	  double BinningWidth1 = (BinningMom[e0+1]-BinningMom[e0]);
 	  for(int f0=0;f0<NBinsMom;f0++){//loop over effect 0
 	    if(UseTrashBins && IsTrueMomTrashBin[f0]) continue;
-	    double BinningWidth2 = (BinningMom[f0+1]-BinningMom[f0]);
 	    if(ratio){
-	      ErrorSquared+=BinningWidth1*BinningWidth2*CovarianceXSTargets[e0][e1][f0][e1][0][0]/pow(Value_h2o,2.);
-	      ErrorSquared+=BinningWidth1*BinningWidth2*CovarianceXSTargets[e0][e1][f0][e1][1][1]/pow(Value_ch,2.);
-	      ErrorSquared+= -BinningWidth1*BinningWidth2*CovarianceXSTargets[e0][e1][f0][e1][1][0]/(Value_ch*Value_h2o);
-	      ErrorSquared+= -BinningWidth1*BinningWidth2*CovarianceXSTargets[e0][e1][f0][e1][0][1]/(Value_ch*Value_h2o);
+	      ErrorSquared+=CovarianceXSTargets[e0][e1][f0][e1][0][0]/pow(Value_h2o,2.);
+	      ErrorSquared+=CovarianceXSTargets[e0][e1][f0][e1][1][1]/pow(Value_ch,2.);
+	      ErrorSquared+= -CovarianceXSTargets[e0][e1][f0][e1][1][0]/(Value_ch*Value_h2o);
+	      ErrorSquared+= -CovarianceXSTargets[e0][e1][f0][e1][0][1]/(Value_ch*Value_h2o);
 	    }
-	    else  ErrorSquared+=BinningWidth1*BinningWidth2*CovarianceXS[e0][e1][f0][e1];
+	    else  ErrorSquared+=CovarianceXS[e0][e1][f0][e1];
 	  }
 	}
 	if(ratio) ErrorSquared=ErrorSquared*pow(Value,2.);
@@ -2627,20 +2459,18 @@ int main(int argc, char ** argv){
       for(int e0=0;e0<NBinsMom;e0++){
 	if(UseTrashBins && IsTrueMomTrashBin[e0]) continue;
 	for(int e1=0;e1<NBinsAngle;e1++){
-	  if(UseTrashBins && IsTrueAngleTrashBin[e1]) continue;	
-	  double BinningWidth1 = (BinningMom[e0+1]-BinningMom[e0])*(BinningAngle[e1+1]-BinningAngle[e1]);  
+	  if(UseTrashBins && IsTrueAngleTrashBin[e1]) continue;
 	  for(int f0=0;f0<NBinsMom;f0++){
 	    if(UseTrashBins && IsTrueMomTrashBin[f0]) continue;
 	    for(int f1=0;f1<NBinsAngle;f1++){
 	      if(UseTrashBins && IsTrueAngleTrashBin[f1]) continue;
-	      double BinningWidth2 = (BinningMom[f0+1]-BinningMom[f0])*(BinningAngle[f1+1]-BinningAngle[f1]);
 	      if(ratio){
-		TotalErrorXSSquared+=BinningWidth1*BinningWidth2*CovarianceXSTargets[e0][e1][f0][f1][0][0]/pow(TotalValue_h2o,2.);
-		TotalErrorXSSquared+=BinningWidth1*BinningWidth2*CovarianceXSTargets[e0][e1][f0][f1][1][1]/pow(TotalValue_ch,2.);
-		TotalErrorXSSquared+= -BinningWidth1*BinningWidth2*CovarianceXSTargets[e0][e1][f0][f1][1][0]/(TotalValue_ch*TotalValue_h2o);
-		TotalErrorXSSquared+= -BinningWidth1*BinningWidth2*CovarianceXSTargets[e0][e1][f0][f1][0][1]/(TotalValue_ch*TotalValue_h2o);
+		TotalErrorXSSquared+=CovarianceXSTargets[e0][e1][f0][f1][0][0]/pow(TotalValue_h2o,2.);
+		TotalErrorXSSquared+=CovarianceXSTargets[e0][e1][f0][f1][1][1]/pow(TotalValue_ch,2.);
+		TotalErrorXSSquared+= -CovarianceXSTargets[e0][e1][f0][f1][1][0]/(TotalValue_ch*TotalValue_h2o);
+		TotalErrorXSSquared+= -CovarianceXSTargets[e0][e1][f0][f1][0][1]/(TotalValue_ch*TotalValue_h2o);
 	      }
-	      else TotalErrorXSSquared+=BinningWidth1*BinningWidth2*CovarianceXS[e0][e1][f0][f1];
+	      else TotalErrorXSSquared+=CovarianceXS[e0][e1][f0][f1];
 	    }
 	  }
 	}
@@ -2666,15 +2496,16 @@ int main(int argc, char ** argv){
 	  // antinu, nue component is already included in the Covariance Matrix
 	
 	  //cout<<setprecision(3)<<std::scientific<<e0<<", "<<e1<<", "<<ErrorSquared<<endl;
+	
 	  double RelativeError=TMath::Sqrt(ErrorSquared);
 	  if(Value!=0) RelativeError/=Value;      
 	  ErrorTotalFlux_Plus[e0][e1]=RelativeError;
 	  ErrorTotalFlux_Minus[e0][e1]=-RelativeError;
 
+
 	  // ErrorSquared+=NominalSelectedMC->GetBinContent(e0+1,e1+1); 
 	  ErrorSquared+=NominalSelectedMC->GetBinError(e0+1,e1+1); // ML modified 2017/07/18
 	  Error=TMath::Sqrt(ErrorSquared);
-
 	  cout<<e0<<" "<<e1<<" "<<Value<<" +/-"<<RelativeError*Value<<" ("<<RelativeError*100<<"%) and from fit "<<Error_Plus[Systematics_Flux_Start]->GetBinContent(e0+1,e1+1)*100<<"%"<<endl;      
 	
 	  NominalSelectedMC->SetBinError(e0+1,e1+1,ErrorSquared);
@@ -2699,25 +2530,22 @@ int main(int argc, char ** argv){
 	if(ratio){
 	  for(int e1=0;e1<NBinsAngle;e1++){//loop over effect 1
 	    if(UseTrashBins && IsTrueAngleTrashBin[e1]) continue;
-	    double BinningWidth1 = (BinningAngle[e1+1]-BinningAngle[e1]);  
-	    Value_ch+=BinningWidth1*NominalSelectedMC_ch->GetBinContent(e0+1,e1+1);
-	    Value_h2o+=BinningWidth1*NominalSelectedMC_h2o->GetBinContent(e0+1,e1+1);
+	    Value_ch+=NominalSelectedMC_ch->GetBinContent(e0+1,e1+1);
+	    Value_h2o+=NominalSelectedMC_h2o->GetBinContent(e0+1,e1+1);
 	  }
 	}
 	
 	for(int e1=0;e1<NBinsAngle;e1++){//loop over effect 1
 	  if(UseTrashBins && IsTrueAngleTrashBin[e1]) continue;
-	  double BinningWidth1 = (BinningAngle[e1+1]-BinningAngle[e1]);  
 	  for(int f1=0;f1<NBinsAngle;f1++){//loop over effect 1
 	    if(UseTrashBins && IsTrueAngleTrashBin[f1]) continue;
-	    double BinningWidth2 = (BinningAngle[f1+1]-BinningAngle[f1]);  
 	    if(ratio){
-	      ErrorSquared+=BinningWidth1*BinningWidth2*CovarianceFluxTargets[e0][e1][e0][f1][0][0]/pow(Value_h2o,2.);
-	      ErrorSquared+=BinningWidth1*BinningWidth2*CovarianceFluxTargets[e0][e1][e0][f1][1][1]/pow(Value_ch,2.);
-	      ErrorSquared+= -BinningWidth1*BinningWidth2*CovarianceFluxTargets[e0][e1][e0][f1][1][0]/(Value_ch*Value_h2o);
-	      ErrorSquared+= -BinningWidth1*BinningWidth2*CovarianceFluxTargets[e0][e1][e0][f1][0][1]/(Value_ch*Value_h2o);
+	      ErrorSquared+=CovarianceFluxTargets[e0][e1][e0][f1][0][0]/pow(Value_h2o,2.);
+	      ErrorSquared+=CovarianceFluxTargets[e0][e1][e0][f1][1][1]/pow(Value_ch,2.);
+	      ErrorSquared+= -CovarianceFluxTargets[e0][e1][e0][f1][1][0]/(Value_ch*Value_h2o);
+	      ErrorSquared+= -CovarianceFluxTargets[e0][e1][e0][f1][0][1]/(Value_ch*Value_h2o);
 	    }
-	    else ErrorSquared+=BinningWidth1*BinningWidth2*CovarianceFlux[e0][e1][e0][f1];
+	    else ErrorSquared+=CovarianceFlux[e0][e1][e0][f1];
 	  }
 	}
 	if(ratio) ErrorSquared=ErrorSquared*pow(Value,2.);
@@ -2745,7 +2573,6 @@ int main(int argc, char ** argv){
 	if(ratio){
 	  for(int e0=0;e0<NBinsMom;e0++){//loop over effect 0
 	    if(UseTrashBins && IsTrueMomTrashBin[e0]) continue;
-	    double BinningWidth1 = (BinningMom[e0+1]-BinningMom[e0]);  
 	    Value_ch+=NominalSelectedMC_ch->GetBinContent(e0+1,e1+1);
 	    Value_h2o+=NominalSelectedMC_h2o->GetBinContent(e0+1,e1+1);
 	  }
@@ -2753,17 +2580,15 @@ int main(int argc, char ** argv){
 
 	for(int e0=0;e0<NBinsMom;e0++){//loop over effect 1
 	  if(UseTrashBins && IsTrueMomTrashBin[e0]) continue;
-	  double BinningWidth1 = (BinningMom[e0+1]-BinningMom[e0]);  
 	  for(int f0=0;f0<NBinsMom;f0++){//loop over effect 1
 	    if(UseTrashBins && IsTrueMomTrashBin[f0]) continue;
-	    double BinningWidth2 = (BinningMom[f0+1]-BinningMom[f0]);  
 	    if(ratio){
-	      ErrorSquared+=BinningWidth1*BinningWidth2*CovarianceFluxTargets[e0][e1][f0][e1][0][0]/pow(Value_h2o,2.);
-	      ErrorSquared+=BinningWidth1*BinningWidth2*CovarianceFluxTargets[e0][e1][f0][e1][1][1]/pow(Value_ch,2.);
-	      ErrorSquared+= -BinningWidth1*BinningWidth2*CovarianceFluxTargets[e0][e1][f0][e1][1][0]/(Value_ch*Value_h2o);
-	      ErrorSquared+= -BinningWidth1*BinningWidth2*CovarianceFluxTargets[e0][e1][f0][e1][0][1]/(Value_ch*Value_h2o);
+	      ErrorSquared+=CovarianceFluxTargets[e0][e1][f0][e1][0][0]/pow(Value_h2o,2.);
+	      ErrorSquared+=CovarianceFluxTargets[e0][e1][f0][e1][1][1]/pow(Value_ch,2.);
+	      ErrorSquared+= -CovarianceFluxTargets[e0][e1][f0][e1][1][0]/(Value_ch*Value_h2o);
+	      ErrorSquared+= -CovarianceFluxTargets[e0][e1][f0][e1][0][1]/(Value_ch*Value_h2o);
 	    }
-	    else ErrorSquared+=BinningWidth1*BinningWidth2*CovarianceFlux[e0][e1][f0][e1];
+	    else ErrorSquared+=CovarianceFlux[e0][e1][f0][e1];
 	  }
 	}
 	if(ratio) ErrorSquared=ErrorSquared*pow(Value,2.);
@@ -2787,19 +2612,17 @@ int main(int argc, char ** argv){
 	if(UseTrashBins && IsTrueMomTrashBin[e0]) continue;
 	for(int e1=0;e1<NBinsAngle;e1++){
 	  if(UseTrashBins && IsTrueAngleTrashBin[e1]) continue;
-	  double BinningWidth1 = (BinningMom[e0+1]-BinningMom[e0])*(BinningAngle[e1+1]-BinningAngle[e1]);  
 	  for(int f0=0;f0<NBinsMom;f0++){
 	    if(UseTrashBins && IsTrueMomTrashBin[f0]) continue;
 	    for(int f1=0;f1<NBinsAngle;f1++){
 	      if(UseTrashBins && IsTrueAngleTrashBin[f1]) continue;
-	      double BinningWidth2 = (BinningMom[f0+1]-BinningMom[f0])*(BinningAngle[f1+1]-BinningAngle[f1]);  
 	      if(ratio){
-		TotalErrorFluxSquared+=BinningWidth1*BinningWidth2*CovarianceFluxTargets[e0][e1][f0][f1][0][0]/pow(TotalValue_h2o,2.);
-		TotalErrorFluxSquared+=BinningWidth1*BinningWidth2*CovarianceFluxTargets[e0][e1][f0][f1][1][1]/pow(TotalValue_ch,2.);
-		TotalErrorFluxSquared+= -BinningWidth1*BinningWidth2*CovarianceFluxTargets[e0][e1][f0][f1][1][0]/(TotalValue_ch*TotalValue_h2o);
-		TotalErrorFluxSquared+= -BinningWidth1*BinningWidth2*CovarianceFluxTargets[e0][e1][f0][f1][0][1]/(TotalValue_ch*TotalValue_h2o);
+		TotalErrorFluxSquared+=CovarianceFluxTargets[e0][e1][f0][f1][0][0]/pow(TotalValue_h2o,2.);
+		TotalErrorFluxSquared+=CovarianceFluxTargets[e0][e1][f0][f1][1][1]/pow(TotalValue_ch,2.);
+		TotalErrorFluxSquared+= -CovarianceFluxTargets[e0][e1][f0][f1][1][0]/(TotalValue_ch*TotalValue_h2o);
+		TotalErrorFluxSquared+= -CovarianceFluxTargets[e0][e1][f0][f1][0][1]/(TotalValue_ch*TotalValue_h2o);
 	      }
-	      else TotalErrorFluxSquared+=BinningWidth1*BinningWidth2*CovarianceFlux[e0][e1][f0][f1];
+	      else TotalErrorFluxSquared+=CovarianceFlux[e0][e1][f0][f1];
 	    }
 	  }
 	}
@@ -3148,7 +2971,7 @@ int main(int argc, char ** argv){
     }
 
     //#########################################ERROR TABLE####################################
-    double power=1;//(normalized && !ratio?1e42:1);
+    double power=(normalized && !ratio?1e42:1);
 #ifdef RECONSTRUCTED
     power=1.;
 #endif 
@@ -3185,8 +3008,8 @@ int main(int argc, char ** argv){
     if(EndError>=Systematics_Xsec_Start){
       cout<<"\nxscn systematics breakdown:"<<endl; 
       for(int i=StartXsec;i<=EndXsec;i++)
-	cout<<setprecision(2)<<NameXSParam[i]<<" & "<<100*TMath::Abs(TotalRelxsError[i])<<"\\% \\\\"<<endl;
-      if(CorrelateMEC) cout<<"MEC-C and -O are treated as "<<(int)100*MEC_C_O_corr<<"\\% correlated in error #4"<<endl;
+	cout<<setprecision(2)<<"param "<<i<<" +-"<<100*TMath::Abs(TotalRelxsError[i])<<"%"<<endl;
+      if(CorrelateMEC) cout<<"MEC-C and -O are treated as "<<(int)100*MEC_C_O_corr<<"% correlated in error #4"<<endl;
     }
     //#########################################END ERROR TABLE####################################
     TCanvas * cNominalSelectedMC = new TCanvas("cNominalSelectedMC");
@@ -3211,9 +3034,6 @@ int main(int argc, char ** argv){
     NominalSelectedMC_RecAngle->Write();
     NominalSelectedData->Write();
     NominalSelectedMC->Write();
-    NominalSelectedMC_XSTemp->Write();
-    NominalSelectedMC_XSTemp_ch->Write();
-    NominalSelectedMC_XSTemp_h2o->Write();
     NominalTrueMC->Write();
     NominalTrueMC_RecMom->Write();
     NominalTrueMC_RecAngle->Write();

@@ -192,7 +192,7 @@ int Xsec::DetermineFSI(int IsSand,int IsAnti,int IsNuE,int IsBkgH,int IsBkgV,int
   else if(IsBkgV) FSIInt=9;
   else if(IsAnti) FSIInt=10;
   else if(IsNuE) FSIInt=11;
-  else if(FSIInt==3 && IsSciBkg) FSIInt=12;
+  else if(/*FSIInt==3 &&*/ IsSciBkg) FSIInt=12;
 
   return FSIInt;
 }
@@ -368,8 +368,8 @@ void Xsec::LoadInputFiles_OnlyUnfoldedData(char * InputName, double ** DataUnfol
     
     for(int c0=0;c0<NBinsTrueMom;c0++){
       for(int c1=0;c1<NBinsTrueAngle;c1++){
-	DataUnfoldedEvents[c0][c1]=Events[c0][c1];
-	//DataUnfoldedEvents[c0][c1]=XSection[c0][c1];
+	//DataUnfoldedEvents[c0][c1]=Events[c0][c1];
+	DataUnfoldedEvents[c0][c1]=XSection[c0][c1];
 	//cout << "Jben = " << Events[c0][c1] << endl;
 #ifdef DEBUG
 	cout<<"True bin ("<<c0<<","<<c1<<")     XS="<<DataUnfoldedEvents[c0][c1]<<", Nev="<<Events[c0][c1]<<endl;

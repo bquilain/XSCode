@@ -181,7 +181,8 @@ int main(int argc, char **argv){
       //if(MC && PM && (f>=415 && f<=419)) continue; ML 2017/06/23
       
       if(MC) {
-	sprintf(FileMC,"%s/%sMC_Wall_Run1_%d_wNoise_ana.root",cMCOUT,DetName,f);
+	//sprintf(FileMC,"%s/%sMC_Wall_Run1_%d_wNoise_ana.root",cMCOUT,DetName,f);
+	sprintf(FileMC,"%s/%sMC_Run1_%d_wNoise_ana.root",cMCOUT,DetName,f);
 	MCSample=0;//0 is for Sand Muons
 	POTCount->Fill(1.,1e21); // per file
       }
